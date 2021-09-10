@@ -90,12 +90,12 @@ namespace Emulator::CpuClock::Tests
 	}
 
 	//A time period may vary from 480 nanosecs to 2000 nanosecs for i8080
-	INSTANTIATE_TEST_CASE_P(CpuClockTests,
-							CpuClockTest,
-							testing::Values(
-								std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(2000), nanoseconds(0))),
-								std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(2000), nanoseconds(80000000))),
-								std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(1000), nanoseconds(0))),
-								std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(1000), nanoseconds(80000000)))
-							));
+	//INSTANTIATE_TEST_CASE_P(CpuClockTests,
+	//						CpuClockTest,
+	//						testing::Values(
+	//							std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(2000), nanoseconds(0))),
+	//							std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(2000), nanoseconds(80000000))),
+	//							std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(1000), nanoseconds(0))),
+	//							std::shared_ptr<ICpuClock>(MakeCpuClock(nanoseconds(1000), nanoseconds(80000000)))
+	//						));
 };
