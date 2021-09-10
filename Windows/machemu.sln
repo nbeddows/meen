@@ -19,6 +19,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SystemBusTest", "..\Tests\S
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpuClockTest", "..\Tests\CpuClockTest\msbuild\CpuClockTest.vcxproj", "{6138D9D4-580D-49C4-8631-FC804ECA54EF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControllerTest", "..\Tests\ControllerTest\msbuild\ControllerTest.vcxproj", "{0F22E601-A929-46A6-96B8-F58F6274FB25}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -77,6 +79,14 @@ Global
 		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x64.Build.0 = Release|x64
 		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x86.ActiveCfg = Release|Win32
 		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x86.Build.0 = Release|Win32
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Debug|x64.ActiveCfg = Debug|x64
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Debug|x64.Build.0 = Debug|x64
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Debug|x86.ActiveCfg = Debug|Win32
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Debug|x86.Build.0 = Debug|Win32
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Release|x64.ActiveCfg = Release|x64
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Release|x64.Build.0 = Release|x64
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Release|x86.ActiveCfg = Release|Win32
+		{0F22E601-A929-46A6-96B8-F58F6274FB25}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -84,6 +94,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 		{6138D9D4-580D-49C4-8631-FC804ECA54EF} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
+		{0F22E601-A929-46A6-96B8-F58F6274FB25} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AF8BA78-A80B-404D-9672-672ECE115CE8}
