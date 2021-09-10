@@ -1,0 +1,22 @@
+MACHineEMUlator is a project which aims to run old school programs by means of emulation. It is
+written entirely from scratch using C++.
+
+It represents a challenge I laid out for myself many years ago but has only got up and running
+recently thanks to all the spare time we have all had due to the COVID-19 pandemic. It also gave
+me the opportunity to explore the lastet features of the C++20 draft and make use of them where
+applicable.
+
+Project Goals: 
+
+1. Write a complete Intel 8080 cpu emulator with passing individual unit tests for each instruction. It should also pass the standard Intel 8080 cpudiag tests which can be found online.
+
+2. Implement an abstract controller interface which can be used to read and write data. The interface can then be used to create custom memory and io controllers which can be targeted towards specific programs and architectures.
+
+3. Implement a basic system bus which can be used as 'lines' of communication between the cpu and various controllers.
+
+4. Emulate various roms, starting with the classic Space Invaders. This requires writing a custom
+io interface as well as audio/video rendering.
+
+5. Upgrade the 8080 to an 8085 (z80) complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online.
+
+The docs directory includes examples of how to extend machemu to support other programs.
