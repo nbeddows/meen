@@ -3,6 +3,7 @@ export module Controller;
 import <chrono>;
 import <memory>;
 import <filesystem>;
+import Base;
 import IController;
 import SystemBus;
 
