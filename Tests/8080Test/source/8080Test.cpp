@@ -1610,18 +1610,22 @@ TEST_F(Intel8080Test, ADI_2)
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, true, true, true);
 }
-/*
+
 TEST_F(Intel8080Test, RST_0)
 {
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x00);
 	LoadAndRun("rst0.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
 }
-*/
+
 TEST_F(Intel8080Test, RST_1)
 {
-	LoadAndRun("rst1.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x08);
+	LoadAndRun("rst1.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1629,7 +1633,9 @@ TEST_F(Intel8080Test, RST_1)
 
 TEST_F(Intel8080Test, RST_2)
 {
-	LoadAndRun("rst2.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x10);
+	LoadAndRun("rst2.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1637,7 +1643,9 @@ TEST_F(Intel8080Test, RST_2)
 
 TEST_F(Intel8080Test, RST_3)
 {
-	LoadAndRun("rst3.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x18);
+	LoadAndRun("rst3.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1645,7 +1653,9 @@ TEST_F(Intel8080Test, RST_3)
 
 TEST_F(Intel8080Test, RST_4)
 {
-	LoadAndRun("rst4.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x20);
+	LoadAndRun("rst4.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1653,7 +1663,9 @@ TEST_F(Intel8080Test, RST_4)
 
 TEST_F(Intel8080Test, RST_5)
 {
-	LoadAndRun("rst5.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x28);
+	LoadAndRun("rst5.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1661,7 +1673,9 @@ TEST_F(Intel8080Test, RST_5)
 
 TEST_F(Intel8080Test, RST_6)
 {
-	LoadAndRun("rst6.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x30);
+	LoadAndRun("rst6.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
@@ -1669,7 +1683,9 @@ TEST_F(Intel8080Test, RST_6)
 
 TEST_F(Intel8080Test, RST_7)
 {
-	LoadAndRun("rst7.bin", 0x00);
+	auto path = directory_;
+	memoryController_->Load(path /= "rst.bin", 0x38);
+	LoadAndRun("rst7.bin");
 	EXPECT_EQ(0x02, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(false, false, false, false, false);
