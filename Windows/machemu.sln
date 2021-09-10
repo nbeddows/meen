@@ -23,6 +23,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControllerTest", "..\Tests\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "8080Test", "..\Tests\8080Test\msbuild\8080Test.vcxproj", "{807BE4BA-0EF8-4A98-B6C3-4E49FC015340}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{1D84FBE6-C35C-49EF-AC91-F303F36B7145}"
+	ProjectSection(SolutionItems) = preProject
+		..\Docs\Changelog.txt = ..\Docs\Changelog.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
