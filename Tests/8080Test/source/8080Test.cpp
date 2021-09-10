@@ -1,11 +1,11 @@
 #include <future>
 #include "gtest/gtest.h"
-#include "Base/Types.h"
 
 import <chrono>;
 import <filesystem>;
 //We mainly want access to the unexposed cpu functions, hence we don't import I8080 here
 import _8080;
+import Base;
 import ControllerFactory;
 import IController;
 //so we can cast to CpmIoController to get the message for the cpudiag test
