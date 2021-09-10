@@ -3,7 +3,35 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.31424.327
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Controller", "..\Controller\msbuild\Controller.vcxproj", "{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SystemBus", "..\SystemBus\msbuild\SystemBus.vcxitems", "{D271A15F-439B-47A0-887F-0902C380C8C6}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Base", "..\Base\msbuild\Base.vcxitems", "{AF7292F4-0A72-4E66-8A43-BBA34C79F11D}"
+EndProject
 Global
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		..\Base\msbuild\Base.vcxitems*{55bdf39e-b9b0-4af3-9e79-a7adc241b0f0}*SharedItemsImports = 4
+		..\SystemBus\msbuild\SystemBus.vcxitems*{55bdf39e-b9b0-4af3-9e79-a7adc241b0f0}*SharedItemsImports = 4
+		..\Base\msbuild\Base.vcxitems*{af7292f4-0a72-4e66-8a43-bba34c79f11d}*SharedItemsImports = 9
+		..\SystemBus\msbuild\SystemBus.vcxitems*{d271a15f-439b-47a0-887f-0902c380c8c6}*SharedItemsImports = 9
+	EndGlobalSection
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Debug|x64.ActiveCfg = Debug|x64
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Debug|x64.Build.0 = Debug|x64
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Debug|x86.ActiveCfg = Debug|Win32
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Debug|x86.Build.0 = Debug|Win32
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Release|x64.ActiveCfg = Release|x64
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Release|x64.Build.0 = Release|x64
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Release|x86.ActiveCfg = Release|Win32
+		{55BDF39E-B9B0-4AF3-9E79-A7ADC241B0F0}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
