@@ -17,6 +17,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3AE4D1BB
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SystemBusTest", "..\Tests\SystemBusTest\msbuild\SystemBusTest.vcxproj", "{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpuClockTest", "..\Tests\CpuClockTest\msbuild\CpuClockTest.vcxproj", "{6138D9D4-580D-49C4-8631-FC804ECA54EF}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -67,12 +69,21 @@ Global
 		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x64.Build.0 = Release|x64
 		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x86.ActiveCfg = Release|Win32
 		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x86.Build.0 = Release|Win32
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Debug|x64.ActiveCfg = Debug|x64
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Debug|x64.Build.0 = Debug|x64
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Debug|x86.ActiveCfg = Debug|Win32
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Debug|x86.Build.0 = Debug|Win32
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x64.ActiveCfg = Release|x64
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x64.Build.0 = Release|x64
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x86.ActiveCfg = Release|Win32
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
+		{6138D9D4-580D-49C4-8631-FC804ECA54EF} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AF8BA78-A80B-404D-9672-672ECE115CE8}
