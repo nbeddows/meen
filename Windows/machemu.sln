@@ -13,6 +13,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CpuClock", "..\CpuClock\msb
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Cpu", "..\Cpu\msbuild\Cpu.vcxproj", "{D8F14D15-1125-4F9C-8244-08328F6F36DF}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SystemBusTest", "..\Tests\SystemBusTest\msbuild\SystemBusTest.vcxproj", "{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -20,6 +24,7 @@ Global
 		..\SystemBus\msbuild\SystemBus.vcxitems*{55bdf39e-b9b0-4af3-9e79-a7adc241b0f0}*SharedItemsImports = 4
 		..\Base\msbuild\Base.vcxitems*{af7292f4-0a72-4e66-8a43-bba34c79f11d}*SharedItemsImports = 9
 		..\SystemBus\msbuild\SystemBus.vcxitems*{d271a15f-439b-47a0-887f-0902c380c8c6}*SharedItemsImports = 9
+		..\SystemBus\msbuild\SystemBus.vcxitems*{d7003525-da2e-4f76-b9ee-f3e99db5f017}*SharedItemsImports = 4
 		..\Base\msbuild\Base.vcxitems*{d8f14d15-1125-4f9c-8244-08328f6f36df}*SharedItemsImports = 4
 		..\SystemBus\msbuild\SystemBus.vcxitems*{d8f14d15-1125-4f9c-8244-08328f6f36df}*SharedItemsImports = 4
 	EndGlobalSection
@@ -54,9 +59,20 @@ Global
 		{D8F14D15-1125-4F9C-8244-08328F6F36DF}.Release|x64.Build.0 = Release|x64
 		{D8F14D15-1125-4F9C-8244-08328F6F36DF}.Release|x86.ActiveCfg = Release|Win32
 		{D8F14D15-1125-4F9C-8244-08328F6F36DF}.Release|x86.Build.0 = Release|Win32
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Debug|x64.ActiveCfg = Debug|x64
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Debug|x64.Build.0 = Debug|x64
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Debug|x86.ActiveCfg = Debug|Win32
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Debug|x86.Build.0 = Debug|Win32
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x64.ActiveCfg = Release|x64
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x64.Build.0 = Release|x64
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x86.ActiveCfg = Release|Win32
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D7003525-DA2E-4F76-B9EE-F3E99DB5F017} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AF8BA78-A80B-404D-9672-672ECE115CE8}
