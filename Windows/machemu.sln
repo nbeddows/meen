@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{1D84FBE6-C
 		..\Docs\Changelog.txt = ..\Docs\Changelog.txt
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Machine", "..\Machine\msbuild\Machine.vcxproj", "{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -102,6 +104,14 @@ Global
 		{807BE4BA-0EF8-4A98-B6C3-4E49FC015340}.Release|x64.Build.0 = Release|x64
 		{807BE4BA-0EF8-4A98-B6C3-4E49FC015340}.Release|x86.ActiveCfg = Release|Win32
 		{807BE4BA-0EF8-4A98-B6C3-4E49FC015340}.Release|x86.Build.0 = Release|Win32
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Debug|x64.ActiveCfg = Debug|x64
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Debug|x64.Build.0 = Debug|x64
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Debug|x86.ActiveCfg = Debug|Win32
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Debug|x86.Build.0 = Debug|Win32
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x64.ActiveCfg = Release|x64
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x64.Build.0 = Release|x64
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x86.ActiveCfg = Release|Win32
+		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
