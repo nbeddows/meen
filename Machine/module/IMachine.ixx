@@ -1,6 +1,6 @@
 export module IMachine;
 
-import <filesystem>;
+import <memory>;
 import IController;
 
 namespace Emulator
@@ -10,20 +10,6 @@ namespace Emulator
 	*/
 	export struct IMachine
 	{
-		/** Load
-		
-			Load a rom file into memory at the specified address.
-
-			@param	rom				The read only memory to be loaded.
-			@param	memoryOffset	The offset in bytes into memory.
-
-			@throw	std::exception	@see IMemoryController.
-			
-			@discussion				This function call be called multiple times in order
-									to load different rom files at different memory locations.
-		*/
-		virtual void Load(std::filesystem::path rom, uint32_t memoryOffset) = 0;
-		
 		/** Run
 		
 			Run the roms loaded into memory initialising execution at the given
