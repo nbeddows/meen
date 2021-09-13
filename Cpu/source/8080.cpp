@@ -288,64 +288,6 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
 	});
 }
 
-//REMOVE ME!
-#if 0
-void Intel8080::LoadProgram(std::string_view program, uint32_t offset)
-{	
-	std::ifstream fin (program.data(), std::ios::binary|std::ios::ate);
-	
-	if (!fin)
-	{
-		throw std::runtime_error ("The program file failed to open");
-	}
-	
-	if (fin.tellg() > maxMemory)
-	{
-		throw std::length_error("The length of the program is too big");
-	}
-	
-	uint16_t size = static_cast<uint16_t>(fin.tellg());
-
-	if (size > maxMemory - offset)
-	{
-		throw std::length_error("The length of the program is too big to fit at the specified offset");
-	}
-	
-	fin.seekg (0, std::ios::beg);
-
-	if (!(fin.read(reinterpret_cast<char*>(memory_.data()) + offset, size)))
-	{
-		throw std::invalid_argument ("The program specified failed to load");
-	}
-
-	pc_ = offset;
-	end_ = offset + size;
-
-	//clock_->Reset();
-}
-
-void Intel8080::LoadProgram(const std::vector<std::byte>& program, uint32_t offset)
-{
-	if (program.size() > maxMemory)
-	{
-		throw std::length_error("The length of the program is too big");
-	}
-
-	uint16_t size = static_cast<uint16_t>(program.size());
-	
-	if (size > maxMemory - offset)
-	{
-		throw std::length_error("The length of the program is too big to fit at the specified offset");
-	}
-
-	memcpy (memory_.data() + offset, program.data(), program.size());
-	pc_ = offset;
-	end_ = offset + size;
-
-	//clock_->Reset();
-}
-#endif
-
 /*
 promise_type Intel8080::FetchInstruction()
 {
@@ -2231,7 +2173,7 @@ promise_type Intel8080::Jp()
 
 /*
 Implementation of the DI instruction resets the
-interrupt flip - flop.This causes the computer to ignore
+interrupt flip - flop. This causes the computer to ignore
 any subsequent interrupt signals.
 */
 promise_type Intel8080::Di()
