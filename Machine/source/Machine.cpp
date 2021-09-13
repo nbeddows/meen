@@ -92,4 +92,9 @@ namespace Emulator
 	{
 		return systemBus_.controlBus;
 	}
+
+	const std::shared_ptr<I8080>& Machine::Cpu() const
+	{
+		return cpu_;
+	}
 }
