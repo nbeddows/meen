@@ -98,16 +98,15 @@ void Intel8080Test::CheckStatus(bool zero, bool sign, bool parity, bool auxCarry
 void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset) const
 {
 	auto path = directory_;
-	
+	auto addressBus = systemBus_.addressBus;
+	auto dataBus = systemBus_.dataBus;
+	auto controlBus = systemBus_.controlBus;
+
 	//EXPECT_NO_THROW
 	//(
 
 	memoryController_->Load(path /= name, offset);
 	cpu_->PC(offset);
-
-	auto addressBus = systemBus_.addressBus;
-	auto dataBus = systemBus_.dataBus;
-	auto controlBus = systemBus_.controlBus;
 
 	while (controlBus->Receive(Signal::PowerOff) == false)
 	{
