@@ -30,6 +30,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{1D84FBE6-C
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Machine", "..\Machine\msbuild\Machine.vcxproj", "{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MachineTest", "..\Tests\MachineTest\msbuild\MachineTest.vcxproj", "{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -113,6 +115,14 @@ Global
 		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x64.Build.0 = Release|x64
 		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x86.ActiveCfg = Release|Win32
 		{EFEB9B21-CAE2-4DFA-9FD7-DD9224EFD79F}.Release|x86.Build.0 = Release|Win32
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Debug|x64.ActiveCfg = Debug|x64
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Debug|x64.Build.0 = Debug|x64
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Debug|x86.ActiveCfg = Debug|Win32
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Debug|x86.Build.0 = Debug|Win32
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x64.ActiveCfg = Release|x64
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x64.Build.0 = Release|x64
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x86.ActiveCfg = Release|Win32
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -122,6 +132,7 @@ Global
 		{6138D9D4-580D-49C4-8631-FC804ECA54EF} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 		{0F22E601-A929-46A6-96B8-F58F6274FB25} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 		{807BE4BA-0EF8-4A98-B6C3-4E49FC015340} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
+		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C} = {3AE4D1BB-77DF-4283-A0A0-2CD3B7AB9414}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {2AF8BA78-A80B-404D-9672-672ECE115CE8}
