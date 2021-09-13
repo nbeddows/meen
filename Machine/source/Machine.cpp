@@ -14,6 +14,11 @@ namespace Emulator
 
 	void Machine::Run(uint16_t pc)
 	{		
+		if (memoryController_ == nullptr)
+		{
+			throw std::runtime_error ("No memory controller has been set");
+		}
+		
 		auto addressBus = systemBus_.addressBus;
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
