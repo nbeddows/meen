@@ -13,14 +13,12 @@ namespace Emulator
 		//Executes the next instruction
 		virtual bool Execute() = 0;
 
-		virtual void Reset() = 0;
-
-		//virtual void ProgramCounter() = 0;
+		virtual void Reset(uint16_t pc) = 0;
 
 		//virtual void Save() const = 0;
 
 		virtual ~I8080() = default;
 	};
-	
+
 	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus);
 }

@@ -530,7 +530,7 @@ bool Intel8080::Execute()
 #endif
 
 //This essentially powers on the cpu
-void Intel8080::Reset()
+void Intel8080::Reset(uint16_t pc)
 {
 	a_.reset();
 	b_.reset();
@@ -539,7 +539,7 @@ void Intel8080::Reset()
 	e_.reset();
 	h_.reset();
 	l_.reset();
-	pc_ = 0;
+	pc_ = pc;
 	sp_ = 0;
 	status_.reset();
 	timePeriods_ = 0;
