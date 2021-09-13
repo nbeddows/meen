@@ -13,16 +13,6 @@ using namespace std::chrono;
 
 namespace Emulator
 {
-	/*
-	export struct IBaseController
-	{
-		virtual bool Execute() const = 0;
-
-		virtual std::unique_ptr<IController> MakeIoController() const = 0;
-		virtual std::unique_ptr<IController> MakeMemoryController() const = 0;
-	};
-	*/
-
 	/** IController
 
 		A interface to a device that can interact with the cpu.
