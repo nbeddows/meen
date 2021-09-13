@@ -1,23 +1,24 @@
 #include <gtest/gtest.h>
 
-import Controller;
+import ControllerFactory;
+import IController;
 
 namespace Emulator::Controller::Tests
 {
 	class ControllerTest : public testing::Test
 	{
 	protected:
-		static std::unique_ptr<DefaultMemoryController> memoryController_;
+		static std::unique_ptr<IMemoryController> memoryController_;
 	public:
 		static void SetUpTestCase();
 	};
 
-	std::unique_ptr<DefaultMemoryController> ControllerTest::memoryController_;
+	std::unique_ptr<IMemoryController> ControllerTest::memoryController_;
 
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = std::make_unique<DefaultMemoryController>(16);
+		memoryController_ = MakeDefaultMemoryController(16);
 	}
 
 	TEST_F(ControllerTest, Load)
