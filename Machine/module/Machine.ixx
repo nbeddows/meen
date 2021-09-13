@@ -1,6 +1,10 @@
 export module Machine;
 
+import I8080;
+import IController;
+import CpuClock;
 import IMachine;
+import SystemBus;
 
 namespace Emulator
 {
@@ -10,11 +14,11 @@ namespace Emulator
 	export struct Machine final : public IMachine
 	{
 	private:
-		//clock
-		//cpu
-		//memoryController;
-		//ioController;
-		//SystemBus<uint16_t, uint8_t, 8> systemBus_
+		std::unique_ptr<CpuClock> clock_;
+		std::unique_ptr<I8080> cpu_;
+		std::shared_ptr<IMemoryController> memoryController_;
+		std::shared_ptr<IController> ioController_;
+		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 	public:
 		/** Load
 		
@@ -39,4 +43,5 @@ namespace Emulator
 			@see IMachine::SetIoController
 		*/
 		void SetIoController(std::shared_ptr<IController> controller) override final;
-	}
+	};
+}

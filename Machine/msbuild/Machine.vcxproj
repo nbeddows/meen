@@ -20,11 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\module\IMachine.ixx" />
+    <ClCompile Include="..\module\Machine.ixx" />
     <ClCompile Include="..\source\Machine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Controller\msbuild\Controller.vcxproj">
       <Project>{55bdf39e-b9b0-4af3-9e79-a7adc241b0f0}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\CpuClock\msbuild\CpuClock.vcxproj">
+      <Project>{15242c0b-ef0f-40e1-a37a-73faea3c03a6}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Cpu\msbuild\Cpu.vcxproj">
+      <Project>{d8f14d15-1125-4f9c-8244-08328f6f36df}</Project>
     </ProjectReference>
   </ItemGroup>
   <PropertyGroup Label="Globals">
@@ -65,6 +72,7 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <ImportGroup Label="Shared">
+    <Import Project="..\..\SystemBus\msbuild\SystemBus.vcxitems" Label="Shared" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />

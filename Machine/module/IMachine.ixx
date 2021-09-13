@@ -39,11 +39,17 @@ namespace Emulator
 
 		/** SetMemoryController
 		
+			Set a custom memory controller with the machine.
+
+			@param	controller	The memory controller to be used with this machine.
 		*/
 		virtual void SetMemoryController (std::shared_ptr<IController> controller) = 0;
 
 		/** SetIoController
 
+			Set a custom io controller with the machine.
+
+			@param	controller	The io controller to be used with this machine.
 		*/
 		virtual void SetIoController (std::shared_ptr<IController> controller) = 0;
 
