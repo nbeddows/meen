@@ -2,6 +2,7 @@ export module IMachine;
 
 import <memory>;
 import IController;
+import SystemBus;
 
 namespace Emulator
 {
@@ -15,7 +16,9 @@ namespace Emulator
 			Run the roms loaded into memory initialising execution at the given
 			program counter.
 
-			@param	pc					The program counter.
+			@param	pc					The program counter. When no program counter
+										is specified cpu instruction execution will
+										begin from memory address 0x00.
 
 			@throw	std::runtime_error	No memory controller has been set on this
 										machine.
@@ -26,7 +29,7 @@ namespace Emulator
 										will start executing the instructions contained in the
 										rom files that were loaded into memory.
 		*/
-		virtual void Run(uint16_t pc) = 0;
+		virtual void Run(uint16_t pc = 0x00) = 0;
 
 		/** SetMemoryController
 		
@@ -75,6 +78,20 @@ namespace Emulator
 							//memory after 2 seconds of run time.
 		*/
 		virtual void SetIoController (std::shared_ptr<IController> controller) = 0;
+
+		/** ControlBus
+		
+			Returns the control bus that is connected to this machine.
+
+			@return			The control bus.
+
+			@discussion		Since memory and io controllers can be customised they require
+							access to the control bus so they can issue commands,
+							for example; Signal::PowerOff.
+
+							@See SystemBus::Signal
+		*/
+		virtual const std::shared_ptr<ControlBus<8>>& ControlBus() const = 0;
 
 		virtual ~IMachine() = default;
 	};
