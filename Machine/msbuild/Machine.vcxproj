@@ -21,9 +21,9 @@
   <ItemGroup>
     <ClCompile Include="..\module\IMachine.ixx" />
     <ClCompile Include="..\module\Machine.ixx" />
+    <ClCompile Include="..\module\MachineFactory.ixx" />
     <ClCompile Include="..\source\Machine.cpp" />
-    <ClCompile Include="MachineFactory.cpp" />
-    <ClCompile Include="MachineFactory.ixx" />
+    <ClCompile Include="..\source\MachineFactory.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Controller\msbuild\Controller.vcxproj">
