@@ -1,7 +1,7 @@
 export module IMachine;
 
 import <filesystem>;
-import Controller;
+import IController;
 
 namespace Emulator
 {
