@@ -181,8 +181,7 @@ void Intel8080Test::TearDownTestCase()
 
 void Intel8080Test::SetUp()
 {
-	//This needs to be a flag on the control bus.
-	//cpu_->Reset();
+	
 }
 
 void Intel8080Test::TearDown()
