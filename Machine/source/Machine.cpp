@@ -87,4 +87,9 @@ namespace Emulator
 	{
 		ioController_ = controller;
 	}
+
+	const std::shared_ptr<ControlBus<8>>& Machine::ControlBus() const
+	{
+		return systemBus_.controlBus;
+	}
 }
