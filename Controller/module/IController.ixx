@@ -81,11 +81,17 @@ namespace Emulator
 	{
 		/** Load
 		
-			@param	romFile		The binary file containing cpu instructions to be
-								loaded into memory.
-			@param	address		The memory address at which the romFile is to be
-								loaded at.
+			@param	romFile				The binary file containing cpu instructions to be
+										loaded into memory.
+			@param	address				The memory address at which the romFile is to be
+										loaded at.
 
+			@throw	runtime_error		The rom file failed to open, for example, the path does
+										not exist.
+			@throw	length_error		The rom file size is too big to fit at the specified
+										memory offet.
+			@throw	invalid_argument	The rom file exists, but it failed to load.
+			
 			@TODO	add other load variant interfaces, like from vector, array, etc
 		*/
 		virtual void Load(std::filesystem::path romFile, uint16_t offset) = 0;
