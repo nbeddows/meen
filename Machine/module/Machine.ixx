@@ -2,7 +2,7 @@ export module Machine;
 
 import I8080;
 import IController;
-import CpuClock;
+import ICpuClock;
 import IMachine;
 import SystemBus;
 
@@ -14,7 +14,7 @@ namespace Emulator
 	export struct Machine final : public IMachine
 	{
 	private:
-		std::unique_ptr<CpuClock> clock_;
+		std::unique_ptr<ICpuClock> clock_;
 		std::unique_ptr<I8080> cpu_;
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
