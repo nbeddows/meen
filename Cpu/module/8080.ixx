@@ -278,7 +278,7 @@ namespace Emulator
 		
 		//I8080 overrides
 		bool Execute() override final;
-		void Reset() override final;
+		void Reset(uint16_t programCounter) override final;
 
 		//void IO(std::shared_ptr<I8080IO> io);
 		
