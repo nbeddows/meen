@@ -106,7 +106,7 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset) cons
 	//(
 
 	memoryController_->Load(path /= name, offset);
-	cpu_->PC(offset);
+	cpu_->Reset(offset);
 
 	while (controlBus->Receive(Signal::PowerOff) == false)
 	{
@@ -182,7 +182,7 @@ void Intel8080Test::TearDownTestCase()
 void Intel8080Test::SetUp()
 {
 	//This needs to be a flag on the control bus.
-	cpu_->Reset();
+	//cpu_->Reset();
 }
 
 void Intel8080Test::TearDown()
