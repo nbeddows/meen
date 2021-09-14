@@ -15,7 +15,6 @@ namespace Emulator
 		MemoryWrite,
 		IoRead,
 		IoWrite,
-		//TransferAck
 	};
 
 	export template <class T>
@@ -41,9 +40,6 @@ namespace Emulator
 				return sizeof(T) * 8;
 			}
 	};
-
-	//export template <class T>
-	//using AddressBus<T> = DataBus<T>;
 	
 	export template <class T>
 	class AddressBus
