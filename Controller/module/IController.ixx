@@ -1,7 +1,3 @@
-//module;
-
-//#include "Base/Types.h"
-
 export module IController;
 
 import <chrono>;
@@ -17,7 +13,7 @@ namespace Emulator
 
 		A interface to a device that can interact with the cpu.
 
-		@TODO	Can be made into a template which can accept different
+		@todo	Can be made into a template which can accept different
 				address and data sizes.
 	*/
 	export struct IController
@@ -52,11 +48,6 @@ namespace Emulator
 
 			@discussion			A return value of 0 indicates no interrupts
 								have been triggered.
-
-			@TODO				Zero is a valid interrupt number so the interrupt
-								returned should be passed in by ref or returned
-								as a pair<bool, uint8_t> with bool representing
-								whether or not an interrupt was generated.
 		*/
 		virtual ISR ServiceInterrupts(nanoseconds currTime) = 0;
 
@@ -82,7 +73,7 @@ namespace Emulator
 										memory offet.
 			@throw	invalid_argument	The rom file exists, but it failed to load.
 			
-			@TODO	add other load variant interfaces, like from vector, array, etc
+			@todo	add other load variant interfaces, like from vector, array, etc
 		*/
 		virtual void Load(std::filesystem::path romFile, uint16_t offset) = 0;
 		
