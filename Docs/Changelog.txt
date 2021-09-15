@@ -1,3 +1,12 @@
-1.0.0
+0.2.0
 
+* Added machemu sdk with SpaceInvaders test app
+* Now outputting all dependant machemu libraries as machemu.lib so
+  only one library needs to be linked to
+
+0.1.0
+* Added IMachine and IController interfaces.
+* Added Intel 8080 emulator complete with unit tests for each instruction
+* Added TestIoController, CpmIoController and DefaultMemoryController to
+  the controller module to help with cpu unit tests
 * Initial release
