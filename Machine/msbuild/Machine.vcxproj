@@ -122,7 +122,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>lib /OUT:$(SolutionDir)$(Platform)\$(Configuration)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
+      <Command>lib /OUT:$(SolutionDir)$(Platform)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Make machemu</Message>
@@ -149,7 +149,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>lib /OUT:$(SolutionDir)$(Platform)\$(Configuration)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
+      <Command>lib /OUT:$(SolutionDir)$(Platform)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Make machemu</Message>
@@ -172,7 +172,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>lib /OUT:$(SolutionDir)$(Platform)\$(Configuration)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
+      <Command>lib /OUT:$(SolutionDir)$(Platform)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Make machemu</Message>
@@ -199,7 +199,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Command>lib /OUT:$(SolutionDir)$(Platform)\$(Configuration)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
+      <Command>lib /OUT:$(SolutionDir)$(Platform)\machemu.lib $(SolutionDir)$(Platform)\$(Configuration)\Machine.lib $(SolutionDir)$(Platform)\$(Configuration)\Controller.lib $(SolutionDir)$(Platform)\$(Configuration)\Cpu.lib $(SolutionDir)$(Platform)\$(Configuration)\CpuClock.lib</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Make machemu</Message>
