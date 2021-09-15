@@ -16,7 +16,6 @@ mkdir SystemBus\module
 copy ..\%5\machemu.lib %7\%5\
 REM copy ..\%5\%6\Machine.pdb %7\%5\%6\
 copy ..\..\Base\module\Base.ixx Base\module\
-copy ..\..\Controller\module\ControllerFactory.ixx Controller\module\
 copy ..\..\Controller\module\IController.ixx Controller\module\
 copy ..\..\Machine\module\IMachine.ixx Machine\module\
 copy ..\..\Machine\module\MachineFactory.ixx Machine\module\
