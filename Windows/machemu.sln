@@ -32,6 +32,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Machine", "..\Machine\msbui
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MachineTest", "..\Tests\MachineTest\msbuild\MachineTest.vcxproj", "{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Sdk", "..\Sdk\msbuild\Sdk.vcxproj", "{035797D7-64BB-46C3-AE22-EBDB42433795}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SpaceInvaders", "..\SpaceInvaders\msbuild\SpaceInvaders.vcxproj", "{13F2672F-8511-4505-B155-5BCD7FCC3400}"
+EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
 		..\SystemBus\msbuild\SystemBus.vcxitems*{15242c0b-ef0f-40e1-a37a-73faea3c03a6}*SharedItemsImports = 4
@@ -123,6 +127,22 @@ Global
 		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x64.Build.0 = Release|x64
 		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x86.ActiveCfg = Release|Win32
 		{AD4CAD2E-E02F-4BAB-8AFA-28F4673A612C}.Release|x86.Build.0 = Release|Win32
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Debug|x64.ActiveCfg = Debug|x64
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Debug|x64.Build.0 = Debug|x64
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Debug|x86.ActiveCfg = Debug|Win32
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Debug|x86.Build.0 = Debug|Win32
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Release|x64.ActiveCfg = Release|x64
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Release|x64.Build.0 = Release|x64
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Release|x86.ActiveCfg = Release|Win32
+		{035797D7-64BB-46C3-AE22-EBDB42433795}.Release|x86.Build.0 = Release|Win32
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Debug|x64.ActiveCfg = Debug|x64
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Debug|x64.Build.0 = Debug|x64
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Debug|x86.ActiveCfg = Debug|Win32
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Debug|x86.Build.0 = Debug|Win32
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Release|x64.ActiveCfg = Release|x64
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Release|x64.Build.0 = Release|x64
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Release|x86.ActiveCfg = Release|Win32
+		{13F2672F-8511-4505-B155-5BCD7FCC3400}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
