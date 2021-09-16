@@ -31,7 +31,7 @@ namespace Emulator::Machine::Tests
 	{
 		machine_ = MakeMachine();
 		memoryController_ = MakeDefaultMemoryController(16); //16 bit memory bus size
-		ioController_ = MakeTestIoController(machine_->ControlBus()); //send in control bus here .... machine_->ControlBus(); //return shared_ptr to control bus
+		ioController_ = MakeTestIoController();
 	}
 
 	void MachineTest::SetUp()
