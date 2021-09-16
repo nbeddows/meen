@@ -73,8 +73,8 @@ void Intel8080Test::SetUpTestCase()
 	
 	//Create our test controllers so we can customise the machine.
 	memoryController_ = MakeDefaultMemoryController (16); //16 bits addressable memory
-	testIoController_ = MakeTestIoController(machine_->ControlBus());
-	cpmIoController_ = MakeCpmIoController(static_pointer_cast<IController>(memoryController_), machine_->ControlBus());
+	testIoController_ = MakeTestIoController();
+	cpmIoController_ = MakeCpmIoController(static_pointer_cast<IController>(memoryController_));
 }
 
 void Intel8080Test::TearDownTestCase()
