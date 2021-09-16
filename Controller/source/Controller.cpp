@@ -65,11 +65,6 @@ namespace Emulator
 		return ISR::NoInterrupt;
 	}
 
-	MockIoController::MockIoController(const std::shared_ptr<ControlBus<8>>& controlBus)
-	{
-		controlBus_ = controlBus;
-	}
-
 	void MockIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
 	{
 		powerOff_ = port == 0xFF;
@@ -77,18 +72,15 @@ namespace Emulator
 
 	ISR MockIoController::ServiceInterrupts(nanoseconds currTime)
 	{
+		auto isr = ISR::NoInterrupt;
+
 		if (powerOff_ == true)
 		{
-			controlBus_->Send(Signal::PowerOff);
+			isr = ISR::Quit;
 			powerOff_ = false;
 		}
 		
-		return ISR::NoInterrupt;
-	}
-
-	TestIoController::TestIoController(const std::shared_ptr<ControlBus<8>>& controlBus) : MockIoController(controlBus)
-	{
-	
+		return isr;
 	}
 
 	uint8_t TestIoController::Read(uint16_t deviceNumber)
@@ -133,33 +125,35 @@ namespace Emulator
 
 	ISR TestIoController::ServiceInterrupts(nanoseconds currTime)
 	{
-		auto isr = ISR::NoInterrupt;
+		auto isr = MockIoController::ServiceInterrupts(currTime);
 
-		//Fire interrupt rst 1 every second, the cpu will only acknowledge
-		//the interrupt if the test programs have interrupts enabled,
-		//otherwise it will be ignored.
-		auto t = currTime - lastTime_;
-
-		if (t >= nanoseconds::zero())
+		if (isr == ISR::NoInterrupt)
 		{
-			if (t > nanoseconds(1000000000))
+			//Fire interrupt rst 1 every second, the cpu will only acknowledge
+			//the interrupt if the test programs have interrupts enabled,
+			//otherwise it will be ignored.
+			auto t = currTime - lastTime_;
+
+			if (t >= nanoseconds::zero())
 			{
+				if (t > nanoseconds(1000000000))
+				{
+					lastTime_ = currTime;
+					isr = ISR::One;
+				}
+			}
+			else
+			{
+				//If the cpu clock gets restarted for example,
+				//lastTime will be stale, so we reset it.
 				lastTime_ = currTime;
-				isr = ISR::One;
 			}
 		}
-		else
-		{
-			//If the cpu clock gets restarted for example,
-			//lastTime will be stale, so we reset it.
-			lastTime_ = currTime;
-		}
-		
-		MockIoController::ServiceInterrupts(currTime);
+
 		return isr;
 	}
 
-	CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController, const std::shared_ptr<ControlBus<8>>& controlBus) : MockIoController(controlBus)
+	CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController)
 	{
 		memoryController_ = memoryController;
 	}
@@ -234,8 +228,6 @@ namespace Emulator
 	//No interrupts
 	ISR CpmIoController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime)
 	{
-		MockIoController::ServiceInterrupts(currTime);
-
-		return ISR::NoInterrupt;
+		return MockIoController::ServiceInterrupts(currTime);
 	}
 }
