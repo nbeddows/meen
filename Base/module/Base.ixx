@@ -13,6 +13,7 @@ namespace Emulator
 		Five,
 		Six,
 		Seven,
-		NoInterrupt = 0xFF,
+		Quit = 0xEF,
+		NoInterrupt,
 	};
 }
