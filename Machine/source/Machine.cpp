@@ -69,8 +69,15 @@ namespace Emulator
 
 						if (isr != ISR::NoInterrupt)
 						{
-							controlBus->Send(Signal::Interrupt);
-							dataBus->Send(static_cast<uint8_t>(isr));
+							if (isr != ISR::Quit)
+							{
+								controlBus->Send(Signal::Interrupt);
+								dataBus->Send(static_cast<uint8_t>(isr));
+							}
+							else
+							{
+								controlBus->Send(Signal::PowerOff);
+							}
 						}
 					}
 				}
@@ -78,19 +85,14 @@ namespace Emulator
 		}
 	}
 
-	void Machine::SetMemoryController(std::shared_ptr<IController> controller)
+	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
 	{
 		memoryController_ = controller;
 	}
 
-	void Machine::SetIoController(std::shared_ptr<IController> controller)
+	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
 		ioController_ = controller;
-	}
-
-	const std::shared_ptr<ControlBus<8>>& Machine::ControlBus() const
-	{
-		return systemBus_.controlBus;
 	}
 
 	const std::shared_ptr<I8080>& Machine::Cpu() const
