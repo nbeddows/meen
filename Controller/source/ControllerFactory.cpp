@@ -10,13 +10,13 @@ namespace Emulator
 		return std::make_unique<DefaultMemoryController>(addressBusSize);
 	}
 
-	std::unique_ptr<IController> MakeTestIoController(const std::shared_ptr<ControlBus<8>>& controlBus)
+	std::unique_ptr<IController> MakeTestIoController()
 	{
-		return std::make_unique<TestIoController>(controlBus);
+		return std::make_unique<TestIoController>();
 	}
 
-	std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController, const std::shared_ptr<ControlBus<8>>& controlBus)
+	std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController)
 	{
-		return std::make_unique<CpmIoController>(memoryController, controlBus);
+		return std::make_unique<CpmIoController>(memoryController);
 	}
 }
