@@ -12,7 +12,6 @@ mkdir SpaceInvaders\module
 mkdir SpaceInvaders\msbuild
 mkdir SpaceInvaders\source
 mkdir SpaceInvaders\roms
-mkdir SystemBus\module
 copy ..\%5\machemu.lib %7\%5\
 REM copy ..\%5\%6\Machine.pdb %7\%5\%6\
 copy ..\..\Base\module\Base.ixx Base\module\
@@ -23,6 +22,5 @@ copy ..\..\SpaceInvaders\module\SpaceInvaders.ixx SpaceInvaders\module\
 copy ..\..\SpaceInvaders\msbuild\SpaceInvaders.vcxproj SpaceInvaders\msbuild\
 copy ..\..\SpaceInvaders\source\main.cpp SpaceInvaders\source\
 copy ..\..\SpaceInvaders\source\SpaceInvaders.cpp SpaceInvaders\source\
-copy ..\..\SystemBus\module\SystemBus.ixx SystemBus\module\
 echo Done
 
