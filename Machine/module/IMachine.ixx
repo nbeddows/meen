@@ -2,7 +2,6 @@ export module IMachine;
 
 import <memory>;
 import IController;
-import SystemBus;
 
 namespace Emulator
 {
@@ -40,7 +39,7 @@ namespace Emulator
 			@discussion			Not setting a memory controller will cause the Run function
 								to throw a std::runtime_error exception.
 		*/
-		virtual void SetMemoryController (std::shared_ptr<IController> controller) = 0;
+		virtual void SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
 
 		/** SetIoController
 
@@ -63,6 +62,7 @@ namespace Emulator
 
 							memoryController_.Load ("myProgram.bin");
 							machine_.SetMemoryController (memoryController_);
+							//Don't set an io controller
 
 							...
 							...
@@ -77,21 +77,7 @@ namespace Emulator
 							//One can check that status of the machine and
 							//memory after 2 seconds of run time.
 		*/
-		virtual void SetIoController (std::shared_ptr<IController> controller) = 0;
-
-		/** ControlBus
-		
-			Returns the control bus that is connected to this machine.
-
-			@return			The control bus.
-
-			@discussion		Since memory and io controllers can be customised they require
-							access to the control bus so they can issue commands,
-							for example; Signal::PowerOff.
-
-							@See SystemBus::Signal
-		*/
-		virtual const std::shared_ptr<ControlBus<8>>& ControlBus() const = 0;
+		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
 		virtual ~IMachine() = default;
 	};
