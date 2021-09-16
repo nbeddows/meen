@@ -33,19 +33,13 @@ namespace Emulator
 
 			@see IMachine::SetMemoryController
 		*/
-		void SetMemoryController(std::shared_ptr<IController> controller) override final;
+		void SetMemoryController(const std::shared_ptr<IController>& controller) override final;
 
 		/** SetIoController
 
 			@see IMachine::SetIoController
 		*/
-		void SetIoController(std::shared_ptr<IController> controller) override final;
-
-		/** ControlBus
-		
-			@see IMachine::ControlBus
-		*/
-		const std::shared_ptr<Emulator::ControlBus<8>>& ControlBus() const override final;
+		void SetIoController(const std::shared_ptr<IController>& controller) override final;
 
 		/** Cpu
 		
