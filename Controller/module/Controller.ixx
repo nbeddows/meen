@@ -35,16 +35,6 @@ namespace Emulator
 	export class MockIoController : public IController
 	{
 		private:
-			/** contolBus_
-
-				The mock controller uses the controlBus power off signal
-				as a means for shutting down the control loop.
-				It achieves this by setting the power off signal when
-				IO port 0xFF is written to. The value of what is written
-				is irrelevant as it is not used.
-			*/
-			std::shared_ptr<ControlBus<8>> controlBus_;
-
 			/** powerOff_
 
 				Signals the control bus when the current instruction finishes
@@ -56,7 +46,6 @@ namespace Emulator
 			*/
 			bool powerOff_{};
 		protected:
-			MockIoController(const std::shared_ptr<ControlBus<8>>& controlBus);
 			void Write(uint16_t ioDeviceNumber, uint8_t value);			
 			ISR ServiceInterrupts(nanoseconds currTime);
 	};
@@ -91,8 +80,6 @@ namespace Emulator
 		*/
 		uint8_t deviceData_{ 0xAA };
 	public:
-		TestIoController(const std::shared_ptr<ControlBus<8>>& controlBus);
-
 		/**	Read
 
 			Read the contents of the specifed io device.
@@ -199,7 +186,7 @@ namespace Emulator
 
 			An io controller that emulates the CP/M BDOS output routine.
 		*/
-		CpmIoController(const std::shared_ptr<IController>& memoryController, const std::shared_ptr<ControlBus<8>>& controlBus);
+		CpmIoController(const std::shared_ptr<IController>& memoryController);
 
 		/** Message
 
