@@ -8,15 +8,27 @@ applicable.
 
 Project Goals: 
 
+This list will expand as certain milestones are achieved.
+
 1. Write a complete Intel 8080 cpu emulator with passing individual unit tests for each instruction. It should also pass the standard Intel 8080 cpudiag tests which can be found online.
+
+COMPLETE.
 
 2. Implement an abstract controller interface which can be used to read and write data. The interface can then be used to create custom memory and io controllers which can be targeted towards specific programs and architectures.
 
+COMPLETE.
+
 3. Implement a basic system bus which can be used as 'lines' of communication between the cpu and various controllers.
+
+COMPLETE.
 
 4. Emulate various roms, starting with the classic Space Invaders. This requires writing a custom
 io interface as well as audio/video rendering.
 
+IN PROGRESS.
+
 5. Upgrade the 8080 to an 8085 (z80) complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online.
 
-The docs directory includes examples of how to extend machemu to support other programs.
+NOT STARTED.
+
+See the Docs directory for a more in depth explanation of the sdk and the SpaceInvaders directory for an example of how to extend machuemu to support other programs, in this case, the 1978 classic, Space Invaders.
