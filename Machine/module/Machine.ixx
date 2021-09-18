@@ -15,8 +15,7 @@ namespace Emulator
 	{
 	private:
 		std::unique_ptr<ICpuClock> clock_;
-		//The only reason this is a shared_ptr is because we need to return it so we can run the cpu tests.
-		std::shared_ptr<I8080> cpu_;
+		std::unique_ptr<I8080> cpu_;
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
@@ -40,15 +39,5 @@ namespace Emulator
 			@see IMachine::SetIoController
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) override final;
-
-		/** Cpu
-		
-			Returns the internal Cpu.
-
-			@return I8080	The cpu used by this machine.
-
-			@discussion		This function is only used during the cpu tests.
-		*/
-		const std::shared_ptr<I8080>& Cpu() const;
 	};
 }
