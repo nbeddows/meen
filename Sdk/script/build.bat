@@ -4,7 +4,8 @@ echo Building %sdkName% sdk
 if exist %sdkName% rmdir /S /Q %sdkName%
 mkdir %sdkName%
 cd %sdkName%
-mkdir %7\%5\%6\
+mkdir %7\%5\Debug
+mkdir %7\%5\Release
 mkdir Base\module
 mkdir Controller\module
 mkdir Docs
@@ -14,8 +15,13 @@ mkdir SpaceInvaders\module
 mkdir SpaceInvaders\msbuild
 mkdir SpaceInvaders\source
 mkdir SpaceInvaders\roms
-copy ..\%5\machemu.lib %7\%5\
-REM copy ..\%5\%6\Machine.pdb %7\%5\%6\
+copy ..\SpaceInvaders.sln %7\
+copy ..\%5\%6\machemu.lib %7\%5\Debug\
+copy ..\%5\%6\machemu.dll %7\%5\Debug\
+copy ..\%5\%6\machemu.pdb %7\%5\Debug\
+copy ..\%5\%6\machemu.lib %7\%5\Release\
+copy ..\%5\%6\machemu.dll %7\%5\Release\
+copy ..\%5\%6\machemu.pdb %7\%5\Release\
 copy ..\..\Base\module\Base.ixx Base\module\
 copy ..\..\Controller\module\IController.ixx Controller\module\
 copy ..\..\Docs\Changelog.txt Docs\
