@@ -65,6 +65,12 @@ namespace Emulator
 					//otherwise we will overload the databus.
 					if (executionComplete == true)
 					{
+						/* TODO
+
+							We should be able to launch ServiceInterrupts on a
+							separate task.
+						*/
+
 						auto isr = ioController_->ServiceInterrupts(currTime);
 
 						if (isr != ISR::NoInterrupt)
@@ -93,10 +99,5 @@ namespace Emulator
 	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
 		ioController_ = controller;
-	}
-
-	const std::shared_ptr<I8080>& Machine::Cpu() const
-	{
-		return cpu_;
 	}
 }
