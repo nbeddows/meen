@@ -10,7 +10,8 @@ import Base;
 import Controller;
 import ControllerFactory;
 import IController;
-import Machine;
+import ICpuClock;
+import SystemBus;
 
 using namespace std::chrono;
 using namespace Emulator;
@@ -18,12 +19,13 @@ using namespace Emulator;
 class Intel8080Test : public testing::Test
 {
 protected:
-	static std::shared_ptr<Intel8080> cpu_;
+	static std::unique_ptr<ICpuClock> clock_;
+	//not I8080 as we want access to the lower implementation
+	static std::unique_ptr<Intel8080> cpu_;
 	static std::shared_ptr<IController> testIoController_;
 	static std::shared_ptr<IController> cpmIoController_;
 	static std::shared_ptr<IMemoryController> memoryController_;
-	//not IMachine as we want access to the lower implementation
-	static std::unique_ptr<Machine> machine_;
+	static SystemBus<uint16_t, uint8_t, 8> systemBus_;
 	static const inline std::filesystem::path directory_ = "../../programs";
 
 	void CheckStatus (bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
@@ -36,11 +38,12 @@ public:
 	void TearDown();
 };
 
-std::shared_ptr<Intel8080> Intel8080Test::cpu_;
+std::unique_ptr<ICpuClock> Intel8080Test::clock_;
+std::unique_ptr<Intel8080> Intel8080Test::cpu_;
 std::shared_ptr<IController> Intel8080Test::testIoController_;
 std::shared_ptr<IController> Intel8080Test::cpmIoController_;
 std::shared_ptr<IMemoryController> Intel8080Test::memoryController_;
-std::unique_ptr<Machine> Intel8080Test::machine_;
+SystemBus<uint16_t, uint8_t, 8> Intel8080Test::systemBus_;
 
 void Intel8080Test::CheckStatus(bool zero, bool sign, bool parity, bool auxCarry, bool carry) const
 {
@@ -57,21 +60,80 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 	(
 		auto path = directory_;
 		memoryController_->Load(path /= name, offset);
-		machine_->SetMemoryController (memoryController_);
-		machine_->SetIoController (ioController);
-		machine_->Run(offset);
+
+		auto addressBus = systemBus_.addressBus;
+		auto dataBus = systemBus_.dataBus;
+		auto controlBus = systemBus_.controlBus;
+
+		cpu_->Reset(offset);
+
+		while (controlBus->Receive(Signal::PowerOff) == false)
+		{
+			auto currTime = clock_->Tick();
+
+			//check if we can tick the cpu
+			if (controlBus->Receive(Signal::Clock) == true)
+			{
+				//(continue to) execute the next instruction
+				auto executionComplete = cpu_->Execute();
+
+				if (memoryController_ != nullptr)
+				{
+					//check the control bus to see if there are any operations pending
+					if (controlBus->Receive(Signal::MemoryRead))
+					{
+						dataBus->Send(memoryController_->Read(addressBus->Receive()));
+					}
+
+					if (controlBus->Receive(Signal::MemoryWrite))
+					{
+						memoryController_->Write(addressBus->Receive(), dataBus->Receive());
+					}
+				}
+
+				if (ioController != nullptr)
+				{
+					if (controlBus->Receive(Signal::IoRead))
+					{
+						dataBus->Send(ioController->Read(addressBus->Receive()));
+					}
+
+					if (controlBus->Receive(Signal::IoWrite))
+					{
+						ioController->Write(addressBus->Receive(), dataBus->Receive());
+					}
+
+					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
+					//otherwise we will overload the databus.
+					if (executionComplete == true)
+					{
+						auto isr = ioController->ServiceInterrupts(currTime);
+
+						if (isr != ISR::NoInterrupt)
+						{
+							if (isr != ISR::Quit)
+							{
+								controlBus->Send(Signal::Interrupt);
+								dataBus->Send(static_cast<uint8_t>(isr));
+							}
+							else
+							{
+								controlBus->Send(Signal::PowerOff);
+							}
+						}
+					}
+				}
+			}
+		}
 	);
 }
 
 void Intel8080Test::SetUpTestCase()
-{
-	//Create a machine which will run our test programs.
-	machine_ = std::make_unique<Machine>();
-	
-	//Grab the cpu from the machine and cast it to the internal type so we can check the registers.
-	cpu_ = static_pointer_cast<Intel8080>(machine_->Cpu());
-	
-	//Create our test controllers so we can customise the machine.
+{	
+	clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
+	cpu_ = std::make_unique<Intel8080>(systemBus_);
+
+	//Create our test controllers.
 	memoryController_ = MakeDefaultMemoryController (16); //16 bits addressable memory
 	testIoController_ = MakeTestIoController();
 	cpmIoController_ = MakeCpmIoController(static_pointer_cast<IController>(memoryController_));
