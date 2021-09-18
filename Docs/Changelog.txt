@@ -1,13 +1,23 @@
+0.2.1
+
+* The static library machemu.lib has been changed to a dll.
+* MachineFactory::MakeMachine is now exported from machemu.dll.
+* Added a SpaceInvaders solution file to the Windows directory of
+  the sdk.
+* Changed the directory structure of the sdk Windows directory to
+  include both Release and Debug directories to house output files
+  and machuemu dependencies.
+
 0.2.0
 
-* Added machemu sdk with SpaceInvaders test app
+* Added machemu sdk with SpaceInvaders test app.
 * Now outputting all dependant machemu libraries as machemu.lib so
-  only one library needs to be linked to
+  only one library needs to be linked to.
 
 0.1.0
 
-* Added IMachine and IController interfaces
-* Added Intel 8080 emulator complete with unit tests for each instruction
+* Added IMachine and IController interfaces.
+* Added Intel 8080 emulator complete with unit tests for each instruction.
 * Added TestIoController, CpmIoController and DefaultMemoryController to
-  the controller module to help with cpu unit tests
-* Initial release
+  the controller module to help with cpu unit tests.
+* Initial release.
