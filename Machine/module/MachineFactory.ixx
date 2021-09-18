@@ -5,5 +5,5 @@ import IMachine;
 
 namespace Emulator
 {
-	export std::unique_ptr<IMachine> MakeMachine();
+	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
 }
