@@ -22,6 +22,11 @@ namespace Emulator
 		
 			Read 8 bits from a device at the specifed 16 bit address.
 
+			The implementation of the function should be lightweight and
+			should never block. Blocking on this function will cause
+			the cpu pipeline to stall, hence slowing down the emulated
+			application.
+
 			@param	address		The 16 bit address to read from.
 
 			@return	uint8_t		The 8 bits of data read from the device.
@@ -31,6 +36,11 @@ namespace Emulator
 		/** Write
 		
 			Write 8 bits of data to a device at the specified 16 bit address.
+
+			The implementation of the function should be lightweight and
+			should never block. Blocking on this function will cause
+			the cpu pipeline to stall, hence slowing down the emulated
+			application.
 
 			@param	address		The 16 bit address to write to.
 			@param	value		The 8 bit data value to write.
