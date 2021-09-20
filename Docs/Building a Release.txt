@@ -1,0 +1,22 @@
+Before building the Release configuration of the SDK the following must be performed:
+
+1. Make sure Doxygen is installed and added to your PATH environment variable.
+
+2. Increment the major/minor/bugfix version numbers in the Sdk project pre-build event according to the scope of the release.
+
+3. Commit and push the Sdk changes.
+
+	git commit -m "Updated the Sdk version number" Sdk.vcxproj
+	git push
+
+3. Make sure the current version number in the Changelog is up to date.
+
+4. Commit and push the Changelog.
+
+	git commit -m "Updated for version v<major>.<minor>.<patch>" Changelog.txt
+	git push
+
+5. Tag the release.
+
+	git tag -a "v<major>.<minor>.<patch>" -m "Short message describing the release"
+	git push --tags	
