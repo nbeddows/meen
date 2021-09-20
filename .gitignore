@@ -1,0 +1,8 @@
+*.filters
+*.user
+.vs/
+packages/
+Win32/
+x64/
+x86/
+
