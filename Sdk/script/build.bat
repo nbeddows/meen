@@ -33,5 +33,9 @@ copy ..\..\SpaceInvaders\msbuild\SpaceInvaders.vcxproj SpaceInvaders\msbuild\
 copy ..\..\SpaceInvaders\source\main.cpp SpaceInvaders\source\
 copy ..\..\SpaceInvaders\source\SpaceInvaders.cpp SpaceInvaders\source\
 copy ..\..\Welcome.txt .\
+echo Building Docs
+copy ..\..\Docs\DoxyFile .\
+doxygen
+del DoxyFile
 echo Done
 
