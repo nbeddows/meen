@@ -9,7 +9,7 @@ using namespace std::chrono;
 
 namespace Emulator
 {
-	/** IController
+	/** Device interface.
 
 		A interface to a device that can interact with the cpu.
 
@@ -18,7 +18,7 @@ namespace Emulator
 	*/
 	export struct IController
 	{
-		/** Read
+		/** Read from device.
 		
 			Read 8 bits from a device at the specifed 16 bit address.
 
@@ -33,7 +33,7 @@ namespace Emulator
 		*/
 		virtual uint8_t Read(uint16_t address) = 0;
 
-		/** Write
+		/** Write to device.
 		
 			Write 8 bits of data to a device at the specified 16 bit address.
 
@@ -47,7 +47,7 @@ namespace Emulator
 		*/
 		virtual void Write(uint16_t address, uint8_t value) = 0;
 
-		/** Service Interrupts
+		/** Service Interrupts.
 		
 			Query the device for any pending interrupts.
 
@@ -63,17 +63,23 @@ namespace Emulator
 		*/
 		virtual ISR ServiceInterrupts(nanoseconds currTime) = 0;
 
+		/** Destroys the controller.
+		
+			Release all resources used by this controller instance.
+		*/
 		virtual ~IController() = default;
 	};
 
-	/** IMemoryController
+	/** Memory Controller interface.
 	
 		An interface to a generic memory device.
 	*/
 	export struct IMemoryController : public IController
 	{
-		/** Load
+		/** Load ROM.
 		
+			Load a ROM file into memory at the specified address.
+
 			@param	romFile				The binary file containing cpu instructions to be
 										loaded into memory.
 			@param	address				The memory address at which the romFile is to be
@@ -87,9 +93,9 @@ namespace Emulator
 			
 			@todo	add other load variant interfaces, like from vector, array, etc
 		*/
-		virtual void Load(std::filesystem::path romFile, uint16_t offset) = 0;
+		virtual void Load(std::filesystem::path romFile, uint16_t address) = 0;
 		
-		/**	Size
+		/**	Memory size.
 		
 			Obtains the size of the allocated memory used by this memory device.
 
@@ -97,6 +103,10 @@ namespace Emulator
 		*/
 		virtual size_t Size() const = 0;
 
+		/** Destructor.
+
+			Release all resources used by this memory controller instance.
+		*/
 		virtual ~IMemoryController() = default;
 	};
 }
