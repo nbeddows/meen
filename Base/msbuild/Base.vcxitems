@@ -15,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(MSBuildThisFileDirectory)..\module\Base.ixx" />
+    <ClCompile Include="$(MSBuildThisFileDirectory)..\module\CoRoutineHelper.ixx" />
   </ItemGroup>
 </Project>
