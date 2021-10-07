@@ -1,3 +1,12 @@
+0.2.3
+
+* Removed incorrect flip of the status carry bit when
+  executing a compare instruction.
+* Fixed large memory leak caused by co routine handles
+  not being deallocated.
+* Added S(imple)D(irectMedia)L(ayer) support to the sdk
+  example for video rendering.
+
 0.2.2
 
 * Added Doxygen generated html documentation to the sdk.

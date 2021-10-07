@@ -97,7 +97,7 @@ namespace Emulator
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
-		static bool AuxCarry(const Register& r, uint8_t value) { return ((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F; }
+		static bool AuxCarry(const Register& r, uint8_t value) { return false;/*((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F;*/ }
 		static bool Carry(const Register& r, uint8_t value) { return (Value(r) + value) > 0xFF; }
 		static bool Parity(const Register& r) { return (r.count() & 1) == 0; }
 		static bool Sign(const Register& r) { return r.test(7); }
@@ -178,14 +178,21 @@ namespace Emulator
 
 		CoObj Fetch();
 
+		void Dump(bool fileWrite);
+		FILE* fout_{};
+		bool start_dump = false;
+		uint64_t totalTp_{};
+
 	public:
 		/* I8080 overrides */
-		bool Execute() override final;
+		//bool Execute() override final;
+		uint8_t Execute() override final;
 		void Reset(uint16_t programCounter) override final;
 		/* End I8080 overrides */
 
 		Intel8080() = default;
 		Intel8080 (const SystemBus<uint16_t, uint8_t, 8>& systemBus);
+		~Intel8080() { fclose (fout_); }
 
 		uint8_t A() const { return Value(a_); }
 		uint8_t B() const { return Value(b_); }

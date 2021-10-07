@@ -59,7 +59,7 @@ namespace Emulator
 		memory_[addr] = data;
 	}
 
-	ISR DefaultMemoryController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime)
+	ISR DefaultMemoryController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
 	{
 		//this controller never issues any interrupts
 		return ISR::NoInterrupt;
@@ -70,7 +70,7 @@ namespace Emulator
 		powerOff_ = port == 0xFF;
 	}
 
-	ISR MockIoController::ServiceInterrupts(nanoseconds currTime)
+	ISR MockIoController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
 	{
 		auto isr = ISR::NoInterrupt;
 
@@ -123,9 +123,9 @@ namespace Emulator
 		}
 	}
 
-	ISR TestIoController::ServiceInterrupts(nanoseconds currTime)
+	ISR TestIoController::ServiceInterrupts(nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
 	{
-		auto isr = MockIoController::ServiceInterrupts(currTime);
+		auto isr = MockIoController::ServiceInterrupts(currTime, cycles);
 
 		if (isr == ISR::NoInterrupt)
 		{
@@ -175,11 +175,13 @@ namespace Emulator
 		{
 			case 0:
 			{
+				//printf("Print Mode: %d\n", value);
 				printMode_ = value;
 				break;
 			}
 			case 1:
 			{
+				//printf("Addr Hi: %d\n", value);
 				addrHi_ = value;
 				break;
 			}
@@ -196,6 +198,7 @@ namespace Emulator
 						{
 							if (isprint(aChar))
 							{
+								//printf("%c", aChar);
 								message_.push_back(aChar);
 							}
 
@@ -207,6 +210,7 @@ namespace Emulator
 					{
 						if (isprint(value))
 						{
+							//printf ("%c", value);
 							message_.push_back(value);
 						}
 						break;
@@ -226,8 +230,8 @@ namespace Emulator
 	}
 
 	//No interrupts
-	ISR CpmIoController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime)
+	ISR CpmIoController::ServiceInterrupts(nanoseconds currTime, uint64_t cycles)
 	{
-		return MockIoController::ServiceInterrupts(currTime);
+		return MockIoController::ServiceInterrupts(currTime, cycles);
 	}
 }

@@ -11,7 +11,8 @@ namespace Emulator
 	export struct I8080
 	{
 		//Executes the next instruction
-		virtual bool Execute() = 0;
+		//virtual bool Execute() = 0;
+		virtual uint8_t Execute() = 0;
 
 		virtual void Reset(uint16_t pc) = 0;
 

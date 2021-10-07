@@ -56,16 +56,17 @@ void Intel8080Test::CheckStatus(bool zero, bool sign, bool parity, bool auxCarry
 
 void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, const std::shared_ptr<IController>& ioController) const
 {
-	EXPECT_NO_THROW
-	(
-		auto path = directory_;
-		memoryController_->Load(path /= name, offset);
+	//EXPECT_NO_THROW
+	//(
+		memoryController_->Load(directory_ / name, offset);
 
 		auto addressBus = systemBus_.addressBus;
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
 
 		cpu_->Reset(offset);
+
+		uint64_t totalCycles = 0;
 
 		while (controlBus->Receive(Signal::PowerOff) == false)
 		{
@@ -75,7 +76,7 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 			if (controlBus->Receive(Signal::Clock) == true)
 			{
 				//(continue to) execute the next instruction
-				auto executionComplete = cpu_->Execute();
+				auto cycles = cpu_->Execute();
 
 				if (memoryController_ != nullptr)
 				{
@@ -105,9 +106,11 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 
 					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
 					//otherwise we will overload the databus.
-					if (executionComplete == true)
+					if (cycles > 0)
 					{
-						auto isr = ioController->ServiceInterrupts(currTime);
+						totalCycles += cycles;
+
+						auto isr = ioController->ServiceInterrupts(currTime, totalCycles);
 
 						if (isr != ISR::NoInterrupt)
 						{
@@ -125,7 +128,7 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 				}
 			}
 		}
-	);
+	//);
 }
 
 void Intel8080Test::SetUpTestCase()
@@ -1955,8 +1958,21 @@ TEST_F(Intel8080Test, CPI0)
 
 TEST_F(Intel8080Test, CPUDIAG)
 {
-	LoadAndRun("cpudiag_patched.bin", 0xEB, cpmIoController_);
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message() == " CPU IS OPERATIONAL");
+	//CP/M Warm Boot is at memory address 0x00, this will be
+	//emulated with the exitTest subroutine.
+	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
+	//CP/M BDOS print message system call is at memory address 0x05,
+	//this will be emulated with the bdosMsg subroutine.
+	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
+
+	LoadAndRun("TST8080.COM", 0x100, cpmIoController_);
+	//LoadAndRun("CPUTEST.COM", 0x100, cpmIoController_);
+	//LoadAndRun("8080PRE.COM", 0x100, cpmIoController_);
+	//LoadAndRun("8080EXM.COM", 0x100, cpmIoController_);
+	//LoadAndRun("8080EXER.COM", 0x100, cpmIoController_);
+
+	//LoadAndRun("cpudiag_patched.bin", 0xEB, cpmIoController_);
+	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find ("CPU IS OPERATIONAL"));
 }
 
 TEST_F(Intel8080Test, ISR_1)

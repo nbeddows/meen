@@ -15,6 +15,8 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
 	dataBus_(systemBus.dataBus),
 	controlBus_(systemBus.controlBus)
 {
+	int err = fopen_s (&fout_, "cpu_dump.txt", "w");
+	
 	opcodeTable_ = std::unique_ptr<std::function <CoObj()>[]>(new std::function <CoObj()>[256]
 	{
 		[&] { return Nop(); },
@@ -276,6 +278,35 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
 	});
 }
 
+void Intel8080::Dump(bool fileWrite)
+{
+	if (start_dump == true)
+	{
+		if (fout_ != nullptr && fileWrite == true)
+		{
+			fprintf(fout_, "IR: 0x%02x  ", opcode_);
+			fprintf(fout_, "PC: 0x%04x  ", pc_);
+			fprintf(fout_, "SP: 0x%04x  ", sp_);
+			fprintf(fout_, "BC: 0x%02x%02x  ", B(), C());
+			fprintf(fout_, "DE: 0x%02x%02x  ", D(), E());
+			fprintf(fout_, "HL: 0x%02x%02x  ", H(), L());
+			fprintf(fout_, "AF: 0x%02x%02x  ", A(), Value(status_));
+			fprintf(fout_, "IC: %I64d\n", totalTp_);
+		}
+		else
+		{
+			printf("IR: 0x%02x  ", opcode_);
+			printf("PC: 0x%04x  ", pc_);
+			printf("SP: 0x%04x  ", sp_);
+			printf("BC: 0x%02x%02x  ", B(), C());
+			printf("DE: 0x%02x%02x  ", D(), E());
+			printf("HL: 0x%02x%02x  ", H(), L());
+			printf("AF: 0x%02x%02x  ", A(), Value(status_));
+			printf("IC: %I64d\n", totalTp_);
+		}
+	}
+}
+
 CoObj Intel8080::Fetch()
 {
 	//The instruction is not complete (0)
@@ -292,7 +323,8 @@ CoObj Intel8080::Fetch()
 	co_return;
 }
 
-bool Intel8080::Execute()
+//bool Intel8080::Execute()
+uint8_t Intel8080::Execute()
 {
 	//Acknowledge the interrupt
 	if (controlBus_->Receive(Signal::Interrupt) == true)
@@ -318,7 +350,7 @@ bool Intel8080::Execute()
 		{
 			//We didn't complete the instruction in time, this should never happen
 			assert (!coObj_.coh || coObj_.coh.done() == true);
-
+			
 			//Execute the next instruction if there are no outstanding interrupts
 			if (isr_ == ISR::NoInterrupt)
 			{
@@ -326,10 +358,27 @@ bool Intel8080::Execute()
 			}
 			else
 			{
-				coObj_ = Rst(0xC7 | (static_cast<uint8_t>(isr_) << 3));
+				opcode_ = 0xC7 | (static_cast<uint8_t>(isr_) << 3);
+				coObj_ = Rst(opcode_);
+
+				//coObj_ = Rst(0xC7 | (static_cast<uint8_t>(isr_) << 3));
+			
 				//Interrupt is being serviced, clear it.
 				isr_ = ISR::NoInterrupt;
 			}
+
+
+			//if (sp_ < 0x23DE)
+			//{
+			//	printf ("STACK CORRUPTION: %d\n", sp_);
+			//}
+
+			//if (pc_ == 0x8)
+			//	printf("RST 1\n");
+			//else if (pc_ == 0x10)
+			//	printf("RST 2\n");
+			//else if (pc_ == 0x87)
+			//	printf("Leaving RST\n");
 		}
 		//Decode and execute the instruction after we complete the fetch.
 		else if (timePeriods_ == -1)
@@ -351,12 +400,44 @@ bool Intel8080::Execute()
 
 	coDone_ = coObj_.coh.done();
 
-	if (timePeriods_ > 0)
+	uint8_t tp = 0;
+
+	if (coDone_ == true && timePeriods_ != -1)
 	{
-		timePeriods_--;
+		if ((opcode_ & 0xC7) != 0xC7)
+		{
+			tp = timePeriods_;
+			totalTp_ += tp;
+		}
+
+		timePeriods_ = 0;
+
+		//if (pc_ == 0x09EE)
+		{
+			start_dump = true;
+		}
+
+		//Dump(true);
+
+		//if (pc_ == 0x1857)
+		if (totalTp_ == 21457942)
+		{
+			pc_ = pc_;
+		}
+
 	}
 
-	return timePeriods_ == 0;
+	return tp;
+	//else
+	//{
+	//	return 0;
+	//}
+	//if (timePeriods_ > 0)
+	//{
+	//	timePeriods_--;
+	//}
+
+	//return timePeriods_ == 0;
 }
 
 //This essentially powers on the cpu
@@ -413,7 +494,8 @@ CoObj Intel8080::Inr()
 	
 	//Get the data and process it.
 	Register r = dataBus_->Receive();
-	Inr(r);
+	r = Add(r, 0x01, false, 0, "INR");
+	//Inr(r);
 	
 	WriteToAddress(Signal::MemoryWrite, addr, Value(r));
 	//Wait for the write request to be handled.
@@ -441,7 +523,8 @@ CoObj Intel8080::Dcr(uint16_t addr)
 	ReadFromAddress(Signal::MemoryRead, addr);
 	co_await coObj_;
 	Register r = dataBus_->Receive();
-	Dcr(r);
+	r = Add(r, 0xFF, false, 0, "DCR");
+	//Dcr(r);
 	WriteToAddress (Signal::MemoryWrite, addr, Value(r));
 	co_await coObj_;
 	co_return;
@@ -612,7 +695,7 @@ CoObj Intel8080::Rar()
 	{
 		printf("0x%04X RAR\n", pc_);
 	}
-
+	
 	bool tmp = status_[CarryFlag];
 	status_[CarryFlag] = a_[0];
 	a_ >>= 1;
@@ -1307,10 +1390,10 @@ CoObj Intel8080::Cmp(const Register& r, std::string_view instructionName)
 {
 	Sub(r, 0, instructionName);
 
-	if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
-	{
-		status_.flip(Condition::CarryFlag);
-	}
+	//if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
+	//{
+	//	status_.flip(Condition::CarryFlag);
+	//}
 
 	timePeriods_ = 4;
 	co_return;
@@ -1325,10 +1408,10 @@ CoObj Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
 
 	Sub(r, 0, instructionName);
 
-	if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
-	{
-		status_.flip(Condition::CarryFlag);
-	}
+	//if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
+	//{
+	//	status_.flip(Condition::CarryFlag);
+	//}
 
 	co_return;
 }
@@ -1519,6 +1602,7 @@ CoObj Intel8080::Adi(const Register& r)
 	++pc_;
 }
 
+#if 1
 /**
 	RST
 
@@ -1558,6 +1642,7 @@ CoObj Intel8080::Rst(uint8_t restart)
 	pc_ = addr;
 	co_return;
 }
+#endif
 
 CoObj Intel8080::Rst()
 {
