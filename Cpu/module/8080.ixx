@@ -70,6 +70,8 @@ namespace Emulator
 		/**
 			Five condition (or status) bits are provided by the
 			8080 to reflect the results of data operations
+
+			S Z 0 AC 0 P 1 C
 		*/
 		Register status_ = 0b00000010;
 
@@ -97,7 +99,7 @@ namespace Emulator
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
-		static bool AuxCarry(const Register& r, uint8_t value) { return false;/*((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F;*/ }
+		static bool AuxCarry(const Register& r, uint8_t value) { return ((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F; }
 		static bool Carry(const Register& r, uint8_t value) { return (Value(r) + value) > 0xFF; }
 		static bool Parity(const Register& r) { return (r.count() & 1) == 0; }
 		static bool Sign(const Register& r) { return r.test(7); }
@@ -192,7 +194,7 @@ namespace Emulator
 
 		Intel8080() = default;
 		Intel8080 (const SystemBus<uint16_t, uint8_t, 8>& systemBus);
-		~Intel8080() { fclose (fout_); }
+		~Intel8080() { if (fout_ != nullptr) fclose (fout_); }
 
 		uint8_t A() const { return Value(a_); }
 		uint8_t B() const { return Value(b_); }
