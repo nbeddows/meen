@@ -196,23 +196,16 @@ namespace Emulator
 
 						while (aChar != '$')
 						{
-							if (isprint(aChar))
-							{
-								//printf("%c", aChar);
-								message_.push_back(aChar);
-							}
-
+							//printf("%c", aChar);
+							message_.push_back(aChar);
 							aChar = memoryController_->Read(++addr);
 						}
 						break;
 					}
 					case 2:
-					{
-						if (isprint(value))
-						{
-							//printf ("%c", value);
-							message_.push_back(value);
-						}
+					{						
+						//printf ("%c", value);
+						message_.push_back(value);
 						break;
 					}
 					default:
