@@ -452,7 +452,7 @@ void Intel8080::Reset(uint16_t pc)
 	l_.reset();
 	pc_ = pc;
 	sp_ = 0;
-	status_.reset();
+	status_ = 0b00000010;
 	timePeriods_ = 0;
 	iff_ = false;
 }
@@ -1245,9 +1245,10 @@ CoObj Intel8080::Sbb(uint16_t addr, std::string_view instructionName)
 
 void Intel8080::Ana(const Register& r)
 {
+	status_[Condition::AuxCarryFlag] = ((a_ | r) & Register(0x08)) != 0;
+
 	a_ &= r;
 
-	status_[Condition::AuxCarryFlag] = false;
 	status_[Condition::CarryFlag] = false;
 	status_[Condition::ZeroFlag] = Zero(a_);
 	status_[Condition::SignFlag] = Sign(a_);
@@ -1388,14 +1389,17 @@ CoObj Intel8080::Ora(uint16_t addr, std::string_view instructionName)
 
 CoObj Intel8080::Cmp(const Register& r, std::string_view instructionName)
 {
-	Sub(r, 0, instructionName);
+	int16_t result = Value(a_) - Value(r);
+	status_[Condition::CarryFlag] = result >> 8;
+	status_[Condition::AuxCarryFlag] = ~(Value(a_) ^ result ^ Value(r)) & 0x10;
 
-	//if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
-	//{
-	//	status_.flip(Condition::CarryFlag);
-	//}
+	Register reg = static_cast<int8_t>(result);
+	status_[Condition::ZeroFlag] = Zero(reg);
+	status_[Condition::SignFlag] = Sign(reg);
+	status_[Condition::ParityFlag] = Parity(reg);
 
 	timePeriods_ = 4;
+	pc_++;
 	co_return;
 }
 
@@ -1406,13 +1410,14 @@ CoObj Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
 	co_await coObj_;
 	Register r = dataBus_->Receive();
 
-	Sub(r, 0, instructionName);
-
-	//if (a_.test(Condition::SignFlag) ^ r.test(Condition::SignFlag))
-	//{
-	//	status_.flip(Condition::CarryFlag);
-	//}
-
+	int16_t result = Value(a_) - Value(r);
+	status_[Condition::CarryFlag] = result >> 8;
+	status_[Condition::AuxCarryFlag] = ~(Value(a_) ^ result ^ Value(r)) & 0x10;
+	r = static_cast<int8_t>(result);
+	status_[Condition::ZeroFlag] = Zero(r);
+	status_[Condition::SignFlag] = Sign(r);
+	status_[Condition::ParityFlag] = Parity(r);
+	pc_++;
 	co_return;
 }
 
@@ -1600,6 +1605,7 @@ CoObj Intel8080::Adi(const Register& r)
 	co_await coObj_;
 	a_ = Value(a_) + dataBus_->Receive();
 	++pc_;
+	co_return;
 }
 
 #if 1
