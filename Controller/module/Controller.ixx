@@ -190,11 +190,11 @@ namespace Emulator
 
 		/** Message
 
-			Returns the current message buffer.
+			Returns the message buffer. The message buffer is then cleared.
 
 			@return		string	The message buffer.
 		*/
-		const std::string& Message() const;
+		std::string Message();
 
 		/** Read
 

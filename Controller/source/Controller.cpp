@@ -158,9 +158,9 @@ namespace Emulator
 		memoryController_ = memoryController;
 	}
 
-	const std::string& CpmIoController::Message() const
+	std::string CpmIoController::Message()
 	{
-		return message_;
+		return std::move(message_);
 	}
 
 	//Not used, just return 0;
