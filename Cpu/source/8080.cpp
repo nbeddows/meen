@@ -10,14 +10,14 @@ using namespace std::chrono;
 namespace Emulator
 {
 
-Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
+Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
 	: addressBus_(systemBus.addressBus),
 	dataBus_(systemBus.dataBus),
-	controlBus_(systemBus.controlBus)
+	controlBus_(systemBus.controlBus),
+	process_(process)
 {
-	int err = fopen_s (&fout_, "cpu_dump.txt", "w");
-	
-	opcodeTable_ = std::unique_ptr<std::function <CoObj()>[]>(new std::function <CoObj()>[256]
+#ifdef ENABLE_OPCODE_TABLE
+	opcodeTable_ = std::unique_ptr<std::function <uint8_t()>[]>(new std::function <uint8_t()>[256]
 	{
 		[&] { return Nop(); },
 		[&] { return Lxi(b_, c_); },
@@ -260,7 +260,7 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
 		[&] { return Xra(++pc_, "XRI"); },
 		[&] { return Rst(); },
 		[&] { return RetOnFlag(status_.test(Condition::SignFlag) == false, "RP"); },
-		[&] { return Pop(a_, status_); },
+		[&] { auto ticks = 0; ticks = Pop(a_, status_); status_ = (status_ & Register(0xD7)) | Register(0x02); return ticks; },
 		[&] { return JmpOnFlag(status_.test(Condition::SignFlag) == false, "JP"); },
 		[&] { return Di(); },
 		[&] { return CallOnFlag(status_.test(Condition::SignFlag) == false, "CP"); },
@@ -276,169 +276,321 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus)
 		[&] { return Cmp(++pc_, "CPI"); },
 		[&] { return Rst(); },
 	});
+#endif
 }
 
-void Intel8080::Dump(bool fileWrite)
+uint8_t Intel8080::Fetch()
 {
-	if (start_dump == true)
-	{
-		if (fout_ != nullptr && fileWrite == true)
-		{
-			fprintf(fout_, "IR: 0x%02x  ", opcode_);
-			fprintf(fout_, "PC: 0x%04x  ", pc_);
-			fprintf(fout_, "SP: 0x%04x  ", sp_);
-			fprintf(fout_, "BC: 0x%02x%02x  ", B(), C());
-			fprintf(fout_, "DE: 0x%02x%02x  ", D(), E());
-			fprintf(fout_, "HL: 0x%02x%02x  ", H(), L());
-			fprintf(fout_, "AF: 0x%02x%02x  ", A(), Value(status_));
-			fprintf(fout_, "IC: %I64d\n", totalTp_);
-		}
-		else
-		{
-			printf("IR: 0x%02x  ", opcode_);
-			printf("PC: 0x%04x  ", pc_);
-			printf("SP: 0x%04x  ", sp_);
-			printf("BC: 0x%02x%02x  ", B(), C());
-			printf("DE: 0x%02x%02x  ", D(), E());
-			printf("HL: 0x%02x%02x  ", H(), L());
-			printf("AF: 0x%02x%02x  ", A(), Value(status_));
-			printf("IC: %I64d\n", totalTp_);
-		}
-	}
-}
-
-CoObj Intel8080::Fetch()
-{
-	//The instruction is not complete (0)
-	//and we don't know the time periods
-	//until the instruction is fetched, so we
-	//use a negative (invalid) value to
-	//indicate this.
-	timePeriods_ = -1;
-
 	//Fetch the next instruction
 	ReadFromAddress(Signal::MemoryRead, pc_);
-	co_await coObj_;
 	opcode_ = dataBus_->Receive();
-	co_return;
+	return -1;
 }
 
-//bool Intel8080::Execute()
 uint8_t Intel8080::Execute()
 {
+	static int nb_instructions = 0;
+
+	auto isr = ISR::NoInterrupt;
+	uint8_t timePeriods = 0;
+
 	//Acknowledge the interrupt
 	if (controlBus_->Receive(Signal::Interrupt) == true)
 	{
 		//Fetch the interrupt service routine
-		auto isr = dataBus_->Receive();
-	
+		auto interrupt = dataBus_->Receive();
+
 		if (iff_ == true)
 		{
-			isr_ = static_cast<ISR>(isr);
-			
+			isr = static_cast<ISR>(interrupt);
+
 			//the interrupt enable system is automatically
 			//disabled whenever an interrupt is acknowledged
 			iff_ = false;
 		}
 	}
 
-	if (coDone_ == true)
+	if (isr == ISR::NoInterrupt)
 	{
-		//We want to start a new instruction but the required number
-		//of time periods have not elapsed.
-		if (timePeriods_ == 0)
+		/* opcode = */Fetch();
+
+#ifdef ENABLE_OPCODE_TABLE
+		timePeriods = opcodeTable_[opcode_]();
+#else
+		switch(opcode_)
 		{
-			//We didn't complete the instruction in time, this should never happen
-			assert (!coObj_.coh || coObj_.coh.done() == true);
-			
-			//Execute the next instruction if there are no outstanding interrupts
-			if (isr_ == ISR::NoInterrupt)
-			{
-				coObj_ = Fetch();
-			}
-			else
-			{
-				opcode_ = 0xC7 | (static_cast<uint8_t>(isr_) << 3);
-				coObj_ = Rst(opcode_);
-
-				//coObj_ = Rst(0xC7 | (static_cast<uint8_t>(isr_) << 3));
-			
-				//Interrupt is being serviced, clear it.
-				isr_ = ISR::NoInterrupt;
-			}
-
-
-			//if (sp_ < 0x23DE)
-			//{
-			//	printf ("STACK CORRUPTION: %d\n", sp_);
-			//}
-
-			//if (pc_ == 0x8)
-			//	printf("RST 1\n");
-			//else if (pc_ == 0x10)
-			//	printf("RST 2\n");
-			//else if (pc_ == 0x87)
-			//	printf("Leaving RST\n");
+			case 0x00: timePeriods = Nop(); break;
+			case 0x01: timePeriods = Lxi(b_, c_); break;
+			case 0x02: timePeriods = Stax(b_, c_); break;
+			case 0x03: timePeriods = Inx(b_, c_); break;
+			case 0x04: timePeriods = Inr(b_); break;
+			case 0x05: timePeriods = Dcr(b_); break;
+			case 0x06: timePeriods = Mvi(b_); break;
+			case 0x07: timePeriods = Rlc(); break;
+			case 0x08: timePeriods = NotImplemented(); break;
+			case 0x09: timePeriods = Dad(b_, c_); break;
+			case 0x0A: timePeriods = Ldax(b_, c_); break;
+			case 0x0B: timePeriods = Dcx(b_, c_); break;
+			case 0x0C: timePeriods = Inr(c_); break;
+			case 0x0D: timePeriods = Dcr(c_); break;
+			case 0x0E: timePeriods = Mvi(c_); break;
+			case 0x0F: timePeriods = Rrc(); break;
+			case 0x10: timePeriods = NotImplemented(); break;
+			case 0x11: timePeriods = Lxi(d_, e_); break;
+			case 0x12: timePeriods = Stax(d_, e_); break;
+			case 0x13: timePeriods = Inx(d_, e_); break;
+			case 0x14: timePeriods = Inr(d_); break;
+			case 0x15: timePeriods = Dcr(d_); break;
+			case 0x16: timePeriods = Mvi(d_); break;
+			case 0x17: timePeriods = Ral(); break;
+			case 0x18: timePeriods = NotImplemented(); break;
+			case 0x19: timePeriods = Dad(d_, e_); break;
+			case 0x1A: timePeriods = Ldax(d_, e_); break;
+			case 0x1B: timePeriods = Dcx(d_, e_); break;
+			case 0x1C: timePeriods = Inr(e_); break;
+			case 0x1D: timePeriods = Dcr(e_); break;
+			case 0x1E: timePeriods = Mvi(e_); break;
+			case 0x1F: timePeriods = Rar(); break;
+			case 0x20: timePeriods = NotImplemented(); break;
+			case 0x21: timePeriods = Lxi(h_, l_); break;
+			case 0x22: timePeriods = Shld(); break;
+			case 0x23: timePeriods = Inx(h_, l_); break;
+			case 0x24: timePeriods = Inr(h_); break;
+			case 0x25: timePeriods = Dcr(h_); break;
+			case 0x26: timePeriods = Mvi(h_); break;
+			case 0x27: timePeriods = Daa(); break;
+			case 0x28: timePeriods = NotImplemented(); break;
+			case 0x29: timePeriods = Dad(h_, l_); break;
+			case 0x2A: timePeriods = Lhld(); break;
+			case 0x2B: timePeriods = Dcx(h_, l_); break;
+			case 0x2C: timePeriods = Inr(l_); break;
+			case 0x2D: timePeriods = Dcr(l_); break;
+			case 0x2E: timePeriods = Mvi(l_); break;
+			case 0x2F: timePeriods = Cma(); break;
+			case 0x30: timePeriods = NotImplemented(); break;
+			case 0x31: timePeriods = Lxi(); break;
+			case 0x32: timePeriods = Sta(); break;
+			case 0x33: timePeriods = Inx(); break;
+			case 0x34: timePeriods = Inr(); break;
+			case 0x35: timePeriods = Dcr(Uint16(h_, l_)); break;
+			case 0x36: timePeriods = Mvi(); break;
+			case 0x37: timePeriods = Stc(); break;
+			case 0x38: timePeriods = NotImplemented(); break;
+			case 0x39: timePeriods = Dad(); break;
+			case 0x3A: timePeriods = Lda(); break;
+			case 0x3B: timePeriods = Dcx(); break;
+			case 0x3C: timePeriods = Inr(a_); break;
+			case 0x3D: timePeriods = Dcr(a_); break;
+			case 0x3E: timePeriods = Mvi(a_); break;
+			case 0x3F: timePeriods = Cmc(); break;
+			case 0x40: timePeriods = Nop(); break;
+			case 0x41: timePeriods = Mov(b_, c_); break;
+			case 0x42: timePeriods = Mov(b_, d_); break;
+			case 0x43: timePeriods = Mov(b_, e_); break;
+			case 0x44: timePeriods = Mov(b_, h_); break;
+			case 0x45: timePeriods = Mov(b_, l_); break;
+			case 0x46: timePeriods = Mov(b_); break;
+			case 0x47: timePeriods = Mov(b_, a_); break;
+			case 0x48: timePeriods = Mov(c_, b_); break;
+			case 0x49: timePeriods = Nop(); break;
+			case 0x4A: timePeriods = Mov(c_, d_); break;
+			case 0x4B: timePeriods = Mov(c_, e_); break;
+			case 0x4C: timePeriods = Mov(c_, h_); break;
+			case 0x4D: timePeriods = Mov(c_, l_); break;
+			case 0x4E: timePeriods = Mov(c_); break;
+			case 0x4F: timePeriods = Mov(c_, a_); break;
+			case 0x50: timePeriods = Mov(d_, b_); break;
+			case 0x51: timePeriods = Mov(d_, c_); break;
+			case 0x52: timePeriods = Nop(); break;
+			case 0x53: timePeriods = Mov(d_, e_); break;
+			case 0x54: timePeriods = Mov(d_, h_); break;
+			case 0x55: timePeriods = Mov(d_, l_); break;
+			case 0x56: timePeriods = Mov(d_); break;
+			case 0x57: timePeriods = Mov(d_, a_); break;
+			case 0x58: timePeriods = Mov(e_, b_); break;
+			case 0x59: timePeriods = Mov(e_, c_); break;
+			case 0x5A: timePeriods = Mov(e_, d_); break;
+			case 0x5B: timePeriods = Nop(); break;
+			case 0x5C: timePeriods = Mov(e_, h_); break;
+			case 0x5D: timePeriods = Mov(e_, l_); break;
+			case 0x5E: timePeriods = Mov(e_); break;
+			case 0x5F: timePeriods = Mov(e_, a_); break;
+			case 0x60: timePeriods = Mov(h_, b_); break;
+			case 0x61: timePeriods = Mov(h_, c_); break;
+			case 0x62: timePeriods = Mov(h_, d_); break;
+			case 0x63: timePeriods = Mov(h_, e_); break;
+			case 0x64: timePeriods = Nop(); break;
+			case 0x65: timePeriods = Mov(h_, l_); break;
+			case 0x66: timePeriods = Mov(h_); break;
+			case 0x67: timePeriods = Mov(h_, a_); break;
+			case 0x68: timePeriods = Mov(l_, b_); break;
+			case 0x69: timePeriods = Mov(l_, c_); break;
+			case 0x6A: timePeriods = Mov(l_, d_); break;
+			case 0x6B: timePeriods = Mov(l_, e_); break;
+			case 0x6C: timePeriods = Mov(l_, h_); break;
+			case 0x6D: timePeriods = Nop(); break;
+			case 0x6E: timePeriods = Mov(l_); break;
+			case 0x6F: timePeriods = Mov(l_, a_); break;
+			case 0x70: timePeriods = Mov(Value(b_)); break;
+			case 0x71: timePeriods = Mov(Value(c_)); break;
+			case 0x72: timePeriods = Mov(Value(d_)); break;
+			case 0x73: timePeriods = Mov(Value(e_)); break;
+			case 0x74: timePeriods = Mov(Value(h_)); break;
+			case 0x75: timePeriods = Mov(Value(l_)); break;
+			case 0x76: timePeriods = Hlt(); break;
+			case 0x77: timePeriods = Mov(Value(a_)); break;
+			case 0x78: timePeriods = Mov(a_, b_); break;
+			case 0x79: timePeriods = Mov(a_, c_); break;
+			case 0x7A: timePeriods = Mov(a_, d_); break;
+			case 0x7B: timePeriods = Mov(a_, e_); break;
+			case 0x7C: timePeriods = Mov(a_, h_); break;
+			case 0x7D: timePeriods = Mov(a_, l_); break;
+			case 0x7E: timePeriods = Mov(a_); break;
+			case 0x7F: timePeriods = Nop(); break;
+			case 0x80: timePeriods = Add(b_, "ADD"); break;
+			case 0x81: timePeriods = Add(c_, "ADD"); break;
+			case 0x82: timePeriods = Add(d_, "ADD"); break;
+			case 0x83: timePeriods = Add(e_, "ADD"); break;
+			case 0x84: timePeriods = Add(h_, "ADD"); break;
+			case 0x85: timePeriods = Add(l_, "ADD"); break;
+			case 0x86: timePeriods = Add(Uint16(h_, l_), "ADD"); break;
+			case 0x87: timePeriods = Add(a_, "ADD"); break;
+			case 0x88: timePeriods = Adc(b_, "ADC"); break;
+			case 0x89: timePeriods = Adc(c_, "ADC"); break;
+			case 0x8A: timePeriods = Adc(d_, "ADC"); break;
+			case 0x8B: timePeriods = Adc(e_, "ADC"); break;
+			case 0x8C: timePeriods = Adc(h_, "ADC"); break;
+			case 0x8D: timePeriods = Adc(l_, "ADC"); break;
+			case 0x8E: timePeriods = Adc(Uint16(h_, l_), "ADC"); break;
+			case 0x8F: timePeriods = Adc(a_, "ADC"); break;
+			case 0x90: timePeriods = Sub(b_, "SUB"); break;
+			case 0x91: timePeriods = Sub(c_, "SUB"); break;
+			case 0x92: timePeriods = Sub(d_, "SUB"); break;
+			case 0x93: timePeriods = Sub(e_, "SUB"); break;
+			case 0x94: timePeriods = Sub(h_, "SUB"); break;
+			case 0x95: timePeriods = Sub(l_, "SUB"); break;
+			case 0x96: timePeriods = Sub(Uint16(h_, l_), "SUB"); break;
+			case 0x97: timePeriods = Sub(a_, "SUB"); break;
+			case 0x98: timePeriods = Sbb(b_, "SBB"); break;
+			case 0x99: timePeriods = Sbb(c_, "SBB"); break;
+			case 0x9A: timePeriods = Sbb(d_, "SBB"); break;
+			case 0x9B: timePeriods = Sbb(e_, "SBB"); break;
+			case 0x9C: timePeriods = Sbb(h_, "SBB"); break;
+			case 0x9D: timePeriods = Sbb(l_, "SBB"); break;
+			case 0x9E: timePeriods = Sbb(Uint16(h_, l_), "SBB"); break;
+			case 0x9F: timePeriods = Sbb(a_, "SBB"); break;
+			case 0xA0: timePeriods = Ana(b_, "ANA"); break;
+			case 0xA1: timePeriods = Ana(c_, "ANA"); break;
+			case 0xA2: timePeriods = Ana(d_, "ANA"); break;
+			case 0xA3: timePeriods = Ana(e_, "ANA"); break;
+			case 0xA4: timePeriods = Ana(h_, "ANA"); break;
+			case 0xA5: timePeriods = Ana(l_, "ANA"); break;
+			case 0xA6: timePeriods = Ana(Uint16(h_, l_), "ANA"); break;
+			case 0xA7: timePeriods = Ana(a_, "ANA"); break;
+			case 0xA8: timePeriods = Xra(b_, "XRA"); break;
+			case 0xA9: timePeriods = Xra(c_, "XRA"); break;
+			case 0xAA: timePeriods = Xra(d_, "XRA"); break;
+			case 0xAB: timePeriods = Xra(e_, "XRA"); break;
+			case 0xAC: timePeriods = Xra(h_, "XRA"); break;
+			case 0xAD: timePeriods = Xra(l_, "XRA"); break;
+			case 0xAE: timePeriods = Xra(Uint16(h_, l_), "XRA"); break;
+			case 0xAF: timePeriods = Xra(a_, "XRA"); break;
+			case 0xB0: timePeriods = Ora(b_, "ORA"); break;
+			case 0xB1: timePeriods = Ora(c_, "ORA"); break;
+			case 0xB2: timePeriods = Ora(d_, "ORA"); break;
+			case 0xB3: timePeriods = Ora(e_, "ORA"); break;
+			case 0xB4: timePeriods = Ora(h_, "ORA"); break;
+			case 0xB5: timePeriods = Ora(l_, "ORA"); break;
+			case 0xB6: timePeriods = Ora(Uint16(h_, l_), "ORA"); break;
+			case 0xB7: timePeriods = Ora(a_, "ORA"); break;
+			case 0xB8: timePeriods = Cmp(b_, "CMP"); break;
+			case 0xB9: timePeriods = Cmp(c_, "CMP"); break;
+			case 0xBA: timePeriods = Cmp(d_, "CMP"); break;
+			case 0xBB: timePeriods = Cmp(e_, "CMP"); break;
+			case 0xBC: timePeriods = Cmp(h_, "CMP"); break;
+			case 0xBD: timePeriods = Cmp(l_, "CMP"); break;
+			case 0xBE: timePeriods = Cmp(Uint16(h_, l_), "CMP"); break;
+			case 0xBF: timePeriods = Cmp(a_, "CMP"); break;
+			case 0xC0: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == false, "RNZ"); break;
+			case 0xC1: timePeriods = Pop(b_, c_); break;
+			case 0xC2: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == false, "JNZ"); break;
+			case 0xC3: timePeriods = JmpOnFlag(true, "JMP"); break;
+			case 0xC4: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == false, "CNZ"); break;
+			case 0xC5: timePeriods = Push(b_, c_); break;
+			case 0xC6: timePeriods = Add(++pc_, "ADI"); break;
+			case 0xC7: timePeriods = Rst(); break;
+			case 0xC8: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == true, "RZ"); break;
+			case 0xC9: timePeriods = RetOnFlag(true, "RET"); break;
+			case 0xCA: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == true, "JZ"); break;
+			case 0xCB: timePeriods = NotImplemented(); break;
+			case 0xCC: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == true, "CZ"); break;
+			case 0xCD: timePeriods = CallOnFlag(true, "CALL"); break;
+			case 0xCE: timePeriods = Adc(++pc_, "ACI"); break;
+			case 0xCF: timePeriods = Rst(); break;
+			case 0xD0: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == false, "RNC"); break;
+			case 0xD1: timePeriods = Pop(d_, e_); break;
+			case 0xD2: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == false, "JNC"); break;
+			case 0xD3: timePeriods = Out(); break;
+			case 0xD4: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == false, "CNC"); break;
+			case 0xD5: timePeriods = Push(d_, e_); break;
+			case 0xD6: timePeriods = Sub(++pc_, "SUI"); break;
+			case 0xD7: timePeriods = Rst(); break;
+			case 0xD8: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == true, "RC"); break;
+			case 0xD9: timePeriods = NotImplemented(); break;
+			case 0xDA: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == true, "JC"); break;
+			case 0xDB: timePeriods = In(); break;
+			case 0xDC: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == true, "CC"); break;
+			case 0xDD: timePeriods = NotImplemented(); break;
+			case 0xDE: timePeriods = Sbb(++pc_, "SBI"); break;
+			case 0xDF: timePeriods = Rst(); break;
+			case 0xE0: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == false, "RPO"); break;
+			case 0xE1: timePeriods = Pop(h_, l_); break;
+			case 0xE2: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == false, "JPO"); break;
+			case 0xE3: timePeriods = Xthl(); break;
+			case 0xE4: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == false, "CPO"); break;
+			case 0xE5: timePeriods = Push(h_, l_); break;
+			case 0xE6: timePeriods = Ana(++pc_, "ANI"); break;
+			case 0xE7: timePeriods = Rst(); break;
+			case 0xE8: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == true, "RPE"); break;
+			case 0xE9: timePeriods = Pchl(); break;
+			case 0xEA: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == true, "JPE"); break;
+			case 0xEB: timePeriods = Xchg(); break;
+			case 0xEC: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == true, "CPE"); break;
+			case 0xED: timePeriods = NotImplemented(); break;
+			case 0xEE: timePeriods = Xra(++pc_, "XRI"); break;
+			case 0xEF: timePeriods = Rst(); break;
+			case 0xF0: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == false, "RP"); break;
+			case 0xF1: timePeriods = Pop(a_, status_); status_ = (status_ & Register(0xD7)) | Register(0x02); break;
+			case 0xF2: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == false, "JP"); break;
+			case 0xF3: timePeriods = Di(); break;
+			case 0xF4: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == false, "CP"); break;
+			case 0xF5: timePeriods = Push(a_, status_); break;
+			case 0xF6: timePeriods = Ora(++pc_, "ORI"); break;
+			case 0xF7: timePeriods = Rst(); break;
+			case 0xF8: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == true, "RM"); break;
+			case 0xF9: timePeriods = Sphl(); break;
+			case 0xFA: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == true, "JM"); break;
+			case 0xFB: timePeriods = Ei(); break;
+			case 0xFC: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == true, "CM"); break;
+			case 0xFD: timePeriods = NotImplemented(); break;
+			case 0xFE: timePeriods = Cmp(++pc_, "CPI"); break;
+			case 0xFF: timePeriods = Rst(); break;
+			default: assert(0); break;
 		}
-		//Decode and execute the instruction after we complete the fetch.
-		else if (timePeriods_ == -1)
-		{
-			coObj_ = opcodeTable_[opcode_]();
-		}
-/*
-		else
-		{
-			//We are essentially spinning here on instruction completion.
-		}
-*/
 	}
 	else
 	{
-		//Resume execution of the current instruction.
-		coObj_.coh.resume();
+		opcode_ = 0xC7 | (static_cast<uint8_t>(isr) << 3);
+		timePeriods = Rst(opcode_);
+
+		//Interrupt is being serviced, clear it.
+		isr = ISR::NoInterrupt;
 	}
 
-	coDone_ = coObj_.coh.done();
-
-	uint8_t tp = 0;
-
-	if (coDone_ == true && timePeriods_ != -1)
-	{
-		if ((opcode_ & 0xC7) != 0xC7)
-		{
-			tp = timePeriods_;
-			totalTp_ += tp;
-		}
-
-		timePeriods_ = 0;
-
-		//if (pc_ == 0x09EE)
-		{
-			start_dump = true;
-		}
-
-		//Dump(true);
-
-		//if (pc_ == 0x1857)
-		if (totalTp_ == 21457942)
-		{
-			pc_ = pc_;
-		}
-
-	}
-
-	return tp;
-	//else
-	//{
-	//	return 0;
-	//}
-	//if (timePeriods_ > 0)
-	//{
-	//	timePeriods_--;
-	//}
-
-	//return timePeriods_ == 0;
+	nb_instructions++;
+	return timePeriods;
 }
+#endif
 
 //This essentially powers on the cpu
 void Intel8080::Reset(uint16_t pc)
@@ -453,7 +605,6 @@ void Intel8080::Reset(uint16_t pc)
 	pc_ = pc;
 	sp_ = 0;
 	status_ = 0b00000010;
-	timePeriods_ = 0;
 	iff_ = false;
 }
 
@@ -461,6 +612,9 @@ void Intel8080::ReadFromAddress(Signal readLocation, uint16_t addr)
 {
 	controlBus_->Send(readLocation);			
 	addressBus_->Send (addr);
+#ifndef ENABLE_CO_ROUTINE
+	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
+#endif
 }
 
 void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t value)
@@ -468,6 +622,9 @@ void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t valu
 	controlBus_->Send(writeLocation);
 	addressBus_->Send(addr);
 	dataBus_->Send(value);
+#ifndef ENABLE_CO_ROUTINE
+	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
+#endif
 }
 
 /**
@@ -475,32 +632,23 @@ void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t valu
 
 	The specified register or memory byte is incremented by one.
 */
-CoObj Intel8080::Inr(Register& r)
+uint8_t Intel8080::Inr(Register& r)
 {
-	timePeriods_ = 5;
-	r = Add(r, 0x01, false, 0, "INR");
-	co_return;
+	r = Add(r, 0x01, 0, false, "INR");
+	return 5;
 }
 
-CoObj Intel8080::Inr()
+uint8_t Intel8080::Inr()
 {
-	//Update the emulated time to complete.
-	timePeriods_ = 10;
 	auto addr = Uint16(h_, l_);
 	
 	ReadFromAddress(Signal::MemoryRead, addr);
-	//Wait for the read request to be handled.
-	co_await coObj_;
-	
 	//Get the data and process it.
 	Register r = dataBus_->Receive();
-	r = Add(r, 0x01, false, 0, "INR");
+	r = Add(r, 0x01, 0, false, "INR");
 	//Inr(r);
-	
 	WriteToAddress(Signal::MemoryWrite, addr, Value(r));
-	//Wait for the write request to be handled.
-	co_await coObj_;
-	co_return;
+	return 10;
 }
 
 /**
@@ -509,32 +657,26 @@ CoObj Intel8080::Inr()
 	The specified register or memory byte is
 	decremented by one.
 */
-CoObj Intel8080::Dcr(Register& r)
+uint8_t Intel8080::Dcr(Register& r)
 {
-	timePeriods_ = 5;
 	//Using twos compliment add for subtraciton.
-	r = Add(r, 0xFF, false, 0, "DCR");
-	co_return;
+	r = Add(r, 0xFF, 0, false, "DCR");
+	return 5;
 }
 
-CoObj Intel8080::Dcr(uint16_t addr)
+uint8_t Intel8080::Dcr(uint16_t addr)
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	Register r = dataBus_->Receive();
-	r = Add(r, 0xFF, false, 0, "DCR");
+	r = Add(r, 0xFF, 0, false, "DCR");
 	//Dcr(r);
 	WriteToAddress (Signal::MemoryWrite, addr, Value(r));
-	co_await coObj_;
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::Mvi(Register& reg)
+uint8_t Intel8080::Mvi(Register& reg)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	reg = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -543,14 +685,12 @@ CoObj Intel8080::Mvi(Register& reg)
 	}
 
 	++pc_;
-	co_return;
+	return 7;
 }
 
-CoObj Intel8080::Mvi()
+uint8_t Intel8080::Mvi()
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto data = dataBus_->Receive();
 	auto addr = Uint16(h_, l_);
 
@@ -560,10 +700,8 @@ CoObj Intel8080::Mvi()
 	}
 
 	WriteToAddress (Signal::MemoryWrite, addr, data);
-	co_await coObj_;
-
 	++pc_;
-	co_return;
+	return 10;
 }
 
 /**
@@ -573,42 +711,30 @@ CoObj Intel8080::Mvi()
 	accumulator is adjusted to form two four bit
 	binary-coded-decimal digits.
 */
-CoObj Intel8080::Daa()
+uint8_t Intel8080::Daa()
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X DAA\n", pc_);
 	}
 
-	uint8_t nibble = Value(a_) & 0x0F;
+	uint8_t adjustment = 0;
+	uint8_t highNibble = Value(a_) >> 4;
+	uint8_t lowNibble = Value(a_) & 0x0F;
 
-	if (nibble > 0x09 || status_[Condition::AuxCarryFlag] == true)
+	if (lowNibble > 0x09 || status_[Condition::AuxCarryFlag] == true)
 	{
-		status_[Condition::AuxCarryFlag] = nibble + 0x06 > 0x0F;
-
-		a_ = Value(a_) + 6;
+		adjustment += 6;
 	}
 
-	nibble = (Value(a_) & 0xF0) >> 4;
-
-	if (nibble > 0x09 || status_[Condition::CarryFlag] == true)
+	if (highNibble > 0x09 || status_[Condition::CarryFlag] == true || (highNibble >= 9 && lowNibble > 9))
 	{
-		if (nibble + 0x06 > 0x0F)
-		{
-			status_[Condition::CarryFlag] = true;
-		}
-
-		nibble += 6;
-
-		a_ = (nibble << 4) | (Value(a_) & 0x0F);
+		adjustment += 0x60;
+		status_[Condition::CarryFlag] = true;
 	}
 
-	status_[Condition::ZeroFlag] = Zero(a_);
-	status_[Condition::SignFlag] = Sign(a_);
-	status_[Condition::ParityFlag] = Parity(a_);
-	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	a_ = Add(a_, Register(adjustment), 0, false, "");
+	return 4;
 }
 
 /**
@@ -619,7 +745,7 @@ CoObj Intel8080::Daa()
 	with the high order bit being transferred to the low-order bit position of
 	the accumulator.
 */
-CoObj Intel8080::Rlc()
+uint8_t Intel8080::Rlc()
 {
 	if constexpr (dbg == true)
 	{
@@ -630,8 +756,7 @@ CoObj Intel8080::Rlc()
 	a_ <<= 1;
 	a_[0] = status_[CarryFlag];
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 /**
@@ -642,7 +767,7 @@ CoObj Intel8080::Rlc()
 	rotated one bit position to the right, with the low-order bit
 	being transferred to the high-order bit position of the accumulator.
 */
-CoObj Intel8080::Rrc()
+uint8_t Intel8080::Rrc()
 {
 	if constexpr (dbg == true)
 	{
@@ -653,8 +778,7 @@ CoObj Intel8080::Rrc()
 	a_ >>= 1;
 	a_[7] = status_[CarryFlag];
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 /**
@@ -665,7 +789,7 @@ CoObj Intel8080::Rrc()
 	Carry bit, while the Carry bit replaces the high-order bit of
 	the accumulator.
 */
-CoObj Intel8080::Ral()
+uint8_t Intel8080::Ral()
 {
 	if constexpr (dbg == true)
 	{
@@ -677,8 +801,7 @@ CoObj Intel8080::Ral()
 	a_ <<= 1;
 	a_[0] = tmp;
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 /**
@@ -689,7 +812,7 @@ CoObj Intel8080::Ral()
 	carry bit, while the carry bit replaces the high-order bit of
 	the accumulator.
 */
-CoObj Intel8080::Rar()
+uint8_t Intel8080::Rar()
 {
 	if constexpr (dbg == true)
 	{
@@ -701,18 +824,14 @@ CoObj Intel8080::Rar()
 	a_ >>= 1;
 	a_[7] = tmp;
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Lxi(Register& regHi, Register& regLow)
+uint8_t Intel8080::Lxi(Register& regHi, Register& regLow)
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	regLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	regHi = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -721,17 +840,14 @@ CoObj Intel8080::Lxi(Register& regHi, Register& regLow)
 	}
 
 	++pc_;
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::Lxi()
+uint8_t Intel8080::Lxi()
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto spLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	sp_ = Uint16(dataBus_->Receive(), spLow);
 
 	if constexpr (dbg == true)
@@ -740,7 +856,7 @@ CoObj Intel8080::Lxi()
 	}
 
 	++pc_;
-	co_return;
+	return 10;
 }
 
 /**
@@ -751,14 +867,11 @@ CoObj Intel8080::Lxi()
 	with LOW ADO. The contents of the H register are stored at
 	the next higher memory address.
 */
-CoObj Intel8080::Shld()
+uint8_t Intel8080::Shld()
 {
-	timePeriods_ = 16;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -767,11 +880,9 @@ CoObj Intel8080::Shld()
 	}
 
 	WriteToAddress(Signal::MemoryWrite, addr, Value(l_));
-	co_await coObj_;
 	WriteToAddress(Signal::MemoryWrite, addr + 1, Value(h_));
-	co_await coObj_;
 	++pc_;
-	co_return;
+	return 16;
 }
 
 /**
@@ -786,19 +897,16 @@ CoObj Intel8080::Shld()
 	16H, the instruction: STAX B
 	will store the contents of the accumulator at memory location 3F16H.
 */
-CoObj Intel8080::Stax(const Register& hi, const Register& low)
+uint8_t Intel8080::Stax(const Register& hi, const Register& low)
 {
-	timePeriods_ = 7;
-
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X STAX %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
 	WriteToAddress(Signal::MemoryWrite, Uint16(hi, low), Value(a_));
-	co_await coObj_;
 	++pc_;
-	co_return;
+	return 7;
 }
 
 /**
@@ -807,7 +915,7 @@ CoObj Intel8080::Stax(const Register& hi, const Register& low)
 	The 16-bit number held in the specified
 	register pair is incremented by one.
 */
-CoObj Intel8080::Inx(Register& hi, Register& low)
+uint8_t Intel8080::Inx(Register& hi, Register& low)
 {
 	if constexpr (dbg == true)
 	{
@@ -818,11 +926,10 @@ CoObj Intel8080::Inx(Register& hi, Register& low)
 	hi = (val >> 8) & 0xFF;
 	low = val & 0xFF;
 	++pc_;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
-CoObj Intel8080::Inx()
+uint8_t Intel8080::Inx()
 {
 	if constexpr (dbg == true)
 	{
@@ -831,8 +938,7 @@ CoObj Intel8080::Inx()
 
 	++sp_;
 	++pc_;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
 /**
@@ -842,7 +948,7 @@ CoObj Intel8080::Inx()
 	registers using two's complement arithmetic. The result replaces the contents of
 	the H and L registers.
 */
-CoObj Intel8080::Dad(const Register& hi, const Register& low)
+uint8_t Intel8080::Dad(const Register& hi, const Register& low)
 {
 	if constexpr (dbg == true)
 	{
@@ -861,14 +967,12 @@ CoObj Intel8080::Dad(const Register& hi, const Register& low)
 	l_ = val & 0xFF;
 	status_[Condition::CarryFlag] = (val > 0xFFFF);
 	++pc_;
-	timePeriods_ = 10;
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::Dad()
+uint8_t Intel8080::Dad()
 {
-	Dad((sp_ >> 8) & 0xFF, sp_ & 0xFF);
-	co_return;
+	return Dad((sp_ >> 8) & 0xFF, sp_ & 0xFF);
 }
 
 /**
@@ -878,14 +982,11 @@ CoObj Intel8080::Dad()
 	by concatenating HI ADD with LOW ADD replaces the contents of the L register.
 	The byte at the next higher memory address replaces the contents of the H register.
 */
-CoObj Intel8080::Lhld()
+uint8_t Intel8080::Lhld()
 {
-	timePeriods_ = 16;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -894,13 +995,11 @@ CoObj Intel8080::Lhld()
 	}
 
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	l_ = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, addr + 1);
-	co_await coObj_;
 	h_ = dataBus_->Receive();
 	++pc_;
-	co_return;
+	return 16;
 }
 
 /**
@@ -909,20 +1008,17 @@ CoObj Intel8080::Lhld()
 	The contents of the memory location
 	addressed by registers BC/DE replace the contents of the accumulator.
 */
-CoObj Intel8080::Ldax(const Register& hi, const Register& low)
+uint8_t Intel8080::Ldax(const Register& hi, const Register& low)
 {
-	timePeriods_ = 7;
-
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X LDAX, %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
 	ReadFromAddress(Signal::MemoryRead, Uint16(hi, low));
-	co_await coObj_;
 	a_ = dataBus_->Receive();
 	++pc_;
-	co_return;
+	return 7;
 }
 
 /**
@@ -931,7 +1027,7 @@ CoObj Intel8080::Ldax(const Register& hi, const Register& low)
 	The 16-bit number held in the specified
 	register pair is decremented by one.
 */
-CoObj Intel8080::Dcx(Register& hi, Register& low)
+uint8_t Intel8080::Dcx(Register& hi, Register& low)
 {
 	if constexpr (dbg == true)
 	{
@@ -942,11 +1038,10 @@ CoObj Intel8080::Dcx(Register& hi, Register& low)
 	hi = (val >> 8) & 0xFF;
 	low = val & 0xFF;
 	++pc_;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
-CoObj Intel8080::Dcx()
+uint8_t Intel8080::Dcx()
 {
 	if constexpr (dbg == true)
 	{
@@ -955,8 +1050,7 @@ CoObj Intel8080::Dcx()
 
 	sp_ += 0xFFFF;
 	++pc_;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
 /**
@@ -964,7 +1058,7 @@ CoObj Intel8080::Dcx()
 
 	Each bit of the contents of the accumulator is complemented (producing the one's complement).
 */
-CoObj Intel8080::Cma()
+uint8_t Intel8080::Cma()
 {
 	if constexpr (dbg == true)
 	{
@@ -973,18 +1067,14 @@ CoObj Intel8080::Cma()
 
 	a_.flip();
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Sta()
+uint8_t Intel8080::Sta()
 {
-	timePeriods_ = 13;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -993,12 +1083,11 @@ CoObj Intel8080::Sta()
 	}
 
 	WriteToAddress (Signal::MemoryWrite, addr, Value(a_));
-	co_await coObj_;
 	++pc_;
-	co_return;
+	return 13;
 }
 
-CoObj Intel8080::Stc()
+uint8_t Intel8080::Stc()
 {
 	if constexpr (dbg == true)
 	{
@@ -1007,18 +1096,14 @@ CoObj Intel8080::Stc()
 
 	status_[Condition::CarryFlag] = true;
 	++pc_;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Lda()
+uint8_t Intel8080::Lda()
 {
-	timePeriods_ = 13;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -1027,13 +1112,12 @@ CoObj Intel8080::Lda()
 	}
 
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	a_ = dataBus_->Receive();
 	++pc_;
-	co_return;
+	return 13;
 }
 
-CoObj Intel8080::Cmc()
+uint8_t Intel8080::Cmc()
 {
 	if constexpr (dbg == true)
 	{
@@ -1042,11 +1126,10 @@ CoObj Intel8080::Cmc()
 
 	status_[Condition::CarryFlag] = !status_[Condition::CarryFlag];
 	pc_++;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Mov(Register& lhs, const Register& rhs)
+uint8_t Intel8080::Mov(Register& lhs, const Register& rhs)
 {
 	if constexpr (dbg == true)
 	{
@@ -1055,14 +1138,12 @@ CoObj Intel8080::Mov(Register& lhs, const Register& rhs)
 
 	lhs = rhs;
 	pc_++;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
-CoObj Intel8080::Mov(Register& lhs)
+uint8_t Intel8080::Mov(Register& lhs)
 {
 	auto addr = Uint16(h_, l_);
-	timePeriods_ = 7;
 
 	if constexpr (dbg == true)
 	{
@@ -1070,16 +1151,14 @@ CoObj Intel8080::Mov(Register& lhs)
 	}
 
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	lhs = dataBus_->Receive();
 	pc_++;
-	co_return;
+	return 7;
 }
 
-CoObj Intel8080::Mov(uint8_t value)
+uint8_t Intel8080::Mov(uint8_t value)
 {
 	uint16_t addr = Uint16(h_, l_);
-	timePeriods_ = 7;
 
 	if constexpr (dbg == true)
 	{
@@ -1087,12 +1166,11 @@ CoObj Intel8080::Mov(uint8_t value)
 	}
 
 	WriteToAddress(Signal::MemoryWrite, addr, value);
-	co_await coObj_;
 	pc_++;
-	co_return;
+	return 7;
 }
 
-CoObj Intel8080::Nop()
+uint8_t Intel8080::Nop()
 {
 	if constexpr (dbg == true)
 	{
@@ -1100,8 +1178,7 @@ CoObj Intel8080::Nop()
 	}
 
 	pc_++;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 /**
@@ -1121,49 +1198,31 @@ CoObj Intel8080::Nop()
 	to ignore interrupts, the computer will not operate again
 	until the main power switch is turned off and then back on.
 */
-CoObj Intel8080::Hlt()
+uint8_t Intel8080::Hlt()
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X HLT\n", pc_);
 	}
 
+	// Untested
 	assert(0);
-
 	pc_++;
-
-	//need to wait here .... co-routine??
-
-	timePeriods_ = 7;
-	co_return;
+	return 7;
 }
 
-Intel8080::Register Intel8080::Add(const Register& lhs, const Register& rhs, bool setCarryFlag, uint8_t carry, [[maybe_unused]] std::string_view instructionName)
-{
-	if constexpr (dbg == true)
-	{
-		if (instructionName.data() == "ADI" || instructionName.data() == "ACI" || instructionName.data() == "SUI" || instructionName.data() == "SBI" || instructionName.data() == "CPI")
-		{
-			uint16_t addr = pc_ + 0xFFFF;
-			printf("0x%04X %s 0x%02X\n", addr, instructionName.data(), opcode_);
-		}
-		else
-		{
-			printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
-		}
-	}
-
-	uint8_t valuePlusCarry = Value(rhs) + carry;
+Intel8080::Register Intel8080::Add(const Register& lhs, const Register& rhs, uint8_t carry, bool setCarryFlag, [[maybe_unused]] std::string_view instructionName)
+{	
+	uint8_t a = Value(lhs);
+	uint8_t b = Value(rhs);
 
 	if (setCarryFlag == true)
 	{
-		status_[Condition::CarryFlag] = Carry(lhs, valuePlusCarry);
+		status_[Condition::CarryFlag] = (a + b + carry) > 0xFF;
 	}
 
-	status_[Condition::AuxCarryFlag] = AuxCarry(lhs, valuePlusCarry);
-
-	Register r = Value(lhs) + valuePlusCarry;
-
+	status_[Condition::AuxCarryFlag] = ((a & 0x0F) + (b & 0x0F) + carry) > 0x0F;
+	auto r = Register(a + b + carry);
 	status_[Condition::ZeroFlag] = Zero(r);
 	status_[Condition::SignFlag] = Sign(r);
 	status_[Condition::ParityFlag] = Parity(r);
@@ -1171,76 +1230,64 @@ Intel8080::Register Intel8080::Add(const Register& lhs, const Register& rhs, boo
 	return r;
 }
 
-CoObj Intel8080::Add(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Add(const Register& r, std::string_view instructionName)
 {
-	a_ = Add(a_, r, true, 0, instructionName);
-	timePeriods_ = 4;
-	co_return;
+	a_ = Add(a_, r, 0, true, instructionName);
+	return 4;
 }
 
-CoObj Intel8080::Add(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Add(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
-	a_ = Add(a_, Register(dataBus_->Receive()), true, 0, instructionName);
-	co_return;
+	a_ = Add(a_, Register(dataBus_->Receive()), 0, true, instructionName);
+	return 7;
 }
 
 
-CoObj Intel8080::Adc(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Adc(const Register& r, std::string_view instructionName)
 {
-	a_ = Add(a_, r, true, status_[Condition::CarryFlag], instructionName);
-	timePeriods_ = 4;
-	co_return;
+	a_ = Add(a_, r, status_[Condition::CarryFlag], true, instructionName);
+	return 4;
 }
 
-CoObj Intel8080::Adc(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Adc(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
-	a_ = Add(a_, Register(dataBus_->Receive()), true, status_[Condition::CarryFlag], instructionName);
-	co_return;
+	a_ = Add(a_, Register(dataBus_->Receive()), status_[Condition::CarryFlag], true, instructionName);
+	return 7;
 }
 
 Intel8080::Register Intel8080::Sub(const Register& r, uint8_t withCarry, std::string_view instructionName)
 {
-	auto reg = Add(a_, ~(Value(r) + withCarry) + 1, true, 0/*withCarry*/, instructionName);
+	auto reg = Add(a_, ~Value(r), !withCarry /* carry flag */, true, instructionName);
 	status_.flip(Condition::CarryFlag);
 	return reg;
 }
 
-CoObj Intel8080::Sub(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Sub(const Register& r, std::string_view instructionName)
 {
 	a_ = Sub(r, 0, instructionName);
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Sub(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Sub(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	a_ = Sub(Register(dataBus_->Receive()), 0, instructionName);
-	co_return;
+	return 7;
 }
 
-CoObj Intel8080::Sbb(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Sbb(const Register& r, std::string_view instructionName)
 {
 	a_ = Sub(r, status_[Condition::CarryFlag], instructionName);
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Sbb(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Sbb(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	a_ = Sub(Register(dataBus_->Receive()), status_[Condition::CarryFlag], instructionName);
-	co_return;
+	return 7;
 }
 
 void Intel8080::Ana(const Register& r)
@@ -1256,24 +1303,20 @@ void Intel8080::Ana(const Register& r)
 	pc_++;
 }
 
-CoObj Intel8080::Ana(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Ana(const Register& r, std::string_view instructionName)
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 	}
 
-	timePeriods_ = 4;
 	Ana (r);
-
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Ana(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	Register r = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -1289,7 +1332,7 @@ CoObj Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 	}
 	
 	Ana(r);
-	co_return;
+	return 7;
 }
 
 void Intel8080::Xra(const Register& r)
@@ -1304,24 +1347,20 @@ void Intel8080::Xra(const Register& r)
 	pc_++;
 }
 
-CoObj Intel8080::Xra(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Xra(const Register& r, std::string_view instructionName)
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 	}
 
-	timePeriods_ = 4;
 	Xra(r);
-	//status_[Condition::AuxCarryFlag] = AuxCarry(a_, Value(r));
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Xra(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	Register r = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -1337,7 +1376,7 @@ CoObj Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 	}
 	
 	Xra(r);
-	co_return;
+	return 7;
 }
 
 void Intel8080::Ora(const Register& r)
@@ -1352,23 +1391,20 @@ void Intel8080::Ora(const Register& r)
 	pc_++;
 }
 
-CoObj Intel8080::Ora(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Ora(const Register& r, std::string_view instructionName)
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 	}
 
-	timePeriods_ = 4;
 	Ora(r);
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Ora(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Ora(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	Register r = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -1384,44 +1420,24 @@ CoObj Intel8080::Ora(uint16_t addr, std::string_view instructionName)
 	}
 
 	Ora(r);
-	co_return;
+	return 7;
 }
 
-CoObj Intel8080::Cmp(const Register& r, std::string_view instructionName)
+uint8_t Intel8080::Cmp(const Register& r, std::string_view instructionName)
 {
-	int16_t result = Value(a_) - Value(r);
-	status_[Condition::CarryFlag] = result >> 8;
-	status_[Condition::AuxCarryFlag] = ~(Value(a_) ^ result ^ Value(r)) & 0x10;
-
-	Register reg = static_cast<int8_t>(result);
-	status_[Condition::ZeroFlag] = Zero(reg);
-	status_[Condition::SignFlag] = Sign(reg);
-	status_[Condition::ParityFlag] = Parity(reg);
-
-	timePeriods_ = 4;
-	pc_++;
-	co_return;
+	Sub(r, 0, instructionName);
+	return 4;
 }
 
-CoObj Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
+uint8_t Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
 {
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, addr);
-	co_await coObj_;
 	Register r = dataBus_->Receive();
-
-	int16_t result = Value(a_) - Value(r);
-	status_[Condition::CarryFlag] = result >> 8;
-	status_[Condition::AuxCarryFlag] = ~(Value(a_) ^ result ^ Value(r)) & 0x10;
-	r = static_cast<int8_t>(result);
-	status_[Condition::ZeroFlag] = Zero(r);
-	status_[Condition::SignFlag] = Sign(r);
-	status_[Condition::ParityFlag] = Parity(r);
-	pc_++;
-	co_return;
+	Sub(r, 0, instructionName);
+	return 7;
 }
 
-CoObj Intel8080::NotImplemented()
+uint8_t Intel8080::NotImplemented()
 {
 	if constexpr (dbg == true)
 	{
@@ -1438,12 +1454,10 @@ CoObj Intel8080::NotImplemented()
 	}
 
 	pc_++;
-
-	timePeriods_ = 0;
-	co_return;
+	return 0;
 }
 
-CoObj Intel8080::RetOnFlag(bool status, std::string_view instructionName)
+uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 {
 	if constexpr (dbg == true)
 	{
@@ -1454,33 +1468,27 @@ CoObj Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 	
 	if (status == true)
 	{
-		timePeriods_ = 11;
-
 		ReadFromAddress(Signal::MemoryRead, sp_++);
-		co_await coObj_;
 		auto pcLow = dataBus_->Receive();
 		ReadFromAddress(Signal::MemoryRead, sp_++);
-		co_await coObj_;
 		pc_ = Uint16(dataBus_->Receive(), pcLow);
 
 		if (instructionName == "RET")
 		{
-			timePeriods_ = 10;
+			return 10;
 		}
 		else
 		{
-			timePeriods_ = 11;
+			return 11;
 		}
 	}
 	else
 	{
-		timePeriods_ = 5;
-	}
-	
-	co_return;
+		return 5;
+	}	
 }
 
-CoObj Intel8080::Pop(Register& hi, Register& low)
+uint8_t Intel8080::Pop(Register& hi, Register& low)
 {
 	if constexpr (dbg == true)
 	{
@@ -1494,25 +1502,19 @@ CoObj Intel8080::Pop(Register& hi, Register& low)
 		}
 	}
 
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, sp_++);
-	co_await coObj_;
 	low = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, sp_++);
-	co_await coObj_;
 	hi = dataBus_->Receive();
 	pc_++;
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
+uint8_t Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -1521,18 +1523,14 @@ CoObj Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 	}
 
 	status ? pc_ = addr : ++pc_;
-
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::CallOnFlag(bool status, std::string_view instructionName)
+uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 {
-	timePeriods_ = status ? 17 : 11;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addrLow = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto addr = Uint16(dataBus_->Receive(), addrLow);
 
 	if constexpr (dbg == true)
@@ -1546,11 +1544,8 @@ CoObj Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	{
 		sp_ += 0xFFFF;
 		WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
-		co_await coObj_;
-
 		sp_ += 0xFFFF;
 		WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
-		co_await coObj_;
 
 		/*
 			This needs to be moved ... by calling push above
@@ -1560,12 +1555,15 @@ CoObj Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 			If we could this would have to FIXED. It isn't technically correct, but works, a minor issue to fix someday.
 		*/
 		pc_ = addr;
+		return 17;
 	}
-
-	co_return;
+	else
+	{
+		return 11;
+	}
 }
 
-CoObj Intel8080::Push(const Register& hi, const Register low)
+uint8_t Intel8080::Push(const Register& hi, const Register low)
 {
 	if constexpr (dbg == true)
 	{
@@ -1579,36 +1577,27 @@ CoObj Intel8080::Push(const Register& hi, const Register low)
 		}
 	}
 
-	timePeriods_ = 11;
-
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, Value(hi));
-	co_await coObj_;
-
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, Value(low));
-	co_await coObj_;
-
 	pc_++;
-	co_return;
+	return 11;
 }
 
-CoObj Intel8080::Adi(const Register& r)
+uint8_t Intel8080::Adi(const Register& r)
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X ADI %c\n", pc_, registerName_[(opcode_ & 0x30) >> 3]);
 	}
 
-	timePeriods_ = 7;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	a_ = Value(a_) + dataBus_->Receive();
 	++pc_;
-	co_return;
+	return 7;
 }
 
-#if 1
 /**
 	RST
 
@@ -1619,7 +1608,7 @@ CoObj Intel8080::Adi(const Register& r)
 	are pushed onto the stack, providing a return address for
 	later use by a RETURN instruction.
 */
-CoObj Intel8080::Rst(uint8_t restart)
+uint8_t Intel8080::Rst(uint8_t restart)
 {
 	uint16_t addr = restart & 0x38;
 
@@ -1628,15 +1617,10 @@ CoObj Intel8080::Rst(uint8_t restart)
 		printf("0x%04X INTERRUPT RST %d\n", pc_, addr >> 3);
 	}
 
-	timePeriods_ = 11;
-
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
-	co_await coObj_;
-
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
-	co_await coObj_;
 
 	/*
 		This needs to be moved ... by calling push above
@@ -1646,11 +1630,10 @@ CoObj Intel8080::Rst(uint8_t restart)
 		If we could this would have to FIXED. It isn't technically correct, but works, a minor issue to fix someday.
 	*/
 	pc_ = addr;
-	co_return;
+	return 11;
 }
-#endif
 
-CoObj Intel8080::Rst()
+uint8_t Intel8080::Rst()
 {
 	//We need to increment pc_ before the call to Rst as the address of the next
 	//instruction (++pc_) to be executed needs to be pushed to the stack so we
@@ -1665,16 +1648,12 @@ CoObj Intel8080::Rst()
 		printf("0x%04X RST %d\n", pc_, addr >> 3);
 	}
 
-	timePeriods_ = 11;
 	++pc_;
 
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
-	co_await coObj_;
-
 	sp_ += 0xFFFF;
 	WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
-	co_await coObj_;
 
 	/*
 		This needs to be moved ... by calling push above
@@ -1684,15 +1663,12 @@ CoObj Intel8080::Rst()
 		If we could this would have to FIXED. It isn't technically correct, but works, a minor issue to fix someday.
 	*/
 	pc_ = addr;
-
-	co_return;
+	return 11;
 }
 
-CoObj Intel8080::Out()
+uint8_t Intel8080::Out()
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto out = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -1702,16 +1678,13 @@ CoObj Intel8080::Out()
 
 	//write to IO port 'out' the accumulator
 	WriteToAddress(Signal::IoWrite, out, Value(a_));
-	co_await coObj_;
 	++pc_;
-	co_return;
+	return 10;
 }
 
-CoObj Intel8080::In()
+uint8_t Intel8080::In()
 {
-	timePeriods_ = 10;
 	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	co_await coObj_;
 	auto in = dataBus_->Receive();
 
 	if constexpr (dbg == true)
@@ -1721,11 +1694,9 @@ CoObj Intel8080::In()
 
 	//Read into the accumulator the value in IO port 'in'.
 	ReadFromAddress(Signal::IoRead, in);
-	co_await coObj_;
 	a_ = dataBus_->Receive();
-
 	++pc_;
-	co_return;
+	return 10;
 }
 
 /**
@@ -1735,19 +1706,16 @@ CoObj Intel8080::In()
 	The contents of the H register are exchanged with the contents of the memory byte whose address is one greater than that held
 	in the stack pointer.
 */
-CoObj Intel8080::Xthl()
+uint8_t Intel8080::Xthl()
 {
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X XTHL\n", pc_);
 	}
 
-	timePeriods_ = 18;
 	ReadFromAddress(Signal::MemoryRead, sp_);
-	co_await coObj_;
 	auto spl = dataBus_->Receive();
 	ReadFromAddress(Signal::MemoryRead, sp_ + 1);
-	co_await coObj_;
 	auto sph = dataBus_->Receive();
 
 	uint8_t l = Value(l_);
@@ -1760,12 +1728,9 @@ CoObj Intel8080::Xthl()
 	h_ = h;
 
 	WriteToAddress(Signal::MemoryWrite, sp_, spl);
-	co_await coObj_;
 	WriteToAddress(Signal::MemoryWrite, sp_ + 1, sph);
-	co_await coObj_;
-	
 	pc_++;
-	co_return;
+	return 18;
 }
 
 /**
@@ -1775,7 +1740,7 @@ CoObj Intel8080::Xthl()
 	and the contents of the L register replace the least significant 8 bits of the program counter.
 	This causes program execution to continue at the address contained in the H and L registers
 */
-CoObj Intel8080::Pchl()
+uint8_t Intel8080::Pchl()
 {
 	if constexpr (dbg == true)
 	{
@@ -1783,11 +1748,10 @@ CoObj Intel8080::Pchl()
 	}
 
 	pc_ = Uint16(h_, l_);
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
-CoObj Intel8080::Xchg()
+uint8_t Intel8080::Xchg()
 {
 	if constexpr (dbg == true)
 	{
@@ -1797,8 +1761,7 @@ CoObj Intel8080::Xchg()
 	std::swap(h_, d_);
 	std::swap(l_, e_);
 	pc_++;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 /*
@@ -1806,7 +1769,7 @@ Implementation of the DI instruction resets the
 interrupt flip - flop. This causes the computer to ignore
 any subsequent interrupt signals.
 */
-CoObj Intel8080::Di()
+uint8_t Intel8080::Di()
 {
 	if constexpr (dbg == true)
 	{
@@ -1815,11 +1778,10 @@ CoObj Intel8080::Di()
 
 	iff_ = false;
 	pc_++;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
-CoObj Intel8080::Sphl()
+uint8_t Intel8080::Sphl()
 {
 	if constexpr (dbg == true)
 	{
@@ -1828,15 +1790,14 @@ CoObj Intel8080::Sphl()
 
 	sp_ = Uint16(h_, l_);
 	pc_++;
-	timePeriods_ = 5;
-	co_return;
+	return 5;
 }
 
 /*
 	Implementation of the EI instruction sets the
-	interrupt flip-flop. This alerts the computer to the presence of interrupts and causes it to respond accordingly
+	interrupt flip-flop. This alerts the computer to the presence of interrupts and causes it to respond accordingly
 */
-CoObj Intel8080::Ei()
+uint8_t Intel8080::Ei()
 {
 	if constexpr (dbg == true)
 	{
@@ -1845,8 +1806,7 @@ CoObj Intel8080::Ei()
 
 	iff_ = true;
 	pc_++;
-	timePeriods_ = 4;
-	co_return;
+	return 4;
 }
 
 }
