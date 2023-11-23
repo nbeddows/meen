@@ -1,6 +1,7 @@
 export module I8080;
 
 import <cstdint>;
+import <functional>;
 import <memory>;
 import <string_view>;
 import <vector>;
@@ -21,5 +22,5 @@ namespace Emulator
 		virtual ~I8080() = default;
 	};
 
-	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus);
+	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
 }
