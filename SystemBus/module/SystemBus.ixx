@@ -102,6 +102,13 @@ namespace Emulator
 			dataBus = std::make_shared<DataBus<dataW>>();
 			controlBus = std::make_shared<ControlBus<ctrlW>>();
 		}
+
+		SystemBus(const std::shared_ptr<AddressBus<addrW>>& ab, const std::shared_ptr<DataBus<dataW>>& db, const std::shared_ptr<ControlBus<ctrlW>>& cb)
+		{
+			addressBus = ab;
+			dataBus = db;
+			controlBus = cb;
+		}
 	};
 
 	export template <class addrW, class dataW, uint8_t ctrlW>
