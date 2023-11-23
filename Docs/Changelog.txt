@@ -1,3 +1,8 @@
+0.3.2
+
+* Added a co-routine helper module for easier co-routine handling.
+* Added basic Space Invaders rendering support via the Simple Direct Media Layer.
+
 0.2.2
 
 * Added Doxygen generated html documentation to the sdk.
