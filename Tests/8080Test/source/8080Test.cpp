@@ -24,12 +24,13 @@ protected:
 	static std::unique_ptr<Intel8080> cpu_;
 	static std::shared_ptr<IController> testIoController_;
 	static std::shared_ptr<IController> cpmIoController_;
+	static std::shared_ptr<IController> ioController_;
 	static std::shared_ptr<IMemoryController> memoryController_;
 	static SystemBus<uint16_t, uint8_t, 8> systemBus_;
 	static const inline std::filesystem::path directory_ = "../../programs";
 
 	void CheckStatus (bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-	void LoadAndRun(std::filesystem::path, uint32_t offset = 0x100, const std::shared_ptr<IController>& ioController = testIoController_) const;
+	void LoadAndRun(std::filesystem::path, uint32_t offset = 0x100) const;
 	
 public:
 	static void SetUpTestCase();
@@ -42,6 +43,7 @@ std::unique_ptr<ICpuClock> Intel8080Test::clock_;
 std::unique_ptr<Intel8080> Intel8080Test::cpu_;
 std::shared_ptr<IController> Intel8080Test::testIoController_;
 std::shared_ptr<IController> Intel8080Test::cpmIoController_;
+std::shared_ptr<IController> Intel8080Test::ioController_;
 std::shared_ptr<IMemoryController> Intel8080Test::memoryController_;
 SystemBus<uint16_t, uint8_t, 8> Intel8080Test::systemBus_;
 
@@ -54,7 +56,7 @@ void Intel8080Test::CheckStatus(bool zero, bool sign, bool parity, bool auxCarry
 	EXPECT_EQ(carry, cpu_->Carry());
 }
 
-void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, const std::shared_ptr<IController>& ioController) const
+void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset) const
 {
 	//EXPECT_NO_THROW
 	//(
@@ -75,7 +77,7 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 			//check if we can tick the cpu
 			if (controlBus->Receive(Signal::Clock) == true)
 			{
-				//(continue to) execute the next instruction
+				//Execute the next instruction
 				auto cycles = cpu_->Execute();
 
 				if (memoryController_ != nullptr)
@@ -92,25 +94,15 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 					}
 				}
 
-				if (ioController != nullptr)
+				if (ioController_ != nullptr)
 				{
-					if (controlBus->Receive(Signal::IoRead))
-					{
-						dataBus->Send(ioController->Read(addressBus->Receive()));
-					}
-
-					if (controlBus->Receive(Signal::IoWrite))
-					{
-						ioController->Write(addressBus->Receive(), dataBus->Receive());
-					}
-
 					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
 					//otherwise we will overload the databus.
 					if (cycles > 0)
 					{
 						totalCycles += cycles;
 
-						auto isr = ioController->ServiceInterrupts(currTime, totalCycles);
+						auto isr = ioController_->ServiceInterrupts(currTime, totalCycles);
 
 						if (isr != ISR::NoInterrupt)
 						{
@@ -132,14 +124,47 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset, cons
 }
 
 void Intel8080Test::SetUpTestCase()
-{	
-	clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
-	cpu_ = std::make_unique<Intel8080>(systemBus_);
-
+{
 	//Create our test controllers.
-	memoryController_ = MakeDefaultMemoryController (16); //16 bits addressable memory
+	memoryController_ = MakeDefaultMemoryController(16); //16 bits addressable memory
 	testIoController_ = MakeTestIoController();
 	cpmIoController_ = MakeCpmIoController(static_pointer_cast<IController>(memoryController_));
+	ioController_ = testIoController_;
+
+	clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(0/*2000*/));
+	cpu_ = std::make_unique<Intel8080>(systemBus_, [](const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+	{
+		auto controlBus = systemBus.controlBus;
+		auto addressBus = systemBus.addressBus;
+		auto dataBus = systemBus.dataBus;
+
+		if (memoryController_ != nullptr)
+		{
+			//check the control bus to see if there are any operations pending
+			if (controlBus->Receive(Signal::MemoryRead))
+			{
+				dataBus->Send(memoryController_->Read(addressBus->Receive()));
+			}
+
+			if (controlBus->Receive(Signal::MemoryWrite))
+			{
+				memoryController_->Write(addressBus->Receive(), dataBus->Receive());
+			}
+		}
+
+		if (ioController_ != nullptr)
+		{
+			if (controlBus->Receive(Signal::IoRead))
+			{
+				dataBus->Send(ioController_->Read(addressBus->Receive()));
+			}
+
+			if (controlBus->Receive(Signal::IoWrite))
+			{
+				ioController_->Write(addressBus->Receive(), dataBus->Receive());
+			}
+		}
+	});
 }
 
 void Intel8080Test::TearDownTestCase()
@@ -1256,7 +1281,7 @@ TEST_F(Intel8080Test, ANA_B)
 	LoadAndRun("anab.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_C)
@@ -1264,7 +1289,7 @@ TEST_F(Intel8080Test, ANA_C)
 	LoadAndRun("anac.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_D)
@@ -1272,7 +1297,7 @@ TEST_F(Intel8080Test, ANA_D)
 	LoadAndRun("anad.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_E)
@@ -1280,7 +1305,7 @@ TEST_F(Intel8080Test, ANA_E)
 	LoadAndRun("anae.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_H)
@@ -1288,7 +1313,7 @@ TEST_F(Intel8080Test, ANA_H)
 	LoadAndRun("anah.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_L)
@@ -1296,7 +1321,7 @@ TEST_F(Intel8080Test, ANA_L)
 	LoadAndRun("anal.bin");
 	EXPECT_EQ(0x0C, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_M)
@@ -1304,7 +1329,7 @@ TEST_F(Intel8080Test, ANA_M)
 	LoadAndRun("anam.bin");
 	EXPECT_EQ(0x20, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, false, false, false);
+	CheckStatus(false, false, false, true, false);
 }
 
 TEST_F(Intel8080Test, ANA_A)
@@ -1312,7 +1337,7 @@ TEST_F(Intel8080Test, ANA_A)
 	LoadAndRun("anaa.bin");
 	EXPECT_EQ(0xFC, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, true, true, false, false);
+	CheckStatus(false, true, true, true, false);
 }
 
 TEST_F(Intel8080Test, XRA_B)
@@ -1824,7 +1849,7 @@ TEST_F(Intel8080Test, ANI)
 	LoadAndRun("ani.bin");
 	EXPECT_EQ(0x0A, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, RPE)
@@ -1879,7 +1904,7 @@ TEST_F(Intel8080Test, PUSH_POP_PSW)
 	LoadAndRun("pushpoppsw.bin");
 	EXPECT_EQ(0x00, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(true, false, true, false, true);
+	CheckStatus(true, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, JP)
@@ -1945,7 +1970,7 @@ TEST_F(Intel8080Test, CPI)
 	LoadAndRun("cpi.bin");
 	EXPECT_EQ(0x4A, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, false, true, false, false);
+	CheckStatus(false, false, true, true, false);
 }
 
 TEST_F(Intel8080Test, CPI0)
@@ -1953,26 +1978,7 @@ TEST_F(Intel8080Test, CPI0)
 	LoadAndRun("cpi0.bin");
 	EXPECT_EQ(0xF5, cpu_->A());
 	//zero, sign, parity, auxCarry, carry
-	CheckStatus(false, true, true, false, false);
-}
-
-TEST_F(Intel8080Test, CPUDIAG)
-{
-	//CP/M Warm Boot is at memory address 0x00, this will be
-	//emulated with the exitTest subroutine.
-	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
-	//CP/M BDOS print message system call is at memory address 0x05,
-	//this will be emulated with the bdosMsg subroutine.
-	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
-
-	LoadAndRun("TST8080.COM", 0x100, cpmIoController_);
-	//LoadAndRun("CPUTEST.COM", 0x100, cpmIoController_);
-	//LoadAndRun("8080PRE.COM", 0x100, cpmIoController_);
-	//LoadAndRun("8080EXM.COM", 0x100, cpmIoController_);
-	//LoadAndRun("8080EXER.COM", 0x100, cpmIoController_);
-
-	//LoadAndRun("cpudiag_patched.bin", 0xEB, cpmIoController_);
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find ("CPU IS OPERATIONAL"));
+	CheckStatus(false, true, true, true, false);
 }
 
 TEST_F(Intel8080Test, ISR_1)
@@ -1987,10 +1993,74 @@ TEST_F(Intel8080Test, ISR_1)
 	//need to run this off an async task with a two second time out.
 	auto future = std::async(std::launch::async, [&]
 	{
-		LoadAndRun("spinUntilIsr.bin");
+		LoadAndRun("spinUntilIsr.bin", 0x100);
 	});
 
 	EXPECT_EQ(std::future_status::ready, future.wait_for(seconds(2)));
 	EXPECT_EQ(0x00, cpu_->A());
 	EXPECT_EQ(0x01, cpu_->B());
+}
+
+TEST_F(Intel8080Test, Tst8080)
+{
+	//CP/M Warm Boot is at memory address 0x00, this will be
+	//emulated with the exitTest subroutine.
+	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
+	//CP/M BDOS print message system call is at memory address 0x05,
+	//this will be emulated with the bdosMsg subroutine.
+	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
+	// use the cpm io controller for cpm based tests
+	ioController_ = cpmIoController_;
+	LoadAndRun("TST8080.COM", 0x100);
+	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find ("CPU IS OPERATIONAL") != std::string::npos);
+	// restore the default io controller
+	ioController_ = testIoController_;
+}
+
+TEST_F(Intel8080Test, 8080Pre)
+{
+	//CP/M Warm Boot is at memory address 0x00, this will be
+	//emulated with the exitTest subroutine.
+	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
+	//CP/M BDOS print message system call is at memory address 0x05,
+	//this will be emulated with the bdosMsg subroutine.
+	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
+	// use the cpm io controller for cpm based tests
+	ioController_ = cpmIoController_;
+	LoadAndRun("8080PRE.COM", 0x100);
+	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("8080 Preliminary tests complete") != std::string::npos);
+	// restore the default io controller
+	ioController_ = testIoController_;
+}
+
+TEST_F(Intel8080Test, CpuTest)
+{
+	//CP/M Warm Boot is at memory address 0x00, this will be
+	//emulated with the exitTest subroutine.
+	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
+	//CP/M BDOS print message system call is at memory address 0x05,
+	//this will be emulated with the bdosMsg subroutine.
+	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
+	// use the cpm io controller for cpm based tests
+	ioController_ = cpmIoController_;
+	LoadAndRun("CPUTEST.COM", 0x100);	
+	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU TESTS OK") != std::string::npos);
+	// restore the default io controller
+	ioController_ = testIoController_;
+}
+
+TEST_F(Intel8080Test, 8080Exm)
+{
+	//CP/M Warm Boot is at memory address 0x00, this will be
+	//emulated with the exitTest subroutine.
+	memoryController_->Load(directory_ / "exitTest.bin", 0x00);
+	//CP/M BDOS print message system call is at memory address 0x05,
+	//this will be emulated with the bdosMsg subroutine.
+	memoryController_->Load(directory_ / "bdosMsg.bin", 0x05);
+	// use the cpm io controller for cpm based tests
+	ioController_ = cpmIoController_;
+	LoadAndRun("8080EXM.COM", 0x100);
+	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("ERROR") == std::string::npos);
+	// restore the default io controller
+	ioController_ = testIoController_;
 }
