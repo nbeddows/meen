@@ -14,7 +14,7 @@ namespace Emulator
 	{
 		clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
 
-		cpu_ = std::make_unique<Intel8080>(systemBus_, [](const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+		cpu_ = Make8080(systemBus_, [this](const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
 		{
 			auto controlBus = systemBus.controlBus;
 			auto addressBus = systemBus.addressBus;
