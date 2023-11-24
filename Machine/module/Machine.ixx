@@ -20,9 +20,9 @@ namespace Emulator
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 
-		void RunCpu();
 	public:
 		Machine();
+		~Machine() = default;
 
 		/** Run
 		
