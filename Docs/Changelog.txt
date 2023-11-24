@@ -1,7 +1,11 @@
 0.3.2
 
-* Added a co-routine helper module for easier co-routine handling.
-* Added basic Space Invaders rendering support via the Simple Direct Media Layer.
+* Added a co-routine helper module for easier co-routine
+  handling.
+* Fixed large memory leak caused by co routine handles
+  not being deallocated.
+* Added S(imple)D(irectMedia)L(ayer) support to the sdk
+  example for video rendering.
 
 0.2.2
 

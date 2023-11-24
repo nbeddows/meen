@@ -29,7 +29,7 @@ namespace Emulator
 		//IController virtual overrides
 		uint8_t Read(uint16_t address) override final;
 		void Write(uint16_t address, uint8_t value) override final;
-		ISR ServiceInterrupts(nanoseconds currTime) override final;
+		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
 	};
 
 	export class MockIoController : public IController
@@ -47,7 +47,7 @@ namespace Emulator
 			bool powerOff_{};
 		protected:
 			void Write(uint16_t ioDeviceNumber, uint8_t value);			
-			ISR ServiceInterrupts(nanoseconds currTime);
+			ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles);
 	};
 	
 	/** TestIoController
@@ -123,7 +123,7 @@ namespace Emulator
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(nanoseconds currTime) override final;
+		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
 	};
 
 	/** CpmIoController
@@ -190,11 +190,11 @@ namespace Emulator
 
 		/** Message
 
-			Returns the current message buffer.
+			Returns the message buffer. The message buffer is then cleared.
 
 			@return		string	The message buffer.
 		*/
-		const std::string& Message() const;
+		std::string Message();
 
 		/** Read
 
@@ -235,6 +235,6 @@ namespace Emulator
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(nanoseconds currTime) override final;
+		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
 	};
 }
