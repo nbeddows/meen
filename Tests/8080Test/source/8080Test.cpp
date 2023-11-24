@@ -80,20 +80,6 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset) cons
 				//Execute the next instruction
 				auto cycles = cpu_->Execute();
 
-				if (memoryController_ != nullptr)
-				{
-					//check the control bus to see if there are any operations pending
-					if (controlBus->Receive(Signal::MemoryRead))
-					{
-						dataBus->Send(memoryController_->Read(addressBus->Receive()));
-					}
-
-					if (controlBus->Receive(Signal::MemoryWrite))
-					{
-						memoryController_->Write(addressBus->Receive(), dataBus->Receive());
-					}
-				}
-
 				if (ioController_ != nullptr)
 				{
 					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
