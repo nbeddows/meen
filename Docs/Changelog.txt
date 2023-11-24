@@ -1,3 +1,14 @@
+1.0.0
+
+* Added gtests for all official 8080 test suites
+* Fixed carry and auxillary carry flags for the add
+  and Daa instructions which were causing the test
+  suites to fail.
+* Perform the required 270 degree rotation of the
+  Space Invaders video memory for correct rendering.
+* Added keyboard support for Space invaders.
+* Removed co-routines for performance reasons.
+
 0.3.2
 
 * Added a co-routine helper module for easier co-routine
