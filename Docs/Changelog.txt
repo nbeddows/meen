@@ -1,6 +1,14 @@
+1.1.0
+* Added audio support to Space Invaders.
+* Abstracted Space Invaders SDL IO from
+  the base IO allowing for different
+  Space Invaders IO implementations to
+  be more easily added.
+* Added MIT license.
+
 1.0.0
 
-* Added gtests for all official 8080 test suites
+* Added gtests for all official 8080 test suites.
 * Fixed carry and auxillary carry flags for the add
   and Daa instructions which were causing the test
   suites to fail.

@@ -25,7 +25,7 @@ COMPLETE.
 4. Emulate various roms, starting with the classic Space Invaders. This requires writing a custom
 io interface as well as audio/video rendering.
 
-IN PROGRESS.
+COMPLETE.
 
 5. Upgrade the 8080 to an 8085 (z80) complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online.
 
