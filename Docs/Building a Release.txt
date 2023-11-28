@@ -2,21 +2,37 @@ Before building the Release configuration of the SDK the following must be perfo
 
 1. Make sure Doxygen is installed and added to your PATH environment variable.
 
-2. Increment the major/minor/bugfix version numbers in the Sdk project pre-build event according to the scope of the release.
+2. Make sure Cppcheck is installed and added to your PATH environment variable.
 
-3. Commit and push the Sdk changes.
+3. Make sure you are on the development branch and everything required for the release is committed to it.
+
+4. Increment the major/minor/bugfix version numbers in the Sdk project pre-build event according to the scope of the release.
+
+5. Commit and push the Sdk changes.
 
 	git commit -m "Updated the Sdk version number" Sdk.vcxproj
 	git push
 
-3. Make sure the current version number in the Changelog is up to date.
+6. Make sure the Changelog is up to date (including the version number!).
 
-4. Commit and push the Changelog.
+7. Commit and push the Changelog.
 
 	git commit -m "Updated for version v<major>.<minor>.<patch>" Changelog.txt
 	git push
 
-5. Tag the release.
+Build the SDK.
+
+8. Fix and commit any static analysis issues that have been detected. 
+
+9. Merge the development branch into the main branch.
+
+10. Change to the main branch
+
+11. Pull the development branch into the main branch.
+
+12. Build the release version of the SDK.
+
+13. Tag the release (ONLY if the SDK built successfully).
 
 	git tag -a "v<major>.<minor>.<patch>" -m "Short message describing the release"
 	git push --tags	

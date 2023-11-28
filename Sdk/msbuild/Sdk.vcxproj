@@ -105,8 +105,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Command>cppcheck --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "$(SolutionDir)..\"
+..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Message>Running static analysis and building the sdk</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -127,8 +135,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Command>cppcheck --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "$(SolutionDir)..\"
+..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Message>Running static analysis and building the sdk</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -145,8 +161,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Command>cppcheck --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "$(SolutionDir)..\"
+..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Message>Running static analysis and building the sdk</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -167,8 +191,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PreBuildEvent>
-      <Command>..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Command>cppcheck --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "$(SolutionDir)..\"
+..\script\build.bat $(SolutionDir) 1 1 0 $(Platform) $(Configuration) $(TargetPlatformIdentifier)</Command>
+      <Message>Running static analysis and building the sdk</Message>
     </PreBuildEvent>
+    <PostBuildEvent>
+      <Command>
+      </Command>
+      <Message>
+      </Message>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
