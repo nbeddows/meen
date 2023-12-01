@@ -1,7 +1,0 @@
-Special thanks to the following sites:
-
-https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf
-https://altairclone.com/downloads/cpu_tests/
-https://caglrc.cc/~svo/i8080/
-http://www.brentradio.com/SpaceInvaders.htm
-http://computerarcheology.com/Arcade/SpaceInvaders/Hardware.html

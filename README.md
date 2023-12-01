@@ -1,5 +1,4 @@
-MACHineEMUlator is a project which aims to run old school programs by means of emulation. It is
-written entirely from scratch using C++.
+MACHineEMUlator is a project which aims to run old school programs by means of emulation (starting with the Intel8080). It is written entirely from scratch using C++.
 
 It represents a challenge I laid out for myself many years ago but has only got up and running
 recently thanks to all the spare time we have all had due to the COVID-19 pandemic. It also gave
@@ -31,4 +30,8 @@ COMPLETE.
 
 NOT STARTED.
 
-See the Docs directory for a more in depth explanation of the sdk and the SpaceInvaders directory for an example of how to extend machuemu to support other programs, in this case, the 1978 classic, Space Invaders.
+Special thanks to the following sites:
+
+https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf
+https://altairclone.com/downloads/cpu_tests/
+https://caglrc.cc/~svo/i8080/
