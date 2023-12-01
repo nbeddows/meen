@@ -1,7 +1,7 @@
-1.2.0
+1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
 
-1.1.0
+1.1.0 [28/11/23]
 * Added audio support to Space Invaders.
 * Abstracted Space Invaders SDL IO from
   the base IO allowing for different
@@ -9,7 +9,7 @@
   be more easily added.
 * Added MIT license.
 
-1.0.0
+1.0.0 [24/11/23]
 
 * Added gtests for all official 8080 test suites.
 * Fixed carry and auxillary carry flags for the add
@@ -20,7 +20,7 @@
 * Added keyboard support for Space invaders.
 * Removed co-routines for performance reasons.
 
-0.3.2
+0.3.2 [07/10/21]
 
 * Added a co-routine helper module for easier co-routine
   handling.
@@ -29,11 +29,11 @@
 * Added S(imple)D(irectMedia)L(ayer) support to the sdk
   example for video rendering.
 
-0.2.2
+0.2.2 [21/09/21]
 
 * Added Doxygen generated html documentation to the sdk.
 
-0.2.1
+0.2.1 [18/09/21]
 
 * The static library machemu.lib has been changed to a dll.
 * MachineFactory::MakeMachine is now exported from machemu.dll.
@@ -43,13 +43,13 @@
   include both Release and Debug directories to house output files
   and machuemu dependencies.
 
-0.2.0
+0.2.0 [17/09/21]
 
 * Added machemu sdk with SpaceInvaders test app.
 * Now outputting all dependant machemu libraries as machemu.lib so
   only one library needs to be linked to.
 
-0.1.0
+0.1.0 [10/09/21]
 
 * Added IMachine and IController interfaces.
 * Added Intel 8080 emulator complete with unit tests for each instruction.

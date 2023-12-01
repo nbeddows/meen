@@ -25,7 +25,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "8080Test", "..\Tests\8080Te
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Docs", "Docs", "{1D84FBE6-C35C-49EF-AC91-F303F36B7145}"
 	ProjectSection(SolutionItems) = preProject
-		..\Docs\Changelog.txt = ..\Docs\Changelog.txt
+		..\CHANGELOG.md = ..\CHANGELOG.md
 		..\Docs\Doxyfile = ..\Docs\Doxyfile
 	EndProjectSection
 EndProject

@@ -42,6 +42,7 @@ namespace Emulator
 	private:
 		using Register = std::bitset<8>;
 		static constexpr uint8_t maxRegisters_ = 8;
+		//cppcheck-suppress unusedStructMember
 		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
 
 		enum /*class*/Condition
@@ -75,6 +76,7 @@ namespace Emulator
 			The program counter is a 16 bit register which is accessible to the programmer and whose contents indicate the
 			address of the next instruction to be executed.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint16_t pc_{};
 
 		/**
@@ -93,9 +95,11 @@ namespace Emulator
 		Register status_ = 0b00000010;
 
 		//interrupt flip-flip - 1 enabled, 0 disabled
+		//cppcheck-suppress unusedStructMember
 		bool iff_{};
 
 		//The opcode for the instruction to be executed.
+		//cppcheck-suppress unusedStructMember
 		uint8_t opcode_{};
 #ifdef ENABLE_OPCODE_TABLE 
 		std::unique_ptr<std::function <uint8_t()>[]> opcodeTable_;
@@ -172,7 +176,7 @@ namespace Emulator
 		inline uint8_t Pop(Register& hi, Register& low);
 		inline uint8_t JmpOnFlag(bool status, std::string_view instructionName);
 		inline uint8_t CallOnFlag(bool status, std::string_view instructionName);
-		inline uint8_t Push(const Register& hi, const Register low);
+		inline uint8_t Push(const Register& hi, const Register& low);
 		inline uint8_t Adi(const Register& r);
 		inline uint8_t Rst();
 		inline uint8_t Rst(uint8_t restart);
@@ -205,9 +209,6 @@ namespace Emulator
 		uint8_t H() const { return Value(h_); }
 		uint8_t L() const { return Value(l_); }
 		uint16_t SP() const { return sp_; }
-		uint8_t Status() const { return Value(status_); }
-
-		void PC(uint16_t pc) { pc_ = pc; }
 
 		bool Zero() const { return status_[Condition::ZeroFlag]; }
 		bool Sign() const { return status_[Condition::SignFlag]; }

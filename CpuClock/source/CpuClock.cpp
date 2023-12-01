@@ -177,7 +177,8 @@ namespace Emulator
 						//if it happens a lot we can reduce the spinPercantageToSleep_
 						if (targetSpinTime < nanoseconds::zero())
 						{
-							printf("Over slept by %I64d nanos\n", abs(targetSpinTime.count()));
+							//cppcheck-suppress invalidPrintfArgType_sint
+							printf("Over slept by %lld nanos\n", abs(targetSpinTime.count()));
 						}
 					}
 				}

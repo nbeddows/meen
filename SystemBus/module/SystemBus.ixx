@@ -39,6 +39,7 @@ namespace Emulator
 		IoWrite,
 	};
 
+	//cppcheck-suppress syntaxError
 	export template <class T>
 	class DataBus
 	{

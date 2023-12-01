@@ -48,6 +48,7 @@ namespace Emulator::Controller::Tests
 		EXPECT_NO_THROW
 		(
 			//load one byte compliment carry program into memory
+			//cppcheck-suppress unknownMacro
 			memoryController_->Load ("../../Programs/cmc.bin", 0);
 		);
 	}

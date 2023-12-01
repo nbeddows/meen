@@ -37,6 +37,7 @@ namespace Emulator::Bus::Tests
 
 	SystemBus<uint16_t, uint8_t, 8> SystemBusTest::systemBus_;
 
+	//cppcheck-suppress syntaxError
 	TEST_F(SystemBusTest, ControlBusClock)
 	{
 		systemBus_.controlBus->Send(Signal::Clock);

@@ -24,15 +24,16 @@ copy ..\%5\%6\machemu.dll %7\%5\Release\
 copy ..\%5\%6\machemu.pdb %7\%5\Release\
 copy ..\..\Base\module\Base.ixx Base\module\
 copy ..\..\Controller\module\IController.ixx Controller\module\
-copy ..\..\Docs\Changelog.txt Docs\
+copy ..\..\CHANGELOG.md .\
+copy ..\..\LICENSE.md .\
 copy ..\..\Machine\module\IMachine.ixx Machine\module\
 copy ..\..\Machine\module\MachineFactory.ixx Machine\module\
+copy ..\..\README.md .\
 copy ..\..\SpaceInvaders\docs\SpaceInvaders.txt SpaceInvaders\docs\
 copy ..\..\SpaceInvaders\module\SpaceInvaders.ixx SpaceInvaders\module\
 copy ..\..\SpaceInvaders\msbuild\SpaceInvaders.vcxproj SpaceInvaders\msbuild\
 copy ..\..\SpaceInvaders\source\main.cpp SpaceInvaders\source\
 copy ..\..\SpaceInvaders\source\SpaceInvaders.cpp SpaceInvaders\source\
-copy ..\..\Welcome.txt .\
 echo Building Docs
 copy ..\..\Docs\DoxyFile .\
 doxygen

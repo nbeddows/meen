@@ -24,15 +24,13 @@ Build the SDK.
 
 8. Fix and commit any static analysis issues that have been detected. 
 
-9. Merge the development branch into the main branch.
+9. Change to the main branch
 
-10. Change to the main branch
+10. Merge the development branch into the main branch.
 
-11. Pull the development branch into the main branch.
+11. Build the release version of the SDK.
 
-12. Build the release version of the SDK.
-
-13. Tag the release (ONLY if the SDK built successfully).
+12. Tag the release (ONLY if the SDK built successfully).
 
 	git tag -a "v<major>.<minor>.<patch>" -m "Short message describing the release"
 	git push --tags	
