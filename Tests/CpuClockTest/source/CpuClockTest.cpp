@@ -91,6 +91,7 @@ namespace Emulator::CpuClock::Tests
 		EXPECT_LT(runTime - targetTime, nanoseconds(5000));
 	}
 
+	//cppcheck-suppress syntaxError
 	TEST_P(CpuClockTest, RunClockFor2Secs)
 	{
 		RunClockFor(2);

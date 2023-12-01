@@ -599,6 +599,7 @@ uint8_t Intel8080::Execute()
 			case 0xFF: timePeriods = Rst(); break;
 			default: assert(0); break;
 		}
+#endif
 	}
 	else
 	{
@@ -612,7 +613,6 @@ uint8_t Intel8080::Execute()
 	nb_instructions++;
 	return timePeriods;
 }
-#endif
 
 //This essentially powers on the cpu
 void Intel8080::Reset(uint16_t pc)
@@ -1585,7 +1585,7 @@ uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	}
 }
 
-uint8_t Intel8080::Push(const Register& hi, const Register low)
+uint8_t Intel8080::Push(const Register& hi, const Register& low)
 {
 	if constexpr (dbg == true)
 	{

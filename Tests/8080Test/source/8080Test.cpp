@@ -56,9 +56,6 @@ protected:
 	
 public:
 	static void SetUpTestCase();
-	static void TearDownTestCase();
-	void SetUp();
-	void TearDown();
 };
 
 std::unique_ptr<ICpuClock> Intel8080Test::clock_;
@@ -131,6 +128,7 @@ void Intel8080Test::LoadAndRun(std::filesystem::path name, uint32_t offset) cons
 	//);
 }
 
+//cppcheck-suppress unusedFunction
 void Intel8080Test::SetUpTestCase()
 {
 	//Create our test controllers.
@@ -173,21 +171,6 @@ void Intel8080Test::SetUpTestCase()
 			}
 		}
 	});
-}
-
-void Intel8080Test::TearDownTestCase()
-{
-
-}
-
-void Intel8080Test::SetUp()
-{
-	
-}
-
-void Intel8080Test::TearDown()
-{
-	//cpu_->UnloadProgram();
 }
 
 TEST_F(Intel8080Test, LXI_B)

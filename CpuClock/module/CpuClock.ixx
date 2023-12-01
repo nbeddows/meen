@@ -45,6 +45,7 @@ namespace Emulator
 		//over sleep, so we only ask for a percentage of what we want,
 		//(this can be reduced if we continually oversleep) then spin
 		//for the remainder.
+		//cppcheck-suppress unusedStructMember
 		static constexpr double spinPercantageToSleep_{ 0.8 };
 
 		//Used to signal a tick of the clock

@@ -36,13 +36,14 @@ namespace Emulator
 	export class DefaultMemoryController final : public IMemoryController
 	{
 	private:
+		//cppcheck-suppress unusedStructMember
 		size_t memorySize_{};
 		std::unique_ptr<uint8_t[]> memory_;
 	public:
 		//Pass in system bus here.
 		//We need to pass in the system bus here in so that the
 		//memory can talk directly to the IO
-		DefaultMemoryController(uint8_t addressBusSize);
+		explicit DefaultMemoryController(uint8_t addressBusSize);
 
 		//IMemoryContoller virtual overrides
 		void Load(std::filesystem::path romFile, uint16_t offset) override final;
@@ -66,6 +67,7 @@ namespace Emulator
 				is guaranteed that no instructions are currently executing
 				at that time.
 			*/
+			//cppcheck-suppress unusedStructMember
 			bool powerOff_{};
 		protected:
 			void Write(uint16_t ioDeviceNumber, uint8_t value);			
@@ -100,6 +102,7 @@ namespace Emulator
 							arbitary value, this can be useful, for
 							example, during tests.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint8_t deviceData_{ 0xAA };
 	public:
 		/**	Read
@@ -177,6 +180,7 @@ namespace Emulator
 			The final output buffer that will be used to
 			print to.
 		*/
+		//cppcheck-suppress unusedStructMember
 		std::string message_;
 
 		/** memoryController_
@@ -194,6 +198,7 @@ namespace Emulator
 			A value of 2 will output a single character into
 			the output message buffer.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint8_t printMode_{};
 
 		/** addrHi_
@@ -202,13 +207,14 @@ namespace Emulator
 			from which characters will be read into the output buffer.
 			This value is only used when the print mode is 9.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint8_t addrHi_{};
 	public:
 		/** CpmIoController
 
 			An io controller that emulates the CP/M BDOS output routine.
 		*/
-		CpmIoController(const std::shared_ptr<IController>& memoryController);
+		explicit CpmIoController(const std::shared_ptr<IController>& memoryController);
 
 		/** Message
 

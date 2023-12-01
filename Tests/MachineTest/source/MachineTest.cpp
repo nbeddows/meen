@@ -84,6 +84,7 @@ namespace Emulator::Machine::Tests
 	{
 		EXPECT_ANY_THROW
 		(
+			//cppcheck-suppress unknownMacro
 			machine_->Run();
 		);
 	}
