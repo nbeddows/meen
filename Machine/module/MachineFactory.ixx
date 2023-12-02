@@ -25,6 +25,12 @@ export module MachineFactory;
 import <memory>;
 import IMachine;
 
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP __declspec(dllexport)
+#else
+#define DLL_EXP_IMP __declspec(dllimport)
+#endif
+
 namespace Emulator
 {
 	/** Create a machine.
