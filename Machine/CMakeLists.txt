@@ -26,3 +26,5 @@ target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
 )
+
+set_target_properties(${lib_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Bin)
