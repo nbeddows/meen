@@ -1,10 +1,11 @@
 *.filters
 *.user
 .vs/
+build/
+machemu*/
 packages/
 roms/
 third_party/
-machemu*/
 Win32/
 x64/
 x86/
