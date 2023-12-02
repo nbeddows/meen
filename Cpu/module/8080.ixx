@@ -24,6 +24,7 @@ export module _8080;
 
 import <array>;
 import <bitset>;
+import <memory>;
 import <functional>;
 import <string_view>;
 
