@@ -20,15 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module ControllerFactory;
+export module MemoryController;
 
+import <chrono>;
 import <memory>;
-import MemoryController;
+import <filesystem>;
+import Base;
+import IMemoryController;
+
+using namespace std::chrono;
 
 namespace Emulator
 {
-	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize)
+	export class MemoryController final : public IMemoryController
 	{
-		return std::make_unique<MemoryController>(addressBusSize);
-	}
-}
+	private:
+		//cppcheck-suppress unusedStructMember
+		size_t memorySize_{};
+		std::unique_ptr<uint8_t[]> memory_;
+	public:
+		explicit MemoryController(uint8_t addressBusSize);
+		~MemoryController() = default;
+
+		//IMemoryContoller virtual overrides
+		void Load(std::filesystem::path romFile, uint16_t offset) final;
+		size_t Size() const final;
+
+		//IController virtual overrides
+		uint8_t Read(uint16_t address) final;
+		void Write(uint16_t address, uint8_t value) final;
+		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) final;
+	};
+} // namespace Emulator

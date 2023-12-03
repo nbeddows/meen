@@ -23,11 +23,9 @@ SOFTWARE.
 export module ControllerFactory;
 
 import <memory>;
-import IController;
+import IMemoryController;
 
 namespace Emulator
 {
-	export std::unique_ptr<IMemoryController> MakeDefaultMemoryController(uint8_t addressBusSize);
-	export std::unique_ptr<IController> MakeTestIoController();
-	export std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController);
+	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize);
 }
