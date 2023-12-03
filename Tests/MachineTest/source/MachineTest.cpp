@@ -24,7 +24,7 @@ SOFTWARE.
 #include <gtest/gtest.h>
 
 import <chrono>;
-import ControllerFactory;
+import <filesystem>;
 import IController;
 import IMachine;
 import MachineFactory;
@@ -39,7 +39,7 @@ namespace Emulator::Machine::Tests
 		static std::shared_ptr<IMemoryController> memoryController_;
 		static std::shared_ptr<IController> ioController_;
 		static std::unique_ptr<IMachine> machine_;
-		static const inline std::filesystem::path directory_ = "../../programs";
+		static const inline std::filesystem::path directory_ = "../Programs";
 	public:
 		static void SetUpTestCase();
 		void SetUp();
