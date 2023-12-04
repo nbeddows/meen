@@ -41,7 +41,4 @@ namespace Emulator
 		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/
 	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
-	export DLL_EXP_IMP std::unique_ptr<IMemoryController> MakeDefaultMemoryController(uint8_t addressBusSize);
-	export DLL_EXP_IMP std::unique_ptr<IController> MakeTestIoController();
-	export DLL_EXP_IMP std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController);
 }

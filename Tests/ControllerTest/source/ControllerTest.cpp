@@ -23,7 +23,7 @@ SOFTWARE.
 #include <gtest/gtest.h>
 
 import ControllerFactory;
-import IController;
+import IMemoryController;
 
 namespace Emulator::Controller::Tests
 {
@@ -40,7 +40,7 @@ namespace Emulator::Controller::Tests
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = MakeDefaultMemoryController(16);
+		memoryController_ = MakeMemoryController(16);
 	}
 
 	TEST_F(ControllerTest, Load)

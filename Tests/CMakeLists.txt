@@ -8,37 +8,10 @@ FetchContent_Declare(
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-set(exe_name Tests)
-
-set(test_module_files
-  ../Base/${module_dir}/Base.ixx
-  ../Controller/${module_dir}/IController.ixx
-  ../Machine/${module_dir}/MachineFactory.ixx
-  ../Machine/${module_dir}/IMachine.ixx
-)
-
-set(test_source_files
-  MachineTest/${source_dir}/MachineTest.cpp
-)
-
-SOURCE_GROUP("Module Files" FILES test_module_files)
-SOURCE_GROUP("Source Files" FILES test_source_files)
-
-add_executable(${exe_name}
-  ${test_module_files}
-  ${test_source_files}
-)
-
-target_link_libraries(${exe_name} PRIVATE
-  gtest
-  gtest_main
-  MachEmu
-)
-
-add_custom_command(
-  TARGET ${exe_name} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-  ${CMAKE_SOURCE_DIR}/Tests/Programs
-  ${CMAKE_BINARY_DIR}/Programs)
-
-set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Bin)
+#set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+add_subdirectory(ControllerTest)
+add_subdirectory(MachineTest)
+add_subdirectory(TestControllers)
+set_target_properties(ControllerTest PROPERTIES FOLDER "Tests")
+set_target_properties(MachineTest PROPERTIES FOLDER "Tests")
+set_target_properties(TestControllers PROPERTIES FOLDER "Tests")

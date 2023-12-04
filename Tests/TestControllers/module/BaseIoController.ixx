@@ -20,15 +20,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module MachineFactory;
+export module BaseIoController;
 
-import <memory>;
-import Machine;
+import <chrono>;
+import <cstdint>;
+import Base;
+import IController;
 
 namespace Emulator
 {
-	std::unique_ptr<IMachine> MakeMachine()
+    export class BaseIoController : public IController
 	{
-		return std::make_unique<Machine>();
-	}
-}
+		private:
+			/** powerOff_
+
+				Signals the control bus when the current instruction finishes
+				executing that it is time to shutdown.
+
+				The signal is sent during the servicing of interrupts as it
+				is guaranteed that no instructions are currently executing
+				at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool powerOff_{};
+		protected:
+            BaseIoController() = default;
+            ~BaseIoController() = default;
+
+			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
+			ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) override;
+	};
+} // namespace Emulator

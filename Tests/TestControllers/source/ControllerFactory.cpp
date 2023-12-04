@@ -20,12 +20,27 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module ControllerFactory;
+module ControllerFactory;
 
 import <memory>;
-import IMemoryController;
+import MemoryController;
+import CpmIoController;
+import TestIoController;
 
 namespace Emulator
 {
-	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize);
+	std::unique_ptr<IController> MakeTestIoController()
+	{
+		return std::make_unique<TestIoController>();
+	}
+
+	std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController)
+	{
+		return std::make_unique<CpmIoController>(memoryController);
+	}
+
+	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize)
+	{
+		return std::make_unique<MemoryController>(addressBusSize);
+	}
 }
