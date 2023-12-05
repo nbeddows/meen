@@ -28,7 +28,7 @@ import SystemBus;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** ICpuClock
 	
@@ -122,4 +122,4 @@ namespace Emulator
 	export std::unique_ptr<ICpuClock> MakeCpuClock(nanoseconds timePeriod, nanoseconds correlateFrequency);
 	//export template <uint8_t crtlW>
 	export std::unique_ptr<ICpuClock> MakeCpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod);
-}
+} // namespace MachEmu

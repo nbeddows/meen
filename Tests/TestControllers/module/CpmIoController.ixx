@@ -20,136 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module Controller;
+export module CpmIoController;
 
 import <chrono>;
-import <memory>;
-import <filesystem>;
 import Base;
-import IController;
-import SystemBus;
+import BaseIoController;
 
-using namespace std::chrono;
-
-namespace Emulator
+namespace MachEmu::Tests
 {
-	export class DefaultMemoryController final : public IMemoryController
-	{
-	private:
-		//cppcheck-suppress unusedStructMember
-		size_t memorySize_{};
-		std::unique_ptr<uint8_t[]> memory_;
-	public:
-		//Pass in system bus here.
-		//We need to pass in the system bus here in so that the
-		//memory can talk directly to the IO
-		explicit DefaultMemoryController(uint8_t addressBusSize);
-
-		//IMemoryContoller virtual overrides
-		void Load(std::filesystem::path romFile, uint16_t offset) override final;
-		size_t Size() const override final;
-
-		//IController virtual overrides
-		uint8_t Read(uint16_t address) override final;
-		void Write(uint16_t address, uint8_t value) override final;
-		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
-	};
-
-	export class MockIoController : public IController
-	{
-		private:
-			/** powerOff_
-
-				Signals the control bus when the current instruction finishes
-				executing that it is time to shutdown.
-
-				The signal is sent during the servicing of interrupts as it
-				is guaranteed that no instructions are currently executing
-				at that time.
-			*/
-			//cppcheck-suppress unusedStructMember
-			bool powerOff_{};
-		protected:
-			void Write(uint16_t ioDeviceNumber, uint8_t value);			
-			ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles);
-	};
-	
-	/** TestIoController
-
-		A minimal implementaion for an io controller. It allows
-		reading and writing to one device (device0).
-
-		@discussion		This IO controller is purely academic, it's
-						main use is for unit tests, in reality the
-						device data would be an interface into actual
-						IO, for example, a keyboard or a mouse.
-	*/
-	export class TestIoController final : public MockIoController
-	{
-	private:
-		/** lastTime_
-		
-			Track the cpu time so we can trigger interrupts
-			at one second intervals.
-		*/
-		nanoseconds lastTime_;
-
-		/** deviceData_
-
-			The io data to be maintained by this 'io device'.
-
-			@discussion		The mock device will be initialised to an
-							arbitary value, this can be useful, for
-							example, during tests.
-		*/
-		//cppcheck-suppress unusedStructMember
-		uint8_t deviceData_{ 0xAA };
-	public:
-		/**	Read
-
-			Read the contents of the specifed io device.
-
-			@param	ioDeviceNumber	The io device number to read from.
-									Only once device is supported, ie;
-									device number 0.
-
-			@return	uint8_t			The contents of the io device at the
-									time of the function call.
-
-			@see IController::Read()
-		*/
-		uint8_t Read(uint16_t ioDeviceNumber) override final;
-
-		/** Write
-
-			Write the specified value to the specified io device.
-
-			@param	ioDeviceNumber	The io device number to write to.
-									Only one device is supported, ie;
-									device number 0.
-			@param	value			The data to write to the io device.
-
-			@see IController::Write()
-		*/
-		void Write(uint16_t ioDeviceNumber, uint8_t value) override final;
-
-		/** ServiceInterrupts
-
-			Checks the io controller to see if any interrupts are pending.
-
-			@param	currTime	The time in nanoseconds of the cpu clock.
-
-			@return	uint8_t		The interrupt that requires servicing by the
-								cpu.
-
-			@discussion			Currently, no interrupts are triggered by this
-								mock io controller. The return value will always
-								be zero.
-
-			@see IContoller::ServiceInterrupts()
-		*/
-		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
-	};
 
 	/** CpmIoController
 
@@ -165,7 +43,7 @@ namespace Emulator
 					dependence on CP/M BDOS. See cpudiag_readme.txt for
 					more information.
 	*/
-	export class CpmIoController final : public MockIoController
+	export class CpmIoController final : public BaseIoController
 	{
 	private:
 		enum class Port
@@ -230,7 +108,7 @@ namespace Emulator
 
 			@return		uint8_t		Always zero.
 		*/
-		uint8_t Read(uint16_t ioDeviceNumber) override final;
+		uint8_t Read(uint16_t ioDeviceNumber) final;
 
 		/** Write
 
@@ -246,7 +124,7 @@ namespace Emulator
 									Port::Process the value is either the low 8 bit address when the Port::PrintMode is 9 or the actual
 									value to print when Port::PrintMode is 2.
 		*/
-		void Write(uint16_t Port, uint8_t value) override final;
+		void Write(uint16_t Port, uint8_t value) final;
 
 		/** ServiceInterrupts
 
@@ -263,6 +141,6 @@ namespace Emulator
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) override final;
+		ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) final;
 	};
-}
+} // namespace MachEmu::Tests

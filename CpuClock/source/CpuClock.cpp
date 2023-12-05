@@ -29,7 +29,7 @@ using namespace std::chrono;
 
 constexpr bool dbgClock = false;
 
-namespace Emulator
+namespace MachEmu
 {
 	CpuClock::CpuClock(nanoseconds timePeriod, nanoseconds correlateFreq) :
 		timePeriod_(timePeriod),
@@ -226,4 +226,4 @@ namespace Emulator
 	{
 		return targetNanos_;
 	}
-}
+} // namespace MachEmu

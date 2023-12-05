@@ -22,7 +22,6 @@ add_library(${lib_name} SHARED
 add_dependencies(${lib_name} Base Controller Cpu CpuClock SystemBus)
 
 target_link_libraries(${lib_name} PRIVATE
-	Controller
 	Cpu
 	CpuClock
 )

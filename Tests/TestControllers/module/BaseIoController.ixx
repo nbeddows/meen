@@ -20,14 +20,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module ControllerFactory;
+export module BaseIoController;
 
-import <memory>;
+import <chrono>;
+import <cstdint>;
+import Base;
 import IController;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
-	export std::unique_ptr<IMemoryController> MakeDefaultMemoryController(uint8_t addressBusSize);
-	export std::unique_ptr<IController> MakeTestIoController();
-	export std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController);
-}
+    export class BaseIoController : public IController
+	{
+		private:
+			/** powerOff_
+
+				Signals the control bus when the current instruction finishes
+				executing that it is time to shutdown.
+
+				The signal is sent during the servicing of interrupts as it
+				is guaranteed that no instructions are currently executing
+				at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool powerOff_{};
+		protected:
+            BaseIoController() = default;
+            ~BaseIoController() = default;
+
+			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
+			ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) override;
+	};
+} // namespace MachEmu::Tests

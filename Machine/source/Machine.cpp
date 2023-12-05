@@ -20,15 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-
 module Machine;
 
 import <chrono>;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	Machine::Machine()
 	{
@@ -138,4 +136,4 @@ namespace Emulator
 	{
 		ioController_ = controller;
 	}
-}
+} // namespace MachEmu

@@ -23,28 +23,12 @@ SOFTWARE.
 module MachineFactory;
 
 import <memory>;
-import Controller;
 import Machine;
 
-namespace Emulator
+namespace MachEmu
 {
 	std::unique_ptr<IMachine> MakeMachine()
 	{
 		return std::make_unique<Machine>();
 	}
-
-	std::unique_ptr<IMemoryController> MakeDefaultMemoryController(uint8_t addressBusSize)
-	{
-		return std::make_unique<DefaultMemoryController>(addressBusSize);
-	}
-
-	std::unique_ptr<IController> MakeTestIoController()
-	{
-		return std::make_unique<TestIoController>();
-	}
-
-	std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController)
-	{
-		return std::make_unique<CpmIoController>(memoryController);
-	}
-}
+} // namespace MachEmu

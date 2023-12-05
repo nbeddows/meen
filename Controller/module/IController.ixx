@@ -24,12 +24,11 @@ export module IController;
 
 import <chrono>;
 import <cstdint>;
-import <filesystem>;
 import Base;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Device interface.
 
@@ -92,44 +91,4 @@ namespace Emulator
 		*/
 		virtual ~IController() = default;
 	};
-
-	/** Memory Controller interface.
-	
-		An interface to a generic memory device.
-	*/
-	export struct IMemoryController : public IController
-	{
-		/** Load ROM.
-		
-			Load a ROM file into memory at the specified address.
-
-			@param	romFile				The binary file containing cpu instructions to be
-										loaded into memory.
-			@param	address				The memory address at which the romFile is to be
-										loaded at.
-
-			@throw	runtime_error		The rom file failed to open, for example, the path does
-										not exist.
-			@throw	length_error		The rom file size is too big to fit at the specified
-										memory offet.
-			@throw	invalid_argument	The rom file exists, but it failed to load.
-			
-			@todo	add other load variant interfaces, like from vector, array, etc
-		*/
-		virtual void Load(std::filesystem::path romFile, uint16_t address) = 0;
-		
-		/**	Memory size.
-		
-			Obtains the size of the allocated memory used by this memory device.
-
-			@return	size_t		The size of memory allocated by this device.
-		*/
-		virtual size_t Size() const = 0;
-
-		/** Destructor.
-
-			Release all resources used by this memory controller instance.
-		*/
-		virtual ~IMemoryController() = default;
-	};
-}
+} // namespace MachEmu

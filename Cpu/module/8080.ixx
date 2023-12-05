@@ -34,7 +34,7 @@ import SystemBus;
 
 //#define ENABLE_OPCODE_TABLE
 
-namespace Emulator
+namespace MachEmu
 {
 	constexpr bool dbg = false;
 
@@ -217,4 +217,4 @@ namespace Emulator
 		bool AuxCarry() const { return status_[Condition::AuxCarryFlag]; }
 		bool Carry() const { return status_[Condition::CarryFlag]; }
 	};
-}
+} // namespace MachEmu

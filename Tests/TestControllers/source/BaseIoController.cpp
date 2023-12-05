@@ -20,25 +20,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module MachineFactory;
+module BaseIoController;
 
-import <memory>;
-import IController;
-import IMachine;
+import <chrono>;
+import Base;
 
-#ifdef MachEmu_EXPORTS
-#define DLL_EXP_IMP __declspec(dllexport)
-#else
-#define DLL_EXP_IMP __declspec(dllimport)
-#endif
-
-namespace MachEmu
+namespace MachEmu::Tests
 {
-	/** Create a machine.
+    void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
+	{
+		powerOff_ = port == 0xFF;
+	}
 
-		This function is the main entry point into machemu.dll.
+	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] std::chrono::nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
+	{
+		auto isr = ISR::NoInterrupt;
 
-		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
-	*/
-	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
-} // namespace MachEmu
+		if (powerOff_ == true)
+		{
+			isr = ISR::Quit;
+			powerOff_ = false;
+		}
+		
+		return isr;
+	}
+} // namespace MachEmu::Tests

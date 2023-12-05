@@ -29,7 +29,7 @@ module _8080;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 
 Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
@@ -1831,4 +1831,4 @@ uint8_t Intel8080::Ei()
 	return 4;
 }
 
-}
+} // namespace MachEmu

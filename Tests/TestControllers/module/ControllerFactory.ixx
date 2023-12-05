@@ -20,25 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module MachineFactory;
+export module ControllerFactory;
 
 import <memory>;
 import IController;
-import IMachine;
+import IMemoryController;
 
-#ifdef MachEmu_EXPORTS
-#define DLL_EXP_IMP __declspec(dllexport)
-#else
-#define DLL_EXP_IMP __declspec(dllimport)
-#endif
-
-namespace MachEmu
+namespace MachEmu::Tests
 {
-	/** Create a machine.
-
-		This function is the main entry point into machemu.dll.
-
-		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
-	*/
-	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
-} // namespace MachEmu
+	export std::unique_ptr<IController> MakeCpmIoController();
+	export std::unique_ptr<IController> MakeTestIoController();
+	export std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize);
+} // namespace MachEmu::Tests

@@ -22,7 +22,7 @@ SOFTWARE.
 
 export module Base;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Interrupt service routine.
 
@@ -43,4 +43,4 @@ namespace Emulator
 		Quit = 0xEF,	//<	Returned from IController::ServiceInterrupts to exit the IMachine::Run control loop.
 		NoInterrupt,
 	};
-}
+} // namespace MachEmu

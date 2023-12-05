@@ -29,7 +29,7 @@ import SystemBus;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	//Slow down the current thread to emulate the desired clock speed.
 	//Achieved through a combination of sleep/spin.
@@ -101,4 +101,4 @@ namespace Emulator
 		//Returns the target CPU time.
 		nanoseconds Time() const override final;
 	};
-}
+} // namespace MachEmu

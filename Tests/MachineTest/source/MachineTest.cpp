@@ -20,18 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <filesystem>
 #include <future>
 #include <gtest/gtest.h>
 
 import <chrono>;
-import <filesystem>;
+import ControllerFactory;
 import IController;
 import IMachine;
+import IMemoryController;
 import MachineFactory;
 
 using namespace std::chrono;
 
-namespace Emulator::Machine::Tests
+namespace MachEmu::Tests
 {
 	class MachineTest : public testing::Test
 	{
@@ -39,7 +41,7 @@ namespace Emulator::Machine::Tests
 		static std::shared_ptr<IMemoryController> memoryController_;
 		static std::shared_ptr<IController> ioController_;
 		static std::unique_ptr<IMachine> machine_;
-		static const inline std::filesystem::path directory_ = "../Programs";
+		static const inline std::filesystem::path directory_ = "../../Programs";
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -52,7 +54,7 @@ namespace Emulator::Machine::Tests
 	void MachineTest::SetUpTestCase()
 	{
 		machine_ = MakeMachine();
-		memoryController_ = MakeDefaultMemoryController(16); //16 bit memory bus size
+		memoryController_ = MakeMemoryController(16); //16 bit memory bus size
 		ioController_ = MakeTestIoController();
 	}
 
@@ -100,4 +102,4 @@ namespace Emulator::Machine::Tests
 			machine_->Run();
 		);
 	}
-}
+} // namespace MachEmu::Tests

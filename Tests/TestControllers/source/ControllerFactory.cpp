@@ -23,15 +23,12 @@ SOFTWARE.
 module ControllerFactory;
 
 import <memory>;
-import Controller;
+import MemoryController;
+import CpmIoController;
+import TestIoController;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
-	std::unique_ptr<IMemoryController> MakeDefaultMemoryController(uint8_t addressBusSize)
-	{
-		return std::make_unique<DefaultMemoryController>(addressBusSize);
-	}
-
 	std::unique_ptr<IController> MakeTestIoController()
 	{
 		return std::make_unique<TestIoController>();
@@ -41,4 +38,9 @@ namespace Emulator
 	{
 		return std::make_unique<CpmIoController>(memoryController);
 	}
-}
+
+	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize)
+	{
+		return std::make_unique<MemoryController>(addressBusSize);
+	}
+} // namespace MachEmu::Tests

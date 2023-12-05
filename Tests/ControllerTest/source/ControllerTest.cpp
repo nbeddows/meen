@@ -23,9 +23,9 @@ SOFTWARE.
 #include <gtest/gtest.h>
 
 import ControllerFactory;
-import IController;
+import IMemoryController;
 
-namespace Emulator::Controller::Tests
+namespace MachEmu::Tests
 {
 	class ControllerTest : public testing::Test
 	{
@@ -40,7 +40,7 @@ namespace Emulator::Controller::Tests
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = MakeDefaultMemoryController(16);
+		memoryController_ = MakeMemoryController(16);
 	}
 
 	TEST_F(ControllerTest, Load)
@@ -87,4 +87,4 @@ namespace Emulator::Controller::Tests
 
 		EXPECT_EQ(0x3F, value);
 	}
-}
+} // namespace MachEmu::Tests

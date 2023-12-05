@@ -25,7 +25,7 @@ export module SystemBus;
 import <bitset>;
 import <memory>;
 
-namespace Emulator
+namespace MachEmu
 {
 	export enum Signal
 	{
@@ -139,4 +139,4 @@ namespace Emulator
 	{
 		return std::make_unique<SystemBus<addrW, dataW, ctrlW>>();
 	}
-}
+} // namespace MachEmu

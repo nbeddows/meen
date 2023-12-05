@@ -20,25 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module MachineFactory;
+export module MemoryController;
 
+import <chrono>;
 import <memory>;
-import IController;
-import IMachine;
+import <filesystem>;
+import Base;
+import IMemoryController;
 
-#ifdef MachEmu_EXPORTS
-#define DLL_EXP_IMP __declspec(dllexport)
-#else
-#define DLL_EXP_IMP __declspec(dllimport)
-#endif
+using namespace std::chrono;
 
-namespace MachEmu
+namespace MachEmu::Tests
 {
-	/** Create a machine.
+	export class MemoryController final : public IMemoryController
+	{
+	private:
+		//cppcheck-suppress unusedStructMember
+		size_t memorySize_{};
+		std::unique_ptr<uint8_t[]> memory_;
+	public:
+		explicit MemoryController(uint8_t addressBusSize);
+		~MemoryController() = default;
 
-		This function is the main entry point into machemu.dll.
+		//IMemoryContoller virtual overrides
+		void Load(std::filesystem::path romFile, uint16_t offset) final;
+		size_t Size() const final;
 
-		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
-	*/
-	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
-} // namespace MachEmu
+		//IController virtual overrides
+		uint8_t Read(uint16_t address) final;
+		void Write(uint16_t address, uint8_t value) final;
+		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) final;
+	};
+} // namespace MachEmu::Tests
