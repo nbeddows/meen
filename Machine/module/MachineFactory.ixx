@@ -32,7 +32,7 @@ import IMachine;
 #define DLL_EXP_IMP __declspec(dllimport)
 #endif
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Create a machine.
 
@@ -41,4 +41,4 @@ namespace Emulator
 		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/
 	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
-}
+} // namespace MachEmu

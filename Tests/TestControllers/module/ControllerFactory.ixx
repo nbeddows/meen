@@ -26,9 +26,9 @@ import <memory>;
 import IController;
 import IMemoryController;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
 	export std::unique_ptr<IController> MakeCpmIoController();
 	export std::unique_ptr<IController> MakeTestIoController();
 	export std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize);
-}
+} // namespace MachEmu::Tests

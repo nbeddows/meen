@@ -26,7 +26,7 @@ import CpuClock;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	//factory free form function
 	std::unique_ptr<ICpuClock> MakeCpuClock(nanoseconds timePeriod, nanoseconds correlateFreq)
@@ -38,4 +38,4 @@ namespace Emulator
 	{
 		return std::make_unique<CpuClock>(controlBus, timePeriod);
 	}
-}
+} // namespace MachEmu

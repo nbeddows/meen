@@ -30,7 +30,7 @@ import IMemoryController;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
 	export class MemoryController final : public IMemoryController
 	{
@@ -51,4 +51,4 @@ namespace Emulator
 		void Write(uint16_t address, uint8_t value) final;
 		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) final;
 	};
-} // namespace Emulator
+} // namespace MachEmu::Tests

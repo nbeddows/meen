@@ -25,10 +25,10 @@ module MachineFactory;
 import <memory>;
 import Machine;
 
-namespace Emulator
+namespace MachEmu
 {
 	std::unique_ptr<IMachine> MakeMachine()
 	{
 		return std::make_unique<Machine>();
 	}
-}
+} // namespace MachEmu

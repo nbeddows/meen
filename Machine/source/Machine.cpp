@@ -26,7 +26,7 @@ import <chrono>;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	Machine::Machine()
 	{
@@ -136,4 +136,4 @@ namespace Emulator
 	{
 		ioController_ = controller;
 	}
-}
+} // namespace MachEmu

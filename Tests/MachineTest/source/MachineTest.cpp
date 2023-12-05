@@ -33,7 +33,7 @@ import MachineFactory;
 
 using namespace std::chrono;
 
-namespace Emulator::Machine::Tests
+namespace MachEmu::Tests
 {
 	class MachineTest : public testing::Test
 	{
@@ -102,4 +102,4 @@ namespace Emulator::Machine::Tests
 			machine_->Run();
 		);
 	}
-}
+} // namespace MachEmu::Tests

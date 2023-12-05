@@ -25,7 +25,7 @@ SOFTWARE.
 import ControllerFactory;
 import IMemoryController;
 
-namespace Emulator::Controller::Tests
+namespace MachEmu::Tests
 {
 	class ControllerTest : public testing::Test
 	{
@@ -87,4 +87,4 @@ namespace Emulator::Controller::Tests
 
 		EXPECT_EQ(0x3F, value);
 	}
-}
+} // namespace MachEmu::Tests

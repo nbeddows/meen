@@ -27,7 +27,7 @@ import <cstdint>;
 import Base;
 import IController;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
     export class BaseIoController : public IController
 	{
@@ -50,4 +50,4 @@ namespace Emulator
 			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
 			ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) override;
 	};
-} // namespace Emulator
+} // namespace MachEmu::Tests

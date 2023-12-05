@@ -28,7 +28,7 @@ import Base;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Device interface.
 
@@ -91,4 +91,4 @@ namespace Emulator
 		*/
 		virtual ~IController() = default;
 	};
-} // namespace Emulator
+} // namespace MachEmu

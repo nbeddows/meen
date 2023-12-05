@@ -28,7 +28,7 @@ import ICpuClock;
 import IMachine;
 import SystemBus;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Machine
 
@@ -64,4 +64,4 @@ namespace Emulator
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) override final;
 	};
-}
+} // namespace MachEmu

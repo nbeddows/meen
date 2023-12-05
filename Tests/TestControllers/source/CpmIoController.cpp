@@ -26,7 +26,7 @@ import <chrono>;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
     CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController)
 	{
@@ -102,4 +102,4 @@ namespace Emulator
 	{
 		return BaseIoController::ServiceInterrupts(currTime, cycles);
 	}
-} // namespace Emulator
+} // namespace MachEmu::Tests

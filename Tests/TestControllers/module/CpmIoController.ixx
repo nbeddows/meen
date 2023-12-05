@@ -26,7 +26,7 @@ import <chrono>;
 import Base;
 import BaseIoController;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
 
 	/** CpmIoController
@@ -143,4 +143,4 @@ namespace Emulator
 		*/
 		ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) final;
 	};
-} // namespace Emulator
+} // namespace MachEmu::Tests

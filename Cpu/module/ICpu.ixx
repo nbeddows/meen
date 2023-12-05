@@ -29,7 +29,7 @@ import <string_view>;
 import <vector>;
 import SystemBus;
 
-namespace Emulator
+namespace MachEmu
 {
 	export struct I8080
 	{
@@ -44,4 +44,4 @@ namespace Emulator
 	};
 
 	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
-}
+} // namespace MachEmu

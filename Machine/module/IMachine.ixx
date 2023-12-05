@@ -25,7 +25,7 @@ export module IMachine;
 import <memory>;
 import IController;
 
-namespace Emulator
+namespace MachEmu
 {
 	/** Machine interface.
 
@@ -98,4 +98,4 @@ namespace Emulator
 		*/
 		virtual ~IMachine() = default;
 	};
-}
+} // namespace MachEmu

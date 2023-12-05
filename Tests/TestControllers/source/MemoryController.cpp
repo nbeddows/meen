@@ -30,7 +30,7 @@ import <chrono>;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu::Tests
 {
 	MemoryController::MemoryController(uint8_t addrSize)
 	{
@@ -87,4 +87,4 @@ namespace Emulator
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;
 	}
-}
+} // namespace MachEmu::Tests

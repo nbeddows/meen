@@ -28,7 +28,7 @@ import <filesystem>;
 import Base;
 import IController;
 
-namespace Emulator
+namespace MachEmu
 { 
     /** Memory Controller interface.
 	
@@ -69,4 +69,4 @@ namespace Emulator
 		*/
 		virtual ~IMemoryController() = default;
 	};
-} // namespace Emulator
+} // namespace MachEmu
