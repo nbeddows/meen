@@ -54,11 +54,13 @@ function(addTarget name module_files)
         # for the modules. We create a symlink to it from the
         # current directory.
         add_custom_target(
-            ${name}StdModuleSymlink
+            ${name}ModuleSymlink
             COMMAND ${CMAKE_COMMAND} -E create_symlink
             ${CMAKE_BINARY_DIR}/gcm.cache
             gcm.cache
         )
+
+        add_dependencies(${name} ${name}ModuleSymLink)
     endif()
 endfunction()
 
