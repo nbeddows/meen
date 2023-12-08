@@ -20,26 +20,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuClockFactory;
+export module CpuClockFactory;
 
 import <chrono>;
 import <memory>;
 import ICpuClock;
-import CpuClock;
 import SystemBus;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
-	//factory free form function
-	std::unique_ptr<ICpuClock> MakeCpuClock(nanoseconds timePeriod, nanoseconds correlateFreq)
-	{
-		return std::make_unique<CpuClock>(timePeriod, correlateFreq);
-	}
+	/** Factory function to make a cpu clock
+	
+		The CPU clock contols the timing for the target CPU so that all instructions executed
+		execute at the correct rate.
 
-	std::unique_ptr<ICpuClock> MakeCpuClock(const std::shared_ptr<ControlBus<8>>& controlBus, nanoseconds timePeriod)
-	{
-		return std::make_unique<CpuClock>(controlBus, timePeriod);
-	}
+		@param	timePeriod				The duration in nanoseconds of the target cpu tick (cycle).
+		
+		@param	correlateFrequency		The frequency in nanoseconds at which the clock will sync
+										The target cpu to the correct rate.
+
+										@see ICpuClock::CorrelateFrequency
+										@see ICpuClock::Tick
+
+		@return	unique_ptr				A unique_ptr to the CpuClock interface.
+	*/
+	export std::unique_ptr<ICpuClock> MakeCpuClock(std::chrono::nanoseconds timePeriod, std::chrono::nanoseconds correlateFrequency);
+	//export template <uint8_t crtlW>
+	export std::unique_ptr<ICpuClock> MakeCpuClock(const std::shared_ptr<ControlBus<8>>& controlBus, std::chrono::nanoseconds timePeriod);
 } // namespace MachEmu

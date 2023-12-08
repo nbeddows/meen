@@ -24,17 +24,12 @@ export module ICpuClock;
 
 import <chrono>;
 import <cstdint>;
-import <memory>;
-import SystemBus;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
 	/** ICpuClock
 	
 		Represents the clock of an emulated cpu.
-
 	*/
 	export struct ICpuClock
 	{
@@ -44,7 +39,7 @@ namespace MachEmu
 
 			@return		nanoseconds		The tick duration.
 		*/
-		virtual nanoseconds TimePeriod() const = 0;
+		virtual std::chrono::nanoseconds TimePeriod() const = 0;
 
 		/** CorrelateFrequency
 			
@@ -59,7 +54,7 @@ namespace MachEmu
 
 			@return			nanoseconds		The frequency at which the target cpu will correlate.
 		*/
-		virtual nanoseconds CorrelateFrequency() const = 0;
+		virtual std::chrono::nanoseconds CorrelateFrequency() const = 0;
 		
 		/** Reset
 			
@@ -88,9 +83,9 @@ namespace MachEmu
 											ignored, it is primarily used in the tests
 											to assert the accuracy of the clock.
 		*/
-		virtual nanoseconds Tick(uint16_t ticks) = 0;
+		virtual std::chrono::nanoseconds Tick(uint16_t ticks) = 0;
 		//virtual nanoseconds Tick() const = 0;
-		virtual nanoseconds Tick() = 0;
+		virtual std::chrono::nanoseconds Tick() = 0;
 		
 		/** Time
 		
@@ -98,29 +93,8 @@ namespace MachEmu
 
 			@return		nanoseconds		The current emulated cpu time.
 		*/
-		virtual nanoseconds Time() const = 0;
+		virtual std::chrono::nanoseconds Time() const = 0;
 
 		virtual ~ICpuClock() = default;
 	};
-
-	/* THIS NEEDS TO BE MOVED TO CpuClockFactory.ixx*/
-	
-	/** Factory function to make a cpu clock
-	
-		The CPU clock contols the timing for the target CPU so that all instructions executed
-		execute at the correct rate.
-
-		@param	timePeriod				The duration in nanoseconds of the target cpu tick (cycle).
-		
-		@param	correlateFrequency		The frequency in nanoseconds at which the clock will sync
-										The target cpu to the correct rate.
-
-										@see ICpuClock::CorrelateFrequency
-										@see ICpuClock::Tick
-
-		@return	unique_ptr				A unique_ptr to the CpuClock interface.
-	*/
-	export std::unique_ptr<ICpuClock> MakeCpuClock(nanoseconds timePeriod, nanoseconds correlateFrequency);
-	//export template <uint8_t crtlW>
-	export std::unique_ptr<ICpuClock> MakeCpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod);
 } // namespace MachEmu
