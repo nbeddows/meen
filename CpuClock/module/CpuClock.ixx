@@ -22,13 +22,11 @@ SOFTWARE.
 
 export module CpuClock;
 
+import <cstdint>;
 import <chrono>;
 import <memory>;
-import <thread>;
 import ICpuClock;
 import SystemBus;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
@@ -39,7 +37,7 @@ namespace MachEmu
 	private:
 		//The minimum spin time that must be accumulated before a sleep can occur.
 		//Due to O/S scheduling it really can't be less than this.
-		static constexpr nanoseconds minSpinTimeForSleep_{ 50000000 };
+		static constexpr std::chrono::nanoseconds minSpinTimeForSleep_{ 50000000 };
 
 		//Since sleep only guarantees a minimim sleep time, asking for
 		//what we really want will more than likley mean that we will
@@ -58,48 +56,49 @@ namespace MachEmu
 		//Could use a range here and then use a random
 		//value within the range .... or not ....
 		//just leaving it constant.
-		nanoseconds timePeriod_{};
+		std::chrono::nanoseconds timePeriod_{};
 
 		//The interval at which to correlate this clock with the steady_clock (in nanos).
 		//0 - correlate at every 'Tick' call,
 		//correlating at every tick or close to it will force a spin to maintain
 		//sync, anything above 50ms will allow a sleep for part of the time at the
 		//expense of sync accuracy.
-		nanoseconds correlateFreq_{};
+		std::chrono::nanoseconds correlateFreq_{};
 
 		//When the elapsedTime_ >= correlateFreq_ then perform sleep and/or spin.
-		nanoseconds elapsedTime_{};		
+		std::chrono::nanoseconds elapsedTime_{};		
 
 		//Target and host CPU elapsed nanos.
-		nanoseconds targetNanos_{};
-		nanoseconds hostNanos_{};
+		std::chrono::nanoseconds targetNanos_{};
+		std::chrono::nanoseconds hostNanos_{};
 
 		//Current host CPU time.
-		steady_clock::time_point tp_{};
+		std::chrono::steady_clock::time_point tp_{};
 
 		//The time at which this clock begun.
-		steady_clock::time_point epoch_{};
+		std::chrono::steady_clock::time_point epoch_{};
 	public:
-		CpuClock(nanoseconds timePeriod, nanoseconds correlateFreq);
-		CpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod);
+		CpuClock(std::chrono::nanoseconds timePeriod, std::chrono::nanoseconds correlateFreq);
+		CpuClock(std::shared_ptr<ControlBus<8>> controlBus, std::chrono::nanoseconds timePeriod);
+		~CpuClock() = default;
 
 		//Return the time period of the cpu.
-		nanoseconds TimePeriod() const override final;
+		std::chrono::nanoseconds TimePeriod() const final;
 		//Return the frequency at which to sync the
 		//target cpu with the host.
-		nanoseconds CorrelateFrequency() const override final;
+		std::chrono::nanoseconds CorrelateFrequency() const final;
 
 		//Reset the clock.
-		void Reset() override final;
+		void Reset() final;
 
 		//Returns the host CPU time.
-		nanoseconds Tick(uint16_t ticks) override final;
+		std::chrono::nanoseconds Tick(uint16_t ticks) final;
 		//Returns the time of an actual tick.
 		//Should be close to timePeriod_ as possible
 		//nanoseconds Tick() const;
-		nanoseconds Tick() override final;
+		std::chrono::nanoseconds Tick() final;
 
 		//Returns the target CPU time.
-		nanoseconds Time() const override final;
+		std::chrono::nanoseconds Time() const final;
 	};
 } // namespace MachEmu

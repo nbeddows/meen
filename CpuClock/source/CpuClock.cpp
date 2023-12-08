@@ -22,8 +22,13 @@ SOFTWARE.
 
 module;
 #include <assert.h>
+#include <thread>
 
 module CpuClock;
+
+import <cstdint>;
+import <chrono>;
+import SystemBus;
 
 using namespace std::chrono;
 
