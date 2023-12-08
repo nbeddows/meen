@@ -29,7 +29,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
         DEPENDS ${STD_MODULES_BUILD_TIMESTAMP_FILE}
     )
 
-    set(STD_MODULES_OPTIONS -fmodues-ts -std=c++20 -c -x c++-system-header)
+    set(STD_MODULES_OPTIONS -fmodules-ts -std=c++20 -c -x c++-system-header)
 
     # compile the required std modules
     add_custom_command(
