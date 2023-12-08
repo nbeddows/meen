@@ -17,4 +17,8 @@ add_target(${lib_name}
 	"${${lib_name}_source_files}"
 )
 
+if(CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(${lib_name} PRIVATE -Wno-attributes)
+endif()
+
 add_dependencies(${lib_name} SystemBus)
