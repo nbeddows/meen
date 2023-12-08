@@ -62,7 +62,7 @@ function(add_target name module_files source_files)
             gcm.cache
         )
 
-        add_dependencies(${name} ${name}ModuleSymLink)
+        add_dependencies(${name} ${name}ModuleSymlink)
     endif()
 endfunction()
 
