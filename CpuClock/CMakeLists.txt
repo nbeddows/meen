@@ -1,8 +1,8 @@
 set (lib_name CpuClock)
 
 set (${lib_name}_module_files
-	${module_dir}/${lib_name}.ixx
 	${module_dir}/I${lib_name}.ixx
+	${module_dir}/${lib_name}.ixx
 )
 
 set (${lib_name}_source_files
