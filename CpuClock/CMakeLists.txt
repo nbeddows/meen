@@ -1,21 +1,19 @@
 set (lib_name CpuClock)
 
-set (cpuclock_module_files
+set (${lib_name}_module_files
 	${module_dir}/${lib_name}.ixx
 	${module_dir}/I${lib_name}.ixx
 )
 
-set (cpuclock_source_files
+set (${lib_name}_source_files
 	${source_dir}/${lib_name}.cpp
 	${source_dir}/${lib_name}Factory.cpp
 )
 
-SOURCE_GROUP("Module Files" FILES ${cpuclock_module_files})
-SOURCE_GROUP("Source Files" FILES ${cpuclock_source_files})
 
-add_library(${lib_name}
-	${cpuclock_module_files}
-	${cpuclock_source_files}
+add_target(${lib_name}
+	"${${lib_name}_module_files}"
+	"${${lib_name}_source_files}"
 )
 
 add_dependencies(${lib_name} SystemBus)

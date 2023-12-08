@@ -23,6 +23,7 @@ SOFTWARE.
 export module CpuClock;
 
 import <chrono>;
+import <memory>;
 import <thread>;
 import ICpuClock;
 import SystemBus;

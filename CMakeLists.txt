@@ -42,11 +42,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     )
 endif()
 
-function(addTarget name module_files)
+function(add_target name module_files source_files)
     SOURCE_GROUP("Module Files" FILES ${module_files})
+    SOURCE_GROUP("Source Files" FILES ${source_files})
 
     add_library(${name}
         ${module_files}
+        ${source_files}
     )
 
     if(CMAKE_COMPILER_IS_GNUCXX)
@@ -66,10 +68,10 @@ endfunction()
 
 set(module_dir module)
 set(source_dir source)
-#add_subdirectory(Base)
-#add_subdirectory(Controller)
+add_subdirectory(Base)
+add_subdirectory(Controller)
 #add_subdirectory(Cpu)
-#add_subdirectory(CpuClock)
+add_subdirectory(CpuClock)
 #add_subdirectory(Machine)
 add_subdirectory(SystemBus)
 #add_subdirectory(Tests)

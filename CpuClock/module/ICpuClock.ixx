@@ -1,6 +1,3 @@
-export module ICpuClock;
-
-import <chrono>;
 /*
 Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
 
@@ -23,7 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import <cstdlib>;
+export module ICpuClock;
+
+import <chrono>;
+import <cstdint>;
+import <memory>;
 import SystemBus;
 
 using namespace std::chrono;
