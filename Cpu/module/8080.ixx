@@ -22,29 +22,28 @@ SOFTWARE.
 
 export module _8080;
 
-import <array>;
 import <bitset>;
+import <cstdint>;
 import <memory>;
 import <functional>;
 import <string_view>;
 
 import Base;
-import I8080;
+import ICpu;
 import SystemBus;
 
 //#define ENABLE_OPCODE_TABLE
 
 namespace MachEmu
 {
-	constexpr bool dbg = false;
-
-	export class Intel8080 final : public I8080 //replace with public ICpu
+	export class Intel8080 final : public ICpu
 	{
 	private:
 		using Register = std::bitset<8>;
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
 		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		static constexpr bool dbg = false;
 
 		enum /*class*/Condition
 		{

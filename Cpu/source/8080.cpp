@@ -27,6 +27,14 @@ module;
 
 module _8080;
 
+import <bitset>;
+import <cstdint>;
+import <memory>;
+import <functional>;
+import <string_view>;
+import Base;
+import SystemBus;
+
 using namespace std::chrono;
 
 namespace MachEmu

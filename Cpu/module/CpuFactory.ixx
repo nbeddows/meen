@@ -20,16 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
+export module CpuFactory;
 
+import <cstdint>;
+import <functional>;
 import <memory>;
 import ICpu;
-import _8080;
+import SystemBus;
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
-	{
-		return std::make_unique<Intel8080>(systemBus, process);
-	}
+	export std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
 } // namespace MachEmu

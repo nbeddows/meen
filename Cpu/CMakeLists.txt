@@ -1,21 +1,23 @@
 set (lib_name Cpu)
 
-set (cpu_module_files
-	${module_dir}/8080.ixx
+set (${lib_name}_module_files
 	${module_dir}/I${lib_name}.ixx
+	${module_dir}/8080.ixx
+	${module_dir}/${lib_name}Factory.ixx
 )
 
-set (cpu_source_files
+set (${lib_name}_source_files
 	${source_dir}/8080.cpp
 	${source_dir}/${lib_name}Factory.cpp
 )
 
-SOURCE_GROUP("Module Files" FILES ${cpu_module_files})
-SOURCE_GROUP("Source Files" FILES ${cpu_source_files})
-
-add_library(${lib_name}
-	${cpu_module_files}
-	${cpu_source_files}
+add_target(${lib_name}
+	"${${lib_name}_module_files}"
+	"${${lib_name}_source_files}"
 )
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(${lin_name} PRIVATE -Wno-attributes)
+endif()
 
 add_dependencies(${lib_name} Base CpuClock SystemBus)
