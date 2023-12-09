@@ -17,7 +17,7 @@ add_target(${lib_name}
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lin_name} PRIVATE -Wno-attributes)
+	target_compile_options(${lib_name} PRIVATE -Wno-attributes)
 endif()
 
 add_dependencies(${lib_name} Base CpuClock SystemBus)
