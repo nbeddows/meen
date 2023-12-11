@@ -55,8 +55,8 @@ namespace MachEmu
 		};
 
 		/**
-			The 8080 provides the programmer with an 8-bit accumulator and six additional 8-bit "scratchpad" registers.
-			These seven working registers are numbered and referenced via the integers 0, 1,2,3,4,5, and 7; by convention,
+			The 8080 provides the programmer with an 8-bit accumulator and six additional 8-bit "scratchpad" registers.
+			These seven working registers are numbered and referenced via the integers 0, 1,2,3,4,5, and 7; by convention,
 			these registers may also be accessed via the letters B, C, D,
 			E, H, L, and A (for the accumulator), respectively.
 		*/
@@ -193,8 +193,8 @@ namespace MachEmu
 
 	public:
 		/* I8080 overrides */
-		uint8_t Execute() override final;
-		void Reset(uint16_t programCounter) override final;
+		uint8_t Execute() final;
+		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */
 
 		Intel8080() = default;

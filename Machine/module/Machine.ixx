@@ -22,7 +22,9 @@ SOFTWARE.
 
 export module Machine;
 
-import I8080;
+import <cstdint>;
+import <memory>;
+import ICpu;
 import IController;
 import ICpuClock;
 import IMachine;
@@ -37,7 +39,7 @@ namespace MachEmu
 	{
 	private:
 		std::unique_ptr<ICpuClock> clock_;
-		std::unique_ptr<I8080> cpu_;
+		std::unique_ptr<ICpu> cpu_;
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
@@ -50,18 +52,18 @@ namespace MachEmu
 		
 			@see IMachine::Run
 		*/
-		void Run(uint16_t pc) override final;
+		void Run(uint16_t pc) final;
 
 		/** SetMemoryController
 
 			@see IMachine::SetMemoryController
 		*/
-		void SetMemoryController(const std::shared_ptr<IController>& controller) override final;
+		void SetMemoryController(const std::shared_ptr<IController>& controller) final;
 
 		/** SetIoController
 
 			@see IMachine::SetIoController
 		*/
-		void SetIoController(const std::shared_ptr<IController>& controller) override final;
+		void SetIoController(const std::shared_ptr<IController>& controller) final;
 	};
 } // namespace MachEmu
