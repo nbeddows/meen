@@ -10,7 +10,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     # Enable module compilation, don't rely on file ext
     # for compilation since we are .ixx ext which is not
     # recognised (using for msvc compatibility)
-    set(CMAKE_CXX_FLAGS "-c -x c++ -fmodules-ts")
+    set(CMAKE_CXX_FLAGS "-x c++ -fmodules-ts")
     # our required std modules
     set(STD_MODULES
         array
@@ -44,14 +44,21 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     )
 endif()
 
-function(add_target name module_files source_files)
+function(add_target name type module_files source_files)
     SOURCE_GROUP("Module Files" FILES ${module_files})
     SOURCE_GROUP("Source Files" FILES ${source_files})
 
-    add_library(${name}
-        ${module_files}
-        ${source_files}
+    if(${type} EQUAL EXE)
+        add_executable(${name}
+            ${module_files}
+            ${source_files}
     )
+    else()
+        add_library(${name} ${type}
+            ${module_files}
+            ${source_files}
+        )
+    endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
         # Workaround for not being able to set the search path
@@ -74,6 +81,6 @@ add_subdirectory(Base)
 add_subdirectory(Controller)
 add_subdirectory(Cpu)
 add_subdirectory(CpuClock)
-#add_subdirectory(Machine)
+add_subdirectory(Machine)
 add_subdirectory(SystemBus)
 #add_subdirectory(Tests)

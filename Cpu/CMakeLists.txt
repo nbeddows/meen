@@ -12,6 +12,7 @@ set (${lib_name}_source_files
 )
 
 add_target(${lib_name}
+	STATIC
 	"${${lib_name}_module_files}"
 	"${${lib_name}_source_files}"
 )
