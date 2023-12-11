@@ -19,7 +19,7 @@ else()
 	set(type SHARED)
 endif()
 
-add_target(${lib_name} SHARED
+add_target(${lib_name} ${type}
 	"${${lib_name}_module_files}"
 	"${${lib_name}_machine_source_files}"
 )
