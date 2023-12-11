@@ -22,13 +22,17 @@ SOFTWARE.
 
 module CpuFactory;
 
+import <cstdint>;
+import <functional>;
 import <memory>;
-import ICpu;
+
 import _8080;
+import ICpu;
+import SystemBus;
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
+	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process)
 	{
 		return std::make_unique<Intel8080>(systemBus, process);
 	}

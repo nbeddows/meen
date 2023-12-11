@@ -23,6 +23,15 @@ SOFTWARE.
 module Machine;
 
 import <chrono>;
+import <functional>;
+
+import Base;
+import IContoller;
+import ICpuClock;
+import ICpu;
+import ClockFactory;
+import CpuFactory;
+import SystemBus;
 
 using namespace std::chrono;
 
@@ -31,40 +40,41 @@ namespace MachEmu
 	Machine::Machine()
 	{
 		clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
+		cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
+	}
 
-		cpu_ = Make8080(systemBus_, [this](const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+	{
+		auto controlBus = systemBus.controlBus;
+		auto addressBus = systemBus.addressBus;
+		auto dataBus = systemBus.dataBus;
+
+		if (memoryController_ != nullptr)
 		{
-			auto controlBus = systemBus.controlBus;
-			auto addressBus = systemBus.addressBus;
-			auto dataBus = systemBus.dataBus;
-
-			if (memoryController_ != nullptr)
+			//check the control bus to see if there are any operations pending
+			if (controlBus->Receive(Signal::MemoryRead))
 			{
-				//check the control bus to see if there are any operations pending
-				if (controlBus->Receive(Signal::MemoryRead))
-				{
-					dataBus->Send(memoryController_->Read(addressBus->Receive()));
-				}
-
-				if (controlBus->Receive(Signal::MemoryWrite))
-				{
-					memoryController_->Write(addressBus->Receive(), dataBus->Receive());
-				}
+				dataBus->Send(memoryController_->Read(addressBus->Receive()));
 			}
 
-			if (ioController_ != nullptr)
+			if (controlBus->Receive(Signal::MemoryWrite))
 			{
-				if (controlBus->Receive(Signal::IoRead))
-				{
-					dataBus->Send(ioController_->Read(addressBus->Receive()));
-				}
-
-				if (controlBus->Receive(Signal::IoWrite))
-				{
-					ioController_->Write(addressBus->Receive(), dataBus->Receive());
-				}
+				memoryController_->Write(addressBus->Receive(), dataBus->Receive());
 			}
-		});
+		}
+
+		if (ioController_ != nullptr)
+		{
+			if (controlBus->Receive(Signal::IoRead))
+			{
+				dataBus->Send(ioController_->Read(addressBus->Receive()));
+			}
+
+			if (controlBus->Receive(Signal::IoWrite))
+			{
+				ioController_->Write(addressBus->Receive(), dataBus->Receive());
+			}
+		}
 	}
 
 	void Machine::Run(uint16_t pc)
