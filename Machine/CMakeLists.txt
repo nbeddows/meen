@@ -1,23 +1,32 @@
 set (lib_name MachEmu)
 
-set (machine_module_files
+set (${lib_name}_module_files
 	${module_dir}/IMachine.ixx
 	${module_dir}/Machine.ixx
 	${module_dir}/MachineFactory.ixx
 )
 
-set (machine_source_files
+set (${lib_name}_source_files
 	${source_dir}/Machine.cpp
 	${source_dir}/MachineFactory.cpp
 )
 
-SOURCE_GROUP("Module Files" FILES ${machine_module_files})
-SOURCE_GROUP("Source Files" FILES ${machine_source_files})
+# Shared compilation with g++ yields 'error: stray '\37' in program
+# set to static until it can be resolved.
+if(CMAKE_COMPILER_IS_GNUCXX)
+	set(type STATIC)
+else()
+	set(type SHARED)
+endif()
 
-add_library(${lib_name} SHARED
-	${machine_module_files}
-	${machine_source_files}
+add_target(${lib_name} SHARED
+	"${${lib_name}_module_files}"
+	"${${lib_name}_machine_source_files}"
 )
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
+endif()
 
 add_dependencies(${lib_name} Base Controller Cpu CpuClock SystemBus)
 
