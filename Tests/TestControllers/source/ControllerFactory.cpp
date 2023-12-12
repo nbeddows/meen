@@ -27,7 +27,7 @@ import MemoryController;
 import CpmIoController;
 import TestIoController;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
 	std::unique_ptr<IController> MakeTestIoController()
 	{
@@ -39,8 +39,8 @@ namespace MachEmu::Tests
 		return std::make_unique<CpmIoController>(memoryController);
 	}
 
-	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize)
+	std::unique_ptr<IController> MakeMemoryController(uint8_t addressBusSize)
 	{
 		return std::make_unique<MemoryController>(addressBusSize);
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu

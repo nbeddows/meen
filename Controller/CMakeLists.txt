@@ -2,7 +2,6 @@ set (lib_name Controller)
 
 set (${lib_name}_module_files
 	${module_dir}/I${lib_name}.ixx
-	${module_dir}/IMemory${lib_name}.ixx
 )
 
 add_target(${lib_name} STATIC "${${lib_name}_module_files}" "")

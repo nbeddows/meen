@@ -23,19 +23,19 @@ SOFTWARE.
 #include <gtest/gtest.h>
 
 import ControllerFactory;
-import IMemoryController;
+import IController;
 
 namespace MachEmu::Tests
 {
 	class ControllerTest : public testing::Test
 	{
 	protected:
-		static std::unique_ptr<IMemoryController> memoryController_;
+		static std::unique_ptr<IController> memoryController_;
 	public:
 		static void SetUpTestCase();
 	};
 
-	std::unique_ptr<IMemoryController> ControllerTest::memoryController_;
+	std::unique_ptr<IController> ControllerTest::memoryController_;
 
 	void ControllerTest::SetUpTestCase()
 	{
