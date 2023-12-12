@@ -26,7 +26,7 @@ import <chrono>;
 import Base;
 import BaseIoController;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
     /** TestIoController
 
@@ -104,4 +104,4 @@ namespace MachEmu::Tests
 		*/
 		ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) final;
 	};
-} // namespace MachEmu::Tests
+} // namespace MachEmu

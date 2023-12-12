@@ -26,7 +26,7 @@ import <chrono>;
 
 using namespace std::chrono;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {	
     uint8_t TestIoController::Read(uint16_t deviceNumber)
 	{
@@ -97,4 +97,4 @@ namespace MachEmu::Tests
 
 		return isr;
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu

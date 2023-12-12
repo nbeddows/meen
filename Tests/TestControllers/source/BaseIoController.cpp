@@ -25,7 +25,7 @@ module BaseIoController;
 import <chrono>;
 import Base;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
     void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
 	{
@@ -44,4 +44,4 @@ namespace MachEmu::Tests
 		
 		return isr;
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu
