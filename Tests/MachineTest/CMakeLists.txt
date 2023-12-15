@@ -1,27 +1,24 @@
 set(exe_name MachineTest)
 
-set(test_module_files
-  ../../Machine/${module_dir}/IMachine.ixx
-  ../../Machine/${module_dir}/MachineFactory.ixx
+set(${exe_name}_module_files
+  ${CMAKE_SOURCE_DIR}/Machine/${module_dir}/IMachine.ixx
+  ${CMAKE_SOURCE_DIR}/Machine/${module_dir}/MachineFactory.ixx
 )
 
-set(test_source_files
+set(${exe_name}_source_files
   ${source_dir}/MachineTest.cpp
 )
 
-SOURCE_GROUP("Module Files" FILES ${test_module_files})
-SOURCE_GROUP("Source Files" FILES ${test_source_files})
-
-add_executable(${exe_name}
-  ${test_module_files}
-  ${test_source_files}
+add_target(${exe_name} EXE
+  "${${exe_name}_module_files}"
+  "${${exe_name}_source_files}"
 )
 
 add_dependencies(${exe_name} TestControllers)
 
 target_link_libraries(${exe_name} PRIVATE
-  gtest
-  gtest_main
+  GTest::gtest
+  GTest::gtest_main
   MachEmu
   TestControllers
 )
