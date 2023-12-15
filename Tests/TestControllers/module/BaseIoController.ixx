@@ -22,12 +22,11 @@ SOFTWARE.
 
 export module BaseIoController;
 
-import <chrono>;
 import <cstdint>;
 import Base;
 import IController;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
     export class BaseIoController : public IController
 	{
@@ -48,6 +47,6 @@ namespace MachEmu::Tests
             ~BaseIoController() = default;
 
 			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
-			ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) override;
+			ISR ServiceInterrupts(uint64_t cycles) override;
 	};
-} // namespace MachEmu::Tests
+} // namespace MachEmu

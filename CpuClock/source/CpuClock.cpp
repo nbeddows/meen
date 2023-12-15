@@ -22,8 +22,13 @@ SOFTWARE.
 
 module;
 #include <assert.h>
+#include <thread>
 
 module CpuClock;
+
+import <cstdint>;
+import <chrono>;
+import SystemBus;
 
 using namespace std::chrono;
 
@@ -137,6 +142,7 @@ namespace MachEmu
 	}
 	#endif
 
+	#if 0
 	nanoseconds CpuClock::Tick(uint16_t ticks)
 	{
 		auto throttleTime = nanoseconds::zero();
@@ -221,6 +227,7 @@ namespace MachEmu
 		tp_ = now;
 		return hostNanos_ + throttleTime;
 	}
+	#endif
 
 	nanoseconds CpuClock::Time() const
 	{

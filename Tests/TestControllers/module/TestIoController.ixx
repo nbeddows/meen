@@ -22,11 +22,11 @@ SOFTWARE.
 
 export module TestIoController;
 
-import <chrono>;
+import <cstdint>;
 import Base;
 import BaseIoController;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
     /** TestIoController
 
@@ -46,7 +46,7 @@ namespace MachEmu::Tests
 			Track the cpu time so we can trigger interrupts
 			at one second intervals.
 		*/
-		std::chrono::nanoseconds lastTime_;
+		uint64_t lastTime_;
 
 		/** deviceData_
 
@@ -102,6 +102,6 @@ namespace MachEmu::Tests
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t cycles) final;
 	};
-} // namespace MachEmu::Tests
+} // namespace MachEmu

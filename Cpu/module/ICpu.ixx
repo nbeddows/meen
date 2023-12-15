@@ -20,18 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module I8080;
+export module ICpu;
 
 import <cstdint>;
-import <functional>;
-import <memory>;
-import <string_view>;
-import <vector>;
-import SystemBus;
 
 namespace MachEmu
 {
-	export struct I8080
+	export struct ICpu
 	{
 		//Executes the next instruction
 		virtual uint8_t Execute() = 0;
@@ -40,8 +35,6 @@ namespace MachEmu
 
 		//virtual void Save() const = 0;
 
-		virtual ~I8080() = default;
+		virtual ~ICpu() = default;
 	};
-
-	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
 } // namespace MachEmu

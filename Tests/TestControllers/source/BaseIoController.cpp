@@ -22,17 +22,16 @@ SOFTWARE.
 
 module BaseIoController;
 
-import <chrono>;
 import Base;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
     void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
 	{
 		powerOff_ = port == 0xFF;
 	}
 
-	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] std::chrono::nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
+	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
 	{
 		auto isr = ISR::NoInterrupt;
 
@@ -44,4 +43,4 @@ namespace MachEmu::Tests
 		
 		return isr;
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu

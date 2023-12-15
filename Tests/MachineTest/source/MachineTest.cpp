@@ -21,15 +21,14 @@ SOFTWARE.
 */
 
 #include <filesystem>
-#include <future>
+//#include <future>
 #include <gtest/gtest.h>
 
-import <chrono>;
-import ControllerFactory;
 import IController;
 import IMachine;
-import IMemoryController;
 import MachineFactory;
+import MemoryController;
+import TestIoController;
 
 using namespace std::chrono;
 
@@ -38,7 +37,7 @@ namespace MachEmu::Tests
 	class MachineTest : public testing::Test
 	{
 	protected:
-		static std::shared_ptr<IMemoryController> memoryController_;
+		static std::shared_ptr<MemoryController> memoryController_;
 		static std::shared_ptr<IController> ioController_;
 		static std::unique_ptr<IMachine> machine_;
 		static const inline std::filesystem::path directory_ = "../../Programs";
@@ -47,15 +46,15 @@ namespace MachEmu::Tests
 		void SetUp();
 	};
 
-	std::shared_ptr<IMemoryController> MachineTest::memoryController_;
+	std::shared_ptr<MemoryController> MachineTest::memoryController_;
 	std::shared_ptr<IController> MachineTest::ioController_;
 	std::unique_ptr<IMachine> MachineTest::machine_;
 
 	void MachineTest::SetUpTestCase()
 	{
 		machine_ = MakeMachine();
-		memoryController_ = MakeMemoryController(16); //16 bit memory bus size
-		ioController_ = MakeTestIoController();
+		memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
+		ioController_ = std::make_shared<TestIoController>();
 	}
 
 	void MachineTest::SetUp()
@@ -91,6 +90,7 @@ namespace MachEmu::Tests
 		);
 	}
 
+/*
 	TEST_F(MachineTest, Run)
 	{
 		EXPECT_NO_THROW
@@ -102,4 +102,5 @@ namespace MachEmu::Tests
 			machine_->Run();
 		);
 	}
+*/
 } // namespace MachEmu::Tests

@@ -22,11 +22,7 @@ SOFTWARE.
 
 module TestIoController;
 
-import <chrono>;
-
-using namespace std::chrono;
-
-namespace MachEmu::Tests
+namespace MachEmu
 {	
     uint8_t TestIoController::Read(uint16_t deviceNumber)
 	{
@@ -68,20 +64,22 @@ namespace MachEmu::Tests
 		}
 	}
 
-	ISR TestIoController::ServiceInterrupts(nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
+	ISR TestIoController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
 	{
-		auto isr = BaseIoController::ServiceInterrupts(currTime, cycles);
+		auto isr = BaseIoController::ServiceInterrupts(cycles);
 
+		// This block needs to be fixed, this will break the unit tests
 		if (isr == ISR::NoInterrupt)
 		{
 			//Fire interrupt rst 1 every second, the cpu will only acknowledge
 			//the interrupt if the test programs have interrupts enabled,
 			//otherwise it will be ignored.
+			auto currTime = cycles;// * 2000 -- this is very much wrong and needs to be fixed
 			auto t = currTime - lastTime_;
 
-			if (t >= nanoseconds::zero())
+			if (t >= 0)
 			{
-				if (t > nanoseconds(1000000000))
+				if (t > 2000000)
 				{
 					lastTime_ = currTime;
 					isr = ISR::One;
@@ -97,4 +95,4 @@ namespace MachEmu::Tests
 
 		return isr;
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu

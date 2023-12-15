@@ -1,20 +1,16 @@
 set(exe_name ControllerTest)
 
-set(test_source_files
+set(${exe_name}_source_files
   ${source_dir}/ControllerTest.cpp
 )
 
-SOURCE_GROUP("Source Files" FILES ${test_source_files})
-
-add_executable(${exe_name}
-  ${test_source_files}
-)
+add_target(${exe_name} EXE "" "${${exe_name}_source_files}")
 
 add_dependencies(${exe_name} TestControllers)
 
 target_link_libraries(${exe_name} PRIVATE
-  gtest
-  gtest_main
+  GTest::gtest
+  GTest::gtest_main
   TestControllers
 )
 
@@ -24,4 +20,4 @@ add_custom_command(
   ${CMAKE_SOURCE_DIR}/Tests/Programs
   ${CMAKE_BINARY_DIR}/Programs)
 
-set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Bin)
+#set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Bin)

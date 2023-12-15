@@ -23,13 +23,20 @@ SOFTWARE.
 export module MachineFactory;
 
 import <memory>;
-import IController;
 import IMachine;
 
+#ifdef _WINDOWS
 #ifdef MachEmu_EXPORTS
 #define DLL_EXP_IMP __declspec(dllexport)
 #else
 #define DLL_EXP_IMP __declspec(dllimport)
+#endif
+#else
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP [[gnu::visibility("default")]]
+#else
+#define DLL_EXP_IMP
+#endif
 #endif
 
 namespace MachEmu

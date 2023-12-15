@@ -22,11 +22,12 @@ SOFTWARE.
 
 export module CpmIoController;
 
-import <chrono>;
+import <memory>;
+import <string>;
 import Base;
 import BaseIoController;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
 
 	/** CpmIoController
@@ -141,6 +142,6 @@ namespace MachEmu::Tests
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(std::chrono::nanoseconds currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t cycles) final;
 	};
-} // namespace MachEmu::Tests
+} // namespace MachEmu

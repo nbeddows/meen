@@ -22,12 +22,16 @@ SOFTWARE.
 
 module;
 #include <assert.h>
-#include <chrono>
-#include <coroutine>
 
 module _8080;
 
-using namespace std::chrono;
+import <bitset>;
+import <cstdint>;
+import <memory>;
+import <functional>;
+import <string_view>;
+import Base;
+import SystemBus;
 
 namespace MachEmu
 {
@@ -634,9 +638,7 @@ void Intel8080::ReadFromAddress(Signal readLocation, uint16_t addr)
 {
 	controlBus_->Send(readLocation);			
 	addressBus_->Send (addr);
-#ifndef ENABLE_CO_ROUTINE
 	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-#endif
 }
 
 void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t value)
@@ -644,9 +646,7 @@ void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t valu
 	controlBus_->Send(writeLocation);
 	addressBus_->Send(addr);
 	dataBus_->Send(value);
-#ifndef ENABLE_CO_ROUTINE
 	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-#endif
 }
 
 /**

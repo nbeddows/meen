@@ -23,6 +23,7 @@ SOFTWARE.
 module MachineFactory;
 
 import <memory>;
+import IMachine;
 import Machine;
 
 namespace MachEmu

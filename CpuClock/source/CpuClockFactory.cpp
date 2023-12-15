@@ -20,9 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module ICpuClock;
+module CpuClockFactory;
 
+import <chrono>;
+import <memory>;
+import ICpuClock;
 import CpuClock;
+import SystemBus;
 
 using namespace std::chrono;
 
@@ -34,7 +38,7 @@ namespace MachEmu
 		return std::make_unique<CpuClock>(timePeriod, correlateFreq);
 	}
 
-	std::unique_ptr<ICpuClock> MakeCpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod)
+	std::unique_ptr<ICpuClock> MakeCpuClock(const std::shared_ptr<ControlBus<8>>& controlBus, nanoseconds timePeriod)
 	{
 		return std::make_unique<CpuClock>(controlBus, timePeriod);
 	}

@@ -20,15 +20,31 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module ControllerFactory;
+export module CpuClockFactory;
 
+import <chrono>;
 import <memory>;
-import IController;
-import IMemoryController;
+import ICpuClock;
+import SystemBus;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
-	export std::unique_ptr<IController> MakeCpmIoController();
-	export std::unique_ptr<IController> MakeTestIoController();
-	export std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize);
-} // namespace MachEmu::Tests
+	/** Factory function to make a cpu clock
+	
+		The CPU clock contols the timing for the target CPU so that all instructions executed
+		execute at the correct rate.
+
+		@param	timePeriod				The duration in nanoseconds of the target cpu tick (cycle).
+		
+		@param	correlateFrequency		The frequency in nanoseconds at which the clock will sync
+										The target cpu to the correct rate.
+
+										@see ICpuClock::CorrelateFrequency
+										@see ICpuClock::Tick
+
+		@return	unique_ptr				A unique_ptr to the CpuClock interface.
+	*/
+	export std::unique_ptr<ICpuClock> MakeCpuClock(std::chrono::nanoseconds timePeriod, std::chrono::nanoseconds correlateFrequency);
+	//export template <uint8_t crtlW>
+	export std::unique_ptr<ICpuClock> MakeCpuClock(const std::shared_ptr<ControlBus<8>>& controlBus, std::chrono::nanoseconds timePeriod);
+} // namespace MachEmu

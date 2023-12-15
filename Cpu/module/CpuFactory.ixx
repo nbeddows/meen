@@ -20,27 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module ControllerFactory;
+export module CpuFactory;
 
+import <cstdint>;
+import <functional>;
 import <memory>;
-import MemoryController;
-import CpmIoController;
-import TestIoController;
+import ICpu;
+import SystemBus;
 
-namespace MachEmu::Tests
+namespace MachEmu
 {
-	std::unique_ptr<IController> MakeTestIoController()
-	{
-		return std::make_unique<TestIoController>();
-	}
-
-	std::unique_ptr<IController> MakeCpmIoController(const std::shared_ptr<IController>& memoryController)
-	{
-		return std::make_unique<CpmIoController>(memoryController);
-	}
-
-	std::unique_ptr<IMemoryController> MakeMemoryController(uint8_t addressBusSize)
-	{
-		return std::make_unique<MemoryController>(addressBusSize);
-	}
-} // namespace MachEmu::Tests
+	export std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process);
+} // namespace MachEmu

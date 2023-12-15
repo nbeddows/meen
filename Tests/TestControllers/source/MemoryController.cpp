@@ -21,29 +21,23 @@ SOFTWARE.
 */
 
 module;
-#include <cmath>
 #include <fstream>
 
 module MemoryController;
 
-import <chrono>;
-
-using namespace std::chrono;
-
-namespace MachEmu::Tests
+namespace MachEmu
 {
 	MemoryController::MemoryController(uint8_t addrSize)
 	{
-		memorySize_ = static_cast<size_t>(std::pow(2, addrSize));
-		memory_ = std::make_unique<uint8_t[]>(memorySize_);
+		memory_.resize(1 << addrSize);
 	}
 
 	size_t MemoryController::Size() const
 	{
-		return memorySize_;
+		return memory_.size();
 	}
 
-	void MemoryController::Load(std::filesystem::path romFile, uint16_t offset)
+	void MemoryController::Load(const char* romFile, uint16_t offset)
 	{
 		std::ifstream fin(romFile, std::ios::binary | std::ios::ate);
 
@@ -52,21 +46,21 @@ namespace MachEmu::Tests
 			throw std::runtime_error("The program file failed to open");
 		}
 
-		if (static_cast<size_t>(fin.tellg()) > memorySize_)
+		if (static_cast<size_t>(fin.tellg()) > memory_.size())
 		{
 			throw std::length_error("The length of the program is too big");
 		}
 
 		uint16_t size = static_cast<uint16_t>(fin.tellg());
 
-		if (size > memorySize_ - offset)
+		if (size > memory_.size() - offset)
 		{
 			throw std::length_error("The length of the program is too big to fit at the specified offset");
 		}
 
 		fin.seekg(0, std::ios::beg);
 
-		if (!(fin.read(reinterpret_cast<char*>(&memory_[offset]), size)))
+		if (!(fin.read(reinterpret_cast<char*>(memory_.data() + offset), size)))
 		{
 			throw std::invalid_argument("The program specified failed to load");
 		}
@@ -82,9 +76,9 @@ namespace MachEmu::Tests
 		memory_[addr] = data;
 	}
 
-	ISR MemoryController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
+	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
 	{
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;
 	}
-} // namespace MachEmu::Tests
+} // namespace MachEmu
