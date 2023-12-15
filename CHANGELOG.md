@@ -1,3 +1,7 @@
+1.3.0
+* Add CMake support.
+* Move Space Invaders to it's own repository.
+
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
 
