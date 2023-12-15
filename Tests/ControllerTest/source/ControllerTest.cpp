@@ -22,25 +22,24 @@ SOFTWARE.
 
 #include <gtest/gtest.h>
 
-import ControllerFactory;
-import IController;
+import MemoryController;
 
 namespace MachEmu::Tests
 {
 	class ControllerTest : public testing::Test
 	{
 	protected:
-		static std::unique_ptr<IController> memoryController_;
+		static std::unique_ptr<MemoryController> memoryController_;
 	public:
 		static void SetUpTestCase();
 	};
 
-	std::unique_ptr<IController> ControllerTest::memoryController_;
+	std::unique_ptr<MemoryController> ControllerTest::memoryController_;
 
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = MakeMemoryController(16);
+		memoryController_ = std::make_unique<MemoryController>(16);
 	}
 
 	TEST_F(ControllerTest, Load)
