@@ -11,17 +11,9 @@ set (${lib_name}_source_files
 	${source_dir}/MachineFactory.cpp
 )
 
-# Shared compilation with g++ yields 'error: stray '\37' in program
-# set to static until it can be resolved.
-if(CMAKE_COMPILER_IS_GNUCXX)
-	set(type STATIC)
-else()
-	set(type SHARED)
-endif()
-
-add_target(${lib_name} ${type}
+add_target(${lib_name} SHARED
 	"${${lib_name}_module_files}"
-	"${${lib_name}_machine_source_files}"
+	"${${lib_name}_source_files}"
 )
 
 if(CMAKE_COMPILER_IS_GNUCXX)
