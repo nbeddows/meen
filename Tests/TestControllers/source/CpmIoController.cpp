@@ -22,10 +22,6 @@ SOFTWARE.
 
 module CpmIoController;
 
-import <chrono>;
-
-using namespace std::chrono;
-
 namespace MachEmu
 {
     CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController)
@@ -98,8 +94,8 @@ namespace MachEmu
 	}
 
 	//No interrupts
-	ISR CpmIoController::ServiceInterrupts(nanoseconds currTime, uint64_t cycles)
+	ISR CpmIoController::ServiceInterrupts(uint64_t cycles)
 	{
-		return BaseIoController::ServiceInterrupts(currTime, cycles);
+		return BaseIoController::ServiceInterrupts(cycles);
 	}
 } // namespace MachEmu

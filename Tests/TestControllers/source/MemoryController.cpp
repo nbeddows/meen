@@ -21,20 +21,15 @@ SOFTWARE.
 */
 
 module;
-#include <cmath>
 #include <fstream>
 
 module MemoryController;
-
-import <chrono>;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
 	MemoryController::MemoryController(uint8_t addrSize)
 	{
-		memory_.resize(std::pow(2, addrSize));
+		memory_.resize(1 << addrSize);
 	}
 
 	size_t MemoryController::Size() const
@@ -42,7 +37,7 @@ namespace MachEmu
 		return memory_.size();
 	}
 
-	void MemoryController::Load(std::filesystem::path romFile, uint16_t offset)
+	void MemoryController::Load(const char* romFile, uint16_t offset)
 	{
 		std::ifstream fin(romFile, std::ios::binary | std::ios::ate);
 
@@ -81,7 +76,7 @@ namespace MachEmu
 		memory_[addr] = data;
 	}
 
-	ISR MemoryController::ServiceInterrupts([[maybe_unused]] nanoseconds currTime, [[maybe_unused]] uint64_t cycles)
+	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
 	{
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;

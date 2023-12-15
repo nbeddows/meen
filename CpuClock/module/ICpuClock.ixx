@@ -83,7 +83,7 @@ namespace MachEmu
 											ignored, it is primarily used in the tests
 											to assert the accuracy of the clock.
 		*/
-		virtual std::chrono::nanoseconds Tick(uint16_t ticks) = 0;
+		//virtual std::chrono::nanoseconds Tick(uint16_t ticks) = 0;
 		//virtual nanoseconds Tick() const = 0;
 		virtual std::chrono::nanoseconds Tick() = 0;
 		

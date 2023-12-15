@@ -26,10 +26,10 @@ import <chrono>;
 import <functional>;
 
 import Base;
-import IContoller;
+import IController;
 import ICpuClock;
 import ICpu;
-import ClockFactory;
+import CpuClockFactory;
 import CpuFactory;
 import SystemBus;
 
@@ -117,7 +117,7 @@ namespace MachEmu
 						*/
 
 						//auto isr = ioController_->ServiceInterrupts(nanoseconds(tick));
-						auto isr = ioController_->ServiceInterrupts(currTime, totalCycles);
+						auto isr = ioController_->ServiceInterrupts(/*currTime,*/ totalCycles);
 
 						if (isr != ISR::NoInterrupt)
 						{

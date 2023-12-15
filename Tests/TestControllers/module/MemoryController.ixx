@@ -22,14 +22,11 @@ SOFTWARE.
 
 export module MemoryController;
 
-import <chrono>;
-import <filesystem>;
+import <cstdint>;
 import <vector>;
 
 import Base;
 import IController;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
@@ -41,12 +38,12 @@ namespace MachEmu
 		explicit MemoryController(uint8_t addressBusSize);
 		~MemoryController() = default;
 
-		void Load(std::filesystem::path romFile, uint16_t offset);
+		void Load(const char* romFilePath, uint16_t offset);
 		size_t Size() const;
 
 		//IController virtual overrides
 		uint8_t Read(uint16_t address) final;
 		void Write(uint16_t address, uint8_t value) final;
-		ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t cycles) final;
 	};
 } // namespace MachEmu

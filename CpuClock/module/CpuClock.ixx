@@ -37,7 +37,7 @@ namespace MachEmu
 	private:
 		//The minimum spin time that must be accumulated before a sleep can occur.
 		//Due to O/S scheduling it really can't be less than this.
-		static constexpr std::chrono::nanoseconds minSpinTimeForSleep_{ 50000000 };
+		//static constexpr std::chrono::nanoseconds minSpinTimeForSleep_{ 50000000 };
 
 		//Since sleep only guarantees a minimim sleep time, asking for
 		//what we really want will more than likley mean that we will
@@ -92,7 +92,7 @@ namespace MachEmu
 		void Reset() final;
 
 		//Returns the host CPU time.
-		std::chrono::nanoseconds Tick(uint16_t ticks) final;
+		//std::chrono::nanoseconds Tick(uint16_t ticks) final;
 		//Returns the time of an actual tick.
 		//Should be close to timePeriod_ as possible
 		//nanoseconds Tick() const;

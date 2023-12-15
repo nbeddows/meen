@@ -22,11 +22,8 @@ SOFTWARE.
 
 export module IController;
 
-import <chrono>;
 import <cstdint>;
 import Base;
-
-using namespace std::chrono;
 
 namespace MachEmu
 {
@@ -83,7 +80,7 @@ namespace MachEmu
 
 								@see ISR
 		*/
-		virtual ISR ServiceInterrupts(nanoseconds currTime, uint64_t cycles) = 0;
+		virtual ISR ServiceInterrupts(uint64_t cycles) = 0;
 
 		/** Destroys the controller.
 		

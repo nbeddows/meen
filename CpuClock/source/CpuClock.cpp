@@ -142,6 +142,7 @@ namespace MachEmu
 	}
 	#endif
 
+	#if 0
 	nanoseconds CpuClock::Tick(uint16_t ticks)
 	{
 		auto throttleTime = nanoseconds::zero();
@@ -226,6 +227,7 @@ namespace MachEmu
 		tp_ = now;
 		return hostNanos_ + throttleTime;
 	}
+	#endif
 
 	nanoseconds CpuClock::Time() const
 	{
