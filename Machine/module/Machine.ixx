@@ -44,6 +44,7 @@ namespace MachEmu
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 
+		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
 		Machine();
 		~Machine() = default;
