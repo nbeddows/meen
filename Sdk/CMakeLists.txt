@@ -1,0 +1,55 @@
+set(major 1)
+set(minor 3)
+set(bugfix 0)
+
+set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu-${major}.${minor}.${bugfix})
+
+# write the top level sdk cmake make list
+file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
+  "cmake_minimum_required (VERSION 3.25)\n"
+  "#set(CMAKE_CXX_COMPILER g++-13)\n"
+  "set(CMAKE_CXX_STANDARD 20)\n"
+  "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+  "set(CMAKE_CXX_EXTENSIONS OFF)\n"
+  "set(module_dir module)\n"
+  "set(source_dir source)\n"
+  "project(mach-emu-sdk)\n"
+  "if(CMAKE_COMPILER_IS_GNUCXX)\n"
+  "\tset(STD_MODULES cstdint memory vector)\n"
+  "\tinclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n"
+  "endif()\n"
+  "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
+  "add_subdirectory(Base)\n"
+  "add_subdirectory(Controller)\n"
+  "add_subdirectory(Machine)\n"
+  "add_subdirectory(Tests)\n"
+)
+
+# write the machine cmake list
+file(WRITE ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt
+  "set (lib_name MachEmu)\n"
+  "set (\${lib_name}_module_files \"\${module_dir}/IMachine.ixx\" \"\${module_dir}/MachineFactory.ixx\")\n"
+  "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
+  "add_target(\${lib_name} IMPORTED INTERFACE \"\$\{\${lib_name}_module_files}\")\n"
+  "add_dependencies(\${lib_name} Base Controller)\n"
+)
+
+# copy out the required modules/sources/libraries, perform static analysis
+add_custom_target(
+  Sdk
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Base ${sdkDir}/Base/
+  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/CmakeIncludes ${sdkDir}/CMakeIncludes/
+  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Controller ${sdkDir}/Controller/
+  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Machine/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/$<CONFIG>/MachEmu.lib
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.dll ${sdkDir}/bin/$<CONFIG>/MachEmu.dll
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/IMachine.ixx ${sdkDir}/Machine/module/IMachine.ixx
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/MachineFactory.ixx ${sdkDir}/Machine/module/MachineFactory.ixx
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
+  COMMAND ${CMAKE_COMMAND} -E echo "target_link_directories(\${exe_name} PRIVATE \${CMAKE_SOURCE_DIR}/bin)" >> ${sdkDir}/Tests/MachineTest/CMakeLists.txt
+)
