@@ -14,10 +14,4 @@ target_link_libraries(${exe_name} PRIVATE
   TestControllers
 )
 
-add_custom_command(
-  TARGET ${exe_name} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_directory
-  ${CMAKE_SOURCE_DIR}/Tests/Programs
-  ${CMAKE_BINARY_DIR}/Programs)
-
-#set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/Bin)
+set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
