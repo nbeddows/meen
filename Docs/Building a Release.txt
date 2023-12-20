@@ -6,11 +6,11 @@ Before building the Release configuration of the SDK the following must be perfo
 
 3. Make sure you are on the development branch and everything required for the release is committed to it.
 
-4. Increment the major/minor/bugfix version numbers in the Sdk project pre-build event according to the scope of the release.
+4. Increment the major/minor/bugfix version numbers in the Sdk CMakeLists.txt according to the scope of the release.
 
 5. Commit and push the Sdk changes.
 
-	git commit -m "Updated the Sdk version number" Sdk.vcxproj
+	git commit -m "Updated the Sdk version number" CMakeLists.txt
 	git push
 
 6. Make sure the Changelog is up to date (including the version number!).

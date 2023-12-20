@@ -2,7 +2,7 @@ set(major 1)
 set(minor 3)
 set(bugfix 0)
 
-set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu-${major}.${minor}.${bugfix})
+set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu-v${major}.${minor}.${bugfix})
 
 # write the top level sdk cmake make list
 file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
