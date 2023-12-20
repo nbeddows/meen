@@ -53,6 +53,11 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
   COMMAND ${CMAKE_COMMAND} -E echo "target_link_directories(\${exe_name} PRIVATE \${CMAKE_SOURCE_DIR}/bin)" >> ${sdkDir}/Tests/MachineTest/CMakeLists.txt
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Docs/Doxyfile ${sdkDir}/Doxyfile
+  COMMAND cd ${sdkDir}
+  COMMAND doxygen
+  COMMAND cd ${CMAKE_BINARY_DIR}/Sdk
+  COMMAND ${CMAKE_COMMAND} -E rm -f ${sdkDir}/Doxyfile
   COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-dev.tar.gz ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
 )
