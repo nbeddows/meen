@@ -1,16 +1,16 @@
 Before building the Release configuration of the SDK the following must be performed:
 
-1. Make sure Doxygen is installed and added to your PATH environment variable.
+1. Make sure Doxygen is installed and is in your environment path.
 
-2. Make sure Cppcheck is installed and added to your PATH environment variable.
+2. Make sure Cppcheck is installed and is in your environment path.
 
 3. Make sure you are on the development branch and everything required for the release is committed to it.
 
-4. Increment the major/minor/bugfix version numbers in the Sdk CMakeLists.txt according to the scope of the release.
+4. Increment the major/minor/bugfix version numbers in the Sdk CMakeLists.txt and the Docs Doxyfile according to the scope of the release.
 
-5. Commit and push the Sdk changes.
+5. Commit and push the Sdk and Doxyfile changes.
 
-	git commit -m "Updated the Sdk version number" CMakeLists.txt
+	git commit -m "Updated the Sdk version number" Sdk/CMakeLists.txt Docs/Doxyfile
 	git push
 
 6. Make sure the Changelog is up to date (including the version number!).
