@@ -2,7 +2,7 @@ set(major 1)
 set(minor 3)
 set(bugfix 0)
 
-set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu-v${major}.${minor}.${bugfix})
+set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu)
 
 # write the top level sdk cmake make list
 file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
@@ -58,6 +58,6 @@ add_custom_target(
   COMMAND doxygen
   COMMAND cd ${CMAKE_BINARY_DIR}/Sdk
   COMMAND ${CMAKE_COMMAND} -E rm -f ${sdkDir}/Doxyfile
-  COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-dev.tar.gz ${sdkDir}
+  COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${major}.${minor}.${bugfix}-dev.tar.gz ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
 )
