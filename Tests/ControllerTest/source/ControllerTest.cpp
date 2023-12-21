@@ -48,7 +48,7 @@ namespace MachEmu::Tests
 		(
 			//load one byte compliment carry program into memory
 			//cppcheck-suppress unknownMacro
-			memoryController_->Load ("../../../Tests/Programs/cmc.bin", 0);
+			memoryController_->Load (PROGRAMS_DIR"cmc.bin", 0);
 		);
 	}
 
@@ -57,7 +57,7 @@ namespace MachEmu::Tests
 		EXPECT_ANY_THROW
 		(
 			//load three byte compliment accumulator program starting at the end of memory, this should throw
-			memoryController_->Load("../../../Tests/Programs/cma.bin", static_cast<uint16_t>(memoryController_->Size() - 1));
+			memoryController_->Load(PROGRAMS_DIR"cma.bin", static_cast<uint16_t>(memoryController_->Size() - 1));
 		);
 	}
 
@@ -80,7 +80,7 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			memoryController_->Load("../../../Tests/Programs/cmc.bin", 0x00);
+			memoryController_->Load(PROGRAMS_DIR"cmc.bin", 0x00);
 			value = memoryController_->Read(0x00);
 		);
 
