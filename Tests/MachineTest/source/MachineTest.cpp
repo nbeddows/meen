@@ -40,7 +40,7 @@ namespace MachEmu::Tests
 		static std::shared_ptr<MemoryController> memoryController_;
 		static std::shared_ptr<IController> ioController_;
 		static std::unique_ptr<IMachine> machine_;
-		static const inline std::filesystem::path directory_ = "../../Programs";
+		static const inline std::filesystem::path directory_ = "../../../Tests/Programs";
 	public:
 		static void SetUpTestCase();
 		void SetUp();

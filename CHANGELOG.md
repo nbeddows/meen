@@ -1,6 +1,10 @@
 1.3.0
 * Add CMake support.
 * Move Space Invaders to it's own repository.
+* Remove the Windows specific sdk batch script and
+  build the sdk via CMake instead. Remove Space
+  Invaders from the sdk and update it to include
+  the unit tests.
 
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.

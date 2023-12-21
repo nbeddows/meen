@@ -1,8 +1,6 @@
 set(lib_name TestControllers)
 
 set(${lib_name}_module_files
-  ${CMAKE_SOURCE_DIR}/Base/${module_dir}/Base.ixx
-  ${CMAKE_SOURCE_DIR}/Controller/${module_dir}/IController.ixx
   ${module_dir}/BaseIoController.ixx
   ${module_dir}/CpmIoController.ixx
   ${module_dir}/MemoryController.ixx
@@ -21,6 +19,8 @@ add_target(${lib_name}
   "${${lib_name}_module_files}"
   "${${lib_name}_source_files}"
 )
+
+add_dependencies(${lib_name} Controller)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -Wno-attributes)
