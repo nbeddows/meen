@@ -40,7 +40,6 @@ namespace MachEmu::Tests
 		static std::shared_ptr<MemoryController> memoryController_;
 		static std::shared_ptr<IController> ioController_;
 		static std::unique_ptr<IMachine> machine_;
-		static const inline std::filesystem::path directory_ = "../../../Tests/Programs";
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -90,17 +89,14 @@ namespace MachEmu::Tests
 		);
 	}
 
-/*
 	TEST_F(MachineTest, Run)
 	{
 		EXPECT_NO_THROW
 		(
-			auto path = directory_;
-			memoryController_->Load(path /= "cmc.bin", 0x00);
+			memoryController_->Load(PROGRAMS_DIR"cmc.bin", 0x00);
 			machine_->SetMemoryController(memoryController_);
 			machine_->SetIoController(ioController_);
 			machine_->Run();
 		);
 	}
-*/
 } // namespace MachEmu::Tests
