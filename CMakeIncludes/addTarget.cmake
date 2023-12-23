@@ -32,6 +32,7 @@ function(add_target name type module_files source_files)
             gcm.cache
         )
 
+        target_compile_options(${name} PRIVATE -x c++ -fmodules-ts)
         add_dependencies(${name} ${name}ModuleSymlink)
     endif()
 endfunction()
