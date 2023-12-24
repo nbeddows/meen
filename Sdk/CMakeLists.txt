@@ -4,7 +4,6 @@ set(bugfix 0)
 set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-  set(escape \\)
   set(prefix lib)
   set(postfix so)
 else()
@@ -18,28 +17,31 @@ file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
   "set(CMAKE_CXX_STANDARD 20)\n"
   "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
   "set(CMAKE_CXX_EXTENSIONS OFF)\n"
+  #TODO: - need to point correctly to the share library, currently wont work in non release builds
+  "set(CMAKE_PREFIX_PATH \${CMAKE_SOURCE_DIR}/bin/Release)\n"
+  "set(CMAKE_LIBRARY_OUTPUT_DIRECTORY \${CMAKE_SOURCE_DIR}/bin/\$<CONFIG>)\n"
+  "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_SOURCE_DIR}/bin/\$<CONFIG>)\n"
   "set(module_dir module)\n"
   "set(source_dir source)\n"
   "project(mach-emu-sdk)\n"
+  "find_library(libMachEmu MachEmu)\n"
   "if(CMAKE_COMPILER_IS_GNUCXX)\n"
-  "\tset(STD_MODULES cstdint memory vector)\n"
+  "\tset(STD_MODULES cstdint memory string vector)\n"
   "\tinclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n"
   "endif()\n"
   "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
   "add_subdirectory(Base)\n"
   "add_subdirectory(Controller)\n"
-  "add_subdirectory(Machine)\n"
+#  "add_subdirectory(Machine)\n"
   "add_subdirectory(Tests)\n"
 )
 
 # write the machine cmake list
-file(WRITE ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt
-  "set (lib_name MachEmu)\n"
-  "set (\${lib_name}_module_files \"\${module_dir}/IMachine.ixx\" \"\${module_dir}/MachineFactory.ixx\")\n"
-  "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
-  "add_target(\${lib_name} IMPORTED INTERFACE \"\$\{\${lib_name}_module_files}\")\n"
-  "add_dependencies(\${lib_name} Base Controller)\n"
-)
+#file(WRITE ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt
+#  "set (lib_name Machine)\n"
+#  "set (\${lib_name}_module_files \"\${module_dir}/IMachine.ixx\" \"\${module_dir}/MachineFactory.ixx\")\n"
+#  "add_target(\${lib_name} STATIC \"\$\{\${lib_name}_module_files}\" \"\")\n"
+#)
 
 # copy out the required modules/sources/libraries, perform static analysis
 add_custom_target(
@@ -51,15 +53,16 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Controller ${sdkDir}/Controller/
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Machine/$<CONFIG>/${prefix}MachEmu.lib ${sdkDir}/bin/$<CONFIG>/${prefix}MachEmu.lib
+  #COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
+  # msvc only: TODO - need copy wildcard tp only copy out .lib, .so, .dll, etc
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/$<CONFIG>/MachEmu.lib
+  
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/IMachine.ixx ${sdkDir}/Machine/module/IMachine.ixx
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/MachineFactory.ixx ${sdkDir}/Machine/module/MachineFactory.ixx
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
-  COMMAND ${CMAKE_COMMAND} -E echo "target_link_directories${escape}(\${exe_name} PRIVATE \${CMAKE_SOURCE_DIR}/bin${escape})" >> ${sdkDir}/Tests/MachineTest/CMakeLists.txt
   COMMAND ${CMAKE_COMMAND} -E chdir ${sdkDir} doxygen ${CMAKE_SOURCE_DIR}/Docs/Doxyfile
   COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${major}.${minor}.${bugfix}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-dev.tar.gz ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}

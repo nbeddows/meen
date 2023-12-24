@@ -14,12 +14,11 @@ add_target(${exe_name} EXE
   "${${exe_name}_source_files}"
 )
 
-add_dependencies(${exe_name} TestControllers)
-
 target_link_libraries(${exe_name} PRIVATE
+  Controller
   GTest::gtest
   GTest::gtest_main
-  MachEmu
+  ${libMachEmu}
   TestControllers
 )
 
