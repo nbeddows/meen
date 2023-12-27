@@ -1,17 +1,12 @@
 set(exe_name MachineTest)
 
-set(${exe_name}_module_files
-  ${CMAKE_SOURCE_DIR}/Machine/${module_dir}/IMachine.ixx
-  ${CMAKE_SOURCE_DIR}/Machine/${module_dir}/MachineFactory.ixx
-)
-
 set(${exe_name}_source_files
   ${source_dir}/MachineTest.cpp
 )
 
 add_target(${exe_name} EXE
-  "${${exe_name}_module_files}"
   "${${exe_name}_source_files}"
+  ""
 )
 
 target_link_libraries(${exe_name} PRIVATE

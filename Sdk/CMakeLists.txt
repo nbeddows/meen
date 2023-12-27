@@ -4,6 +4,7 @@ set(bugfix 0)
 set(sdkDir ${CMAKE_BINARY_DIR}/Sdk/mach-emu)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
+  set(escape \\)
   set(prefix lib)
   set(postfix so)
 else()
@@ -32,16 +33,17 @@ file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
   "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
   "add_subdirectory(Base)\n"
   "add_subdirectory(Controller)\n"
-#  "add_subdirectory(Machine)\n"
+  "add_subdirectory(Machine)\n"
   "add_subdirectory(Tests)\n"
 )
 
 # write the machine cmake list
-#file(WRITE ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt
-#  "set (lib_name Machine)\n"
-#  "set (\${lib_name}_module_files \"\${module_dir}/IMachine.ixx\" \"\${module_dir}/MachineFactory.ixx\")\n"
-#  "add_target(\${lib_name} STATIC \"\$\{\${lib_name}_module_files}\" \"\")\n"
-#)
+file(WRITE ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt
+  "set (lib_name Machine)\n"
+  "set (\${lib_name}_module_files \"\${module_dir}/IMachine.ixx\" \"\${module_dir}/MachineFactory.ixx\")\n"
+  "add_target(\${lib_name} STATIC \"\$\{\${lib_name}_module_files}\" \"\")\n"
+  "add_dependencies(\${lib_name} Controller)\n"
+)
 
 # copy out the required modules/sources/libraries, perform static analysis
 add_custom_target(
@@ -53,8 +55,8 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Controller ${sdkDir}/Controller/
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
-  #COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
-  # msvc only: TODO - need copy wildcard tp only copy out .lib, .so, .dll, etc
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
+  # msvc only: TODO - need wildcard to only copy out .lib, .so, .dll, etc
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/$<CONFIG>/MachEmu.lib
   
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}
@@ -63,6 +65,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
+  COMMAND ${CMAKE_COMMAND} -E echo "add_dependencies${escape}(\${exe_name} Machine)" >> ${sdkDir}/Tests/MachineTest/CMakeLists.txt
   COMMAND ${CMAKE_COMMAND} -E chdir ${sdkDir} doxygen ${CMAKE_SOURCE_DIR}/Docs/Doxyfile
   COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${major}.${minor}.${bugfix}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-dev.tar.gz ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
