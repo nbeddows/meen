@@ -11,6 +11,10 @@ else()
   set(postfix dll)
 endif()
 
+if(MSVC)
+  set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
+endif()
+
 # write the top level sdk cmake make list
 file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
   "cmake_minimum_required (VERSION 3.25)\n"
@@ -57,9 +61,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
-  # msvc only: TODO - need wildcard to only copy out .lib, .so, .dll, etc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib
-  
+  ${copyLib}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/${prefix}MachEmu.${postfix}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/IMachine.ixx ${sdkDir}/Machine/module/IMachine.ixx
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/MachineFactory.ixx ${sdkDir}/Machine/module/MachineFactory.ixx
