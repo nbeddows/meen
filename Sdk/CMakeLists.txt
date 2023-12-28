@@ -18,10 +18,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
   "set(CMAKE_CXX_STANDARD 20)\n"
   "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
   "set(CMAKE_CXX_EXTENSIONS OFF)\n"
-  #TODO: - need to point correctly to the share library, currently wont work in non release builds
-  "set(CMAKE_PREFIX_PATH \${CMAKE_SOURCE_DIR}/bin/Release)\n"
-  "set(CMAKE_LIBRARY_OUTPUT_DIRECTORY \${CMAKE_SOURCE_DIR}/bin/\$<CONFIG>)\n"
-  "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \${CMAKE_SOURCE_DIR}/bin/\$<CONFIG>)\n"
+  "set(CMAKE_PREFIX_PATH \${CMAKE_SOURCE_DIR}/bin/)\n"
   "set(module_dir module)\n"
   "set(source_dir source)\n"
   "project(mach-emu-sdk)\n"
@@ -35,6 +32,10 @@ file(WRITE ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt
   "add_subdirectory(Controller)\n"
   "add_subdirectory(Machine)\n"
   "add_subdirectory(Tests)\n"
+  "install(FILES \${CMAKE_SOURCE_DIR}/bin/${prefix}MachEmu.${postfix} DESTINATION lib)\n"
+  "if(MSVC)\n"
+  "\tinstall(FILES \${CMAKE_SOURCE_DIR}/bin/MachEmu.lib DESTINATION lib)\n"
+  "endif()\n"
 )
 
 # write the machine cmake list
@@ -57,9 +58,9 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineCMakeLists.txt ${sdkDir}/Machine/CMakeLists.txt
   # msvc only: TODO - need wildcard to only copy out .lib, .so, .dll, etc
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/$<CONFIG>/MachEmu.lib
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib
   
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/${prefix}MachEmu.${postfix}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/IMachine.ixx ${sdkDir}/Machine/module/IMachine.ixx
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/module/MachineFactory.ixx ${sdkDir}/Machine/module/MachineFactory.ixx
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
