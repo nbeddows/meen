@@ -18,4 +18,4 @@ target_link_libraries(${exe_name} PRIVATE
 )
 
 target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
-# Leave a new line here on purpose as the sdk appends a target_link_directories command
+# Leave a new line here on purpose as the sdk appends an add_dependencies command
