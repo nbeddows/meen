@@ -1,8 +1,3 @@
-# Enable module compilation, don't rely on file ext
-# for compilation since we are .ixx ext which is not
-# recognised (using for msvc compatibility)
-set(CMAKE_CXX_FLAGS "-x c++ -fmodules-ts")
-
 set(STD_MODULES_BUILD_TIMESTAMP_FILE std_modules_build_timestamp)
 # One time build only
 add_custom_target(StdModules ALL

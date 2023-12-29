@@ -6,8 +6,6 @@ set(${exe_name}_source_files
 
 add_target(${exe_name} EXE "" "${${exe_name}_source_files}")
 
-add_dependencies(${exe_name} TestControllers)
-
 target_link_libraries(${exe_name} PRIVATE
   GTest::gtest
   GTest::gtest_main
@@ -15,4 +13,3 @@ target_link_libraries(${exe_name} PRIVATE
 )
 
 target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
-set_target_properties(${exe_name} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)

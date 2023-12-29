@@ -20,17 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include <filesystem>
-//#include <future>
-#include <gtest/gtest.h>
-
+import <memory>;
 import IController;
 import IMachine;
 import MachineFactory;
 import MemoryController;
 import TestIoController;
 
-using namespace std::chrono;
+//#include <future>
+#include <gtest/gtest.h>
 
 namespace MachEmu::Tests
 {

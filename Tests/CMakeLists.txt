@@ -10,11 +10,7 @@ FetchContent_MakeAvailable(googletest)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   # our required std modules for the unit tests
-  set(STD_MODULES
-    cstdint
-	  memory
-    vector
-  )
+  set(STD_MODULES cstdint memory string vector)
 
   # One time build only
   add_custom_target(TestStdModules ALL
@@ -57,4 +53,5 @@ set_target_properties(TestControllers PROPERTIES FOLDER "Tests")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   add_dependencies(ControllerTest TestModules)
+  add_dependencies(MachineTest TestModules)
 endif()
