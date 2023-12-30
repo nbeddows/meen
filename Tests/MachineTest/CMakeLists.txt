@@ -5,8 +5,8 @@ set(${exe_name}_source_files
 )
 
 add_target(${exe_name} EXE
-  "${${exe_name}_source_files}"
   ""
+  "${${exe_name}_source_files}"
 )
 
 target_link_libraries(${exe_name} PRIVATE

@@ -22,6 +22,7 @@ SOFTWARE.
 
 export module ICpu;
 
+import <array>;
 import <cstdint>;
 
 namespace MachEmu
@@ -34,6 +35,8 @@ namespace MachEmu
 		virtual void Reset(uint16_t pc) = 0;
 
 		//virtual void Save() const = 0;
+
+		virtual std::array<uint8_t, 12> GetState() const = 0;
 
 		virtual ~ICpu() = default;
 	};
