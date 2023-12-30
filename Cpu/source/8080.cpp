@@ -26,6 +26,7 @@ module;
 
 module _8080;
 
+import <array>;
 import <bitset>;
 import <cstdint>;
 import <memory>;
@@ -303,6 +304,14 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 		[&] { return Rst(); },
 	});
 #endif
+}
+
+std::array<uint8_t, 12> Intel8080::GetState() const
+{
+	return { Value(a_), Value(b_), Value(c_), Value(d_),
+			Value(e_), Value(h_), Value(l_), Value(status_),
+			static_cast<uint8_t>(pc_ >> 8), static_cast<uint8_t>(pc_ & 0xFF),
+			static_cast<uint8_t>(sp_ >> 8), static_cast<uint8_t>(sp_ & 0xFF) };
 }
 
 uint8_t Intel8080::Fetch()

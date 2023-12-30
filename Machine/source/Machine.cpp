@@ -26,6 +26,7 @@ module;
 
 module Machine;
 
+import <array>;
 import <chrono>;
 import <functional>;
 
@@ -147,5 +148,10 @@ namespace MachEmu
 	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
 		ioController_ = controller;
+	}
+
+	std::array<uint8_t, 12> Machine::GetState() const
+	{
+		return cpu_->GetState();
 	}
 } // namespace MachEmu

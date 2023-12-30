@@ -23,6 +23,7 @@ SOFTWARE.
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
+import <array>;
 import <memory>;
 #include "Controller/IController.h"
 
@@ -123,9 +124,9 @@ namespace MachEmu
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
-		/**	Get the state of the cpu.
+		/**	Get the state of the machine.
 
-			Returns the state of the cpu as an array in the following
+			Returns the state of the machine (currently just the cpu) as an array in the following
 			form dependent on cpu type:
 
 			Intel8080:
@@ -143,10 +144,12 @@ namespace MachEmu
 					PC (16 bits)
 				Stack Pointer:
 					SP (16 bits)
-				
-				Remaining bits are unused 
+			
+			TODO: other cpus/components
+
+			Remaining bits are unused.
 		*/
-		std::array<uint8_t, 12> GetCpuState();
+		virtual std::array<uint8_t, 12> GetState() const = 0;
 
 		/** Destructor.
 

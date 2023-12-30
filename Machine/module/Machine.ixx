@@ -27,6 +27,7 @@ module;
 
 export module Machine;
 
+import <array>;
 import <cstdint>;
 import <memory>;
 import ICpu;
@@ -69,5 +70,11 @@ namespace MachEmu
 			@see IMachine::SetIoController
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
+
+		/** GetCpuState
+		
+			@see IMachine::GetCpuState
+		*/
+		std::array<uint8_t, 12> GetState() const final;
 	};
 } // namespace MachEmu
