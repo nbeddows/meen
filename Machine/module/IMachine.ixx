@@ -22,7 +22,6 @@ SOFTWARE.
 
 export module IMachine;
 
-import <array>;
 import <memory>;
 import IController;
 
