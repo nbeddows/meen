@@ -23,7 +23,6 @@ SOFTWARE.
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
-import <array>;
 import <memory>;
 #include "Controller/IController.h"
 
