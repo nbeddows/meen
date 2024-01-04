@@ -1,7 +1,7 @@
 set (lib_name Base)
 
-set (${lib_name}_module_files
-	${module_dir}/${lib_name}.ixx
+set (${lib_name}_include_files
+	${include_dir}/${lib_name}/${lib_name}.h
 )
 
-add_target(${lib_name} STATIC ${${lib_name}_module_files} "")
+add_target(${lib_name} INTERFACE "${${lib_name}_include_files}" "" "")

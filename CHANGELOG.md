@@ -5,6 +5,10 @@
   build the sdk via CMake instead. Remove Space
   Invaders from the sdk and update it to include
   the unit tests.
+* Rename the sdk project target from mach-emu-sdk
+  to mach-emu.
+* Sdk modules are now headers files for better
+  platform compatibility.
 
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.

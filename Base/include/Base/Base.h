@@ -20,7 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module Base;
+#ifndef BASE_H
+#define BASE_H
 
 namespace MachEmu
 {
@@ -30,7 +31,7 @@ namespace MachEmu
 
 		@see	IController.
 	*/
-	export enum class ISR
+	enum class ISR
 	{
 		Zero,
 		One,
@@ -44,3 +45,5 @@ namespace MachEmu
 		NoInterrupt,
 	};
 } // namespace MachEmu
+
+#endif // BASE_H

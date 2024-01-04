@@ -20,17 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module IMachine;
+#ifndef IMACHINE_H
+#define IMACHINE_H
 
 import <memory>;
-import IController;
+#include "Controller/IController.h"
 
 namespace MachEmu
 {
 	/** Machine interface.
 
 	*/
-	export struct IMachine
+	struct IMachine
 	{
 		/** Run the machine.
 		
@@ -99,3 +100,5 @@ namespace MachEmu
 		virtual ~IMachine() = default;
 	};
 } // namespace MachEmu
+
+#endif // IMACHINE_H

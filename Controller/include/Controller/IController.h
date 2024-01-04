@@ -20,10 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module IController;
+#ifndef ICONTROLLER_H
+#define ICONTROLLER_H
 
 import <cstdint>;
-import Base;
+#include "Base/Base.h"
 
 namespace MachEmu
 {
@@ -34,7 +35,7 @@ namespace MachEmu
 		@todo	Can be made into a template which can accept different
 				address and data sizes.
 	*/
-	export struct IController
+	struct IController
 	{
 		/** Read from device.
 		
@@ -89,3 +90,5 @@ namespace MachEmu
 		virtual ~IController() = default;
 	};
 } // namespace MachEmu
+
+#endif // ICONTROLLER_H

@@ -22,6 +22,7 @@ SOFTWARE.
 
 module;
 #include <fstream>
+#include "Base/Base.h"
 
 module MemoryController;
 

@@ -20,10 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module MachineFactory;
+#ifndef MACHINE_FACTORY_H
+#define MACHINE_FACTORY_H
 
 import <memory>;
-import IMachine;
+#include "IMachine.h"
 
 #ifdef _WINDOWS
 #ifdef MachEmu_EXPORTS
@@ -47,5 +48,7 @@ namespace MachEmu
 
 		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/
-	export DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
+	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
 } // namespace MachEmu
+
+#endif // MACHINE_FACTORY_H

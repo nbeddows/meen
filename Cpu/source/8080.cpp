@@ -22,6 +22,7 @@ SOFTWARE.
 
 module;
 #include <assert.h>
+#include "Base/Base.h"
 
 module _8080;
 
@@ -30,7 +31,6 @@ import <cstdint>;
 import <memory>;
 import <functional>;
 import <string_view>;
-import Base;
 import SystemBus;
 
 namespace MachEmu

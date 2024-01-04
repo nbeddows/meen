@@ -4,13 +4,9 @@ set(${exe_name}_source_files
   ${source_dir}/MachineTest.cpp
 )
 
-add_target(${exe_name} EXE
-  "${${exe_name}_source_files}"
-  ""
-)
+add_target(${exe_name} EXE "" "" "${${exe_name}_source_files}")
 
 target_link_libraries(${exe_name} PRIVATE
-  Controller
   GTest::gtest
   GTest::gtest_main
   ${libMachEmu}
@@ -18,4 +14,6 @@ target_link_libraries(${exe_name} PRIVATE
 )
 
 target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
-# Leave a new line here on purpose as the sdk appends an add_dependencies command
+target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
+target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
+target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})

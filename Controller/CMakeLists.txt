@@ -1,10 +1,8 @@
 set (lib_name Controller)
 
-set (${lib_name}_module_files
-	${module_dir}/I${lib_name}.ixx
+set (${lib_name}_include_files
+	${include_dir}/${lib_name}/I${lib_name}.h
 )
 
-add_target(${lib_name} STATIC "${${lib_name}_module_files}" "")
-
-add_dependencies(${lib_name} Base)
+add_target(${lib_name} INTERFACE "${${lib_name}_include_files}" "" "")
 
