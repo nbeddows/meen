@@ -25,7 +25,6 @@ SOFTWARE.
 #define MACHINE_FACTORY_H
 
 import <memory>;
-//import IMachine;
 #include "IMachine.h"
 
 #ifdef _WINDOWS
@@ -50,7 +49,7 @@ namespace MachEmu
 
 		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/
-	/*export*/ DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
+	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
 } // namespace MachEmu
 
 #endif // MACHINE_FACTORY_H

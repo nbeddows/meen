@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-//export module IMachine;
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
@@ -32,7 +31,7 @@ namespace MachEmu
 	/** Machine interface.
 
 	*/
-	/*export*/ struct IMachine
+	struct IMachine
 	{
 		/** Run the machine.
 		
