@@ -20,6 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+module;
+
+#include "Base/Base.h"
+
 module CpmIoController;
 
 namespace MachEmu
@@ -74,7 +78,7 @@ namespace MachEmu
 						break;
 					}
 					case 2:
-					{						
+					{
 						//printf ("%c", value);
 						message_.push_back(value);
 						break;
