@@ -20,11 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
-import Base;
-import IController;
-import IMachine;
-import MachineFactory;
 import CpmIoController;
 import MemoryController;
 import TestIoController;
@@ -33,6 +28,10 @@ import TestIoController;
 #include <array>
 #include <future>
 #include "gtest/gtest.h"
+#include "Base/Base.h"
+#include "Controller/IController.h"
+#include "Machine/IMachine.h"
+#include "Machine/MachineFactory.h"
 
 //using namespace std::chrono;
 using namespace MachEmu;
