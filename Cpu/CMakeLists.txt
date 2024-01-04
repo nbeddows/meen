@@ -11,14 +11,12 @@ set (${lib_name}_source_files
 	${source_dir}/${lib_name}Factory.cpp
 )
 
-add_target(${lib_name}
-	STATIC
-	"${${lib_name}_module_files}"
-	"${${lib_name}_source_files}"
-)
+add_target(${lib_name} STATIC "" "${${lib_name}_module_files}" "${${lib_name}_source_files}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
-add_dependencies(${lib_name} Base CpuClock SystemBus)
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
+
+add_dependencies(${lib_name} CpuClock SystemBus)
