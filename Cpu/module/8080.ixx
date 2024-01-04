@@ -19,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+module;
+
+#include "Base/Base.h"
 
 export module _8080;
 
@@ -28,7 +31,6 @@ import <memory>;
 import <functional>;
 import <string_view>;
 
-import Base;
 import ICpu;
 import SystemBus;
 
