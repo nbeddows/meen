@@ -20,27 +20,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module Base;
+//export module MachineFactory;
+#ifndef MACHINE_FACTORY_H
+#define MACHINE_FACTORY_H
+
+import <memory>;
+//import IMachine;
+#include "IMachine.h"
+
+#ifdef _WINDOWS
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP __declspec(dllexport)
+#else
+#define DLL_EXP_IMP __declspec(dllimport)
+#endif
+#else
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP [[gnu::visibility("default")]]
+#else
+#define DLL_EXP_IMP
+#endif
+#endif
 
 namespace MachEmu
 {
-	/** Interrupt service routine.
+	/** Create a machine.
 
-		A pre defined set of interrupts that can be returned from IController::ServiceInterrupts.
+		This function is the main entry point into machemu.dll.
 
-		@see	IController.
+		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/
-	export enum class ISR
-	{
-		Zero,
-		One,
-		Two,
-		Three,
-		Four,
-		Five,
-		Six,
-		Seven,
-		Quit = 0xEF,	//<	Returned from IController::ServiceInterrupts to exit the IMachine::Run control loop.
-		NoInterrupt,
-	};
+	/*export*/ DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
 } // namespace MachEmu
+
+#endif // MACHINE_FACTORY_H
