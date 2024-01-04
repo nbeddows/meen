@@ -21,14 +21,14 @@ SOFTWARE.
 */
 
 import <memory>;
-import IController;
-import IMachine;
-import MachineFactory;
 import MemoryController;
 import TestIoController;
 
 //#include <future>
 #include <gtest/gtest.h>
+#include "Controller/IController.h"
+#include "Machine/IMachine.h"
+#include "Machine/MachineFactory.h"
 
 namespace MachEmu::Tests
 {

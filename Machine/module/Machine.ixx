@@ -20,14 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+module;
+
+#include "Controller/IController.h"
+#include "Machine/IMachine.h"
+
 export module Machine;
 
 import <cstdint>;
 import <memory>;
 import ICpu;
-import IController;
 import ICpuClock;
-import IMachine;
 import SystemBus;
 
 namespace MachEmu

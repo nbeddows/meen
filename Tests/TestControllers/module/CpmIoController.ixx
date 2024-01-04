@@ -20,11 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+module;
+
+#include "Base/Base.h"
+
 export module CpmIoController;
 
 import <memory>;
 import <string>;
-import Base;
 import BaseIoController;
 
 namespace MachEmu
