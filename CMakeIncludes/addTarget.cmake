@@ -1,17 +1,12 @@
-function(add_target name type module_files source_files)
+function(add_target name type include_files module_files source_files)
+    SOURCE_GROUP("Include Files" FILES ${include_files})
     SOURCE_GROUP("Module Files" FILES ${module_files})
     SOURCE_GROUP("Source Files" FILES ${source_files})
 
     if(${type} MATCHES EXE)
-        add_executable(${name}
-            ${module_files}
-            ${source_files}
-    )
+        add_executable(${name} ${include_files} ${module_files} ${source_files})
     else()
-        add_library(${name} ${type}
-            ${module_files}
-            ${source_files}
-        )
+        add_library(${name} ${type} ${include_files} ${module_files} ${source_files})
     endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
