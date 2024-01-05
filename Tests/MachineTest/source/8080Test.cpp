@@ -24,9 +24,14 @@ import CpmIoController;
 import MemoryController;
 import TestIoController;
 
-#include <chrono>
+// Google test under g++-13 seems to have some module compatibility issues
+// or it could be related to how this file is written (module/header include order for example).
+// Disable and re-test on future gtest/g++ releases.
+#ifdef _WINDOWS
 #include <array>
 #include <future>
+#endif
+
 #include "gtest/gtest.h"
 #include "Base/Base.h"
 #include "Controller/IController.h"
@@ -1886,6 +1891,10 @@ TEST_F(Intel8080Test, CPI0)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
+// Google test under g++-13 seems to have some module compatibility issues
+// or it could be related to how this file is written (module/header include order for example)
+// Disable and re-test on future releases
+#ifdef _WINDOWS
 TEST_F(Intel8080Test, ISR_1)
 {
 	std::array<uint8_t, 12> state{};
@@ -1905,6 +1914,7 @@ TEST_F(Intel8080Test, ISR_1)
 	EXPECT_EQ(0x00, state[State::A]);
 	EXPECT_EQ(0x01, state[State::B]);
 }
+#endif
 
 TEST_F(Intel8080Test, Tst8080)
 {
@@ -1917,7 +1927,7 @@ TEST_F(Intel8080Test, Tst8080)
 	// use the cpm io controller for cpm based tests
 	machine_->SetIoController(cpmIoController_);
 	auto state = LoadAndRun("TST8080.COM");
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find ("CPU IS OPERATIONAL") != std::string::npos);
+	EXPECT_EQ(74, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find ("CPU IS OPERATIONAL"));
 	// restore the default io controller
 	machine_->SetIoController(testIoController_);
 }
@@ -1933,7 +1943,7 @@ TEST_F(Intel8080Test, 8080Pre)
 	// use the cpm io controller for cpm based tests
 	machine_->SetIoController(cpmIoController_);
 	auto state = LoadAndRun("8080PRE.COM");
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("8080 Preliminary tests complete") != std::string::npos);
+	EXPECT_EQ(0, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("8080 Preliminary tests complete"));
 	// restore the default io controller
 	machine_->SetIoController(testIoController_);
 }
@@ -1949,7 +1959,7 @@ TEST_F(Intel8080Test, CpuTest)
 	// use the cpm io controller for cpm based tests
 	machine_->SetIoController(cpmIoController_);
 	auto state = LoadAndRun("CPUTEST.COM");
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU TESTS OK") != std::string::npos);
+	EXPECT_EQ(168, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU TESTS OK"));
 	// restore the default io controller
 	machine_->SetIoController(testIoController_);
 }
@@ -1965,7 +1975,7 @@ TEST_F(Intel8080Test, 8080Exm)
 	// use the cpm io controller for cpm based tests
 	machine_->SetIoController(cpmIoController_);
 	auto state = LoadAndRun("8080EXM.COM");
-	EXPECT_TRUE(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("ERROR") == std::string::npos);
+	EXPECT_EQ(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("ERROR"), std::string::npos);
 	// restore the default io controller
 	machine_->SetIoController(testIoController_);
 }
