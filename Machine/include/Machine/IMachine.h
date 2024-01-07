@@ -30,6 +30,32 @@ namespace MachEmu
 {
 	/** Machine interface.
 
+		An abstract representation of a basic machine with a cpu, clock and
+		custom memory and IO.
+
+		Basic Principles of Operation
+
+		// Create a machine
+		auto machine = MakeMachine();
+
+		// Create a custom memory controller (See tests for examples)
+		auto customMemoryController = std::make_unique<CustomMemoryController>();
+
+		// Load memory with program via custom controller method
+		customMemoryController->LoadProgram("myProgram.com");
+
+		// Create custom IO Controller (See tests for examples)
+		auto customIOController = std::make_unique<CustomIOController>();
+
+		// Set the memory and IO controllers with the machine
+		machine->SetIOController(customIOController);
+		machine->SetMemoryController(customMemoryController);
+
+		// Run the machine
+		machine->Run();
+
+		// machine->Run() is a blocking function, it won't return until the custom IO
+		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
 	*/
 	struct IMachine
 	{
@@ -58,6 +84,8 @@ namespace MachEmu
 			to throw a std::runtime_error exception.
 
 			@param	controller	The memory controller to be used with this machine.
+
+			See the tests for an example memory controller.
 		*/
 		virtual void SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
 
@@ -90,8 +118,37 @@ namespace MachEmu
 
 			//One can check that status of the machine and
 			//memory after 2 seconds of run time.
+
+			See the tests for example IO controllers.
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
+
+		/**	Get the state of the machine.
+
+			Returns the state of the machine (currently just the cpu) as an array in the following
+			form dependent on cpu type:
+
+			Intel8080:
+				Registers:
+					A (8 bits)
+					B (8 bits)
+					C (8 bits)
+					D (8 bits)
+					E (8 bits)
+					H (8 bits)
+					L (8 bits)
+				Status:
+					S (8 bits)
+				Program Counter:
+					PC (16 bits)
+				Stack Pointer:
+					SP (16 bits)
+			
+			TODO: other cpus/components
+
+			Remaining bits are unused.
+		*/
+		virtual std::array<uint8_t, 12> GetState() const = 0;
 
 		/** Destructor.
 

@@ -26,6 +26,7 @@ module;
 
 module _8080;
 
+import <array>;
 import <bitset>;
 import <cstdint>;
 import <memory>;
@@ -303,6 +304,14 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 		[&] { return Rst(); },
 	});
 #endif
+}
+
+std::array<uint8_t, 12> Intel8080::GetState() const
+{
+	return { Value(a_), Value(b_), Value(c_), Value(d_),
+			Value(e_), Value(h_), Value(l_), Value(status_),
+			static_cast<uint8_t>(pc_ >> 8), static_cast<uint8_t>(pc_ & 0xFF),
+			static_cast<uint8_t>(sp_ >> 8), static_cast<uint8_t>(sp_ & 0xFF) };
 }
 
 uint8_t Intel8080::Fetch()
@@ -636,7 +645,7 @@ void Intel8080::Reset(uint16_t pc)
 
 void Intel8080::ReadFromAddress(Signal readLocation, uint16_t addr)
 {
-	controlBus_->Send(readLocation);			
+	controlBus_->Send(readLocation);
 	addressBus_->Send (addr);
 	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
 }
@@ -663,7 +672,7 @@ uint8_t Intel8080::Inr(Register& r)
 uint8_t Intel8080::Inr()
 {
 	auto addr = Uint16(h_, l_);
-	
+
 	ReadFromAddress(Signal::MemoryRead, addr);
 	//Get the data and process it.
 	Register r = dataBus_->Receive();
@@ -840,7 +849,7 @@ uint8_t Intel8080::Rar()
 	{
 		printf("0x%04X RAR\n", pc_);
 	}
-	
+
 	bool tmp = status_[CarryFlag];
 	status_[CarryFlag] = a_[0];
 	a_ >>= 1;
@@ -1234,7 +1243,7 @@ uint8_t Intel8080::Hlt()
 }
 
 Intel8080::Register Intel8080::Add(const Register& lhs, const Register& rhs, uint8_t carry, bool setCarryFlag, [[maybe_unused]] std::string_view instructionName)
-{	
+{
 	uint8_t a = Value(lhs);
 	uint8_t b = Value(rhs);
 
@@ -1352,7 +1361,7 @@ uint8_t Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 			printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 		}
 	}
-	
+
 	Ana(r);
 	return 7;
 }
@@ -1396,7 +1405,7 @@ uint8_t Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 			printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 		}
 	}
-	
+
 	Xra(r);
 	return 7;
 }
@@ -1487,7 +1496,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 	}
 
 	pc_++;
-	
+
 	if (status == true)
 	{
 		ReadFromAddress(Signal::MemoryRead, sp_++);
@@ -1495,7 +1504,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 		ReadFromAddress(Signal::MemoryRead, sp_++);
 		pc_ = Uint16(dataBus_->Receive(), pcLow);
 
-		if (instructionName == "RET")
+		if (std::string(instructionName) == "RET")
 		{
 			return 10;
 		}
@@ -1507,7 +1516,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 	else
 	{
 		return 5;
-	}	
+	}
 }
 
 uint8_t Intel8080::Pop(Register& hi, Register& low)
@@ -1662,7 +1671,7 @@ uint8_t Intel8080::Rst()
 	//can return to it once the Rst completes.
 	//++pc_;
 	//Rst(opcode_);
-	
+
 	uint16_t addr = opcode_ & 0x38;
 
 	if constexpr (dbg == true)
@@ -1745,7 +1754,7 @@ uint8_t Intel8080::Xthl()
 
 	std::swap(spl, l);
 	std::swap(sph, h);
-	
+
 	l_ = l;
 	h_ = h;
 

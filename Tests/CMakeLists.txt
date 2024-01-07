@@ -31,10 +31,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   add_custom_target(
     TestModules
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_BINARY_DIR}/gcm.cache/Base.gcm
-    ${CMAKE_BINARY_DIR}/gcm.cache/IController.gcm
-    ${CMAKE_BINARY_DIR}/gcm.cache/IMachine.gcm
-    ${CMAKE_BINARY_DIR}/gcm.cache/MachineFactory.gcm
     ${CMAKE_BINARY_DIR}/Tests/TestControllers/gcm.cache/BaseIoController.gcm
     ${CMAKE_BINARY_DIR}/Tests/TestControllers/gcm.cache/CpmIoController.gcm
     ${CMAKE_BINARY_DIR}/Tests/TestControllers/gcm.cache/MemoryController.gcm
