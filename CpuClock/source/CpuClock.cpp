@@ -32,205 +32,69 @@ import SystemBus;
 
 using namespace std::chrono;
 
-constexpr bool dbgClock = false;
-
 namespace MachEmu
 {
-	CpuClock::CpuClock(nanoseconds timePeriod, nanoseconds correlateFreq) :
-		timePeriod_(timePeriod),
-		correlateFreq_(correlateFreq)
+	CpuClock::CpuClock(milliseconds correlateFreq, uint64_t speed) :
+		timePeriod_(1000000000 / speed)
 	{
-		tp_ = steady_clock::now();
+		// tick the clock after at least this many ticks
+		totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
 	}
 
-	CpuClock::CpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod) :
-		controlBus_(controlBus),
-		timePeriod_(timePeriod)
+	nanoseconds CpuClock::Tick(uint64_t ticks)
 	{
-		epoch_ = steady_clock::now();
-		tp_ = epoch_;
-	}
+		tickCount_ += ticks;
 
-	nanoseconds CpuClock::TimePeriod() const
-	{
-		return timePeriod_;
-	}
+		if (tickCount_ >= totalTicks_)
+		{
+			auto sleepFor = [this](nanoseconds sleepTime)
+			{
+				if (sleepTime > nanoseconds::zero())
+				{
+					auto now = steady_clock::now();
+					std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(sleepTime.count() * spinPercantageToSleep_)));
+					auto total = duration_cast<nanoseconds>(steady_clock::now() - now);
+					sleepTime -= total;
+				}
 
-	nanoseconds CpuClock::CorrelateFrequency() const
-	{
-		return correlateFreq_;
+				return sleepTime;
+			};
+
+			auto spinFor = [this](nanoseconds spinTime)
+			{
+				auto now = steady_clock::now();
+
+				if (spinTime > nanoseconds::zero())
+				{
+					auto start = now;
+					auto end = (now + spinTime);
+
+					while (now < end)
+					{
+						now = steady_clock::now();
+					}
+
+					// record any over spin
+					spinTime = duration_cast<nanoseconds>(end - now);
+				}
+
+				return spinTime;
+			};
+
+
+			auto nanos = nanoseconds(tickCount_ * timePeriod_) - duration_cast<nanoseconds>(steady_clock::now() - lastTime_) + error_;
+			error_ = spinFor(sleepFor(nanos));
+			tickCount_ = 0;
+			lastTime_ = steady_clock::now();
+			time_ = duration_cast<nanoseconds>(lastTime_ - epoch_);
+		}
+
+		return time_;
 	}
 
 	void CpuClock::Reset()
 	{
-		elapsedTime_ = nanoseconds::zero();
-		hostNanos_ = nanoseconds::zero();
-		targetNanos_ = nanoseconds::zero();
 		epoch_ = steady_clock::now();
-		tp_ = epoch_;
-	}
-
-	nanoseconds CpuClock::Tick()
-	{
-		auto now = steady_clock::now();
-
-		if (now >= tp_ + timePeriod_)
-		{
-			controlBus_->Send (Signal::Clock);
-			tp_ = now;
-		}
-
-		return now - epoch_;
-	}
-
-	#if 0
-	nanoseconds CpuClock::Tick() const
-	{
-		auto sleepTime = nanoseconds::zero();
-		auto startClock = steady_clock::now();
-		auto currentClock = startClock;
-		
-		auto targetSpinTime = timePeriod_;
-
-		if (targetSpinTime > minSpinTimeForSleep_)
-		{
-			auto mostOfTheSpin = static_cast<uint64_t>(targetSpinTime.count() * spinPercantageToSleep_);
-
-			std::this_thread::sleep_for(nanoseconds(mostOfTheSpin));
-			sleepTime = std::chrono::steady_clock::now() - currentClock;
-			currentClock += sleepTime;
-			targetSpinTime -= sleepTime;
-
-			if constexpr (dbgClock == true)
-			{
-				//we slept longer than the target ... it should compensate for this, but
-				//if it happens a lot we can reduce the spinPercantageToSleep_
-				if (targetSpinTime < nanoseconds::zero())
-				{
-					printf("Over slept by %I64d nanos\n", abs(targetSpinTime.count()));
-				}
-			}
-		}
-		//else if (targetSpinTime > 5)
-		//{
-		//	while (currentClock < targetClock)
-		//	{
-		//		std::this_thread::sleep_for(nanoseconds(1));
-		//		currentClock = steady_clock::now();
-		//	}
-		//}
-
-		//auto spinStart = currentClock;
-		//auto targetClock = spinStart + targetSpinTime;
-		auto targetClock = currentClock + targetSpinTime;
-
-		while (currentClock < targetClock)
-		{
-			std::this_thread::sleep_for(nanoseconds(0));
-			currentClock = steady_clock::now();
-		}
-
-		if constexpr (dbgClock == true)
-		{
-			if (targetSpinTime > nanoseconds::zero() && currentClock > targetClock)
-			{
-				printf("Over spun by %I64d nanos\n", (currentClock - targetClock).count());
-			}
-		}
-
-		return currentClock - startClock;
-	}
-	#endif
-
-	#if 0
-	nanoseconds CpuClock::Tick(uint16_t ticks)
-	{
-		auto throttleTime = nanoseconds::zero();
-		auto elapsed = timePeriod_ * ticks;
-		targetNanos_ += elapsed;
-		elapsedTime_ += elapsed;
-		auto now = steady_clock::now();
-		hostNanos_ += (now - tp_);
-
-		if (elapsedTime_ >= correlateFreq_)
-		{
-			auto targetSpinTime = (targetNanos_ - hostNanos_);
-
-			if (targetSpinTime > nanoseconds::zero())
-			{
-				//the host CPU exectued faster than the target,
-				//we need to slow down the host(sleep/spin)
-
-				/*
-					If the target spin time is greater than 50ms (minSpinTimeForSleep_), we will
-					sleep for 80% (spinPercantageToSleep_) of the spin time, then spin away the rest.
-				*/
-				auto sleepTime = nanoseconds::zero();
-				auto currentClock = steady_clock::now();
-
-				if (targetSpinTime >= minSpinTimeForSleep_)
-				{
-					auto mostOfTheSpin = static_cast<uint64_t>(targetSpinTime.count() * spinPercantageToSleep_);
-					
-					std::this_thread::sleep_for(nanoseconds(mostOfTheSpin));
-					sleepTime = std::chrono::steady_clock::now() - currentClock;
-					currentClock += sleepTime;
-					targetSpinTime -= sleepTime;
-					
-					if constexpr (dbgClock == true)
-					{
-						//we slept longer than the target ... it should compensate for this, but
-						//if it happens a lot we can reduce the spinPercantageToSleep_
-						if (targetSpinTime < nanoseconds::zero())
-						{
-							//cppcheck-suppress invalidPrintfArgType_sint
-							printf("Over slept by %lld nanos\n", abs(targetSpinTime.count()));
-						}
-					}
-				}
-
-				auto spinStart = currentClock;
-				auto targetClock = spinStart + targetSpinTime;
-
-				while (currentClock < targetClock)
-				{
-					//std::this_thread::sleep_for(nanoseconds(1));
-					currentClock = steady_clock::now();
-				}
-
-				if constexpr (dbgClock == true)
-				{
-					if (targetSpinTime > nanoseconds::zero() && currentClock > targetClock)
-					{
-						printf ("Over spun by %I64d nanos\n", (currentClock - targetClock).count());
-					}
-				}
-
-				//throttle time = sleepTime + how much we actually spun
-				throttleTime = sleepTime + (currentClock - spinStart);
-
-				//This essentially stores the error (0 - we throttled the exact amount, > 0 throttled too much, < 0 throttled too little
-				//targetSpinTime -= throttleTime;
-			}
-			//else
-			//{
-			//	if constexpr (dbgClock == true)
-			//	{
-			//		printf("Host CPU behind by %I64d nanos\n", abs(targetSpinTime.count()));
-			//	}
-			//}
-
-			//reset the elapsed time for the next correlate check
-			elapsedTime_ = nanoseconds::zero();
-		}
-
-		tp_ = now;
-		return hostNanos_ + throttleTime;
-	}
-	#endif
-
-	nanoseconds CpuClock::Time() const
-	{
-		return targetNanos_;
+		lastTime_ = epoch_;
 	}
 } // namespace MachEmu
