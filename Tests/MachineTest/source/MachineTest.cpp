@@ -97,4 +97,37 @@ namespace MachEmu::Tests
 			machine_->Run();
 		);
 	}
+
+	TEST_F(MachineTest, RunTimed)
+	{
+		EXPECT_NO_THROW
+		(			
+			// Run a program that should take a second to complete
+			// (in actual fact it's 2000047 ticks, 47 ticks over a second.
+			// We need to be as close a possible to 2000000 ticks without
+			// going under so the cpu sleeps at the end
+			// of the program so it maintains sync. It's never going to
+			// be perfect, but its close enough for testing purposes).
+			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
+			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+			machine_->SetMemoryController(memoryController_);
+			machine_->SetIoController(ioController_);
+			
+			int64_t nanos = 0;
+
+			// If an over sleep occurs after the last batch of instructions are executed during a machine run
+			// there is no way to compensate for this which means running a timed test just once will result in
+			// sporadic failures. To counter this we will run the machine multiples times and take the average
+			// of the accumulated run time, this should smooth out the errors caused by end of program over sleeps.
+			int64_t iterations = 5;
+
+			for (int i = 0; i < iterations; i++)
+			{
+				nanos += machine_->Run();
+			}
+
+			// Allow an average 500 micros of over sleep error
+			EXPECT_LT(nanos - (iterations * 1000000000), 500000)
+		);
+	}
 } // namespace MachEmu::Tests
