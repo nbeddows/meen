@@ -1,8 +1,8 @@
 set (lib_name MachEmu)
 
 set (${lib_name}_include_files
-	${module_dir}/${lib_name}/IMachine.h
-	${module_dir}/${lib_name}/MachineFactory.h
+	${include_dir}/Machine/IMachine.h
+	${include_dir}/Machine/MachineFactory.h
 )
 
 set (${lib_name}_module_files
@@ -14,7 +14,7 @@ set (${lib_name}_source_files
 	${source_dir}/MachineFactory.cpp
 )
 
-add_target(${lib_name} SHARED "" "${${lib_name}_module_files}" "${${lib_name}_source_files}")
+add_target(${lib_name} SHARED "${${lib_name}_include_files}" "${${lib_name}_module_files}" "${${lib_name}_source_files}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
