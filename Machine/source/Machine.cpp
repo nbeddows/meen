@@ -42,7 +42,7 @@ namespace MachEmu
 {
 	Machine::Machine()
 	{
-		clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
+		clock_ = MakeCpuClock(milliseconds(50), 2000000);
 		cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
 	}
 
@@ -80,64 +80,50 @@ namespace MachEmu
 		}
 	}
 
-	void Machine::Run(uint16_t pc)
+	uint64_t Machine::Run(uint16_t pc)
 	{		
 		if (memoryController_ == nullptr)
 		{
 			throw std::runtime_error ("No memory controller has been set");
 		}
-		
-		auto addressBus = systemBus_.addressBus;
+
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
+		uint8_t cycles = 0;
+		nanoseconds currTime{};
 
 		cpu_->Reset(pc);
+		clock_->Reset();
 
 		uint64_t totalCycles = 0;
 
 		while (controlBus->Receive(Signal::PowerOff) == false)
 		{
-			auto currTime = clock_->Tick();
+			//Execute the next instruction
+			cycles = cpu_->Execute();
+			currTime = clock_->Tick(cycles);
+			totalCycles += cycles;
 
-			//check if we can tick the cpu
-			if (controlBus->Receive(Signal::Clock) == true)
+			if (ioController_ != nullptr)
 			{
-				//Execute the next instruction
-				auto cycles = cpu_->Execute();
+				auto isr = ioController_->ServiceInterrupts(/*currTime,*/ totalCycles);
 
-				if (ioController_ != nullptr)
+				if (isr != ISR::NoInterrupt)
 				{
-					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
-					//otherwise we will overload the databus.
-					if (cycles > 0)
+					if (isr != ISR::Quit)
 					{
-						totalCycles += cycles;
-						
-						/* TODO
-
-							We should be able to launch ServiceInterrupts on a
-							separate task.
-						*/
-
-						//auto isr = ioController_->ServiceInterrupts(nanoseconds(tick));
-						auto isr = ioController_->ServiceInterrupts(/*currTime,*/ totalCycles);
-
-						if (isr != ISR::NoInterrupt)
-						{
-							if (isr != ISR::Quit)
-							{
-								controlBus->Send(Signal::Interrupt);
-								dataBus->Send(static_cast<uint8_t>(isr));
-							}
-							else
-							{
-								controlBus->Send(Signal::PowerOff);
-							}
-						}
+						controlBus->Send(Signal::Interrupt);
+						dataBus->Send(static_cast<uint8_t>(isr));
+					}
+					else
+					{
+						controlBus->Send(Signal::PowerOff);
 					}
 				}
 			}
 		}
+
+		return currTime.count();
 	}
 
 	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)

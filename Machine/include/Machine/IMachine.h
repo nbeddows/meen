@@ -71,12 +71,14 @@ namespace MachEmu
 										is specified cpu instruction execution will
 										begin from memory address 0x00.
 
+			@return	uint64_t			The duration of the run time of the machine in nanoseconds.
+
 			@throw	std::runtime_error	No memory controller has been set on this
 										machine.
 
 										@see SetMemoryController
 		*/
-		virtual void Run(uint16_t pc = 0x00) = 0;
+		virtual uint64_t Run(uint16_t pc = 0x00) = 0;
 
 		/** Set a custom memory controller with the machine.
 
