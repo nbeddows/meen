@@ -43,48 +43,57 @@ namespace MachEmu
 
 	nanoseconds CpuClock::Tick(uint64_t ticks)
 	{
-		tickCount_ += ticks;
-
-		if (tickCount_ >= totalTicks_)
+		if (totalTicks_ >= 0)
 		{
-			auto sleepFor = [this](nanoseconds sleepTime)
+			tickCount_ += ticks;
+
+			if (tickCount_ >= totalTicks_)
 			{
-				if (sleepTime > nanoseconds::zero())
+				auto sleepFor = [this](nanoseconds sleepTime)
 				{
-					auto now = steady_clock::now();
-					std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(sleepTime.count() * spinPercantageToSleep_)));
-					auto total = duration_cast<nanoseconds>(steady_clock::now() - now);
-					sleepTime -= total;
-				}
-
-				return sleepTime;
-			};
-
-			auto spinFor = [this](nanoseconds spinTime)
-			{
-				auto now = steady_clock::now();
-
-				if (spinTime > nanoseconds::zero())
-				{
-					auto start = now;
-					auto end = (now + spinTime);
-
-					while (now < end)
+					// don't attempt to sleep for anything less than a millisecond 
+					if (sleepTime >= nanoseconds(1000000))
 					{
-						now = steady_clock::now();
+						auto now = steady_clock::now();
+						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(sleepTime.count() * spinPercantageToSleep_)));
+						auto total = duration_cast<nanoseconds>(steady_clock::now() - now);
+						sleepTime -= total;
 					}
 
-					// record any over spin
-					spinTime = duration_cast<nanoseconds>(end - now);
-				}
+					return sleepTime;
+				};
 
-				return spinTime;
-			};
+				auto spinFor = [this](nanoseconds spinTime)
+				{
+					auto now = steady_clock::now();
+
+					if (spinTime > nanoseconds::zero())
+					{
+						auto start = now;
+						auto end = (now + spinTime);
+
+						while (now < end)
+						{
+							now = steady_clock::now();
+						}
+
+						// record any over spin
+						spinTime = duration_cast<nanoseconds>(end - now);
+					}
+
+					return spinTime;
+				};
 
 
-			auto nanos = nanoseconds(tickCount_ * timePeriod_) - duration_cast<nanoseconds>(steady_clock::now() - lastTime_) + error_;
-			error_ = spinFor(sleepFor(nanos));
-			tickCount_ = 0;
+				auto nanos = nanoseconds(tickCount_ * timePeriod_) - duration_cast<nanoseconds>(steady_clock::now() - lastTime_) + error_;
+				error_ = spinFor(sleepFor(nanos));
+				tickCount_ = 0;
+				lastTime_ = steady_clock::now();
+				time_ = duration_cast<nanoseconds>(lastTime_ - epoch_);
+			}
+		}
+		else
+		{
 			lastTime_ = steady_clock::now();
 			time_ = duration_cast<nanoseconds>(lastTime_ - epoch_);
 		}
