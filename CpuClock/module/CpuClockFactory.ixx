@@ -43,10 +43,9 @@ namespace MachEmu
 
 										The lower the frequency the higher the resolution of the clock (0 being the highest, ie;
 										sync the cpu after every instruction).
-										Low correlation frequencies can yield inaccurate clock speeds due
-										to host OS scheduling (anything below 30-50 milliseconds).
-
-										TODO: investigate high res clock.
+										Low correlation frequencies (above 0) can yield inaccurate clock speeds when a high
+										resolution clock is not available (anything below 30-50 milliseconds). When a high resolution
+										clock is available the best resolution attainable is at most 1 millisecond.
 
 										@see ICpuClock::Tick
 

@@ -97,8 +97,8 @@ namespace MachEmu
 						struct timespec req{ 0, sleepTime };
 						nanosleep(&req, nullptr);
 #elif defined _WINDOWS
-						// Convert from microseconds to 100 of ns, and negative for relative time.
 						LARGE_INTEGER sleepPeriod;
+						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
 						sleepPeriod.QuadPart = -(sleepTime / 100);
 
 						// Create the timer, sleep until time has passed, and clean up.
