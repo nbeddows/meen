@@ -127,7 +127,7 @@ namespace MachEmu::Tests
 			}
 
 			// Allow an average 500 micros of over sleep error
-			EXPECT_LT(nanos - (iterations * 1000000000), 500000)
+			EXPECT_LT(((nanos / iterations) - 1000000000), 500000);
 		);
 	}
 } // namespace MachEmu::Tests

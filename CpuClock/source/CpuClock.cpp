@@ -21,14 +21,22 @@ SOFTWARE.
 */
 
 module;
-#include <assert.h>
+
+#ifdef __GNUC__
+// use nanosleep
+#include <time.h>
+#elif defined _WINDOWS
+// use hi-res window sleep
+#include <Windows.h>
+#else
+// use std::thread::sleep_for
 #include <thread>
+#endif
 
 module CpuClock;
 
 import <cstdint>;
 import <chrono>;
-import SystemBus;
 
 using namespace std::chrono;
 
@@ -39,6 +47,35 @@ namespace MachEmu
 	{
 		// tick the clock after at least this many ticks
 		totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
+
+#ifdef _WINDOWS
+		const HINSTANCE ntdll = LoadLibrary("ntdll.dll");
+		if (ntdll != NULL)
+		{
+			typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
+			typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
+
+			pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
+			pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
+			if (NtQueryTimerResolution != NULL &&
+				NtSetTimerResolution != NULL)
+			{
+				// Query for the highest accuracy timer resolution.
+				unsigned long minimum, maximum, current;
+				NtQueryTimerResolution(&minimum, &maximum, &current);
+				// Set the timer resolution to the highest.
+				NtSetTimerResolution(minimum, (char)0, &current);
+
+				NtQueryTimerResolution(&minimum, &maximum, &current);
+
+				return;
+			}
+
+			// We can decrement the internal reference count by one
+			// and NTDLL.DLL still remains loaded in the process.
+			FreeLibrary(ntdll);
+		}
+#endif
 	}
 
 	nanoseconds CpuClock::Tick(uint64_t ticks)
@@ -49,18 +86,33 @@ namespace MachEmu
 
 			if (tickCount_ >= totalTicks_)
 			{
-				auto sleepFor = [this](nanoseconds sleepTime)
+				auto sleepFor = [this](nanoseconds spinTime)
 				{
 					// don't attempt to sleep for anything less than a millisecond 
-					if (sleepTime >= nanoseconds(1000000))
+					if (spinTime >= nanoseconds(1000000))
 					{
+						auto sleepTime = static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_);
 						auto now = steady_clock::now();
-						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(sleepTime.count() * spinPercantageToSleep_)));
-						auto total = duration_cast<nanoseconds>(steady_clock::now() - now);
-						sleepTime -= total;
+#ifdef __GNUC__
+						struct timespec req{ 0, sleepTime };
+						nanosleep(&req, nullptr);
+#elif defined _WINDOWS
+						// Convert from microseconds to 100 of ns, and negative for relative time.
+						LARGE_INTEGER sleepPeriod;
+						sleepPeriod.QuadPart = -(sleepTime / 100);
+
+						// Create the timer, sleep until time has passed, and clean up.
+						HANDLE timer = CreateWaitableTimerEx(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
+						SetWaitableTimer(timer, &sleepPeriod, 0, nullptr, nullptr, 0);
+						WaitForSingleObject(timer, INFINITE);
+						CloseHandle(timer);
+#else
+						std::this_thread::sleep_for(nanoseconds(sleepTime));
+#endif
+						spinTime -= duration_cast<nanoseconds>(steady_clock::now() - now);
 					}
 
-					return sleepTime;
+					return spinTime;
 				};
 
 				auto spinFor = [this](nanoseconds spinTime)
@@ -83,7 +135,6 @@ namespace MachEmu
 
 					return spinTime;
 				};
-
 
 				auto nanos = nanoseconds(tickCount_ * timePeriod_) - duration_cast<nanoseconds>(steady_clock::now() - lastTime_) + error_;
 				error_ = spinFor(sleepFor(nanos));
