@@ -32,37 +32,8 @@ namespace MachEmu
 		Represents the clock of an emulated cpu.
 	*/
 	export struct ICpuClock
-	{
-		/** TimePeriod
-			
-			Returns in nanoseconds the duration of a clock cycle (tick).
-
-			@return		nanoseconds		The tick duration.
-		*/
-		virtual std::chrono::nanoseconds TimePeriod() const = 0;
-
-		/** CorrelateFrequency
-			
-			The frequency in nanoseconds at which the clock will sync the target cpu
-			to the correct rate.
-
-			@discussion		A frequency of zero will sync the cpu at every call to Tick().
-							The lower the frequency the more often the cpu will spin to maintain sync
-							(most accurate, more cpu usage, less jitter), anything above 50,000,000 nanos
-							(50 milliseconds) will sleep the cpu thread to maintain sync
-							(less accurate, less cpu usage, more jitter).
-
-			@return			nanoseconds		The frequency at which the target cpu will correlate.
-		*/
-		virtual std::chrono::nanoseconds CorrelateFrequency() const = 0;
-		
-		/** Reset
-			
-			Resets the cpu to its initial state when forst created.
-		*/
-		virtual void Reset() = 0;
-		
-		/** Tick
+	{		
+		/** Tick.
 		
 			Advances the cpu by the specified number of ticks.
 
@@ -76,24 +47,18 @@ namespace MachEmu
 
 							@see TimePeriod
 			
+			@param			ticks			The number of ticks to advance the clock.
+			
 			@return			nanoseconds		The current time of the machine which is
 											emulating the target cpu.
-
-											For the most part the return value can be
-											ignored, it is primarily used in the tests
-											to assert the accuracy of the clock.
 		*/
-		//virtual std::chrono::nanoseconds Tick(uint16_t ticks) = 0;
-		//virtual nanoseconds Tick() const = 0;
-		virtual std::chrono::nanoseconds Tick() = 0;
-		
-		/** Time
-		
-			The current time in nanoseconds of the emulated cpu
+		virtual std::chrono::nanoseconds Tick(uint64_t ticks) = 0;
 
-			@return		nanoseconds		The current emulated cpu time.
+		/** Reset.
+
+			Resets the epoch of the clock.
 		*/
-		virtual std::chrono::nanoseconds Time() const = 0;
+		virtual void Reset() = 0;
 
 		virtual ~ICpuClock() = default;
 	};

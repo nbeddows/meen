@@ -34,17 +34,24 @@ namespace MachEmu
 		The CPU clock contols the timing for the target CPU so that all instructions executed
 		execute at the correct rate.
 
-		@param	timePeriod				The duration in nanoseconds of the target cpu tick (cycle).
-		
-		@param	correlateFrequency		The frequency in nanoseconds at which the clock will sync
+		@param	correlateFrequency		The frequency in milliseconds at which the clock will sync
 										The target cpu to the correct rate.
 
-										@see ICpuClock::CorrelateFrequency
+										A frequency of 0 will sync the cpu at every call to Tick() (this will spin the
+										cpu 100% of the time to maintain sync (most accurate, high cpu usage)).
+										A frequency of -1 will not perform any synchronisation (run as fast as possible).
+
+										The lower the frequency the higher the resolution of the clock (0 being the highest, ie;
+										sync the cpu after every instruction).
+										Low correlation frequencies (above 0) can yield inaccurate clock speeds when a high
+										resolution clock is not available (anything below 30-50 milliseconds). When a high resolution
+										clock is available the best resolution attainable is at most 1 millisecond.
+
 										@see ICpuClock::Tick
+
+		@param	speed					The desired clock speed in ticks per second, for the i8080 cpu this will be 2000000 (2Mhz)
 
 		@return	unique_ptr				A unique_ptr to the CpuClock interface.
 	*/
-	export std::unique_ptr<ICpuClock> MakeCpuClock(std::chrono::nanoseconds timePeriod, std::chrono::nanoseconds correlateFrequency);
-	//export template <uint8_t crtlW>
-	export std::unique_ptr<ICpuClock> MakeCpuClock(const std::shared_ptr<ControlBus<8>>& controlBus, std::chrono::nanoseconds timePeriod);
+	export std::unique_ptr<ICpuClock> MakeCpuClock(std::chrono::milliseconds correlateFreq, uint64_t speed);
 } // namespace MachEmu

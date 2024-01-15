@@ -57,7 +57,7 @@ namespace MachEmu
 		
 			@see IMachine::Run
 		*/
-		void Run(uint16_t pc) final;
+		uint64_t Run(uint16_t pc) final;
 
 		/** SetMemoryController
 
