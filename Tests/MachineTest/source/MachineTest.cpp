@@ -112,7 +112,10 @@ namespace MachEmu::Tests
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
 			machine_->SetMemoryController(memoryController_);
 			machine_->SetIoController(ioController_);
-			
+			// 25 millisecond resolution
+			auto err = machine_->SetClockResolution(25000000);
+			EXPECT_EQ(ErrorCode::NoError, err);
+
 			int64_t nanos = 0;
 
 			// If an over sleep occurs after the last batch of instructions are executed during a machine run
@@ -126,8 +129,23 @@ namespace MachEmu::Tests
 				nanos += machine_->Run();
 			}
 
+			auto error = (nanos / iterations) - 1000000000;
 			// Allow an average 500 micros of over sleep error
-			EXPECT_LT(((nanos / iterations) - 1000000000), 500000);
+			EXPECT_GT(500000, error);
+			EXPECT_LT(0, error);
+			// restore back to as fast as possible
+			err = machine_->SetClockResolution(-1);
+			EXPECT_EQ(ErrorCode::NoError, err);
 		);
+	}
+
+	TEST_F(MachineTest, BadClockResolution)
+	{
+		// Try to set the resolution to 500 microseconds
+		auto err = machine_->SetClockResolution(500000);
+		EXPECT_EQ(ErrorCode::ClockResolution, err);
+		// restore back to as fast as possible
+		err = machine_->SetClockResolution(-1);
+		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 } // namespace MachEmu::Tests
