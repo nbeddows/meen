@@ -44,6 +44,13 @@ namespace MachEmu
 		Quit = 0xEF,	//<	Returned from IController::ServiceInterrupts to exit the IMachine::Run control loop.
 		NoInterrupt,
 	};
+
+	// TODO: convert to std::error_code
+	enum class ErrorCode
+	{
+		NoError,
+		ClockResolution
+	};
 } // namespace MachEmu
 
 #endif // BASE_H
