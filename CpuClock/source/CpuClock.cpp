@@ -42,40 +42,76 @@ using namespace std::chrono;
 
 namespace MachEmu
 {
-	CpuClock::CpuClock(milliseconds correlateFreq, uint64_t speed) :
+	CpuClock::CpuClock(uint64_t speed) :
 		timePeriod_(1000000000 / speed)
 	{
 		// tick the clock after at least this many ticks
-		totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
+		//totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
+#ifdef __GNUC__
+		struct timespec res;
+		auto err = clock_getres(CLOCK_REALTIME, &res);
 
-#ifdef _WINDOWS
-		const HINSTANCE ntdll = LoadLibrary("ntdll.dll");
-		if (ntdll != NULL)
+		if (err < 0)
 		{
-			typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
-			typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
+			throw std::runtime_error("Failed to query clock resolution");
+		}
 
-			pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
-			pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
-			if (NtQueryTimerResolution != NULL &&
-				NtSetTimerResolution != NULL)
+		maxResolution_ = nanoseconds(res.tv_nsec);
+
+#elif _WINDOWS
+		auto ntdll = LoadLibrary("ntdll.dll");
+		
+		if (ntdll == nullptr)
+		{
+			throw std::runtime_error("Failed to query clock resolution");
+		}
+		
+		typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
+		typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
+
+		pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
+		pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
+		
+		if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
+		{
+			FreeLibrary(ntdll);
+			throw std::runtime_error("Failed to query clock resolution");
+		}
+
+		// Query for the highest accuracy timer resolution.
+		unsigned long minimum, maximum, current;
+		NtQueryTimerResolution(&minimum, &maximum, &current);
+		// Set the timer resolution to the highest - if we do set it we MUST call it again with FALSE
+		// when we exit to restore the system default.
+		//NtSetTimerResolution(maximum, TRUE, &current);
+		maxResolution_ = nanoseconds(current * 100);
+		// We are done
+		FreeLibrary(ntdll);
+
+#else
+		maxResolution_ = nanoseconds(40000000);
+#endif
+	}
+
+	ErrorCode CpuClock::SetTickResolution(std::chrono::nanoseconds resolution)
+	{
+		auto err = ErrorCode::NoError;
+
+		if (resolution >= nanoseconds::zero() && timePeriod_ >= nanoseconds::zero())
+		{
+			if (resolution < maxResolution_)
 			{
-				// Query for the highest accuracy timer resolution.
-				unsigned long minimum, maximum, current;
-				NtQueryTimerResolution(&minimum, &maximum, &current);
-				// Set the timer resolution to the highest.
-				NtSetTimerResolution(minimum, (char)0, &current);
-
-				NtQueryTimerResolution(&minimum, &maximum, &current);
-
-				return;
+				err = ErrorCode::ClockResolution;
 			}
 
-			// We can decrement the internal reference count by one
-			// and NTDLL.DLL still remains loaded in the process.
-			FreeLibrary(ntdll);
+			totalTicks_ = resolution / timePeriod_;
 		}
-#endif
+		else
+		{
+			totalTicks_ = -1;
+		}
+
+		return err;
 	}
 
 	nanoseconds CpuClock::Tick(uint64_t ticks)

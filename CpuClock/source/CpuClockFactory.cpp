@@ -26,15 +26,14 @@ import <chrono>;
 import <memory>;
 import ICpuClock;
 import CpuClock;
-import SystemBus;
 
 using namespace std::chrono;
 
 namespace MachEmu
 {
 	//factory free form function
-	std::unique_ptr<ICpuClock> MakeCpuClock(milliseconds correlateFreq, uint64_t speed)
+	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed)
 	{
-		return std::make_unique<CpuClock>(correlateFreq, speed);
+		return std::make_unique<CpuClock>(speed);
 	}
 } // namespace MachEmu

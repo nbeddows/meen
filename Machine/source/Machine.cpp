@@ -42,8 +42,13 @@ namespace MachEmu
 {
 	Machine::Machine()
 	{
-		clock_ = MakeCpuClock(milliseconds(50), 2000000);
+		clock_ = MakeCpuClock(2000000);
 		cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
+	}
+
+	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
+	{
+		return clock_->SetTickResolution(nanoseconds(clockResolution));
 	}
 
 	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)

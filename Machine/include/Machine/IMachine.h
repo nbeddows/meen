@@ -51,6 +51,10 @@ namespace MachEmu
 		machine->SetIOController(customIOController);
 		machine->SetMemoryController(customMemoryController);
 
+		// set the clock resolution - not setting this will run the
+		// machine as fast as possible (default)
+		machine->SetResolution(20000000); // 20 millisecond clock resolution
+
 		// Run the machine
 		machine->Run();
 
@@ -124,6 +128,29 @@ namespace MachEmu
 			See the tests for example IO controllers.
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
+
+		/**	Set the frequency at which the internal clock ticks.
+
+			@param		clockResolution				A request in nanoseconds as to how frequently the
+													machine clock will tick. The clock is disabled by
+													default (run as fast as possible).
+
+			@return		ErrorCode	NoError			The resolution was set successfully.
+									ClockResolution	The resolution was set, however, the host does not support
+													a high enough resolution timer for this resolution. This may
+													result in high CPU usage, high jitter and inaccurate timing.
+													This method should be called again with a lower resolution.
+
+			Note that this is only a request and while best efforts are made to honour it, the consistency of the tick
+			rate will not be perfect, especially at higher resolutions when no high resolution clock is available.
+		
+			A value of less than 0 will run the machine as fast as possible with the highest possible resolution.
+			A value of 0 will run the machine at realtime (or as close to) with the highest possible resolution.
+			Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
+			the clock speed and is not recommended.
+		*/
+		virtual ErrorCode SetClockResolution (int64_t clockResolution) = 0;
+
 
 		/**	Get the state of the machine.
 
