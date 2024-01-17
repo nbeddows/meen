@@ -101,7 +101,7 @@ namespace MachEmu::Tests
 	TEST_F(MachineTest, RunTimed)
 	{
 		EXPECT_NO_THROW
-		(			
+		(
 			// Run a program that should take a second to complete
 			// (in actual fact it's 2000047 ticks, 47 ticks over a second.
 			// We need to be as close a possible to 2000000 ticks without
@@ -141,8 +141,19 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, BadClockResolution)
 	{
-		// Try to set the resolution to 500 microseconds
-		auto err = machine_->SetClockResolution(500000);
+		// Linux high resolution timer will return 1 nanosecond resolution
+		// linux/include/linux/hrtimer.h:
+		// The resolution of the clocks. The resolution value is returned in
+		// the clock_getres() system call to give application programmers an
+		// idea of the (in)accuracy of timers. Timer values are rounded up to
+		// this resolution values.
+		//
+		// # define HIGH_RES_NSEC          1
+
+		// Windows high resolution timer will be around 500/1000 micros.
+
+		// Sending in a value of 0 will satisfy both cases
+		auto err = machine_->SetClockResolution(0);
 		EXPECT_EQ(ErrorCode::ClockResolution, err);
 		// restore back to as fast as possible
 		err = machine_->SetClockResolution(-1);

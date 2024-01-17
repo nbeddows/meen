@@ -33,6 +33,8 @@ module;
 #include <thread>
 #endif
 
+#include "Base/Base.h"
+
 module CpuClock;
 
 import <cstdint>;
