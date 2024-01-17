@@ -9,6 +9,7 @@
   to mach-emu.
 * Sdk modules are now headers files for better
   platform compatibility.
+* Added SetClockResolution to the IMachine interface.
 
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
