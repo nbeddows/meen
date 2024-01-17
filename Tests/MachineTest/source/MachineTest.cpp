@@ -149,9 +149,9 @@ namespace MachEmu::Tests
 		// this resolution values.
 		//
 		// # define HIGH_RES_NSEC          1
-		
+
 		// Windows high resolution timer will be around 500/1000 micros.
-		
+
 		// Sending in a value of 0 will satisfy both cases
 		auto err = machine_->SetClockResolution(0);
 		EXPECT_EQ(ErrorCode::ClockResolution, err);
