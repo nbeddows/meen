@@ -77,7 +77,7 @@ namespace MachEmu
 		memory_[addr] = data;
 	}
 
-	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
+	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
 	{
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;

@@ -50,6 +50,6 @@ namespace MachEmu
             ~BaseIoController() = default;
 
 			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
-			ISR ServiceInterrupts(uint64_t cycles) override;
+			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) override;
 	};
 } // namespace MachEmu

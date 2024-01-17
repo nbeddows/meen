@@ -95,7 +95,7 @@ namespace MachEmu
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
 		uint8_t cycles = 0;
-		nanoseconds currTime{};
+		auto currTime = nanoseconds::zero();
 
 		cpu_->Reset(pc);
 		clock_->Reset();
@@ -111,7 +111,7 @@ namespace MachEmu
 
 			if (ioController_ != nullptr)
 			{
-				auto isr = ioController_->ServiceInterrupts(/*currTime,*/ totalCycles);
+				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalCycles);
 
 				if (isr != ISR::NoInterrupt)
 				{

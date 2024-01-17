@@ -33,7 +33,7 @@ namespace MachEmu
 		powerOff_ = port == 0xFF;
 	}
 
-	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t cycles)
+	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
 	{
 		auto isr = ISR::NoInterrupt;
 

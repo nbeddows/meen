@@ -98,8 +98,8 @@ namespace MachEmu
 	}
 
 	//No interrupts
-	ISR CpmIoController::ServiceInterrupts(uint64_t cycles)
+	ISR CpmIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
 	{
-		return BaseIoController::ServiceInterrupts(cycles);
+		return BaseIoController::ServiceInterrupts(currTime, cycles);
 	}
 } // namespace MachEmu
