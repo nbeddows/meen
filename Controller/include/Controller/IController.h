@@ -81,7 +81,7 @@ namespace MachEmu
 
 								@see ISR
 		*/
-		virtual ISR ServiceInterrupts(uint64_t cycles) = 0;
+		virtual ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) = 0;
 
 		/** Destroys the controller.
 		

@@ -1902,9 +1902,16 @@ TEST_F(Intel8080Test, ISR_1)
 	//The ioController fires rst 1 every second.
 	memoryController_->Load(PROGRAMS_DIR"/isr.bin", 0x08);
 
-	//There is a chance for an infinate spin if the test fails.
-	//Since the ioController fires an interrupt every second we
-	//need to run this off an async task with a two second time out.
+	// Set to the resolution to 50Hz
+	machine_->SetClockResolution(20000000);
+
+	// There is a chance for an infinate spin if the test fails.
+	// Since the ioController fires an interrupt every second we
+	// need to run this off an async task with a two second time out.
+	// TODO: since we fire every second we need to test that the Run
+	// method takes a second to complete, pass back the Run value
+	// from LoadAndRun or pass it in to LoadAndRun as a reference
+	// parameter to be set.
 	auto future = std::async(std::launch::async, [&]
 	{
 		state = LoadAndRun("spinUntilIsr.bin");
@@ -1913,6 +1920,9 @@ TEST_F(Intel8080Test, ISR_1)
 	EXPECT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(2)));
 	EXPECT_EQ(0x00, state[State::A]);
 	EXPECT_EQ(0x01, state[State::B]);
+
+	// restore back to as fast as possible
+	EXPECT_EQ(ErrorCode::NoError, machine_->SetClockResolution(-1));
 }
 #endif
 

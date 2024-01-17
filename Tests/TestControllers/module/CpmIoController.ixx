@@ -145,6 +145,6 @@ namespace MachEmu
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
