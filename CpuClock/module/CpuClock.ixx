@@ -26,7 +26,6 @@ import <cstdint>;
 import <chrono>;
 import <memory>;
 import ICpuClock;
-import SystemBus;
 
 namespace MachEmu
 {
@@ -43,8 +42,9 @@ namespace MachEmu
 		//cppcheck-suppress unusedStructMember
 		static constexpr double spinPercantageToSleep_{ 0.7 };
 
-		// the number of ticks to accumulate before a correlation occurs.
-		int totalTicks_{};
+		// The number of ticks to accumulate before a correlation occurs.
+		// Set the default to -1 (don't sync the clock, run as fast as possible)
+		int totalTicks_{-1};
 		
 		// the current tick count in this correlation period.
 		int tickCount_{};
@@ -64,6 +64,8 @@ namespace MachEmu
 		std::chrono::steady_clock::time_point lastTime_{};
 		// the current time of the clock expressed at a frequency as specified by correlateFreq
 		std::chrono::nanoseconds time_{};
+		// the maximum resolution of the host clock
+		std::chrono::nanoseconds maxResolution_{};
 
 	public:
 		//correlateFreq
@@ -73,10 +75,11 @@ namespace MachEmu
 		//correlating at every tick or close to it will force a spin to maintain
 		//sync, anything above 50ms will allow a sleep for part of the time at the
 		//expense of sync accuracy.
-		CpuClock(std::chrono::milliseconds correlateFreq, uint64_t speed);
+		CpuClock(uint64_t speed);
 		~CpuClock() = default;
 
 		void Reset() final;
+		ErrorCode SetTickResolution(std::chrono::nanoseconds resolution) final;
 
 		//Returns the host CPU time.
 		std::chrono::nanoseconds Tick(uint64_t ticks) final;

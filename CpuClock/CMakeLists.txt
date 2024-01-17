@@ -18,4 +18,4 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
-add_dependencies(${lib_name} SystemBus)
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})

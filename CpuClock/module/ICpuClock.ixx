@@ -19,6 +19,9 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+module;
+
+#include "Base/Base.h"
 
 export module ICpuClock;
 
@@ -35,7 +38,7 @@ namespace MachEmu
 	{		
 		/** Tick.
 		
-			Advances the cpu by the specified number of ticks.
+			Advances the clock by the specified number of ticks.
 
 			@discussion		The tick is the smallest unit at which the cpu
 							can advance. It can only move forward hence the
@@ -53,6 +56,31 @@ namespace MachEmu
 											emulating the target cpu.
 		*/
 		virtual std::chrono::nanoseconds Tick(uint64_t ticks) = 0;
+
+		/** Set the resolution of the ticking clock.
+		
+			@param	resolution			The frequency in nanoseconds at which the clock will sync
+										The target cpu to the correct rate.
+
+										A frequency of 0 will sync the cpu at every call to Tick() (this will spin the
+										cpu 100% of the time to maintain sync (most accurate, high cpu usage)).
+										A frequency of -1 will not perform any synchronisation (run as fast as possible).
+
+										The lower the frequency the higher the resolution of the clock (0 being the highest, ie;
+										sync the cpu after every instruction).
+										Low correlation frequencies (above 0) can yield inaccurate clock speeds when a high
+										resolution clock is not available (anything below 30-50 milliseconds). When a high resolution
+										clock is available the best resolution attainable is at most 1 millisecond.
+
+										@see ICpuClock::Tick
+
+			@return		ErrorCode	NoError			The resolution was set successfully.
+									ClockResolution	The resolution was set, however, the host does not support
+													a high enough resolution timer for this resolution.
+
+			@see	IMachine::SetClockResolution
+		*/
+		virtual ErrorCode SetTickResolution(std::chrono::nanoseconds resolution) = 0;
 
 		/** Reset.
 
