@@ -94,7 +94,6 @@ namespace MachEmu
 
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
-		uint8_t cycles = 0;
 		auto currTime = nanoseconds::zero();
 
 		cpu_->Reset(pc);
@@ -105,7 +104,7 @@ namespace MachEmu
 		while (controlBus->Receive(Signal::PowerOff) == false)
 		{
 			//Execute the next instruction
-			cycles = cpu_->Execute();
+			auto cycles = cpu_->Execute();
 			currTime = clock_->Tick(cycles);
 			totalCycles += cycles;
 
