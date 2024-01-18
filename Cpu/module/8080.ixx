@@ -46,6 +46,7 @@ namespace MachEmu
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
 		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		//cppcheck-suppress unusedStructMember
 		static constexpr bool dbg = false;
 
 		enum /*class*/Condition

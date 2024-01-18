@@ -45,14 +45,13 @@ namespace MachEmu
 		//for the remainder.
 		//cppcheck-suppress unusedStructMember
 		static constexpr double spinPercantageToSleep_{ 0.7 };
-
 		// The number of ticks to accumulate before a correlation occurs.
 		// Set the default to -1 (don't sync the clock, run as fast as possible)
+		//cppcheck-suppress unusedStructMember
 		int totalTicks_{-1};
-		
 		// the current tick count in this correlation period.
+		//cppcheck-suppress unusedStructMember
 		int tickCount_{};
-
 		//The amount of time for one cycle to complete,
 		//this tends to be variable, for example, on the
 		//i8080 it ranges for 480ns to 2000ns.

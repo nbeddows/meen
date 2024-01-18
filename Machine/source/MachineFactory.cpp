@@ -28,6 +28,7 @@ import Machine;
 
 namespace MachEmu
 {
+	//cppcheck-suppress unusedFunction
 	std::unique_ptr<IMachine> MakeMachine()
 	{
 		return std::make_unique<Machine>();
