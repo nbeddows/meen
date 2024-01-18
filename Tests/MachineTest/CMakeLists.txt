@@ -1,7 +1,6 @@
 set(exe_name MachineTest)
 
 set(${exe_name}_source_files
-  ${source_dir}/8080Test.cpp
   ${source_dir}/MachineTest.cpp
 )
 
