@@ -46,6 +46,7 @@ namespace MachEmu
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
 		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		//cppcheck-suppress unusedStructMember
 		static constexpr bool dbg = false;
 
 		enum /*class*/Condition
@@ -63,12 +64,19 @@ namespace MachEmu
 			these registers may also be accessed via the letters B, C, D,
 			E, H, L, and A (for the accumulator), respectively.
 		*/
+		//cppcheck-suppress unusedStructMember
 		Register a_;
+		//cppcheck-suppress unusedStructMember
 		Register b_;
+		//cppcheck-suppress unusedStructMember
 		Register c_;
+		//cppcheck-suppress unusedStructMember
 		Register d_;
+		//cppcheck-suppress unusedStructMember
 		Register e_;
+		//cppcheck-suppress unusedStructMember
 		Register h_;
+		//cppcheck-suppress unusedStructMember
 		Register l_;
 		//Helper funtions to prime the address and data buses
 		//for read write operations.
@@ -87,6 +95,7 @@ namespace MachEmu
 			by stack operations. The programmer specifies which addresses the stack operations will
 			operate upon via a special accessible 16-bit register called the stack pointer.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint16_t sp_{};
 
 		/**
@@ -113,8 +122,6 @@ namespace MachEmu
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
-		static bool AuxCarry(const Register& r, uint8_t value) { return ((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F; }
-		static bool Carry(const Register& r, uint8_t value) { return (Value(r) + value) > 0xFF; }
 		static bool Parity(const Register& r) { return (r.count() & 1) == 0; }
 		static bool Sign(const Register& r) { return r.test(7); }
 		static bool Zero(const Register& r) { return r.none(); }
@@ -204,20 +211,5 @@ namespace MachEmu
 		Intel8080() = default;
 		Intel8080 (const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
 		~Intel8080() = default;
-
-		uint8_t A() const { return Value(a_); }
-		uint8_t B() const { return Value(b_); }
-		uint8_t C() const { return Value(c_); }
-		uint8_t D() const { return Value(d_); }
-		uint8_t E() const { return Value(e_); }
-		uint8_t H() const { return Value(h_); }
-		uint8_t L() const { return Value(l_); }
-		uint16_t SP() const { return sp_; }
-
-		bool Zero() const { return status_[Condition::ZeroFlag]; }
-		bool Sign() const { return status_[Condition::SignFlag]; }
-		bool Parity() const { return status_[Condition::ParityFlag]; }
-		bool AuxCarry() const { return status_[Condition::AuxCarryFlag]; }
-		bool Carry() const { return status_[Condition::CarryFlag]; }
 	};
 } // namespace MachEmu
