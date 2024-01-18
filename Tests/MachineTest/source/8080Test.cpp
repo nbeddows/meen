@@ -20,100 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import CpmIoController;
-import MemoryController;
-import TestIoController;
-
-// Google test under g++-13 seems to have some module compatibility issues
-// or it could be related to how this file is written (module/header include order for example).
-// Disable and re-test on future gtest/g++ releases.
-#ifdef _WINDOWS
-#include <array>
-#include <future>
-#endif
-
-#include "gtest/gtest.h"
-#include "Base/Base.h"
-#include "Controller/IController.h"
-#include "Machine/IMachine.h"
-#include "Machine/MachineFactory.h"
-
-//using namespace std::chrono;
-using namespace MachEmu;
-
-class Intel8080Test : public testing::Test
-{
-protected:
-	static std::shared_ptr<IController> cpmIoController_;
-	static std::unique_ptr<IMachine> machine_;
-	static std::shared_ptr<MemoryController> memoryController_;
-	static std::shared_ptr<IController> testIoController_;
-
-	enum State
-	{
-		A, B, C, D, E, H, L, S, PC, SP = 10
-	};
-
-	void CheckStatus (uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-	std::array<uint8_t, 12> LoadAndRun(const char* path) const;
-	
-public:
-	static void SetUpTestCase();
-};
-
-std::shared_ptr<IController> Intel8080Test::cpmIoController_;
-std::unique_ptr<IMachine> Intel8080Test::machine_;
-std::shared_ptr<MemoryController> Intel8080Test::memoryController_;
-std::shared_ptr<IController> Intel8080Test::testIoController_;
-
-void Intel8080Test::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const
-{
-	EXPECT_EQ(carry, (status & 0x01) != 0);
-	EXPECT_EQ(parity, (status & 0x04) != 0);
-	EXPECT_EQ(auxCarry, (status & 0x10) != 0);
-	EXPECT_EQ(zero, (status & 0x40) != 0);
-	EXPECT_EQ(sign, (status & 0x80) != 0);
-}
-
-std::array<uint8_t, 12> Intel8080Test::LoadAndRun(const char* name) const
-{
-	//EXPECT_NO_THROW
-	//(
-		std::string dir = PROGRAMS_DIR"/";
-		memoryController_->Load((dir + name).c_str(), 0x100);
-		machine_->Run(0x100);
-		return machine_->GetState();
-	//);
-}
-
-//cppcheck-suppress unusedFunction
-void Intel8080Test::SetUpTestCase()
-{
-	//Create 8080 machine
-	machine_ = MakeMachine();
-	//Create our test controllers.	
-	memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
-	cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
-	testIoController_ = std::make_shared<TestIoController>();
-
-	machine_->SetMemoryController(memoryController_);
-	machine_->SetIoController(testIoController_);
-}
-
-TEST_F(Intel8080Test, LXI_B)
+TEST_F(MachineTest, LXI_B)
 {
 	auto state = LoadAndRun("lxib.bin");
 	EXPECT_EQ(0xFF, state[State::B]);
 	EXPECT_EQ(0x12, state[State::C]);
 }
 
-TEST_F(Intel8080Test, STAX_B)
+TEST_F(MachineTest, STAX_B)
 {
 	auto state = LoadAndRun("staxb.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, INX_B)
+TEST_F(MachineTest, INX_B)
 {
 	auto state = LoadAndRun("inxb.bin");
 	EXPECT_EQ(0xFF, state[State::B]);
@@ -122,7 +42,7 @@ TEST_F(Intel8080Test, INX_B)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_B)
+TEST_F(MachineTest, INR_B)
 {
 	auto state = LoadAndRun("inrb.bin");
 	EXPECT_EQ(0x10, state[State::B]);
@@ -130,7 +50,7 @@ TEST_F(Intel8080Test, INR_B)
 	CheckStatus (state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_B)
+TEST_F(MachineTest, DCR_B)
 {
 	auto state = LoadAndRun("dcrb.bin");
 	EXPECT_EQ(0x00, state[State::B]);
@@ -138,13 +58,13 @@ TEST_F(Intel8080Test, DCR_B)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_B)
+TEST_F(MachineTest, MVI_B)
 {
 	auto state = LoadAndRun("mvib.bin");
 	EXPECT_EQ(0x12, state[State::B]);
 }
 
-TEST_F(Intel8080Test, RLC)
+TEST_F(MachineTest, RLC)
 {
 	auto state = LoadAndRun("rlc.bin");
 	EXPECT_EQ(0xE5, state[State::A]);
@@ -152,7 +72,7 @@ TEST_F(Intel8080Test, RLC)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, DAD_B)
+TEST_F(MachineTest, DAD_B)
 {
 	auto state = LoadAndRun("dadb.bin");
 	//Answer in HL
@@ -164,13 +84,13 @@ TEST_F(Intel8080Test, DAD_B)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, LDAX_B)
+TEST_F(MachineTest, LDAX_B)
 {
 	auto state = LoadAndRun("ldaxb.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
 }
 
-TEST_F(Intel8080Test, DCX_B)
+TEST_F(MachineTest, DCX_B)
 {
 	auto state = LoadAndRun("dcxb.bin");
 	EXPECT_EQ(0xFF, state[State::B]);
@@ -179,7 +99,7 @@ TEST_F(Intel8080Test, DCX_B)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_C)
+TEST_F(MachineTest, INR_C)
 {
 	auto state = LoadAndRun("inrc.bin");
 	EXPECT_EQ(0x10, state[State::C]);
@@ -187,7 +107,7 @@ TEST_F(Intel8080Test, INR_C)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_C)
+TEST_F(MachineTest, DCR_C)
 {
 	auto state = LoadAndRun("dcrc.bin");
 	EXPECT_EQ(0x00, state[State::C]);
@@ -195,13 +115,13 @@ TEST_F(Intel8080Test, DCR_C)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_C)
+TEST_F(MachineTest, MVI_C)
 {
 	auto state = LoadAndRun("mvic.bin");
 	EXPECT_EQ(0x12, state[State::C]);
 }
 
-TEST_F(Intel8080Test, RRC)
+TEST_F(MachineTest, RRC)
 {
 	auto state = LoadAndRun("rrc.bin");
 	EXPECT_EQ(0x79, state[State::A]);
@@ -209,20 +129,20 @@ TEST_F(Intel8080Test, RRC)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, LXI_D)
+TEST_F(MachineTest, LXI_D)
 {
 	auto state = LoadAndRun("lxid.bin");
 	EXPECT_EQ(0xFF, state[State::D]);
 	EXPECT_EQ(0x12, state[State::E]);
 }
 
-TEST_F(Intel8080Test, STAX_D)
+TEST_F(MachineTest, STAX_D)
 {
 	auto state = LoadAndRun("staxd.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, INX_D)
+TEST_F(MachineTest, INX_D)
 {
 	auto state = LoadAndRun("inxd.bin");
 	EXPECT_EQ(0xFF, state[State::D]);
@@ -231,7 +151,7 @@ TEST_F(Intel8080Test, INX_D)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_D)
+TEST_F(MachineTest, INR_D)
 {
 	auto state = LoadAndRun("inrd.bin");
 	EXPECT_EQ(0x10, state[State::D]);
@@ -239,7 +159,7 @@ TEST_F(Intel8080Test, INR_D)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_D)
+TEST_F(MachineTest, DCR_D)
 {
 	auto state = LoadAndRun("dcrd.bin");
 	EXPECT_EQ(0x00, state[State::D]);
@@ -247,13 +167,13 @@ TEST_F(Intel8080Test, DCR_D)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_D)
+TEST_F(MachineTest, MVI_D)
 {
 	auto state = LoadAndRun("mvid.bin");
 	EXPECT_EQ(0x12, state[State::D]);
 }
 
-TEST_F(Intel8080Test, RAL)
+TEST_F(MachineTest, RAL)
 {
 	auto state = LoadAndRun("ral.bin");
 	EXPECT_EQ(0x6A, state[State::A]);
@@ -261,7 +181,7 @@ TEST_F(Intel8080Test, RAL)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, DAD_D)
+TEST_F(MachineTest, DAD_D)
 {
 	auto state = LoadAndRun("dadd.bin");
 	//Answer in HL
@@ -273,13 +193,13 @@ TEST_F(Intel8080Test, DAD_D)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, LDAX_D)
+TEST_F(MachineTest, LDAX_D)
 {
 	auto state = LoadAndRun("ldaxd.bin");
 	EXPECT_EQ(0x1A, state[State::A]);
 }
 
-TEST_F(Intel8080Test, DCX_D)
+TEST_F(MachineTest, DCX_D)
 {
 	auto state = LoadAndRun("dcxd.bin");
 	EXPECT_EQ(0xFF, state[State::D]);
@@ -288,7 +208,7 @@ TEST_F(Intel8080Test, DCX_D)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_E)
+TEST_F(MachineTest, INR_E)
 {
 	auto state = LoadAndRun("inre.bin");
 	EXPECT_EQ(0x10, state[State::E]);
@@ -296,7 +216,7 @@ TEST_F(Intel8080Test, INR_E)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_E)
+TEST_F(MachineTest, DCR_E)
 {
 	auto state = LoadAndRun("dcre.bin");
 	EXPECT_EQ(0x00, state[State::E]);
@@ -304,13 +224,13 @@ TEST_F(Intel8080Test, DCR_E)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_E)
+TEST_F(MachineTest, MVI_E)
 {
 	auto state = LoadAndRun("mvie.bin");
 	EXPECT_EQ(0x12, state[State::E]);
 }
 
-TEST_F(Intel8080Test, RAR)
+TEST_F(MachineTest, RAR)
 {
 	auto state = LoadAndRun("rar.bin");
 	EXPECT_EQ(0xB5, state[State::A]);
@@ -318,21 +238,21 @@ TEST_F(Intel8080Test, RAR)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, LXI_H)
+TEST_F(MachineTest, LXI_H)
 {
 	auto state = LoadAndRun("lxih.bin");
 	EXPECT_EQ(0xFF, state[State::H]);
 	EXPECT_EQ(0x12, state[State::L]);
 }
 
-TEST_F(Intel8080Test, SHLD)
+TEST_F(MachineTest, SHLD)
 {
 	auto state = LoadAndRun("shld.bin");
 	EXPECT_EQ(0xAB, state[State::A]);
 	EXPECT_EQ(0xCD, state[State::B]);
 }
 
-TEST_F(Intel8080Test, INX_H)
+TEST_F(MachineTest, INX_H)
 {
 	auto state = LoadAndRun("inxh.bin");
 	EXPECT_EQ(0xFF, state[State::H]);
@@ -341,7 +261,7 @@ TEST_F(Intel8080Test, INX_H)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_H)
+TEST_F(MachineTest, INR_H)
 {
 	auto state = LoadAndRun("inrh.bin");
 	EXPECT_EQ(0x10, state[State::H]);
@@ -349,7 +269,7 @@ TEST_F(Intel8080Test, INR_H)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_H)
+TEST_F(MachineTest, DCR_H)
 {
 	auto state = LoadAndRun("dcrh.bin");
 	EXPECT_EQ(0x00, state[State::H]);
@@ -357,7 +277,7 @@ TEST_F(Intel8080Test, DCR_H)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_H)
+TEST_F(MachineTest, MVI_H)
 {
 	auto state = LoadAndRun("mvih.bin");
 	EXPECT_EQ(0x12, state[State::H]);
@@ -365,7 +285,7 @@ TEST_F(Intel8080Test, MVI_H)
 
 
 //Need accumulator mvi, instruction needs more work
-TEST_F(Intel8080Test, DAA)
+TEST_F(MachineTest, DAA)
 {
 	auto state = LoadAndRun("daa.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -374,7 +294,7 @@ TEST_F(Intel8080Test, DAA)
 }
 
 
-TEST_F(Intel8080Test, DAD_H)
+TEST_F(MachineTest, DAD_H)
 {
 	auto state = LoadAndRun("dadh.bin");
 	//Answer in HL
@@ -383,7 +303,7 @@ TEST_F(Intel8080Test, DAD_H)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, LHLD)
+TEST_F(MachineTest, LHLD)
 {
 	auto state = LoadAndRun("lhld.bin");
 	EXPECT_EQ(0x7B, state[State::L]);
@@ -391,7 +311,7 @@ TEST_F(Intel8080Test, LHLD)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, DCX_H)
+TEST_F(MachineTest, DCX_H)
 {
 
 	auto state = LoadAndRun("dcxh.bin");
@@ -401,7 +321,7 @@ TEST_F(Intel8080Test, DCX_H)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, INR_L)
+TEST_F(MachineTest, INR_L)
 {
 	auto state = LoadAndRun("inrl.bin");
 	EXPECT_EQ(0x10, state[State::L]);
@@ -409,7 +329,7 @@ TEST_F(Intel8080Test, INR_L)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, DCR_L)
+TEST_F(MachineTest, DCR_L)
 {
 	auto state = LoadAndRun("dcrl.bin");
 	EXPECT_EQ(0x00, state[State::L]);
@@ -417,37 +337,37 @@ TEST_F(Intel8080Test, DCR_L)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_L)
+TEST_F(MachineTest, MVI_L)
 {
 	auto state = LoadAndRun("mvil.bin");
 	EXPECT_EQ(0x12, state[State::L]);
 }
 
-TEST_F(Intel8080Test, CMA)
+TEST_F(MachineTest, CMA)
 {
 	auto state = LoadAndRun("cma.bin");
 	EXPECT_EQ(0x00, state[State::A]);
 }
 
-TEST_F(Intel8080Test, LXI_SP)
+TEST_F(MachineTest, LXI_SP)
 {
 	auto state = LoadAndRun("lxisp.bin");
 	EXPECT_EQ(0xCDAB, (state[State::SP] << 8) | state[State::SP + 1]);
 }
 
-TEST_F(Intel8080Test, STA)
+TEST_F(MachineTest, STA)
 {
 	auto state = LoadAndRun("sta.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
 }
 
-TEST_F(Intel8080Test, INX_SP)
+TEST_F(MachineTest, INX_SP)
 {
 	auto state = LoadAndRun("inxsp.bin");
 	EXPECT_EQ(0xCDAC, (state[State::SP] << 8) | state[State::SP + 1]);
 }
 
-TEST_F(Intel8080Test, INR_M)
+TEST_F(MachineTest, INR_M)
 {
 	auto state = LoadAndRun("inrm.bin");
 	EXPECT_EQ(0x22, state[State::L]);
@@ -456,7 +376,7 @@ TEST_F(Intel8080Test, INR_M)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, DCR_M)
+TEST_F(MachineTest, DCR_M)
 {
 	auto state = LoadAndRun("dcrm.bin");
 	EXPECT_EQ(0x20, state[State::L]);
@@ -464,19 +384,19 @@ TEST_F(Intel8080Test, DCR_M)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, MVI_M)
+TEST_F(MachineTest, MVI_M)
 {
 	auto state = LoadAndRun("mvim.bin");
 	EXPECT_EQ(0xDD, state[State::L]);
 }
 
-TEST_F(Intel8080Test, STC)
+TEST_F(MachineTest, STC)
 {
 	auto state = LoadAndRun("stc.bin");
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, DAD_SP)
+TEST_F(MachineTest, DAD_SP)
 {
 	auto state = LoadAndRun("dadsp.bin");
 	EXPECT_EQ(0x57, state[State::H]);
@@ -484,19 +404,19 @@ TEST_F(Intel8080Test, DAD_SP)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, LDA)
+TEST_F(MachineTest, LDA)
 {
 	auto state = LoadAndRun("lda.bin");
 	EXPECT_EQ(0x3A, state[State::A]);
 }
 
-TEST_F(Intel8080Test, DCX_SP)
+TEST_F(MachineTest, DCX_SP)
 {
 	auto state = LoadAndRun("dcxsp.bin");
 	EXPECT_EQ(0xCDAA, (state[State::SP] << 8) | state[State::SP + 1]);
 }
 
-TEST_F(Intel8080Test, INR_A)
+TEST_F(MachineTest, INR_A)
 {
 	auto state = LoadAndRun("inra.bin");
 	EXPECT_EQ(0x3B, state[State::A]);
@@ -504,7 +424,7 @@ TEST_F(Intel8080Test, INR_A)
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, DCR_A)
+TEST_F(MachineTest, DCR_A)
 {
 	//This program starts out by setting the carry bit
 	//which tests the fact that inr does not modify the carry bit
@@ -514,302 +434,302 @@ TEST_F(Intel8080Test, DCR_A)
 	CheckStatus(state[State::S], false, false, true, true, true);
 }
 
-TEST_F(Intel8080Test, MVI_A)
+TEST_F(MachineTest, MVI_A)
 {
 	auto state = LoadAndRun("mvia.bin");
 	EXPECT_EQ(0x12, state[State::A]);
 }
 
-TEST_F(Intel8080Test, CMC)
+TEST_F(MachineTest, CMC)
 {
 	auto state = LoadAndRun("cmc.bin");
 	//zero, sign, parity, auxCarry, carry
 	CheckStatus(state[State::S], false, false, false, false, true);
 }
 
-TEST_F(Intel8080Test, MOV_BB)
+TEST_F(MachineTest, MOV_BB)
 {
 	auto state = LoadAndRun("movbb.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BC)
+TEST_F(MachineTest, MOV_BC)
 {
 	auto state = LoadAndRun("movbc.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BD)
+TEST_F(MachineTest, MOV_BD)
 {
 	auto state = LoadAndRun("movbd.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BE)
+TEST_F(MachineTest, MOV_BE)
 {
 	auto state = LoadAndRun("movbe.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BH)
+TEST_F(MachineTest, MOV_BH)
 {
 	auto state = LoadAndRun("movbh.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BL)
+TEST_F(MachineTest, MOV_BL)
 {
 	auto state = LoadAndRun("movbl.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BM)
+TEST_F(MachineTest, MOV_BM)
 {
 	auto state = LoadAndRun("movbm.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_BA)
+TEST_F(MachineTest, MOV_BA)
 {
 	auto state = LoadAndRun("movba.bin");
 	EXPECT_EQ(0x21, state[State::B]);
 }
 
-TEST_F(Intel8080Test, MOV_CB)
+TEST_F(MachineTest, MOV_CB)
 {
 	auto state = LoadAndRun("movcb.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CC)
+TEST_F(MachineTest, MOV_CC)
 {
 	auto state = LoadAndRun("movcc.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CD)
+TEST_F(MachineTest, MOV_CD)
 {
 	auto state = LoadAndRun("movcd.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CE)
+TEST_F(MachineTest, MOV_CE)
 {
 	auto state = LoadAndRun("movce.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CH)
+TEST_F(MachineTest, MOV_CH)
 {
 	auto state = LoadAndRun("movch.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CL)
+TEST_F(MachineTest, MOV_CL)
 {
 	auto state = LoadAndRun("movcl.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CM)
+TEST_F(MachineTest, MOV_CM)
 {
 	auto state = LoadAndRun("movcm.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_CA)
+TEST_F(MachineTest, MOV_CA)
 {
 	auto state = LoadAndRun("movca.bin");
 	EXPECT_EQ(0x21, state[State::C]);
 }
 
-TEST_F(Intel8080Test, MOV_DB)
+TEST_F(MachineTest, MOV_DB)
 {
 	auto state = LoadAndRun("movdb.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DC)
+TEST_F(MachineTest, MOV_DC)
 {
 	auto state = LoadAndRun("movdc.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DD)
+TEST_F(MachineTest, MOV_DD)
 {
 	auto state = LoadAndRun("movdd.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DE)
+TEST_F(MachineTest, MOV_DE)
 {
 	auto state = LoadAndRun("movde.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DH)
+TEST_F(MachineTest, MOV_DH)
 {
 	auto state = LoadAndRun("movdh.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DL)
+TEST_F(MachineTest, MOV_DL)
 {
 	auto state = LoadAndRun("movdl.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DM)
+TEST_F(MachineTest, MOV_DM)
 {
 	auto state = LoadAndRun("movdm.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_DA)
+TEST_F(MachineTest, MOV_DA)
 {
 	auto state = LoadAndRun("movda.bin");
 	EXPECT_EQ(0x21, state[State::D]);
 }
 
-TEST_F(Intel8080Test, MOV_EB)
+TEST_F(MachineTest, MOV_EB)
 {
 	auto state = LoadAndRun("moveb.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EC)
+TEST_F(MachineTest, MOV_EC)
 {
 	auto state = LoadAndRun("movec.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_ED)
+TEST_F(MachineTest, MOV_ED)
 {
 	auto state = LoadAndRun("moved.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EE)
+TEST_F(MachineTest, MOV_EE)
 {
 	auto state = LoadAndRun("movee.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EH)
+TEST_F(MachineTest, MOV_EH)
 {
 	auto state = LoadAndRun("moveh.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EL)
+TEST_F(MachineTest, MOV_EL)
 {
 	auto state = LoadAndRun("movel.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EM)
+TEST_F(MachineTest, MOV_EM)
 {
 	auto state = LoadAndRun("movem.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_EA)
+TEST_F(MachineTest, MOV_EA)
 {
 	auto state = LoadAndRun("movea.bin");
 	EXPECT_EQ(0x21, state[State::E]);
 }
 
-TEST_F(Intel8080Test, MOV_HB)
+TEST_F(MachineTest, MOV_HB)
 {
 	auto state = LoadAndRun("movhb.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HC)
+TEST_F(MachineTest, MOV_HC)
 {
 	auto state = LoadAndRun("movhc.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HD)
+TEST_F(MachineTest, MOV_HD)
 {
 	auto state = LoadAndRun("movhd.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HE)
+TEST_F(MachineTest, MOV_HE)
 {
 	auto state = LoadAndRun("movhe.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HH)
+TEST_F(MachineTest, MOV_HH)
 {
 	auto state = LoadAndRun("movhh.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HL)
+TEST_F(MachineTest, MOV_HL)
 {
 	auto state = LoadAndRun("movhl.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HM)
+TEST_F(MachineTest, MOV_HM)
 {
 	auto state = LoadAndRun("movhm.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_HA)
+TEST_F(MachineTest, MOV_HA)
 {
 	auto state = LoadAndRun("movha.bin");
 	EXPECT_EQ(0x21, state[State::H]);
 }
 
-TEST_F(Intel8080Test, MOV_LB)
+TEST_F(MachineTest, MOV_LB)
 {
 	auto state = LoadAndRun("movlb.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LC)
+TEST_F(MachineTest, MOV_LC)
 {
 	auto state = LoadAndRun("movlc.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LD)
+TEST_F(MachineTest, MOV_LD)
 {
 	auto state = LoadAndRun("movld.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LE)
+TEST_F(MachineTest, MOV_LE)
 {
 	auto state = LoadAndRun("movle.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LH)
+TEST_F(MachineTest, MOV_LH)
 {
 	auto state = LoadAndRun("movlh.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LL)
+TEST_F(MachineTest, MOV_LL)
 {
 	auto state = LoadAndRun("movll.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LM)
+TEST_F(MachineTest, MOV_LM)
 {
 	auto state = LoadAndRun("movlm.bin");
 	EXPECT_EQ(0x21, state[State::L]);
 }
 
-TEST_F(Intel8080Test, MOV_LA)
+TEST_F(MachineTest, MOV_LA)
 {
 	auto state = LoadAndRun("movla.bin");
 	EXPECT_EQ(0x21, state[State::L]);
@@ -817,25 +737,25 @@ TEST_F(Intel8080Test, MOV_LA)
 
 //Using MovA for the memory tests since
 //we store the result in the accumulator
-TEST_F(Intel8080Test, MOV_MB)
+TEST_F(MachineTest, MOV_MB)
 {
 	auto state = LoadAndRun("movmb.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_MC)
+TEST_F(MachineTest, MOV_MC)
 {
 	auto state = LoadAndRun("movmc.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_MD)
+TEST_F(MachineTest, MOV_MD)
 {
 	auto state = LoadAndRun("movmd.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_ME)
+TEST_F(MachineTest, MOV_ME)
 {
 	auto state = LoadAndRun("movme.bin");
 	EXPECT_EQ(0x21, state[State::A]);
@@ -846,18 +766,18 @@ TEST_F(Intel8080Test, MOV_ME)
 //the registers to test are being overwritten
 //by the program
 
-TEST_F(Intel8080Test, MOV_MH)
+TEST_F(MachineTest, MOV_MH)
 {
 	LoadAndRun("./programs/movmh.bin");
 }
 
-TEST_F(Intel8080Test, MOV_ML)
+TEST_F(MachineTest, MOV_ML)
 {
 	LoadAndRun("./programs/movml.bin");
 }
 */
 
-//TEST_F(Intel8080Test, HLT)
+//TEST_F(MachineTest, HLT)
 //{
 	/*
 		cpu_->LoadProgram(./programs/hlt.bin, 0);
@@ -866,7 +786,7 @@ TEST_F(Intel8080Test, MOV_ML)
 		{
 			//cpu should halt
 			LoadAndRun("./programs/hlt.bin");
-		
+
 			//program should return
 			//set future
 		}
@@ -878,67 +798,67 @@ TEST_F(Intel8080Test, MOV_ML)
 	*/
 //}
 
-TEST_F(Intel8080Test, MOV_MA)
+TEST_F(MachineTest, MOV_MA)
 {
 	auto state = LoadAndRun("movma.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AB)
+TEST_F(MachineTest, MOV_AB)
 {
 	auto state = LoadAndRun("movab.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AC)
+TEST_F(MachineTest, MOV_AC)
 {
 	auto state = LoadAndRun("movac.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AD)
+TEST_F(MachineTest, MOV_AD)
 {
 	auto state = LoadAndRun("movad.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AE)
+TEST_F(MachineTest, MOV_AE)
 {
 	auto state = LoadAndRun("movae.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AH)
+TEST_F(MachineTest, MOV_AH)
 {
 	auto state = LoadAndRun("movah.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AL)
+TEST_F(MachineTest, MOV_AL)
 {
 	auto state = LoadAndRun("moval.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AM)
+TEST_F(MachineTest, MOV_AM)
 {
 	auto state = LoadAndRun("movam.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MOV_AA)
+TEST_F(MachineTest, MOV_AA)
 {
 	auto state = LoadAndRun("movaa.bin");
 	EXPECT_EQ(0x21, state[State::A]);
 }
 
-TEST_F(Intel8080Test, MovIncDec)
+TEST_F(MachineTest, MovIncDec)
 {
 	auto state = LoadAndRun("movIncDec.bin");
 	EXPECT_EQ(0x77, state[State::A]);
 }
 
-TEST_F(Intel8080Test, ADD_B)
+TEST_F(MachineTest, ADD_B)
 {
 	auto state = LoadAndRun("addb.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -946,7 +866,7 @@ TEST_F(Intel8080Test, ADD_B)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_C)
+TEST_F(MachineTest, ADD_C)
 {
 	auto state = LoadAndRun("addc.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -954,7 +874,7 @@ TEST_F(Intel8080Test, ADD_C)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_D)
+TEST_F(MachineTest, ADD_D)
 {
 	auto state = LoadAndRun("addd.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -962,7 +882,7 @@ TEST_F(Intel8080Test, ADD_D)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_E)
+TEST_F(MachineTest, ADD_E)
 {
 	auto state = LoadAndRun("adde.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -970,7 +890,7 @@ TEST_F(Intel8080Test, ADD_E)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_H)
+TEST_F(MachineTest, ADD_H)
 {
 	auto state = LoadAndRun("addh.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -978,7 +898,7 @@ TEST_F(Intel8080Test, ADD_H)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_L)
+TEST_F(MachineTest, ADD_L)
 {
 	auto state = LoadAndRun("addl.bin");
 	EXPECT_EQ(0x9A, state[State::A]);
@@ -986,7 +906,7 @@ TEST_F(Intel8080Test, ADD_L)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_M)
+TEST_F(MachineTest, ADD_M)
 {
 	auto state = LoadAndRun("addm.bin");
 	EXPECT_EQ(0xD8, state[State::A]);
@@ -994,7 +914,7 @@ TEST_F(Intel8080Test, ADD_M)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADD_A)
+TEST_F(MachineTest, ADD_A)
 {
 	auto state = LoadAndRun("adda.bin");
 	EXPECT_EQ(0xD8, state[State::A]);
@@ -1002,7 +922,7 @@ TEST_F(Intel8080Test, ADD_A)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_B)
+TEST_F(MachineTest, ADC_B)
 {
 	auto state = LoadAndRun("adcb.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1010,7 +930,7 @@ TEST_F(Intel8080Test, ADC_B)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_C)
+TEST_F(MachineTest, ADC_C)
 {
 	auto state = LoadAndRun("adcc.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1018,7 +938,7 @@ TEST_F(Intel8080Test, ADC_C)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_D)
+TEST_F(MachineTest, ADC_D)
 {
 	auto state = LoadAndRun("adcd.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1026,7 +946,7 @@ TEST_F(Intel8080Test, ADC_D)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_E)
+TEST_F(MachineTest, ADC_E)
 {
 	auto state = LoadAndRun("adce.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1034,7 +954,7 @@ TEST_F(Intel8080Test, ADC_E)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_H)
+TEST_F(MachineTest, ADC_H)
 {
 	auto state = LoadAndRun("adch.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1042,7 +962,7 @@ TEST_F(Intel8080Test, ADC_H)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_L)
+TEST_F(MachineTest, ADC_L)
 {
 	auto state = LoadAndRun("adcl.bin");
 	EXPECT_EQ(0x80, state[State::A]);
@@ -1050,7 +970,7 @@ TEST_F(Intel8080Test, ADC_L)
 	CheckStatus(state[State::S], false, true, false, true, false);
 }
 
-TEST_F(Intel8080Test, ADC_M)
+TEST_F(MachineTest, ADC_M)
 {
 	auto state = LoadAndRun("adcm.bin");
 	EXPECT_EQ(0x85, state[State::A]);
@@ -1058,7 +978,7 @@ TEST_F(Intel8080Test, ADC_M)
 	CheckStatus(state[State::S], false, true, false, false, false);
 }
 
-TEST_F(Intel8080Test, ADC_A)
+TEST_F(MachineTest, ADC_A)
 {
 	auto state = LoadAndRun("adca.bin");
 	EXPECT_EQ(0x85, state[State::A]);
@@ -1066,7 +986,7 @@ TEST_F(Intel8080Test, ADC_A)
 	CheckStatus(state[State::S], false, true, false, false, false);
 }
 
-TEST_F(Intel8080Test, SUB_B)
+TEST_F(MachineTest, SUB_B)
 {
 	auto state = LoadAndRun("subb.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1074,7 +994,7 @@ TEST_F(Intel8080Test, SUB_B)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_C)
+TEST_F(MachineTest, SUB_C)
 {
 	auto state = LoadAndRun("subc.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1082,7 +1002,7 @@ TEST_F(Intel8080Test, SUB_C)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_D)
+TEST_F(MachineTest, SUB_D)
 {
 	auto state = LoadAndRun("subd.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1090,7 +1010,7 @@ TEST_F(Intel8080Test, SUB_D)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_E)
+TEST_F(MachineTest, SUB_E)
 {
 	auto state = LoadAndRun("sube.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1098,7 +1018,7 @@ TEST_F(Intel8080Test, SUB_E)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_H)
+TEST_F(MachineTest, SUB_H)
 {
 	auto state = LoadAndRun("subh.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1106,7 +1026,7 @@ TEST_F(Intel8080Test, SUB_H)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_L)
+TEST_F(MachineTest, SUB_L)
 {
 	auto state = LoadAndRun("subl.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1114,7 +1034,7 @@ TEST_F(Intel8080Test, SUB_L)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_M)
+TEST_F(MachineTest, SUB_M)
 {
 	auto state = LoadAndRun("subm.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1122,7 +1042,7 @@ TEST_F(Intel8080Test, SUB_M)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SUB_A)
+TEST_F(MachineTest, SUB_A)
 {
 	auto state = LoadAndRun("suba.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1130,7 +1050,7 @@ TEST_F(Intel8080Test, SUB_A)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_B)
+TEST_F(MachineTest, SBB_B)
 {
 	auto state = LoadAndRun("sbbb.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1138,7 +1058,7 @@ TEST_F(Intel8080Test, SBB_B)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_C)
+TEST_F(MachineTest, SBB_C)
 {
 	auto state = LoadAndRun("sbbc.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1146,7 +1066,7 @@ TEST_F(Intel8080Test, SBB_C)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_D)
+TEST_F(MachineTest, SBB_D)
 {
 	auto state = LoadAndRun("sbbd.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1154,7 +1074,7 @@ TEST_F(Intel8080Test, SBB_D)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_E)
+TEST_F(MachineTest, SBB_E)
 {
 	auto state = LoadAndRun("sbbe.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1162,7 +1082,7 @@ TEST_F(Intel8080Test, SBB_E)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_H)
+TEST_F(MachineTest, SBB_H)
 {
 	auto state = LoadAndRun("sbbh.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1170,7 +1090,7 @@ TEST_F(Intel8080Test, SBB_H)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_L)
+TEST_F(MachineTest, SBB_L)
 {
 	auto state = LoadAndRun("sbbl.bin");
 	EXPECT_EQ(0x01, state[State::A]);
@@ -1178,7 +1098,7 @@ TEST_F(Intel8080Test, SBB_L)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, SBB_M)
+TEST_F(MachineTest, SBB_M)
 {
 	auto state = LoadAndRun("sbbm.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
@@ -1186,7 +1106,7 @@ TEST_F(Intel8080Test, SBB_M)
 	CheckStatus(state[State::S], false, true, true, false, true);
 }
 
-TEST_F(Intel8080Test, SBB_A)
+TEST_F(MachineTest, SBB_A)
 {
 	auto state = LoadAndRun("sbba.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
@@ -1194,7 +1114,7 @@ TEST_F(Intel8080Test, SBB_A)
 	CheckStatus(state[State::S], false, true, true, false, true);
 }
 
-TEST_F(Intel8080Test, ANA_B)
+TEST_F(MachineTest, ANA_B)
 {
 	auto state = LoadAndRun("anab.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1202,7 +1122,7 @@ TEST_F(Intel8080Test, ANA_B)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_C)
+TEST_F(MachineTest, ANA_C)
 {
 	auto state = LoadAndRun("anac.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1210,7 +1130,7 @@ TEST_F(Intel8080Test, ANA_C)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_D)
+TEST_F(MachineTest, ANA_D)
 {
 	auto state = LoadAndRun("anad.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1218,7 +1138,7 @@ TEST_F(Intel8080Test, ANA_D)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_E)
+TEST_F(MachineTest, ANA_E)
 {
 	auto state = LoadAndRun("anae.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1226,7 +1146,7 @@ TEST_F(Intel8080Test, ANA_E)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_H)
+TEST_F(MachineTest, ANA_H)
 {
 	auto state = LoadAndRun("anah.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1234,7 +1154,7 @@ TEST_F(Intel8080Test, ANA_H)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_L)
+TEST_F(MachineTest, ANA_L)
 {
 	auto state = LoadAndRun("anal.bin");
 	EXPECT_EQ(0x0C, state[State::A]);
@@ -1242,7 +1162,7 @@ TEST_F(Intel8080Test, ANA_L)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_M)
+TEST_F(MachineTest, ANA_M)
 {
 	auto state = LoadAndRun("anam.bin");
 	EXPECT_EQ(0x20, state[State::A]);
@@ -1250,7 +1170,7 @@ TEST_F(Intel8080Test, ANA_M)
 	CheckStatus(state[State::S], false, false, false, true, false);
 }
 
-TEST_F(Intel8080Test, ANA_A)
+TEST_F(MachineTest, ANA_A)
 {
 	auto state = LoadAndRun("anaa.bin");
 	EXPECT_EQ(0xFC, state[State::A]);
@@ -1258,7 +1178,7 @@ TEST_F(Intel8080Test, ANA_A)
 	CheckStatus(state[State::S], false, true, true, true, false);
 }
 
-TEST_F(Intel8080Test, XRA_B)
+TEST_F(MachineTest, XRA_B)
 {
 	auto state = LoadAndRun("xrab.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1266,7 +1186,7 @@ TEST_F(Intel8080Test, XRA_B)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_C)
+TEST_F(MachineTest, XRA_C)
 {
 	auto state = LoadAndRun("xrac.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1274,7 +1194,7 @@ TEST_F(Intel8080Test, XRA_C)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_D)
+TEST_F(MachineTest, XRA_D)
 {
 	auto state = LoadAndRun("xrad.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1282,7 +1202,7 @@ TEST_F(Intel8080Test, XRA_D)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_E)
+TEST_F(MachineTest, XRA_E)
 {
 	auto state = LoadAndRun("xrae.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1290,7 +1210,7 @@ TEST_F(Intel8080Test, XRA_E)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_H)
+TEST_F(MachineTest, XRA_H)
 {
 	auto state = LoadAndRun("xrah.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1298,7 +1218,7 @@ TEST_F(Intel8080Test, XRA_H)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_L)
+TEST_F(MachineTest, XRA_L)
 {
 	auto state = LoadAndRun("xral.bin");
 	EXPECT_EQ(0xF0, state[State::A]);
@@ -1306,7 +1226,7 @@ TEST_F(Intel8080Test, XRA_L)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_M)
+TEST_F(MachineTest, XRA_M)
 {
 	auto state = LoadAndRun("xram.bin");
 	EXPECT_EQ(0xDE, state[State::A]);
@@ -1314,7 +1234,7 @@ TEST_F(Intel8080Test, XRA_M)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, XRA_A)
+TEST_F(MachineTest, XRA_A)
 {
 	auto state = LoadAndRun("xraa.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1322,7 +1242,7 @@ TEST_F(Intel8080Test, XRA_A)
 	CheckStatus(state[State::S], true, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_B)
+TEST_F(MachineTest, ORA_B)
 {
 	auto state = LoadAndRun("orab.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1330,7 +1250,7 @@ TEST_F(Intel8080Test, ORA_B)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_C)
+TEST_F(MachineTest, ORA_C)
 {
 	auto state = LoadAndRun("orac.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1338,7 +1258,7 @@ TEST_F(Intel8080Test, ORA_C)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_D)
+TEST_F(MachineTest, ORA_D)
 {
 	auto state = LoadAndRun("orad.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1346,7 +1266,7 @@ TEST_F(Intel8080Test, ORA_D)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_E)
+TEST_F(MachineTest, ORA_E)
 {
 	auto state = LoadAndRun("orae.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1354,7 +1274,7 @@ TEST_F(Intel8080Test, ORA_E)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_H)
+TEST_F(MachineTest, ORA_H)
 {
 	auto state = LoadAndRun("orah.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1362,7 +1282,7 @@ TEST_F(Intel8080Test, ORA_H)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_L)
+TEST_F(MachineTest, ORA_L)
 {
 	auto state = LoadAndRun("oral.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1370,7 +1290,7 @@ TEST_F(Intel8080Test, ORA_L)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_M)
+TEST_F(MachineTest, ORA_M)
 {
 	auto state = LoadAndRun("oram.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
@@ -1378,7 +1298,7 @@ TEST_F(Intel8080Test, ORA_M)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, ORA_A)
+TEST_F(MachineTest, ORA_A)
 {
 	auto state = LoadAndRun("oraa.bin");
 	EXPECT_EQ(0xFC, state[State::A]);
@@ -1386,7 +1306,7 @@ TEST_F(Intel8080Test, ORA_A)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, CMP_B)
+TEST_F(MachineTest, CMP_B)
 {
 	auto state = LoadAndRun("cmpb.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1395,7 +1315,7 @@ TEST_F(Intel8080Test, CMP_B)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_C)
+TEST_F(MachineTest, CMP_C)
 {
 	auto state = LoadAndRun("cmpc.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1404,7 +1324,7 @@ TEST_F(Intel8080Test, CMP_C)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_D)
+TEST_F(MachineTest, CMP_D)
 {
 	auto state = LoadAndRun("cmpd.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1413,7 +1333,7 @@ TEST_F(Intel8080Test, CMP_D)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_E)
+TEST_F(MachineTest, CMP_E)
 {
 	auto state = LoadAndRun("cmpe.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1422,7 +1342,7 @@ TEST_F(Intel8080Test, CMP_E)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_H)
+TEST_F(MachineTest, CMP_H)
 {
 	auto state = LoadAndRun("cmph.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1431,7 +1351,7 @@ TEST_F(Intel8080Test, CMP_H)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_L)
+TEST_F(MachineTest, CMP_L)
 {
 	auto state = LoadAndRun("cmpl.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1440,7 +1360,7 @@ TEST_F(Intel8080Test, CMP_L)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CMP_M)
+TEST_F(MachineTest, CMP_M)
 {
 	auto state = LoadAndRun("cmpm.bin");
 	//The contents of the accumulator and the memory must not change.
@@ -1456,7 +1376,7 @@ TEST_F(Intel8080Test, CMP_M)
 	test which causes it to fail
 */
 #ifdef ENABLE_CMP_A
-TEST_F(Intel8080Test, CMP_A)
+TEST_F(MachineTest, CMP_A)
 {
 	auto state = LoadAndRun("cmpa.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1465,7 +1385,7 @@ TEST_F(Intel8080Test, CMP_A)
 }
 #endif
 
-TEST_F(Intel8080Test, RNZ)
+TEST_F(MachineTest, RNZ)
 {
 	auto state = LoadAndRun("rnz.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1473,14 +1393,14 @@ TEST_F(Intel8080Test, RNZ)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, PUSH_POP_B)
+TEST_F(MachineTest, PUSH_POP_B)
 {
 	auto state = LoadAndRun("pushpopb.bin");
 	EXPECT_EQ(0xAB, state[State::B]);
 	EXPECT_EQ(0xCD, state[State::C]);
 }
 
-TEST_F(Intel8080Test, JNZ)
+TEST_F(MachineTest, JNZ)
 {
 	auto state = LoadAndRun("jnz.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
@@ -1488,7 +1408,7 @@ TEST_F(Intel8080Test, JNZ)
 	CheckStatus(state[State::S], false, true, true, false, false);
 }
 
-TEST_F(Intel8080Test, JMP)
+TEST_F(MachineTest, JMP)
 {
 	auto state = LoadAndRun("jmp.bin");
 	EXPECT_EQ(0x3F, state[State::A]);
@@ -1496,7 +1416,7 @@ TEST_F(Intel8080Test, JMP)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, CNZ)
+TEST_F(MachineTest, CNZ)
 {
 	auto state = LoadAndRun("cnz.bin");
 	EXPECT_EQ(0x30, state[State::A]);
@@ -1504,7 +1424,7 @@ TEST_F(Intel8080Test, CNZ)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ADI_1)
+TEST_F(MachineTest, ADI_1)
 {
 	auto state = LoadAndRun("adi1.bin");
 	EXPECT_EQ(0x56, state[State::A]);
@@ -1512,7 +1432,7 @@ TEST_F(Intel8080Test, ADI_1)
 	CheckStatus(state[State::S], false, false, true, false, false);
 }
 
-TEST_F(Intel8080Test, ADI_2)
+TEST_F(MachineTest, ADI_2)
 {
 	auto state = LoadAndRun("adi2.bin");
 	EXPECT_EQ(0x14, state[State::A]);
@@ -1520,7 +1440,7 @@ TEST_F(Intel8080Test, ADI_2)
 	CheckStatus(state[State::S], false, false, true, true, true);
 }
 
-TEST_F(Intel8080Test, RST_0)
+TEST_F(MachineTest, RST_0)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x00);
 	auto state = LoadAndRun("rst0.bin");
@@ -1529,7 +1449,7 @@ TEST_F(Intel8080Test, RST_0)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_1)
+TEST_F(MachineTest, RST_1)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x08);
 	auto state = LoadAndRun("rst1.bin");
@@ -1538,7 +1458,7 @@ TEST_F(Intel8080Test, RST_1)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_2)
+TEST_F(MachineTest, RST_2)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x10);
 	auto state = LoadAndRun("rst2.bin");
@@ -1547,7 +1467,7 @@ TEST_F(Intel8080Test, RST_2)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_3)
+TEST_F(MachineTest, RST_3)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x18);
 	auto state = LoadAndRun("rst3.bin");
@@ -1556,7 +1476,7 @@ TEST_F(Intel8080Test, RST_3)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_4)
+TEST_F(MachineTest, RST_4)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x20);
 	auto state = LoadAndRun("rst4.bin");
@@ -1565,7 +1485,7 @@ TEST_F(Intel8080Test, RST_4)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_5)
+TEST_F(MachineTest, RST_5)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x28);
 	auto state = LoadAndRun("rst5.bin");
@@ -1574,7 +1494,7 @@ TEST_F(Intel8080Test, RST_5)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_6)
+TEST_F(MachineTest, RST_6)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x30);
 	auto state = LoadAndRun("rst6.bin");
@@ -1583,7 +1503,7 @@ TEST_F(Intel8080Test, RST_6)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RST_7)
+TEST_F(MachineTest, RST_7)
 {
 	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x38);
 	auto state = LoadAndRun("rst7.bin");
@@ -1592,7 +1512,7 @@ TEST_F(Intel8080Test, RST_7)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RZ)
+TEST_F(MachineTest, RZ)
 {
 	auto state = LoadAndRun("rz.bin");
 	EXPECT_EQ(0x20, state[State::A]);
@@ -1600,7 +1520,7 @@ TEST_F(Intel8080Test, RZ)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RET)
+TEST_F(MachineTest, RET)
 {
 	auto state = LoadAndRun("ret.bin");
 	EXPECT_EQ(0x40, state[State::A]);
@@ -1608,7 +1528,7 @@ TEST_F(Intel8080Test, RET)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, JZ)
+TEST_F(MachineTest, JZ)
 {
 	auto state = LoadAndRun("jz.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1616,7 +1536,7 @@ TEST_F(Intel8080Test, JZ)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CZ)
+TEST_F(MachineTest, CZ)
 {
 	auto state = LoadAndRun("cz.bin");
 	EXPECT_EQ(0x10, state[State::A]);
@@ -1624,7 +1544,7 @@ TEST_F(Intel8080Test, CZ)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, CALL)
+TEST_F(MachineTest, CALL)
 {
 	auto state = LoadAndRun("call.bin");
 	EXPECT_EQ(0x20, state[State::A]);
@@ -1632,7 +1552,7 @@ TEST_F(Intel8080Test, CALL)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, ACI_1)
+TEST_F(MachineTest, ACI_1)
 {
 	auto state = LoadAndRun("aci1.bin");
 	EXPECT_EQ(0x14, state[State::A]);
@@ -1640,7 +1560,7 @@ TEST_F(Intel8080Test, ACI_1)
 	CheckStatus(state[State::S], false, false, true, true, true);
 }
 
-TEST_F(Intel8080Test, ACI_2)
+TEST_F(MachineTest, ACI_2)
 {
 	auto state = LoadAndRun("aci2.bin");
 	EXPECT_EQ(0x57, state[State::A]);
@@ -1648,26 +1568,26 @@ TEST_F(Intel8080Test, ACI_2)
 	CheckStatus(state[State::S], false, false, false, false, false);
 }
 
-TEST_F(Intel8080Test, RNC)
+TEST_F(MachineTest, RNC)
 {
 	auto state = LoadAndRun("rnc.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, PUSH_POP_D)
+TEST_F(MachineTest, PUSH_POP_D)
 {
 	auto state = LoadAndRun("pushpopd.bin");
 	EXPECT_EQ(0xAB, state[State::D]);
 	EXPECT_EQ(0xCD, state[State::E]);
 }
 
-TEST_F(Intel8080Test, JNC)
+TEST_F(MachineTest, JNC)
 {
 	auto state = LoadAndRun("jnc.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
 }
 
-TEST_F(Intel8080Test, OUT)
+TEST_F(MachineTest, OUT)
 {
 	auto state = LoadAndRun("out.bin");
 	//Read the contents of device 0
@@ -1676,13 +1596,13 @@ TEST_F(Intel8080Test, OUT)
 	testIoController_->Write (0x00, 0xAA);
 }
 
-TEST_F(Intel8080Test, CNC)
+TEST_F(MachineTest, CNC)
 {
 	auto state = LoadAndRun("cnc.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
 }
 
-TEST_F(Intel8080Test, SUI)
+TEST_F(MachineTest, SUI)
 {
 	auto state = LoadAndRun("sui.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
@@ -1690,31 +1610,31 @@ TEST_F(Intel8080Test, SUI)
 	CheckStatus(state[State::S], false, true, true, false, true);
 }
 
-TEST_F(Intel8080Test, RC)
+TEST_F(MachineTest, RC)
 {
 	auto state = LoadAndRun("rc.bin");
 	EXPECT_EQ(0xFF, state[State::A]);
 }
 
-TEST_F(Intel8080Test, JC)
+TEST_F(MachineTest, JC)
 {
 	auto state = LoadAndRun("jc.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, IN)
+TEST_F(MachineTest, IN)
 {
 	auto state = LoadAndRun("in.bin");
 	EXPECT_EQ(0xAA, state[State::A]);
 }
 
-TEST_F(Intel8080Test, CC)
+TEST_F(MachineTest, CC)
 {
 	auto state = LoadAndRun("cc.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, SBI)
+TEST_F(MachineTest, SBI)
 {
 	auto state = LoadAndRun("sbi.bin");
 	EXPECT_EQ(0xFE, state[State::A]);
@@ -1722,39 +1642,39 @@ TEST_F(Intel8080Test, SBI)
 	CheckStatus(state[State::S], false, true, false, false, true);
 }
 
-TEST_F(Intel8080Test, RPO)
+TEST_F(MachineTest, RPO)
 {
 	auto state = LoadAndRun("rpo.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, PUSH_POP_H)
+TEST_F(MachineTest, PUSH_POP_H)
 {
 	auto state = LoadAndRun("pushpoph.bin");
 	EXPECT_EQ(0xAB, state[State::H]);
 	EXPECT_EQ(0xCD, state[State::L]);
 }
 
-TEST_F(Intel8080Test, JPO)
+TEST_F(MachineTest, JPO)
 {
 	auto state = LoadAndRun("jpo.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, XTHL)
+TEST_F(MachineTest, XTHL)
 {
 	auto state = LoadAndRun("xthl.bin");
 	EXPECT_EQ(0xAB, state[State::H]);
 	EXPECT_EQ(0xCD, state[State::L]);
 }
 
-TEST_F(Intel8080Test, CPO)
+TEST_F(MachineTest, CPO)
 {
 	auto state = LoadAndRun("cpo.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, ANI)
+TEST_F(MachineTest, ANI)
 {
 	auto state = LoadAndRun("ani.bin");
 	EXPECT_EQ(0x0A, state[State::A]);
@@ -1762,25 +1682,25 @@ TEST_F(Intel8080Test, ANI)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, RPE)
+TEST_F(MachineTest, RPE)
 {
 	auto state = LoadAndRun("rpe.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, PCHL)
+TEST_F(MachineTest, PCHL)
 {
 	auto state = LoadAndRun("pchl.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, JPE)
+TEST_F(MachineTest, JPE)
 {
 	auto state = LoadAndRun("jpe.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, XCHG)
+TEST_F(MachineTest, XCHG)
 {
 	auto state = LoadAndRun("xchg.bin");
 	EXPECT_EQ(0x01, state[State::D]);
@@ -1789,13 +1709,13 @@ TEST_F(Intel8080Test, XCHG)
 	EXPECT_EQ(0xCD, state[State::L]);
 }
 
-TEST_F(Intel8080Test, CPE)
+TEST_F(MachineTest, CPE)
 {
 	auto state = LoadAndRun("cpe.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, XRI)
+TEST_F(MachineTest, XRI)
 {
 	auto state = LoadAndRun("xri.bin");
 	EXPECT_EQ(0xBA, state[State::A]);
@@ -1803,13 +1723,13 @@ TEST_F(Intel8080Test, XRI)
 	CheckStatus(state[State::S], false, true, false, false, false);
 }
 
-TEST_F(Intel8080Test, RP)
+TEST_F(MachineTest, RP)
 {
 	auto state = LoadAndRun("rp.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, PUSH_POP_PSW)
+TEST_F(MachineTest, PUSH_POP_PSW)
 {
 	auto state = LoadAndRun("pushpoppsw.bin");
 	EXPECT_EQ(0x00, state[State::A]);
@@ -1817,26 +1737,26 @@ TEST_F(Intel8080Test, PUSH_POP_PSW)
 	CheckStatus(state[State::S], true, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, JP)
+TEST_F(MachineTest, JP)
 {
 	auto state = LoadAndRun("jp.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
 /*
-TEST_F(Intel8080Test, DI)
+TEST_F(MachineTest, DI)
 {
 	LoadAndRun("di.bin");
 }
 */
 
-TEST_F(Intel8080Test, CP)
+TEST_F(MachineTest, CP)
 {
 	auto state = LoadAndRun("cp.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, ORI)
+TEST_F(MachineTest, ORI)
 {
 	auto state = LoadAndRun("ori.bin");
 	EXPECT_EQ(0xBF, state[State::A]);
@@ -1844,38 +1764,38 @@ TEST_F(Intel8080Test, ORI)
 	CheckStatus(state[State::S], false, true, false, false, false);
 }
 
-TEST_F(Intel8080Test, RM)
+TEST_F(MachineTest, RM)
 {
 	auto state = LoadAndRun("rm.bin");
 	EXPECT_EQ(0x10, state[State::A]);
 }
 
-TEST_F(Intel8080Test, SPHL)
+TEST_F(MachineTest, SPHL)
 {
 	auto state = LoadAndRun("sphl.bin");
 	EXPECT_EQ(0x0123, (state[State::SP] << 8) | state[State::SP + 1]);
 }
 
-TEST_F(Intel8080Test, JM)
+TEST_F(MachineTest, JM)
 {
 	auto state = LoadAndRun("jm.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
 /*
-TEST_F(Intel8080Test, EI)
+TEST_F(MachineTest, EI)
 {
 	auto state = LoadAndRun("ei.bin");
 }
 */
 
-TEST_F(Intel8080Test, CM)
+TEST_F(MachineTest, CM)
 {
 	auto state = LoadAndRun("cm.bin");
 	EXPECT_EQ(0x11, state[State::A]);
 }
 
-TEST_F(Intel8080Test, CPI)
+TEST_F(MachineTest, CPI)
 {
 	auto state = LoadAndRun("cpi.bin");
 	EXPECT_EQ(0x4A, state[State::A]);
@@ -1883,7 +1803,7 @@ TEST_F(Intel8080Test, CPI)
 	CheckStatus(state[State::S], false, false, true, true, false);
 }
 
-TEST_F(Intel8080Test, CPI0)
+TEST_F(MachineTest, CPI0)
 {
 	auto state = LoadAndRun("cpi0.bin");
 	EXPECT_EQ(0xF5, state[State::A]);
@@ -1895,7 +1815,7 @@ TEST_F(Intel8080Test, CPI0)
 // or it could be related to how this file is written (module/header include order for example)
 // Disable and re-test on future releases
 #ifdef _WINDOWS
-TEST_F(Intel8080Test, ISR_1)
+TEST_F(MachineTest, ISR_1)
 {
 	std::array<uint8_t, 12> state{};
 	//Load the interrupt service routine at the correct address
@@ -1926,7 +1846,7 @@ TEST_F(Intel8080Test, ISR_1)
 }
 #endif
 
-TEST_F(Intel8080Test, Tst8080)
+TEST_F(MachineTest, Tst8080)
 {
 	//CP/M Warm Boot is at memory address 0x00, this will be
 	//emulated with the exitTest subroutine.
@@ -1942,7 +1862,7 @@ TEST_F(Intel8080Test, Tst8080)
 	machine_->SetIoController(testIoController_);
 }
 
-TEST_F(Intel8080Test, 8080Pre)
+TEST_F(MachineTest, 8080Pre)
 {
 	//CP/M Warm Boot is at memory address 0x00, this will be
 	//emulated with the exitTest subroutine.
@@ -1958,7 +1878,7 @@ TEST_F(Intel8080Test, 8080Pre)
 	machine_->SetIoController(testIoController_);
 }
 
-TEST_F(Intel8080Test, CpuTest)
+TEST_F(MachineTest, CpuTest)
 {
 	//CP/M Warm Boot is at memory address 0x00, this will be
 	//emulated with the exitTest subroutine.
@@ -1974,7 +1894,7 @@ TEST_F(Intel8080Test, CpuTest)
 	machine_->SetIoController(testIoController_);
 }
 
-TEST_F(Intel8080Test, 8080Exm)
+TEST_F(MachineTest, 8080Exm)
 {
 	//CP/M Warm Boot is at memory address 0x00, this will be
 	//emulated with the exitTest subroutine.

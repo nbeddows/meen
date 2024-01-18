@@ -24,8 +24,18 @@ import <memory>;
 import MemoryController;
 import TestIoController;
 
-//#include <future>
+// Google test under g++-13 seems to have some module compatibility issues
+// or it could be related to how this file is written (module/header include order for example).
+// Disable and re-test on future gtest/g++ releases.
+#ifdef _WINDOWS
+#include <future>
+#endif
+
+#include <array>
 #include <gtest/gtest.h>
+// Needs to be declared after gtest due to g++/gtest
+// compilation issues: fixme
+import CpmIoController;
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Machine/MachineFactory.h"
@@ -35,29 +45,62 @@ namespace MachEmu::Tests
 	class MachineTest : public testing::Test
 	{
 	protected:
+		static std::shared_ptr<IController> cpmIoController_;
 		static std::shared_ptr<MemoryController> memoryController_;
-		static std::shared_ptr<IController> ioController_;
+		static std::shared_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
+
+		enum State
+		{
+			A, B, C, D, E, H, L, S, PC, SP = 10
+		};
+
+		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
+		std::array<uint8_t, 12> LoadAndRun(const char* name) const;
 	public:
 		static void SetUpTestCase();
 		void SetUp();
 	};
 
+	std::shared_ptr<IController> MachineTest::cpmIoController_;
 	std::shared_ptr<MemoryController> MachineTest::memoryController_;
-	std::shared_ptr<IController> MachineTest::ioController_;
+	std::shared_ptr<IController> MachineTest::testIoController_;
 	std::unique_ptr<IMachine> MachineTest::machine_;
 
 	void MachineTest::SetUpTestCase()
 	{
 		machine_ = MakeMachine();
 		memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
-		ioController_ = std::make_shared<TestIoController>();
+		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
+		testIoController_ = std::make_shared<TestIoController>();
 	}
 
 	void MachineTest::SetUp()
 	{
-		machine_->SetMemoryController(nullptr);
-		machine_->SetIoController(nullptr);
+		memoryController_->Clear();
+		machine_->SetMemoryController(memoryController_);
+		machine_->SetIoController(testIoController_);
+	}
+
+	std::array<uint8_t, 12> MachineTest::LoadAndRun(const char* name) const
+	{
+		EXPECT_NO_THROW
+		(
+			std::string dir = PROGRAMS_DIR"/";
+			memoryController_->Load((dir + name).c_str(), 0x100);
+			machine_->Run(0x100);
+		);
+
+		return machine_->GetState();
+	}
+
+	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const
+	{
+		EXPECT_EQ(carry, (status & 0x01) != 0);
+		EXPECT_EQ(parity, (status & 0x04) != 0);
+		EXPECT_EQ(auxCarry, (status & 0x10) != 0);
+		EXPECT_EQ(zero, (status & 0x40) != 0);
+		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
 
 	/*TEST_F(MachineTest, RunNoIoControllerSet)
@@ -80,20 +123,11 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, RunNoMemoryControllerSet)
 	{
+		machine_->SetMemoryController(nullptr);
+
 		EXPECT_ANY_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->Run();
-		);
-	}
-
-	TEST_F(MachineTest, Run)
-	{
-		EXPECT_NO_THROW
-		(
-			memoryController_->Load(PROGRAMS_DIR"cmc.bin", 0x00);
-			machine_->SetMemoryController(memoryController_);
-			machine_->SetIoController(ioController_);
 			machine_->Run();
 		);
 	}
@@ -110,8 +144,6 @@ namespace MachEmu::Tests
 			// be perfect, but its close enough for testing purposes).
 			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
-			machine_->SetMemoryController(memoryController_);
-			machine_->SetIoController(ioController_);
 			// 25 millisecond resolution
 			auto err = machine_->SetClockResolution(25000000);
 			EXPECT_EQ(ErrorCode::NoError, err);
@@ -159,4 +191,6 @@ namespace MachEmu::Tests
 		err = machine_->SetClockResolution(-1);
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
+
+	#include "8080Test.cpp"
 } // namespace MachEmu::Tests

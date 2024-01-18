@@ -41,6 +41,7 @@ namespace MachEmu
 		~MemoryController() = default;
 
 		void Load(const char* romFilePath, uint16_t offset);
+		void Clear();
 		size_t Size() const;
 
 		//IController virtual overrides
