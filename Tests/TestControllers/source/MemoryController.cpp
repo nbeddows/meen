@@ -77,6 +77,11 @@ namespace MachEmu
 		memory_[addr] = data;
 	}
 
+	void MemoryController::Clear()
+	{
+		memory_.assign(memory_.size(), 0);
+	}
+
 	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
 	{
 		// this controller never issues any interrupts
