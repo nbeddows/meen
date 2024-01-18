@@ -28,12 +28,10 @@ import TestIoController;
 // or it could be related to how this file is written (module/header include order for example).
 // Disable and re-test on future gtest/g++ releases.
 #ifdef _WINDOWS
-#include <array>
 #include <future>
 #endif
 
- #include <array>
-//#include <future>
+#include <array>
 #include <gtest/gtest.h>
 // Needs to be declared after gtest due to g++/gtest
 // compilation issues: fixme
