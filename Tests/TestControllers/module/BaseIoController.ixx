@@ -31,25 +31,53 @@ import <cstdint>;
 
 namespace MachEmu
 {
+	/** Base IO controller
+		
+		A minimal base class that contains shared functionality between all
+		the test IO Controllers.
+	*/
     export class BaseIoController : public IController
 	{
 		private:
-			/** powerOff_
+			/** Power off signal
 
-				Signals the control bus when the current instruction finishes
-				executing that it is time to shutdown.
+				A signal to indicate to the ServiceInterrupts routine that
+				it is time to shutdown.
 
-				The signal is sent during the servicing of interrupts as it
-				is guaranteed that no instructions are currently executing
-				at that time.
+				@remark		The signal is handled during the servicing of interrupts as it
+							is guaranteed that no instructions are currently executing
+							at that time.
 			*/
 			//cppcheck-suppress unusedStructMember
 			bool powerOff_{};
 		protected:
-            BaseIoController() = default;
-            ~BaseIoController() = default;
+			/** Base IO controller write
+			
+				Writes a specifed value to the give port number.
 
-			void Write(uint16_t ioDeviceNumber, uint8_t value) override;			
+				@param	port	The port to be written to. The power off signal will
+								be enabled when the port number is 0xFF.
+
+				@param	value	The value to be written to the specified port.
+
+				@remark			The value parameter is unused.
+
+				@see			powerOff_
+			*/
+			void Write(uint16_t port, uint8_t value) override;			
+			
+			/**	Base IO interrupt handler
+			
+				Checks the powerOff_ signal. When it is true generate an ISR::Quit interrupt
+
+				@param	currTime	The time in nanoseconds of the machine clock.
+
+				@param	cycles		The total number of cycles that have elapsed.
+
+				@return				ISR::Quit when the powerOff_ signal is true, ISR::NoInterrupt otherwise.
+
+				@remark				The only way a machine can exit is when an ISR::Quit interrupt is generated.
+			*/
 			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) override;
 	};
 } // namespace MachEmu

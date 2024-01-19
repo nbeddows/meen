@@ -132,11 +132,11 @@ namespace MachEmu
 		*/
 		void Write(uint16_t port, uint8_t value) final;
 
-		/** Interrupt handler
+		/** CP/M IO interrupt handler
 
 			Checks the IO controller to see if any interrupts are pending.
 
-			@param	currTime	The time in nanoseconds of the cpu clock.
+			@param	currTime	The time in nanoseconds of the machine clock.
 
 			@param	cycles		The total number of cycles that have elapsed.
 			
