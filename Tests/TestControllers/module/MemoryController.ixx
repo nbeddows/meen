@@ -64,14 +64,14 @@ namespace MachEmu
 			Loads a program into memory at a specified offset from the
 			starting memory address 0x0000.
 
-			@param	romFilePath			The (absolute or relative) address on local disk
-										where the program resides.
+			@param	romFilePath				The (absolute or relative) address on local disk
+											where the program resides.
 
-			@param	offset				The memory location to load the program into.
+			@param	offset					The memory location to load the program into.
 
-			@throw	runtime_error		The rom file failed to open.
-			@throw	length_error		The rom file is too large for the given offset.
-			@throw	invalid_argument	Failed to read the rom file into memory.
+			@throw	std::runtime_error		The rom file failed to open.
+			@throw	std::length_error		The rom file is too large for the given offset.
+			@throw	std::invalid_argument	Failed to read the rom file into memory.
 		*/
 		void Load(const char* romFilePath, uint16_t offset);
 		

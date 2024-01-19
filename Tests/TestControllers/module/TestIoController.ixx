@@ -34,12 +34,13 @@ namespace MachEmu
     /** TestIoController
 
 		A minimal implementaion for an io controller. It allows
-		reading and writing to one device (device0).
+		reading and writing to one device (device0). ISR:One
+		interrupt is triggered every second.
 
-		@discussion		This IO controller is purely academic, it's
-						main use is for unit tests, in reality the
-						device data would be an interface into actual
-						IO, for example, a keyboard or a mouse.
+		@remark		This IO controller is purely academic, it's
+					main use is for unit tests, in reality the
+					device data would be an interface into actual
+					IO, for example, a keyboard or a mouse.
 	*/
 	export class TestIoController final : public BaseIoController
 	{
@@ -55,14 +56,14 @@ namespace MachEmu
 
 			The io data to be maintained by this 'io device'.
 
-			@discussion		The mock device will be initialised to an
-							arbitary value, this can be useful, for
-							example, during tests.
+			@remark		The mock device will be initialised to an
+						arbitary value, this can be useful, for
+						example, during tests.
 		*/
 		//cppcheck-suppress unusedStructMember
 		uint8_t deviceData_{ 0xAA };
 	public:
-		/**	Read
+		/**	Read from a device
 
 			Read the contents of the specifed io device.
 
@@ -70,38 +71,39 @@ namespace MachEmu
 									Only one device is supported, ie;
 									device number 0.
 
-			@return	uint8_t			The contents of the io device at the
+			@return					The contents of the io device at the
 									time of the function call.
 
-			@see IController::Read()
+			@see					IController::Read()
 		*/
 		uint8_t Read(uint16_t ioDeviceNumber) final;
 
-		/** Write
+		/** Write to a device
 
 			Write the specified value to the specified io device.
 
 			@param	ioDeviceNumber	The io device number to write to.
 									Only one device is supported, ie;
 									device number 0.
+
 			@param	value			The data to write to the io device.
 
-			@see IController::Write()
+			@see					IController::Write()
 		*/
 		void Write(uint16_t ioDeviceNumber, uint8_t value) final;
 
-		/** ServiceInterrupts
+		/** Interrupt handler
 
 			Checks the io controller to see if any interrupts are pending.
+			In this example controller, ISR::One will be triggered at
+			one second intervals.
 
-			@param	currTime	The time in nanoseconds of the cpu clock.
+			@param	currTime	The time in nanoseconds of the machine clock.
 
-			@return	uint8_t		The interrupt that requires servicing by the
-								cpu.
+			@param	cycles		The total number of cycles that have elapsed.
 
-			@discussion			Currently, no interrupts are triggered by this
-								mock io controller. The return value will always
-								be zero.
+			@return				The interrupt that requires servicing by the
+								cpu. In this case, ISR::One every second.
 
 			@see IContoller::ServiceInterrupts()
 		*/
