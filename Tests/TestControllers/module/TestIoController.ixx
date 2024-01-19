@@ -31,7 +31,7 @@ import BaseIoController;
 
 namespace MachEmu
 {
-    /** TestIoController
+    /** Basic example IO controller
 
 		A minimal implementaion for an io controller. It allows
 		reading and writing to one device (device0). ISR:One
@@ -39,7 +39,7 @@ namespace MachEmu
 
 		@remark		This IO controller is purely academic, it's
 					main use is for unit tests, in reality the
-					device data would be an interface into actual
+					device data would interface with actual
 					IO, for example, a keyboard or a mouse.
 	*/
 	export class TestIoController final : public BaseIoController
