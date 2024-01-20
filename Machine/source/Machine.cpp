@@ -137,11 +137,21 @@ namespace MachEmu
 
 	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+		
 		memoryController_ = controller;
 	}
 
 	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+
 		ioController_ = controller;
 	}
 
