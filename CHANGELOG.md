@@ -1,5 +1,5 @@
 1.3.0
-* Add CMake support.
+* Added CMake support.
 * Move Space Invaders to it's own repository.
 * Remove the Windows specific sdk batch script and
   build the sdk via CMake instead. Remove Space
@@ -10,6 +10,7 @@
 * Sdk modules are now headers files for better
   platform compatibility.
 * Added SetClockResolution to the IMachine interface.
+* Updated documentation.
 
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
