@@ -81,7 +81,7 @@ namespace MachEmu
 
 			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
 
-			@throw	std::runtime_error	No memory controller has been set on this
+			@throw	std::runtime_error	No memory or io controller has been set on this
 										machine.
 
 			@see SetMemoryController
@@ -91,9 +91,11 @@ namespace MachEmu
 		/** Set a custom memory controller
 
 			The machine will use this controller when it needs to read
-			and write data.
+			and/or write data to ram.
 			
 			@param	controller		The memory controller to be used with this machine.
+
+			@throw					An invalid_argument exception when controller is nullptr.
 
 			@remark					See Tests/TestControllers/MemoryController.cpp
 		*/
@@ -101,30 +103,14 @@ namespace MachEmu
 
 		/** Set a custom io controller
 
+			The machine will use this controller when it needs to read
+			and/or write to an io device.
+
 			@param	controller	The io controller to be used with this machine.
 
-			@remark				Not setting an io controller, while valid, is NOT recommended.
-								This is because without an io controller the machine will have
-								no means of exiting via an i/o device or via an i/o device
-								interrupt.
-								A valid reason for having a null io controller would be if you
-								wanted to run a machine for a certain period of time.
-								For example;
-								@code{.cpp}
-								auto machine = MakeMachine();
-								auto memoryController = MakeDefaultMemoryController(16);
-								memoryController.Load ("myProgram.bin");
-								machine.SetMemoryController (memoryController_);
-								//Don't set an io controller
-								auto future = std::async(std::launch::async, [&]
-								{
-									machine.Run();
-								});
-								auto status = future.wait_for(seconds(2));
-								//One can check the status of the machine and
-								//memory after 2 seconds of run time.
-								@endcode
-								See Tests/TestControllers/TestIoController.cpp
+			@throw				An invalid_argument exception when controller is nullptr.
+
+			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
