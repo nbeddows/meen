@@ -21,7 +21,7 @@ This list will expand as certain milestones are achieved.
 
 Conceptually speaking, MachEmu can be represented by the following diagram:
 
-![](images/MachineDiagram.png)
+![](Docs/images/MachineDiagram.png)
 
 As can be seen from the diagram above MachEmu is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted (See IMachine::SetClockResolution).
 
