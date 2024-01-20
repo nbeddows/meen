@@ -103,25 +103,21 @@ namespace MachEmu::Tests
 		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
 
-	TEST_F(MachineTest, RunNoMemoryControllerSet)
+	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
-		machine_->SetMemoryController(nullptr);
-
 		EXPECT_ANY_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->Run();
+			machine_->SetMemoryController(nullptr);
 		);
 	}
 
-	TEST_F(MachineTest, RunNoIoControllerSet)
+	TEST_F(MachineTest, SetNullptrIoController)
 	{
-		machine_->SetIoController(nullptr);
-
 		EXPECT_ANY_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->Run();
+			machine_->SetIoController(nullptr);
 		);
 	}
 
