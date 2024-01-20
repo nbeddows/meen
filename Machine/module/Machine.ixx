@@ -81,6 +81,6 @@ namespace MachEmu
 		
 			@see IMachine::GetCpuState
 		*/
-		std::array<uint8_t, 12> GetState() const final;
+		std::vector<uint8_t> GetState() const final;
 	};
 } // namespace MachEmu

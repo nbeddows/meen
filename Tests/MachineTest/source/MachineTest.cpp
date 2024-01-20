@@ -31,7 +31,7 @@ import TestIoController;
 #include <future>
 #endif
 
-#include <array>
+#include <vector>
 #include <gtest/gtest.h>
 // Needs to be declared after gtest due to g++/gtest
 // compilation issues: fixme
@@ -56,7 +56,7 @@ namespace MachEmu::Tests
 		};
 
 		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-		std::array<uint8_t, 12> LoadAndRun(const char* name) const;
+		std::vector<uint8_t> LoadAndRun(const char* name) const;
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -82,7 +82,7 @@ namespace MachEmu::Tests
 		machine_->SetIoController(testIoController_);
 	}
 
-	std::array<uint8_t, 12> MachineTest::LoadAndRun(const char* name) const
+	std::vector<uint8_t> MachineTest::LoadAndRun(const char* name) const
 	{
 		EXPECT_NO_THROW
 		(

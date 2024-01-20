@@ -26,12 +26,13 @@ module;
 
 module _8080;
 
-import <array>;
 import <bitset>;
 import <cstdint>;
 import <memory>;
 import <functional>;
 import <string_view>;
+import <vector>;
+
 import SystemBus;
 
 namespace MachEmu
@@ -306,7 +307,7 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 #endif
 }
 
-std::array<uint8_t, 12> Intel8080::GetState() const
+std::vector<uint8_t> Intel8080::GetState() const
 {
 	return { Value(a_), Value(b_), Value(c_), Value(d_),
 			Value(e_), Value(h_), Value(l_), Value(status_),

@@ -25,12 +25,12 @@ module;
 
 export module _8080;
 
-import <array>;
 import <bitset>;
 import <cstdint>;
 import <memory>;
 import <functional>;
 import <string_view>;
+import <vector>;
 
 import ICpu;
 import SystemBus;
@@ -204,7 +204,7 @@ namespace MachEmu
 	public:
 		/* I8080 overrides */
 		uint8_t Execute() final;
-		std::array<uint8_t, 12> GetState() const final;
+		std::vector<uint8_t> GetState() const final;
 		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */
 

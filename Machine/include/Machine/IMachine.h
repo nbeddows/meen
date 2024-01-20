@@ -24,6 +24,7 @@ SOFTWARE.
 #define IMACHINE_H
 
 import <memory>;
+import <vector>;
 #include "Controller/IController.h"
 
 namespace MachEmu
@@ -139,17 +140,17 @@ namespace MachEmu
 
 		/**	Get the state of the machine.
 
-			Returns the state of the machine (currently just the cpu) as an array in the following
-			form dependent on cpu type:
+			@return		The state of the machine as a vector.
+
+			The returned state of the machine currently just contains the cpu as an vector of bytes
+			in the following form:
 
 			<table>
-			<tr><td>Cpu</td><td>Registers</td><td>Status</td><td>Program Counter</td><td>Stack Pointer</td></tr>
-			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td></tr>
+			<tr><td>Cpu</td><td>Registers</td><td>Status</td><td>Program Counter</td><td>Stack Pointer</td><td>Total Bits</td></tr>
+			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td><td>96</td></tr>
 			</table>
-
-			Remaining bits are unused.
 		*/
-		virtual std::array<uint8_t, 12> GetState() const = 0;
+		virtual std::vector<uint8_t> GetState() const = 0;
 
 		/** Destruct the machine
 

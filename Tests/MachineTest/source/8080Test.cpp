@@ -1817,7 +1817,7 @@ TEST_F(MachineTest, CPI0)
 #ifdef _WINDOWS
 TEST_F(MachineTest, ISR_1)
 {
-	std::array<uint8_t, 12> state{};
+	std::vector<uint8_t> state{};
 	//Load the interrupt service routine at the correct address
 	//The ioController fires rst 1 every second.
 	memoryController_->Load(PROGRAMS_DIR"/isr.bin", 0x08);

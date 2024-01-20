@@ -155,7 +155,7 @@ namespace MachEmu
 		ioController_ = controller;
 	}
 
-	std::array<uint8_t, 12> Machine::GetState() const
+	std::vector<uint8_t> Machine::GetState() const
 	{
 		return cpu_->GetState();
 	}
