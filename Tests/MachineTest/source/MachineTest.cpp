@@ -103,27 +103,20 @@ namespace MachEmu::Tests
 		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
 
-	/*TEST_F(MachineTest, RunNoIoControllerSet)
-	{
-		//EXPECT_NO_THROW
-		//(
-			auto path = directory_;
-			memoryController_->Load (path /= "cmc.bin", 0x00);
-			machine_->SetMemoryController (memoryController_);
-
-			//run the cmc program for one second, we should end in a timeout
-			auto future = std::async(std::launch::async, [&]
-			{
-				machine_->Run();
-			});
-
-			EXPECT_EQ(std::future_status::timeout, future.wait_for(seconds(1)));
-		//);
-	}*/
-
 	TEST_F(MachineTest, RunNoMemoryControllerSet)
 	{
 		machine_->SetMemoryController(nullptr);
+
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->Run();
+		);
+	}
+
+	TEST_F(MachineTest, RunNoIoControllerSet)
+	{
+		machine_->SetIoController(nullptr);
 
 		EXPECT_ANY_THROW
 		(

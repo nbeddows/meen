@@ -92,6 +92,11 @@ namespace MachEmu
 			throw std::runtime_error ("No memory controller has been set");
 		}
 
+		if (ioController_ == nullptr)
+		{
+			throw std::runtime_error("No io controller has been set");
+		}
+
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
 		auto currTime = nanoseconds::zero();
