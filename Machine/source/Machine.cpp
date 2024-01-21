@@ -26,9 +26,9 @@ module;
 
 module Machine;
 
-import <array>;
 import <chrono>;
 import <functional>;
+import <memory>;
 
 import ICpuClock;
 import ICpu;
@@ -92,6 +92,11 @@ namespace MachEmu
 			throw std::runtime_error ("No memory controller has been set");
 		}
 
+		if (ioController_ == nullptr)
+		{
+			throw std::runtime_error("No io controller has been set");
+		}
+
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
 		auto currTime = nanoseconds::zero();
@@ -132,16 +137,26 @@ namespace MachEmu
 
 	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+		
 		memoryController_ = controller;
 	}
 
 	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+
 		ioController_ = controller;
 	}
 
-	std::array<uint8_t, 12> Machine::GetState() const
+	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
 	{
-		return cpu_->GetState();
+		return cpu_->GetState(size);
 	}
 } // namespace MachEmu

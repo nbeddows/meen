@@ -44,7 +44,7 @@ namespace MachEmu
 {
 	/** Create a machine.
 
-		This function is the main entry point into machemu.dll.
+		This function is the main entry point into MachEmu
 
 		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
 	*/

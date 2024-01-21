@@ -24,14 +24,6 @@ import <memory>;
 import MemoryController;
 import TestIoController;
 
-// Google test under g++-13 seems to have some module compatibility issues
-// or it could be related to how this file is written (module/header include order for example).
-// Disable and re-test on future gtest/g++ releases.
-#ifdef _WINDOWS
-#include <future>
-#endif
-
-#include <array>
 #include <gtest/gtest.h>
 // Needs to be declared after gtest due to g++/gtest
 // compilation issues: fixme
@@ -56,7 +48,7 @@ namespace MachEmu::Tests
 		};
 
 		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-		std::array<uint8_t, 12> LoadAndRun(const char* name) const;
+		std::unique_ptr<uint8_t[]> LoadAndRun(const char* name) const;
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -82,7 +74,7 @@ namespace MachEmu::Tests
 		machine_->SetIoController(testIoController_);
 	}
 
-	std::array<uint8_t, 12> MachineTest::LoadAndRun(const char* name) const
+	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name) const
 	{
 		EXPECT_NO_THROW
 		(
@@ -103,32 +95,21 @@ namespace MachEmu::Tests
 		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
 
-	/*TEST_F(MachineTest, RunNoIoControllerSet)
+	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
-		//EXPECT_NO_THROW
-		//(
-			auto path = directory_;
-			memoryController_->Load (path /= "cmc.bin", 0x00);
-			machine_->SetMemoryController (memoryController_);
-
-			//run the cmc program for one second, we should end in a timeout
-			auto future = std::async(std::launch::async, [&]
-			{
-				machine_->Run();
-			});
-
-			EXPECT_EQ(std::future_status::timeout, future.wait_for(seconds(1)));
-		//);
-	}*/
-
-	TEST_F(MachineTest, RunNoMemoryControllerSet)
-	{
-		machine_->SetMemoryController(nullptr);
-
 		EXPECT_ANY_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->Run();
+			machine_->SetMemoryController(nullptr);
+		);
+	}
+
+	TEST_F(MachineTest, SetNullptrIoController)
+	{
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->SetIoController(nullptr);
 		);
 	}
 

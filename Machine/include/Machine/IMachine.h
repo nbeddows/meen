@@ -28,12 +28,14 @@ import <memory>;
 
 namespace MachEmu
 {
-	/** Machine interface.
+	/** Machine interface
 
 		An abstract representation of a basic machine with a cpu, clock and
 		custom memory and IO.
 
-		Basic Principles of Operation
+		Basic Principles of Operation:
+
+		@code{.cpp}
 
 		// Create a machine
 		auto machine = MakeMachine();
@@ -53,17 +55,19 @@ namespace MachEmu
 
 		// set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
-		machine->SetResolution(20000000); // 20 millisecond clock resolution
+		machine->SetResolution(20000000); // 20 millisecond clock resolution (50Hz)
 
 		// Run the machine
-		machine->Run();
+		auto runTime = machine->Run();
 
 		// machine->Run() is a blocking function, it won't return until the custom IO
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
+
+		@endcode
 	*/
 	struct IMachine
 	{
-		/** Run the machine.
+		/** Run the machine
 		
 			Run the roms loaded into memory initialising execution at the given
 			program counter.
@@ -75,57 +79,38 @@ namespace MachEmu
 										is specified cpu instruction execution will
 										begin from memory address 0x00.
 
-			@return	uint64_t			The duration of the run time of the machine in nanoseconds.
+			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
 
-			@throw	std::runtime_error	No memory controller has been set on this
+			@throw	std::runtime_error	No memory or io controller has been set on this
 										machine.
 
-										@see SetMemoryController
+			@see SetMemoryController
 		*/
 		virtual uint64_t Run(uint16_t pc = 0x00) = 0;
 
-		/** Set a custom memory controller with the machine.
+		/** Set a custom memory controller
 
-			Not setting a memory controller will cause the Run function
-			to throw a std::runtime_error exception.
+			The machine will use this controller when it needs to read
+			and/or write data to ram.
+			
+			@param	controller		The memory controller to be used with this machine.
 
-			@param	controller	The memory controller to be used with this machine.
+			@throw					An invalid_argument exception when controller is nullptr.
 
-			See the tests for an example memory controller.
+			@remark					See Tests/TestControllers/MemoryController.cpp
 		*/
 		virtual void SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
 
-		/** Set a custom io controller with the machine.
+		/** Set a custom io controller
+
+			The machine will use this controller when it needs to read
+			and/or write to an io device.
 
 			@param	controller	The io controller to be used with this machine.
 
-			Not setting an io controller, while valid, is NOT recommended.
-			This is because without an io controller the machine will have
-			no means of exiting via an i/o device or via an i/o device
-			interrupt.
+			@throw				An invalid_argument exception when controller is nullptr.
 
-			A valid reason for having a null io controller would be if you
-			wanted to run a machine for a certain period of time.
-
-			For example;
-
-			auto machine = MakeMachine();
-			auto memoryController = MakeDefaultMemoryController(16);
-			memoryController.Load ("myProgram.bin");
-			machine.SetMemoryController (memoryController_);
-			//Don't set an io controller
-
-			auto future = std::async(std::launch::async, [&]
-			{
-				machine.Run();
-			});
-
-			auto status = future.wait_for(seconds(2));
-
-			//One can check that status of the machine and
-			//memory after 2 seconds of run time.
-
-			See the tests for example IO controllers.
+			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
@@ -135,51 +120,41 @@ namespace MachEmu
 													machine clock will tick. The clock is disabled by
 													default (run as fast as possible).
 
-			@return		ErrorCode	NoError			The resolution was set successfully.
-									ClockResolution	The resolution was set, however, the host does not support
-													a high enough resolution timer for this resolution. This may
-													result in high CPU usage, high jitter and inaccurate timing.
+			@return									ErrorCode::NoError: The resolution was set successfully.
+													ErrorCode::ClockResolution: The resolution was set,
+													however, the host does not support a high enough resolution
+													timer for this resolution. This may result in high CPU usage,
+													high jitter and inaccurate timing.
 													This method should be called again with a lower resolution.
 
-			Note that this is only a request and while best efforts are made to honour it, the consistency of the tick
-			rate will not be perfect, especially at higher resolutions when no high resolution clock is available.
+			@remark		Note that this is only a request and while best efforts are made to honour it, the consistency of the tick
+						rate will not be perfect, especially at higher resolutions when no high resolution clock is available.
 		
-			A value of less than 0 will run the machine as fast as possible with the highest possible resolution.
-			A value of 0 will run the machine at realtime (or as close to) with the highest possible resolution.
-			Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
-			the clock speed and is not recommended.
+						A value of less than 0 will run the machine as fast as possible with the highest possible resolution.
+						A value of 0 will run the machine at realtime (or as close to) with the highest possible resolution.
+						Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
+						the clock speed and is not recommended.
 		*/
 		virtual ErrorCode SetClockResolution (int64_t clockResolution) = 0;
 
-
 		/**	Get the state of the machine.
 
-			Returns the state of the machine (currently just the cpu) as an array in the following
-			form dependent on cpu type:
+			@param		size	Storage for the state array size in bytes. Optional value and is set to nullptr (ignore) by default.
+								The size of the state array can be obtained via the table below.
 
-			Intel8080:
-				Registers:
-					A (8 bits)
-					B (8 bits)
-					C (8 bits)
-					D (8 bits)
-					E (8 bits)
-					H (8 bits)
-					L (8 bits)
-				Status:
-					S (8 bits)
-				Program Counter:
-					PC (16 bits)
-				Stack Pointer:
-					SP (16 bits)
-			
-			TODO: other cpus/components
+			@return				A copy of the internal state of the machine as a uint8_t unique_ptr array.
 
-			Remaining bits are unused.
+			@remark				The returned state of the machine currently just contains the cpu as an array of bytes
+								in the following form:
+
+			<table>
+			<tr><td>Cpu</td><td>Registers</td><td>Status</td><td>Program Counter</td><td>Stack Pointer</td><td>Total Bits</td></tr>
+			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td><td>96</td></tr>
+			</table>
 		*/
-		virtual std::array<uint8_t, 12> GetState() const = 0;
+		virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
 
-		/** Destructor.
+		/** Destruct the machine
 
 			Release all resources used by this machine instance.
 		*/

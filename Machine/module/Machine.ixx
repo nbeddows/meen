@@ -27,7 +27,6 @@ module;
 
 export module Machine;
 
-import <array>;
 import <cstdint>;
 import <memory>;
 import ICpu;
@@ -81,6 +80,6 @@ namespace MachEmu
 		
 			@see IMachine::GetCpuState
 		*/
-		std::array<uint8_t, 12> GetState() const final;
+		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 	};
 } // namespace MachEmu

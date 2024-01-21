@@ -32,21 +32,93 @@ import <vector>;
 
 namespace MachEmu
 {
+	/**
+		Basic example memory controller
+
+		This minimal example reads and writes to a vector of bytes
+		on disk one byte at a time. The maximum addressable size
+		is 16 bits.
+	*/
 	export class MemoryController final : public IController
 	{
 	private:
+		/**
+			Machine memory
+
+			All the memory that the machine will have access to.
+		*/
 		std::vector<uint8_t> memory_;
 	public:
-		explicit MemoryController(uint8_t addressBusSize);
-		~MemoryController() = default;
+		/**
+			Memory controller constructor
 
+			@remark		The address bus size should not be larger
+						than 16. A value larger than this will result
+						in the additional memory being unaddressable.
+		*/
+		explicit MemoryController(uint8_t addressBusSize);
+
+		/**
+			Load a program
+
+			Loads a program into memory at a specified offset from the
+			starting memory address 0x0000.
+
+			@param	romFilePath				The (absolute or relative) address on local disk
+											where the program resides.
+
+			@param	offset					The memory location to load the program into.
+
+			@throw	std::runtime_error		The rom file failed to open.
+			@throw	std::length_error		The rom file is too large for the given offset.
+			@throw	std::invalid_argument	Failed to read the rom file into memory.
+		*/
 		void Load(const char* romFilePath, uint16_t offset);
+		
+		/** Memory clear
+		
+			Wipes all memory bytes to 0.
+		*/
 		void Clear();
+
+		/** Memory size
+		
+			@return					The total size of the memory in bytes.
+		*/
 		size_t Size() const;
 
-		//IController virtual overrides
+		/** Read a byte of memory
+
+			The maximum size of each read is 8 bits from a 16 address.
+
+			@param		address		The 16 bit address to read from.
+
+			@return					The 8 bits residing at the 16 bit memory address.
+		*/
 		uint8_t Read(uint16_t address) final;
+		
+		/** Write a byte of data to memory
+		
+			The maximum size of each write is 8 bits to a 16 address.
+		
+			@param		address		The 16 bit address to write to.
+			
+			@param		value		The 8 bit value to write.
+		*/
 		void Write(uint16_t address, uint8_t value) final;
+
+		/** Memory IO interrupt handler
+		 
+			Checks the memory controller to see if any interrupts are pending.
+		
+			@param	currTime	The time in nanoseconds of the machine clock.
+
+			@param	cycles		The total number of cycles that have elapsed.
+		
+			@return				ISR::NoInterrupt.
+
+			@remark				This controller never generates any interrupts.
+		*/
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
