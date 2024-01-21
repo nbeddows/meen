@@ -31,7 +31,6 @@ import <cstdint>;
 import <memory>;
 import <functional>;
 import <string_view>;
-import <vector>;
 
 import SystemBus;
 
@@ -307,12 +306,29 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 #endif
 }
 
-std::vector<uint8_t> Intel8080::GetState() const
+std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 {
-	return { Value(a_), Value(b_), Value(c_), Value(d_),
-			Value(e_), Value(h_), Value(l_), Value(status_),
-			static_cast<uint8_t>(pc_ >> 8), static_cast<uint8_t>(pc_ & 0xFF),
-			static_cast<uint8_t>(sp_ >> 8), static_cast<uint8_t>(sp_ & 0xFF) };
+	auto state = std::make_unique<uint8_t[]>(12);
+	
+	state[0] = Value(a_);
+	state[1] = Value(b_);
+	state[2] = Value(c_);
+	state[3] = Value(d_);
+	state[4] = Value(e_);
+	state[5] = Value(h_);
+	state[6] = Value(l_);
+	state[7] = Value(status_);
+	state[8] = static_cast<uint8_t>(pc_ >> 8);
+	state[9] = static_cast<uint8_t>(pc_ & 0xFF);
+	state[10] = static_cast<uint8_t>(sp_ >> 8);
+	state[11] = static_cast<uint8_t>(sp_ & 0xFF);
+
+	if (size != nullptr)
+	{
+		*size = 12;
+	}
+
+	return state;
 }
 
 uint8_t Intel8080::Fetch()

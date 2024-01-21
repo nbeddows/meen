@@ -26,9 +26,9 @@ module;
 
 module Machine;
 
-import <array>;
 import <chrono>;
 import <functional>;
+import <memory>;
 
 import ICpuClock;
 import ICpu;
@@ -155,8 +155,8 @@ namespace MachEmu
 		ioController_ = controller;
 	}
 
-	std::vector<uint8_t> Machine::GetState() const
+	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
 	{
-		return cpu_->GetState();
+		return cpu_->GetState(size);
 	}
 } // namespace MachEmu

@@ -24,7 +24,6 @@ SOFTWARE.
 #define IMACHINE_H
 
 import <memory>;
-import <vector>;
 #include "Controller/IController.h"
 
 namespace MachEmu
@@ -140,17 +139,20 @@ namespace MachEmu
 
 		/**	Get the state of the machine.
 
-			@return		The state of the machine as a vector.
+			@param		size	Storage for the state array size in bytes. Optional value and is set to nullptr (ignore) by default.
+								The size of the state array can be obtained via the table below.
 
-			The returned state of the machine currently just contains the cpu as an vector of bytes
-			in the following form:
+			@return				A copy of the internal state of the machine as a uint8_t unique_ptr array.
+
+			@remark				The returned state of the machine currently just contains the cpu as an array of bytes
+								in the following form:
 
 			<table>
 			<tr><td>Cpu</td><td>Registers</td><td>Status</td><td>Program Counter</td><td>Stack Pointer</td><td>Total Bits</td></tr>
 			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td><td>96</td></tr>
 			</table>
 		*/
-		virtual std::vector<uint8_t> GetState() const = 0;
+		virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
 
 		/** Destruct the machine
 

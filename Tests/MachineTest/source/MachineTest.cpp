@@ -24,14 +24,6 @@ import <memory>;
 import MemoryController;
 import TestIoController;
 
-// Google test under g++-13 seems to have some module compatibility issues
-// or it could be related to how this file is written (module/header include order for example).
-// Disable and re-test on future gtest/g++ releases.
-#ifdef _WINDOWS
-#include <future>
-#endif
-
-#include <vector>
 #include <gtest/gtest.h>
 // Needs to be declared after gtest due to g++/gtest
 // compilation issues: fixme
@@ -56,7 +48,7 @@ namespace MachEmu::Tests
 		};
 
 		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-		std::vector<uint8_t> LoadAndRun(const char* name) const;
+		std::unique_ptr<uint8_t[]> LoadAndRun(const char* name) const;
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -82,7 +74,7 @@ namespace MachEmu::Tests
 		machine_->SetIoController(testIoController_);
 	}
 
-	std::vector<uint8_t> MachineTest::LoadAndRun(const char* name) const
+	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name) const
 	{
 		EXPECT_NO_THROW
 		(
