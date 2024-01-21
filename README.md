@@ -40,9 +40,9 @@ The following table displays the current defacto test suites that these unit tes
 | Cpu   | Test             | Status | 
 |:-----:|:----------------:|:------:|
 | i8080 | 8080EXM          | PASS   |
-||8080PRE|PASS|
-||CPUTEST|PASS|
-||TST8080|PASS|
+|       | 8080PRE          | PASS   |
+|       | CPUTEST          | PASS   |
+|       | TST8080          | PASS   |
 
 IMachine.h specifies the MachEmu interface and outlines the basic principles of operation.
 
@@ -62,15 +62,23 @@ The following image give a possible Windows CMake configuration (note that we do
 
 ![Example Windows configuration](Docs/images/CMake(Windows).png)
 
-MachEmu has been tested on visual studio and requires version 22 or newer (for c++ module support). Open the mach-emu visual studio solution, (depending on your install location you may need to open visual studio with admin privileges) set the configuration to Release and project to INSTALL, then build. Once this builds successfully you will be able to change your project to the machine unit tests and they should run successfully.
+MachEmu has been tested on visual studio and requires version 22 or newer (for c++ module support). Open the mach-emu visual studio solution, (depending on your install location you may need to open visual studio with admin privileges) set the configuration to Release and project to INSTALL, then build. Once this builds successfully you will be able to change your project to the machine and controller unit tests and they should run successfully.
 
 ##### Linux
 
-The following image give a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be g++ 13 or greater (Clang is currently not suppoprted). If the gui output displays a different compiler you can open the root CMakeLists.txt an uncomment the following line #set(CMAKE_CXX_COMPILER g++-13)
+The following image give a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be g++ 13 or greater (Clang is currently not supported). If the gui output displays a different compiler you can open the root CMakeLists.txt and uncomment the following line `set(CMAKE_CXX_COMPILER g++-13)`
 
 ![Example Linux configuration](Docs/images/CMake(Linux).png)
 
-MachEmu has been tested with g++ and requires version 13.2 or newer (for module support) with GNU Make 4.3 or newer. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the unit tests can be run from the relevant directory.
+MachEmu has been tested with g++ and requires version 13.2 or newer (for module support) with GNU Make 4.3 or newer. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
+
+Known issue:
+
+Error copying file (if different) from "/home/user/mach-emu/Tests/TestControllers/gcm.cache/BaseIoController.gcm" to "/home/user/mach-emu/Tests/gcm.cache".
+
+Solution:
+
+Remove the binary directory, reconfigure and rebuild.
 
 ### Acknowledgements
 
