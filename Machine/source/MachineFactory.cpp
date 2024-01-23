@@ -29,8 +29,8 @@ import Machine;
 namespace MachEmu
 {
 	//cppcheck-suppress unusedFunction
-	std::unique_ptr<IMachine> MakeMachine()
+	std::unique_ptr<IMachine> Make8080Machine()
 	{
-		return std::make_unique<Machine>();
+		return std::make_unique<Machine>(CpuType::I8080);
 	}
 } // namespace MachEmu

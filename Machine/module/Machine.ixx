@@ -35,6 +35,11 @@ import SystemBus;
 
 namespace MachEmu
 {
+	export enum class CpuType
+	{
+		I8080
+	};
+
 	/** Machine
 
 	*/
@@ -49,7 +54,7 @@ namespace MachEmu
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
-		Machine();
+		Machine(CpuType cpuType);
 		~Machine() = default;
 
 		/** Run
