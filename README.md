@@ -20,7 +20,7 @@ This list will expand as certain milestones are achieved.
 
 4. Implement a basic system bus which can be used as 'lines' of communication between the cpu and various controllers. **COMPLETE**
 
-5. Upgrade the 8080 to an 8085 (z80) complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
+5. Implement a Zilog Z80 cpu emulator complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
 
 ### Overview
 
