@@ -75,14 +75,14 @@ namespace MachEmu
 			@param	pc					The program counter is the memory address at
 										which the cpu will start executing the instructions
 										contained in the rom files that were loaded into memory.
-										When no program counter
-										is specified cpu instruction execution will
-										begin from memory address 0x00.
 
 			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
 
 			@throw	std::runtime_error	No memory or io controller has been set on this
 										machine.
+
+			@remark						When no program counter is specified cpu instruction
+										execution will begin from memory address 0x00.
 
 			@see SetMemoryController
 		*/
