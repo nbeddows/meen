@@ -18,9 +18,6 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set(major 1)
-set(minor 3)
-set(bugfix 0)
 set(target_name Sdk)
 set(sdkDir ${CMAKE_BINARY_DIR}/${target_name}/mach-emu)
 
@@ -28,14 +25,19 @@ if(CMAKE_COMPILER_IS_GNUCXX)
   set(escape \\)
   set(prefix lib)
   set(postfix so)
+  set(versionExt .${machEmuExtension})
 else()
   set(postfix dll)
 endif()
 
 if(MSVC)
   set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
+  set(installLinkLib "install(FILES \${CMAKE_SOURCE_DIR}/bin/MachEmu.lib DESTINATION lib)\n")
 else()
-  set(stripLib COMMAND strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix})
+  set(buildModules "set(STD_MODULES cstdint memory string vector)\ninclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n")
+  set(installSoLink "install(CODE \"execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix}${versionExt} ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix})\")\n")
+  set(soLink COMMAND ${CMAKE_COMMAND} -E create_symlink ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix})
+  set(stripLib COMMAND strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
 endif()
 
 # write the top level sdk cmake make list
@@ -56,7 +58,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
   "# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
   "# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
   "# SOFTWARE.\n\n"
-  "cmake_minimum_required (VERSION 3.25)\n"
+  "cmake_minimum_required (VERSION 3.28)\n"
   "#set(CMAKE_CXX_COMPILER g++-13)\n"
   "set(CMAKE_CXX_STANDARD 20)\n"
   "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
@@ -67,19 +69,15 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
   "set(source_dir source)\n"
   "project(mach-emu)\n"
   "find_library(libMachEmu MachEmu)\n"
-  "if(CMAKE_COMPILER_IS_GNUCXX)\n"
-  "\tset(STD_MODULES cstdint memory string vector)\n"
-  "\tinclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n"
-  "endif()\n"
+  ${buildModules}
   "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
   "add_subdirectory(Tests)\n"
-  "install(FILES \${CMAKE_SOURCE_DIR}/bin/${prefix}MachEmu.${postfix} DESTINATION lib)\n"
+  "install(FILES \${CMAKE_SOURCE_DIR}/bin/${prefix}MachEmu.${postfix}${versionExt} DESTINATION lib)\n"
+  ${installLinkLib}
   "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Base/include/Base DESTINATION include)\n"
   "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Controller/include/Controller DESTINATION include)\n"
   "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Machine/include/Machine DESTINATION include)\n"
-  "if(MSVC)\n"
-  "\tinstall(FILES \${CMAKE_SOURCE_DIR}/bin/MachEmu.lib DESTINATION lib)\n"
-  "endif()\n"
+  ${installSoLink}
 )
 
 # copy out the required modules/sources/libraries, perform static analysis
@@ -95,13 +93,14 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
   ${copyLib}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/${prefix}MachEmu.${postfix}
+  ${soLink}
   ${stripLib}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
   COMMAND ${CMAKE_COMMAND} -E chdir ${sdkDir} doxygen ${CMAKE_SOURCE_DIR}/Docs/Doxyfile
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Docs/images ${sdkDir}/Docs/html/Docs/images
-  COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${major}.${minor}.${bugfix}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-dev.tar.gz ${sdkDir}
+  COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-dev.tar.gz ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
 )
 

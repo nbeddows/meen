@@ -52,6 +52,8 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${inc
 
 add_dependencies(${lib_name} Cpu CpuClock SystemBus)
 
+set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION ${machEmuVersion})
+
 target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
