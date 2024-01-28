@@ -31,7 +31,7 @@ set (${lib_name}_source_files
 	${source_dir}/${lib_name}Factory.cpp
 )
 
-add_target(${lib_name} STATIC "" "${${lib_name}_module_files}" "${${lib_name}_source_files}")
+add_target(${lib_name} STATIC "" "${${lib_name}_module_files}" "" "${${lib_name}_source_files}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)

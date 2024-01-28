@@ -29,12 +29,18 @@ set (${lib_name}_module_files
 	${module_dir}/Machine.ixx
 )
 
+if(MSVC)
+	set (${lib_name}_resource_files
+		${resource_dir}/Machine.rc
+	)
+endif()
+
 set (${lib_name}_source_files
 	${source_dir}/Machine.cpp
 	${source_dir}/MachineFactory.cpp
 )
 
-add_target(${lib_name} SHARED "${${lib_name}_include_files}" "${${lib_name}_module_files}" "${${lib_name}_source_files}")
+add_target(${lib_name} SHARED "${${lib_name}_include_files}" "${${lib_name}_module_files}" "${${lib_name}_resource_files}" "${${lib_name}_source_files}")
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)

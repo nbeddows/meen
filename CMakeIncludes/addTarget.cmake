@@ -18,15 +18,18 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-function(add_target name type include_files module_files source_files)
+function(add_target name type include_files module_files resource_files source_files)
     SOURCE_GROUP("Include Files" FILES ${include_files})
     SOURCE_GROUP("Module Files" FILES ${module_files})
+    SOURCE_GROUP("Resource Files" FILES ${resource_files})
     SOURCE_GROUP("Source Files" FILES ${source_files})
 
+    set(codeFiles ${include_files} ${module_files} ${resource_files} ${source_files})
+
     if(${type} MATCHES EXE)
-        add_executable(${name} ${include_files} ${module_files} ${source_files})
+        add_executable(${name} ${codeFiles})
     else()
-        add_library(${name} ${type} ${include_files} ${module_files} ${source_files})
+        add_library(${name} ${type} ${codeFiles})
     endif()
 
     if(CMAKE_COMPILER_IS_GNUCXX)
