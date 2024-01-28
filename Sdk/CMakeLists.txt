@@ -21,19 +21,15 @@
 set(target_name Sdk)
 set(sdkDir ${CMAKE_BINARY_DIR}/${target_name}/mach-emu)
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-  set(escape \\)
-  set(prefix lib)
-  set(postfix so)
-  set(versionExt .${machEmuExtension})
-else()
-  set(postfix dll)
-endif()
-
 if(MSVC)
   set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
   set(installLinkLib "install(FILES \${CMAKE_SOURCE_DIR}/bin/MachEmu.lib DESTINATION lib)\n")
+  set(postfix dll)
 else()
+  set(escape \\)
+  set(postfix so)
+  set(prefix lib)
+  set(versionExt .${machEmuVersion})
   set(buildModules "set(STD_MODULES cstdint memory string vector)\ninclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n")
   set(installSoLink "install(CODE \"execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix}${versionExt} ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix})\")\n")
   set(soLink COMMAND ${CMAKE_COMMAND} -E create_symlink ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix})
@@ -92,7 +88,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
   ${copyLib}
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix} ${sdkDir}/bin/${prefix}MachEmu.${postfix}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
   ${soLink}
   ${stripLib}
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
