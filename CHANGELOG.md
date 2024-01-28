@@ -11,6 +11,7 @@
   platform compatibility.
 * Added SetClockResolution to the IMachine interface.
 * Updated documentation.
+* Added version information to dll/so.
 
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
