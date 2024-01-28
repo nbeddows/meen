@@ -144,8 +144,7 @@ namespace MachEmu::Tests
 
 			auto error = (nanos / iterations) - 1000000000;
 			// Allow an average 500 micros of over sleep error
-			EXPECT_GT(500000, error);
-			EXPECT_LT(0, error);
+			EXPECT_EQ(true, error >= 0 && error <= 500000);
 			// restore back to as fast as possible
 			err = machine_->SetClockResolution(-1);
 			EXPECT_EQ(ErrorCode::NoError, err);
