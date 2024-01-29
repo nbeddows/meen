@@ -1,3 +1,20 @@
+1.3.0 [29/01/24]
+* Added CMake support.
+  Tested with Visual Studio 22 (Windows 10) and
+  g++ 13.2 (Ubuntu 23.10).
+* Moved Space Invaders to it's own repository.
+* Removed the Windows specific sdk batch script
+  (now building via CMake).
+* Updated the sdk to include the unit tests
+  (removed Space Invaders).
+* Renamed the sdk project target from mach-emu-sdk
+  to mach-emu.
+* Sdk modules are now headers files for better
+  platform compatibility.
+* Added SetClockResolution to the IMachine interface.
+* Updated documentation.
+* Added version information to dll/so.
+
 1.2.0 [01/12/23]
 * Added Cppcheck static analysis.
 

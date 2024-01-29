@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,123 +19,155 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-
 module;
+
+#include "Base/Base.h"
+#include "Controller/IController.h"
 
 module Machine;
 
 import <chrono>;
+import <functional>;
+import <memory>;
+
+import ICpuClock;
+import ICpu;
+import CpuClockFactory;
+import CpuFactory;
+import SystemBus;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
-	Machine::Machine()
+	Machine::Machine(CpuType cpuType)
 	{
-		clock_ = MakeCpuClock(systemBus_.controlBus, nanoseconds(2000));
-
-		cpu_ = Make8080(systemBus_, [this](const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+		switch (cpuType)
 		{
-			auto controlBus = systemBus.controlBus;
-			auto addressBus = systemBus.addressBus;
-			auto dataBus = systemBus.dataBus;
-
-			if (memoryController_ != nullptr)
+			case CpuType::I8080:
 			{
-				//check the control bus to see if there are any operations pending
-				if (controlBus->Receive(Signal::MemoryRead))
-				{
-					dataBus->Send(memoryController_->Read(addressBus->Receive()));
-				}
-
-				if (controlBus->Receive(Signal::MemoryWrite))
-				{
-					memoryController_->Write(addressBus->Receive(), dataBus->Receive());
-				}
+				clock_ = MakeCpuClock(2000000);
+				cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
+				break;
 			}
-
-			if (ioController_ != nullptr)
+			default:
 			{
-				if (controlBus->Receive(Signal::IoRead))
-				{
-					dataBus->Send(ioController_->Read(addressBus->Receive()));
-				}
-
-				if (controlBus->Receive(Signal::IoWrite))
-				{
-					ioController_->Write(addressBus->Receive(), dataBus->Receive());
-				}
+				throw std::invalid_argument("Unsupported cpu type");
 			}
-		});
+		}
 	}
 
-	void Machine::Run(uint16_t pc)
+	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
+	{
+		return clock_->SetTickResolution(nanoseconds(clockResolution));
+	}
+
+	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
+	{
+		auto controlBus = systemBus.controlBus;
+		auto addressBus = systemBus.addressBus;
+		auto dataBus = systemBus.dataBus;
+
+		if (memoryController_ != nullptr)
+		{
+			//check the control bus to see if there are any operations pending
+			if (controlBus->Receive(Signal::MemoryRead))
+			{
+				dataBus->Send(memoryController_->Read(addressBus->Receive()));
+			}
+
+			if (controlBus->Receive(Signal::MemoryWrite))
+			{
+				memoryController_->Write(addressBus->Receive(), dataBus->Receive());
+			}
+		}
+
+		if (ioController_ != nullptr)
+		{
+			if (controlBus->Receive(Signal::IoRead))
+			{
+				dataBus->Send(ioController_->Read(addressBus->Receive()));
+			}
+
+			if (controlBus->Receive(Signal::IoWrite))
+			{
+				ioController_->Write(addressBus->Receive(), dataBus->Receive());
+			}
+		}
+	}
+
+	uint64_t Machine::Run(uint16_t pc)
 	{		
 		if (memoryController_ == nullptr)
 		{
 			throw std::runtime_error ("No memory controller has been set");
 		}
-		
-		auto addressBus = systemBus_.addressBus;
+
+		if (ioController_ == nullptr)
+		{
+			throw std::runtime_error("No io controller has been set");
+		}
+
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
+		auto currTime = nanoseconds::zero();
 
 		cpu_->Reset(pc);
+		clock_->Reset();
 
 		uint64_t totalCycles = 0;
 
 		while (controlBus->Receive(Signal::PowerOff) == false)
 		{
-			auto currTime = clock_->Tick();
+			//Execute the next instruction
+			auto cycles = cpu_->Execute();
+			currTime = clock_->Tick(cycles);
+			totalCycles += cycles;
 
-			//check if we can tick the cpu
-			if (controlBus->Receive(Signal::Clock) == true)
+			if (ioController_ != nullptr)
 			{
-				//Execute the next instruction
-				auto cycles = cpu_->Execute();
+				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalCycles);
 
-				if (ioController_ != nullptr)
+				if (isr != ISR::NoInterrupt)
 				{
-					//Check the IO to see if any interrupts are pending, don't check if we are in the middle of executing an instruction
-					//otherwise we will overload the databus.
-					if (cycles > 0)
+					if (isr != ISR::Quit)
 					{
-						totalCycles += cycles;
-						
-						/* TODO
-
-							We should be able to launch ServiceInterrupts on a
-							separate task.
-						*/
-
-						//auto isr = ioController_->ServiceInterrupts(nanoseconds(tick));
-						auto isr = ioController_->ServiceInterrupts(currTime, totalCycles);
-
-						if (isr != ISR::NoInterrupt)
-						{
-							if (isr != ISR::Quit)
-							{
-								controlBus->Send(Signal::Interrupt);
-								dataBus->Send(static_cast<uint8_t>(isr));
-							}
-							else
-							{
-								controlBus->Send(Signal::PowerOff);
-							}
-						}
+						controlBus->Send(Signal::Interrupt);
+						dataBus->Send(static_cast<uint8_t>(isr));
+					}
+					else
+					{
+						controlBus->Send(Signal::PowerOff);
 					}
 				}
 			}
 		}
+
+		return currTime.count();
 	}
 
 	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+		
 		memoryController_ = controller;
 	}
 
 	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
+		if (controller == nullptr)
+		{
+			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+
 		ioController_ = controller;
 	}
-}
+
+	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
+	{
+		return cpu_->GetState(size);
+	}
+} // namespace MachEmu

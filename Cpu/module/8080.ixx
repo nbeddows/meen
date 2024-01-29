@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,31 +19,34 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+module;
+
+#include "Base/Base.h"
 
 export module _8080;
 
-import <array>;
 import <bitset>;
+import <cstdint>;
+import <memory>;
 import <functional>;
 import <string_view>;
 
-import Base;
-import I8080;
+import ICpu;
 import SystemBus;
 
 //#define ENABLE_OPCODE_TABLE
 
-namespace Emulator
+namespace MachEmu
 {
-	constexpr bool dbg = false;
-
-	export class Intel8080 final : public I8080 //replace with public ICpu
+	export class Intel8080 final : public ICpu
 	{
 	private:
 		using Register = std::bitset<8>;
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
 		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		//cppcheck-suppress unusedStructMember
+		static constexpr bool dbg = false;
 
 		enum /*class*/Condition
 		{
@@ -55,17 +58,24 @@ namespace Emulator
 		};
 
 		/**
-			The 8080 provides the programmer with an 8-bit accumulator and six additional 8-bit "scratchpad" registers.
-			These seven working registers are numbered and referenced via the integers 0, 1,2,3,4,5, and 7; by convention,
+			The 8080 provides the programmer with an 8-bit accumulator and six additional 8-bit "scratchpad" registers.
+			These seven working registers are numbered and referenced via the integers 0, 1,2,3,4,5, and 7; by convention,
 			these registers may also be accessed via the letters B, C, D,
 			E, H, L, and A (for the accumulator), respectively.
 		*/
+		//cppcheck-suppress unusedStructMember
 		Register a_;
+		//cppcheck-suppress unusedStructMember
 		Register b_;
+		//cppcheck-suppress unusedStructMember
 		Register c_;
+		//cppcheck-suppress unusedStructMember
 		Register d_;
+		//cppcheck-suppress unusedStructMember
 		Register e_;
+		//cppcheck-suppress unusedStructMember
 		Register h_;
+		//cppcheck-suppress unusedStructMember
 		Register l_;
 		//Helper funtions to prime the address and data buses
 		//for read write operations.
@@ -84,6 +94,7 @@ namespace Emulator
 			by stack operations. The programmer specifies which addresses the stack operations will
 			operate upon via a special accessible 16-bit register called the stack pointer.
 		*/
+		//cppcheck-suppress unusedStructMember
 		uint16_t sp_{};
 
 		/**
@@ -110,8 +121,6 @@ namespace Emulator
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
-		static bool AuxCarry(const Register& r, uint8_t value) { return ((Value(r) & 0x0F) + (value & 0x0F)) > 0x0F; }
-		static bool Carry(const Register& r, uint8_t value) { return (Value(r) + value) > 0xFF; }
 		static bool Parity(const Register& r) { return (r.count() & 1) == 0; }
 		static bool Sign(const Register& r) { return r.test(7); }
 		static bool Zero(const Register& r) { return r.none(); }
@@ -193,27 +202,13 @@ namespace Emulator
 
 	public:
 		/* I8080 overrides */
-		uint8_t Execute() override final;
-		void Reset(uint16_t programCounter) override final;
+		uint8_t Execute() final;
+		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
+		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */
 
 		Intel8080() = default;
 		Intel8080 (const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
 		~Intel8080() = default;
-
-		uint8_t A() const { return Value(a_); }
-		uint8_t B() const { return Value(b_); }
-		uint8_t C() const { return Value(c_); }
-		uint8_t D() const { return Value(d_); }
-		uint8_t E() const { return Value(e_); }
-		uint8_t H() const { return Value(h_); }
-		uint8_t L() const { return Value(l_); }
-		uint16_t SP() const { return sp_; }
-
-		bool Zero() const { return status_[Condition::ZeroFlag]; }
-		bool Sign() const { return status_[Condition::SignFlag]; }
-		bool Parity() const { return status_[Condition::ParityFlag]; }
-		bool AuxCarry() const { return status_[Condition::AuxCarryFlag]; }
-		bool Carry() const { return status_[Condition::CarryFlag]; }
 	};
-}
+} // namespace MachEmu

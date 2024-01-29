@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,18 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module I8080;
+export module ICpu;
 
 import <cstdint>;
-import <functional>;
 import <memory>;
-import <string_view>;
-import <vector>;
-import SystemBus;
 
-namespace Emulator
+namespace MachEmu
 {
-	export struct I8080
+	export struct ICpu
 	{
 		//Executes the next instruction
 		virtual uint8_t Execute() = 0;
@@ -40,8 +36,8 @@ namespace Emulator
 
 		//virtual void Save() const = 0;
 
-		virtual ~I8080() = default;
-	};
+		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
 
-	export std::unique_ptr<I8080> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
-}
+		virtual ~ICpu() = default;
+	};
+} // namespace MachEmu

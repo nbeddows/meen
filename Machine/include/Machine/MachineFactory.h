@@ -20,20 +20,35 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
+#ifndef MACHINE_FACTORY_H
+#define MACHINE_FACTORY_H
 
-import <cstdint>;
-import <functional>;
-import <memory>;
+#include <memory>
+#include "IMachine.h"
 
-import _8080;
-import ICpu;
-import SystemBus;
+#ifdef _WINDOWS
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP __declspec(dllexport)
+#else
+#define DLL_EXP_IMP __declspec(dllimport)
+#endif
+#else
+#ifdef MachEmu_EXPORTS
+#define DLL_EXP_IMP [[gnu::visibility("default")]]
+#else
+#define DLL_EXP_IMP
+#endif
+#endif
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process)
-	{
-		return std::make_unique<Intel8080>(systemBus, process);
-	}
+	/** Create a machine.
+	
+		Build a machine based on the Intel 8080 cpu.
+
+		@return		std::unique_ptr<IMachine>	An empty i8080 machine that can be loaded with memory and io controllers.
+	*/
+	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
 } // namespace MachEmu
+
+#endif // MACHINE_FACTORY_H

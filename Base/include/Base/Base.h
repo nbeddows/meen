@@ -20,20 +20,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
-
-import <cstdint>;
-import <functional>;
-import <memory>;
-
-import _8080;
-import ICpu;
-import SystemBus;
+#ifndef BASE_H
+#define BASE_H
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process)
+	/** Interrupt service routine
+
+		A pre defined set of interrupts that can be returned from IController::ServiceInterrupts.
+
+		@see	IController.
+	*/
+	enum class ISR
 	{
-		return std::make_unique<Intel8080>(systemBus, process);
-	}
+		Zero,					/**< Interrupt 0 */
+		One,					/**< Interrupt 1 */
+		Two,					/**< Interrupt 2 */
+		Three,					/**< Interrupt 3 */
+		Four,					/**< Interrupt 4 */
+		Five,					/**< Interrupt 5 */
+		Six,					/**< Interrupt 6 */
+		Seven,					/**< Interrupt 7 */
+		Quit = 0xFFEF,			/**< Exit the IMachine::Run control loop. */
+		NoInterrupt,			/**< No interrupt has occurred. */
+	};
+
+	/** MachuEmu error codes
+	
+		@todo		Convert to ErrorCode to std::error_code
+	*/
+	enum class ErrorCode
+	{
+		NoError,				/**< Success, no error has occured */
+		ClockResolution			/**< Warning, clock resolution may be inaccurate */
+	};
 } // namespace MachEmu
+
+#endif // BASE_H

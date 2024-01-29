@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -22,14 +22,19 @@ SOFTWARE.
 
 module;
 #include <assert.h>
-#include <chrono>
-#include <coroutine>
+#include "Base/Base.h"
 
 module _8080;
 
-using namespace std::chrono;
+import <bitset>;
+import <cstdint>;
+import <memory>;
+import <functional>;
+import <string_view>;
 
-namespace Emulator
+import SystemBus;
+
+namespace MachEmu
 {
 
 Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
@@ -299,6 +304,31 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 		[&] { return Rst(); },
 	});
 #endif
+}
+
+std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
+{
+	auto state = std::make_unique<uint8_t[]>(12);
+	
+	state[0] = Value(a_);
+	state[1] = Value(b_);
+	state[2] = Value(c_);
+	state[3] = Value(d_);
+	state[4] = Value(e_);
+	state[5] = Value(h_);
+	state[6] = Value(l_);
+	state[7] = Value(status_);
+	state[8] = static_cast<uint8_t>(pc_ >> 8);
+	state[9] = static_cast<uint8_t>(pc_ & 0xFF);
+	state[10] = static_cast<uint8_t>(sp_ >> 8);
+	state[11] = static_cast<uint8_t>(sp_ & 0xFF);
+
+	if (size != nullptr)
+	{
+		*size = 12;
+	}
+
+	return state;
 }
 
 uint8_t Intel8080::Fetch()
@@ -632,11 +662,9 @@ void Intel8080::Reset(uint16_t pc)
 
 void Intel8080::ReadFromAddress(Signal readLocation, uint16_t addr)
 {
-	controlBus_->Send(readLocation);			
+	controlBus_->Send(readLocation);
 	addressBus_->Send (addr);
-#ifndef ENABLE_CO_ROUTINE
 	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-#endif
 }
 
 void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t value)
@@ -644,9 +672,7 @@ void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t valu
 	controlBus_->Send(writeLocation);
 	addressBus_->Send(addr);
 	dataBus_->Send(value);
-#ifndef ENABLE_CO_ROUTINE
 	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-#endif
 }
 
 /**
@@ -663,7 +689,7 @@ uint8_t Intel8080::Inr(Register& r)
 uint8_t Intel8080::Inr()
 {
 	auto addr = Uint16(h_, l_);
-	
+
 	ReadFromAddress(Signal::MemoryRead, addr);
 	//Get the data and process it.
 	Register r = dataBus_->Receive();
@@ -840,7 +866,7 @@ uint8_t Intel8080::Rar()
 	{
 		printf("0x%04X RAR\n", pc_);
 	}
-	
+
 	bool tmp = status_[CarryFlag];
 	status_[CarryFlag] = a_[0];
 	a_ >>= 1;
@@ -1234,7 +1260,7 @@ uint8_t Intel8080::Hlt()
 }
 
 Intel8080::Register Intel8080::Add(const Register& lhs, const Register& rhs, uint8_t carry, bool setCarryFlag, [[maybe_unused]] std::string_view instructionName)
-{	
+{
 	uint8_t a = Value(lhs);
 	uint8_t b = Value(rhs);
 
@@ -1352,7 +1378,7 @@ uint8_t Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 			printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 		}
 	}
-	
+
 	Ana(r);
 	return 7;
 }
@@ -1396,7 +1422,7 @@ uint8_t Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 			printf("0x%04X %s %c\n", pc_, instructionName.data(), opcode_ & 0x80 ? registerName_[opcode_ & 0x07] : registerName_[(opcode_ & 0x38) >> 3]);
 		}
 	}
-	
+
 	Xra(r);
 	return 7;
 }
@@ -1487,7 +1513,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 	}
 
 	pc_++;
-	
+
 	if (status == true)
 	{
 		ReadFromAddress(Signal::MemoryRead, sp_++);
@@ -1495,7 +1521,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 		ReadFromAddress(Signal::MemoryRead, sp_++);
 		pc_ = Uint16(dataBus_->Receive(), pcLow);
 
-		if (instructionName == "RET")
+		if (std::string(instructionName) == "RET")
 		{
 			return 10;
 		}
@@ -1507,7 +1533,7 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 	else
 	{
 		return 5;
-	}	
+	}
 }
 
 uint8_t Intel8080::Pop(Register& hi, Register& low)
@@ -1662,7 +1688,7 @@ uint8_t Intel8080::Rst()
 	//can return to it once the Rst completes.
 	//++pc_;
 	//Rst(opcode_);
-	
+
 	uint16_t addr = opcode_ & 0x38;
 
 	if constexpr (dbg == true)
@@ -1745,7 +1771,7 @@ uint8_t Intel8080::Xthl()
 
 	std::swap(spl, l);
 	std::swap(sph, h);
-	
+
 	l_ = l;
 	h_ = h;
 
@@ -1831,4 +1857,4 @@ uint8_t Intel8080::Ei()
 	return 4;
 }
 
-}
+} // namespace MachEmu

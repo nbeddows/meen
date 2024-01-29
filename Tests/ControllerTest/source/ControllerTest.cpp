@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,27 +20,28 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+
+import <memory>;
+import MemoryController;
+
 #include <gtest/gtest.h>
 
-import ControllerFactory;
-import IController;
-
-namespace Emulator::Controller::Tests
+namespace MachEmu::Tests
 {
 	class ControllerTest : public testing::Test
 	{
 	protected:
-		static std::unique_ptr<IMemoryController> memoryController_;
+		static std::unique_ptr<MemoryController> memoryController_;
 	public:
 		static void SetUpTestCase();
 	};
 
-	std::unique_ptr<IMemoryController> ControllerTest::memoryController_;
+	std::unique_ptr<MemoryController> ControllerTest::memoryController_;
 
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = MakeDefaultMemoryController(16);
+		memoryController_ = std::make_unique<MemoryController>(16);
 	}
 
 	TEST_F(ControllerTest, Load)
@@ -49,7 +50,7 @@ namespace Emulator::Controller::Tests
 		(
 			//load one byte compliment carry program into memory
 			//cppcheck-suppress unknownMacro
-			memoryController_->Load ("../../Programs/cmc.bin", 0);
+			memoryController_->Load (PROGRAMS_DIR"cmc.bin", 0);
 		);
 	}
 
@@ -58,7 +59,7 @@ namespace Emulator::Controller::Tests
 		EXPECT_ANY_THROW
 		(
 			//load three byte compliment accumulator program starting at the end of memory, this should throw
-			memoryController_->Load("../../Programs/cma.bin", static_cast<uint16_t>(memoryController_->Size() - 1));
+			memoryController_->Load(PROGRAMS_DIR"cma.bin", static_cast<uint16_t>(memoryController_->Size() - 1));
 		);
 	}
 
@@ -81,10 +82,10 @@ namespace Emulator::Controller::Tests
 
 		EXPECT_NO_THROW
 		(
-			memoryController_->Load("../../Programs/cmc.bin", 0x00);
+			memoryController_->Load(PROGRAMS_DIR"cmc.bin", 0x00);
 			value = memoryController_->Read(0x00);
 		);
 
 		EXPECT_EQ(0x3F, value);
 	}
-}
+} // namespace MachEmu::Tests

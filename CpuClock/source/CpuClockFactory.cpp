@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -20,22 +20,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module ICpuClock;
+module CpuClockFactory;
 
+import <chrono>;
+import <memory>;
+import ICpuClock;
 import CpuClock;
 
 using namespace std::chrono;
 
-namespace Emulator
+namespace MachEmu
 {
 	//factory free form function
-	std::unique_ptr<ICpuClock> MakeCpuClock(nanoseconds timePeriod, nanoseconds correlateFreq)
+	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed)
 	{
-		return std::make_unique<CpuClock>(timePeriod, correlateFreq);
+		return std::make_unique<CpuClock>(speed);
 	}
-
-	std::unique_ptr<ICpuClock> MakeCpuClock(std::shared_ptr<ControlBus<8>> controlBus, nanoseconds timePeriod)
-	{
-		return std::make_unique<CpuClock>(controlBus, timePeriod);
-	}
-}
+} // namespace MachEmu

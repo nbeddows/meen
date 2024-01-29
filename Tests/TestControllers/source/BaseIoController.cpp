@@ -20,20 +20,29 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
+module;
 
-import <cstdint>;
-import <functional>;
-import <memory>;
+#include "Base/Base.h"
 
-import _8080;
-import ICpu;
-import SystemBus;
+module BaseIoController;
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process)
+    void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
 	{
-		return std::make_unique<Intel8080>(systemBus, process);
+		powerOff_ = port == 0xFF;
+	}
+
+	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
+	{
+		auto isr = ISR::NoInterrupt;
+
+		if (powerOff_ == true)
+		{
+			isr = ISR::Quit;
+			powerOff_ = false;
+		}
+		
+		return isr;
 	}
 } // namespace MachEmu

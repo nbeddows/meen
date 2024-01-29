@@ -20,20 +20,22 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
+export module CpuClockFactory;
 
-import <cstdint>;
-import <functional>;
+import <chrono>;
 import <memory>;
-
-import _8080;
-import ICpu;
-import SystemBus;
+import ICpuClock;
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process)
-	{
-		return std::make_unique<Intel8080>(systemBus, process);
-	}
+	/** Factory function to make a cpu clock
+	
+		The CPU clock contols the timing for the target CPU so that all instructions executed
+		execute at the correct rate.
+
+		@param	speed					The desired clock speed in ticks per second, for the i8080 cpu this will be 2000000 (2Mhz)
+
+		@return	unique_ptr				A unique_ptr to the CpuClock interface.
+	*/
+	export std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
 } // namespace MachEmu
