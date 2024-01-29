@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,7 @@ SOFTWARE.
 
 namespace MachEmu
 {
-	/** Interrupt service routine.
+	/** Interrupt service routine
 
 		A pre defined set of interrupts that can be returned from IController::ServiceInterrupts.
 
@@ -33,23 +33,26 @@ namespace MachEmu
 	*/
 	enum class ISR
 	{
-		Zero,
-		One,
-		Two,
-		Three,
-		Four,
-		Five,
-		Six,
-		Seven,
-		Quit = 0xEF,	//<	Returned from IController::ServiceInterrupts to exit the IMachine::Run control loop.
-		NoInterrupt,
+		Zero,					/**< Interrupt 0 */
+		One,					/**< Interrupt 1 */
+		Two,					/**< Interrupt 2 */
+		Three,					/**< Interrupt 3 */
+		Four,					/**< Interrupt 4 */
+		Five,					/**< Interrupt 5 */
+		Six,					/**< Interrupt 6 */
+		Seven,					/**< Interrupt 7 */
+		Quit = 0xFFEF,			/**< Exit the IMachine::Run control loop. */
+		NoInterrupt,			/**< No interrupt has occurred. */
 	};
 
-	// TODO: convert to std::error_code
+	/** MachuEmu error codes
+	
+		@todo		Convert to ErrorCode to std::error_code
+	*/
 	enum class ErrorCode
 	{
-		NoError,
-		ClockResolution
+		NoError,				/**< Success, no error has occured */
+		ClockResolution			/**< Warning, clock resolution may be inaccurate */
 	};
 } // namespace MachEmu
 

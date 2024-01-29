@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -35,8 +35,14 @@ import SystemBus;
 
 namespace MachEmu
 {
-	/** Machine
+	export enum class CpuType
+	{
+		I8080
+	};
 
+	/** Machine
+		
+		@see IMachine.h
 	*/
 	export struct Machine final : public IMachine
 	{
@@ -49,7 +55,7 @@ namespace MachEmu
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
-		Machine();
+		Machine(CpuType cpuType);
 		~Machine() = default;
 
 		/** Run

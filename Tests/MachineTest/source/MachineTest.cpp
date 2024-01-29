@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -61,7 +61,7 @@ namespace MachEmu::Tests
 
 	void MachineTest::SetUpTestCase()
 	{
-		machine_ = MakeMachine();
+		machine_ = Make8080Machine();
 		memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
@@ -144,8 +144,7 @@ namespace MachEmu::Tests
 
 			auto error = (nanos / iterations) - 1000000000;
 			// Allow an average 500 micros of over sleep error
-			EXPECT_GT(500000, error);
-			EXPECT_LT(0, error);
+			EXPECT_EQ(true, error >= 0 && error <= 500000);
 			// restore back to as fast as possible
 			err = machine_->SetClockResolution(-1);
 			EXPECT_EQ(ErrorCode::NoError, err);

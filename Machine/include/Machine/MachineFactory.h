@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2023 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef MACHINE_FACTORY_H
 #define MACHINE_FACTORY_H
 
-import <memory>;
+#include <memory>
 #include "IMachine.h"
 
 #ifdef _WINDOWS
@@ -43,12 +43,12 @@ import <memory>;
 namespace MachEmu
 {
 	/** Create a machine.
+	
+		Build a machine based on the Intel 8080 cpu.
 
-		This function is the main entry point into MachEmu
-
-		@return		std::unique_ptr<IMachine>	An empty machine that can be loaded with memory and io controllers.
+		@return		std::unique_ptr<IMachine>	An empty i8080 machine that can be loaded with memory and io controllers.
 	*/
-	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine();
+	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
 } // namespace MachEmu
 
 #endif // MACHINE_FACTORY_H
