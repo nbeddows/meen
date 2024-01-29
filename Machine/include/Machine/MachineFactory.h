@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef MACHINE_FACTORY_H
 #define MACHINE_FACTORY_H
 
-import <memory>;
+#include <memory>
 #include "IMachine.h"
 
 #ifdef _WINDOWS

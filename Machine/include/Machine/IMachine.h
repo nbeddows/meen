@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
-import <memory>;
+#include <memory>
 #include "Controller/IController.h"
 
 namespace MachEmu

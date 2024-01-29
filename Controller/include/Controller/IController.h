@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef ICONTROLLER_H
 #define ICONTROLLER_H
 
-import <cstdint>;
+#include <cstdint>
 #include "Base/Base.h"
 
 namespace MachEmu
