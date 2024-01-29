@@ -1,11 +1,13 @@
-1.3.0
+1.3.0 [29/01/24]
 * Added CMake support.
-* Move Space Invaders to it's own repository.
-* Remove the Windows specific sdk batch script and
-  build the sdk via CMake instead. Remove Space
-  Invaders from the sdk and update it to include
-  the unit tests.
-* Rename the sdk project target from mach-emu-sdk
+  Tested with Visual Studio 22 (Windows 10) and
+  g++ 13.2 (Ubuntu 23.10).
+* Moved Space Invaders to it's own repository.
+* Removed the Windows specific sdk batch script
+  (now building via CMake).
+* Updated the sdk to include the unit tests
+  (removed Space Invaders).
+* Renamed the sdk project target from mach-emu-sdk
   to mach-emu.
 * Sdk modules are now headers files for better
   platform compatibility.
