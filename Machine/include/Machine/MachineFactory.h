@@ -24,6 +24,7 @@ SOFTWARE.
 #define MACHINE_FACTORY_H
 
 #include <memory>
+#include <string_view>
 #include "IMachine.h"
 
 #ifdef _WINDOWS
@@ -42,7 +43,26 @@ SOFTWARE.
 
 namespace MachEmu
 {
-	/** Create a machine.
+	/**
+		The shared library version
+
+		@return A string view containing the current version, in a format
+				described by [semantic versioning](https://semver.org/)
+
+				```
+				<major>"."<minor>"."<patch>
+				<major>"."<minor>"."<patch>"-"<pre-release>
+				<major>"."<minor>"."<patch>"+"<build>
+				<major>"."<minor>"."<patch>"-"<pre-release>"+"<build>
+				```
+
+		@remark Available since 1.4.0.
+
+		@remark	Version 1.3.0 is implied when this method is not available.
+	*/
+	DLL_EXP_IMP std::string_view Version();
+	
+	/** Create a machine
 	
 		Build a machine based on the Intel 8080 cpu.
 

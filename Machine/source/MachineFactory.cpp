@@ -28,6 +28,11 @@ import Machine;
 
 namespace MachEmu
 {
+	std::string_view Version()
+	{
+		return MachEmu_VERSION;
+	}
+
 	//cppcheck-suppress unusedFunction
 	std::unique_ptr<IMachine> Make8080Machine()
 	{
