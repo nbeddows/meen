@@ -46,6 +46,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
 endif()
 
+target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVersion}\")
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
