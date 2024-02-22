@@ -34,7 +34,7 @@ set (${lib_name}_source_files
 SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
 SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
-find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 REQUIRED)
 
 pybind11_add_module(${lib_name} ${${lib_name}_include_files} ${${lib_name}_source_files})
