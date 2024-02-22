@@ -1,9 +1,15 @@
+import sys
 import re
 import unittest
 
 from MachEmuPy import __version__
 from MachEmuPy import ErrorCode
 from MachEmuPy import Make8080Machine
+
+sys.path.append('../../TestControllers/source')
+
+from MemoryController import MemoryController
+from TestIoController import TestIoController
 
 class MachineTest(unittest.TestCase):
     def setUp(self):
