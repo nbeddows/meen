@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 module;
+#include <cstdint>
 #include <fstream>
 #include "Base/Base.h"
 
