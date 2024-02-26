@@ -28,14 +28,15 @@ module MemoryController;
 
 namespace MachEmu
 {
-	MemoryController::MemoryController(uint8_t addrSize)
+	MemoryController::MemoryController()
+		: memory_{ std::make_unique<uint8_t[]>(memorySize_) }
 	{
-		memory_.resize(1 << addrSize);
+
 	}
 
 	size_t MemoryController::Size() const
 	{
-		return memory_.size();
+		return memorySize_;
 	}
 
 	void MemoryController::Load(const char* romFile, uint16_t offset)
@@ -47,21 +48,21 @@ namespace MachEmu
 			throw std::runtime_error("The program file failed to open");
 		}
 
-		if (static_cast<size_t>(fin.tellg()) > memory_.size())
+		if (static_cast<size_t>(fin.tellg()) > memorySize_)
 		{
 			throw std::length_error("The length of the program is too big");
 		}
 
 		uint16_t size = static_cast<uint16_t>(fin.tellg());
 
-		if (size > memory_.size() - offset)
+		if (size > memorySize_ - offset)
 		{
 			throw std::length_error("The length of the program is too big to fit at the specified offset");
 		}
 
 		fin.seekg(0, std::ios::beg);
 
-		if (!(fin.read(reinterpret_cast<char*>(memory_.data() + offset), size)))
+		if (!(fin.read(reinterpret_cast<char*>(&memory_[offset]), size)))
 		{
 			throw std::invalid_argument("The program specified failed to load");
 		}
@@ -79,7 +80,7 @@ namespace MachEmu
 
 	void MemoryController::Clear()
 	{
-		memory_.assign(memory_.size(), 0);
+		memset(memory_.get(), 0, memorySize_);
 	}
 
 	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
