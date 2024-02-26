@@ -27,9 +27,8 @@ class TestIoController(BaseIoController):
 
             if t >= 0:
                 if t > 1000000000:
-                    self.__lastTime = currTime
                     isr = ISR.One
             else:
-                self.__lastTime = currTime
+                self.__lastTime = 0
 
         return isr
