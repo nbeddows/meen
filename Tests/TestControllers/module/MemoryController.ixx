@@ -27,8 +27,7 @@ module;
 
 export module MemoryController;
 
-import <cstdint>;
-import <memory>;
+import <vector>;
 
 namespace MachEmu
 {
@@ -49,7 +48,7 @@ namespace MachEmu
 
 			All the memory that the machine will have access to.
 		*/
-		std::unique_ptr<uint8_t[]> memory_;
+		std::vector<uint8_t> memory_;
 	public:
 		/**
 			Memory controller constructor

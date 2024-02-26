@@ -29,9 +29,8 @@ module MemoryController;
 namespace MachEmu
 {
 	MemoryController::MemoryController()
-		: memory_{ std::make_unique<uint8_t[]>(memorySize_) }
 	{
-
+		memory_.resize(memorySize_);
 	}
 
 	size_t MemoryController::Size() const
@@ -80,7 +79,7 @@ namespace MachEmu
 
 	void MemoryController::Clear()
 	{
-		memset(memory_.get(), 0, memorySize_);
+		memory_.assign(memory_.size(), 0);
 	}
 
 	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
