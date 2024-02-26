@@ -32,7 +32,19 @@ find_package(pybind11 REQUIRED)
 pybind11_add_module(${lib_name} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes -x c++ -fmodules-ts)
+
+	set(cachePath ${CMAKE_BINARY_DIR}/gcm.cache)
+
+	add_custom_target(
+        ${lib_name}ModuleSymlink
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ${cachePath}
+        gcm.cache
+    )
+
+    add_dependencies(${lib_name} ${lib_name}ModuleSymlink)
+	
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
