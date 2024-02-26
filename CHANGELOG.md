@@ -1,3 +1,8 @@
+1.4.0
+* Added Version API method.
+* Added Python module MachEmuPy.
+* Added Python unit tests.
+
 1.3.0 [29/01/24]
 * Added CMake support.
   Tested with Visual Studio 22 (Windows 10) and
