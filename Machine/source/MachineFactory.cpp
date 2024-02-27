@@ -28,7 +28,7 @@ import Machine;
 
 namespace MachEmu
 {
-	std::string_view Version()
+	const char* Version()
 	{
 		return MachEmu_VERSION;
 	}

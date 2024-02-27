@@ -22,6 +22,8 @@ This list will expand as certain milestones are achieved.
 
 5. Implement a Zilog Z80 cpu emulator complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
 
+6. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **IN PROGRESS**
+
 ### Overview
 
 Conceptually speaking, MachEmu can be represented by the following diagram:
@@ -80,10 +82,24 @@ Solution:
 
 Remove the binary directory, reconfigure and rebuild.
 
+##### Python
+
+When the enablePythonModule option is checked a MachEmu Python module will be built and installed in the same directory as the MachEmu shared library. Note the following pre-requisites:
+
+[Python3](https://www.python.org/downloads/windows/)<br>
+Python3 development - **Linux:** sudo apt install python3-dev **Windows:** available via the advanced options in the installer.<br>
+[pybind11](https://github.com/pybind/pybind11)<br>
+[numpy](https://github.com/numpy/numpy)<br>
+
+The MachuEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
+
+1. Add the MachEmu lib install path to your PYTHONPATH environment variable: export PYTHONPATH=${mach-emu-install-dir}/lib
+2. At run time via the Python sys module: sys.path.append(${mach-emu-install-dir}/lib)
+
 ### Acknowledgements
 
 Special thanks to the following sites:
 
-https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf<br>
-https://altairclone.com/downloads/cpu_tests/<br>
-https://caglrc.cc/~svo/i8080/
+[i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
+[CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
+[Pretty Assmebler](https://caglrc.cc/~svo/i8080/)

@@ -18,35 +18,38 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmuPy)
-
-set (${lib_name}_include_files
-	${include_dir}/MachinePy/ControllerPy.h
-	${include_dir}/MachinePy/MachineHolder.h
-)
+set (lib_name TestControllersPy)
 
 set (${lib_name}_source_files
-	${source_dir}/ControllerPy.cpp
-	${source_dir}/MachineHolder.cpp
-	${source_dir}/MachineModule.cpp
+	${source_dir}/${lib_name}.cpp
 )
 
-SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
 SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
 find_package(pybind11 REQUIRED)
 
-pybind11_add_module(${lib_name} ${${lib_name}_include_files} ${${lib_name}_source_files})
+pybind11_add_module(${lib_name} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -lto=auto -fPIC -Wno-attributes)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes -x c++ -fmodules-ts)
+
+	set(cachePath ${CMAKE_BINARY_DIR}/gcm.cache)
+
+	add_custom_target(
+        ${lib_name}ModuleSymlink
+        COMMAND ${CMAKE_COMMAND} -E create_symlink
+        ${cachePath}
+        gcm.cache
+    )
+
+    add_dependencies(${lib_name} ${lib_name}ModuleSymlink)
+	
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/MachinePy/${include_dir})
+# target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Test/TestControllers/${include_dir})
 
 target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu)
+target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu TestControllers)

@@ -34,9 +34,13 @@ set(libMachEmu MachEmu)
 set(major 1)
 set(minor 3)
 set(bugfix 0)
-option(enablePythonModule " Enable Python module via Pybind" OFF)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
+
+# Not currently working under gcc, turn off
+if(MSVC)
+    option(enablePythonModule "Enable Python module via Pybind" OFF)
+endif()
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
 

@@ -24,7 +24,6 @@ SOFTWARE.
 #define MACHINE_FACTORY_H
 
 #include <memory>
-#include <string_view>
 #include "IMachine.h"
 
 #ifdef _WINDOWS
@@ -46,7 +45,7 @@ namespace MachEmu
 	/**
 		The shared library version
 
-		@return A string view containing the current version, in a format
+		@return A string containing the current version, in a format
 				described by [semantic versioning](https://semver.org/)
 
 				```
@@ -60,7 +59,7 @@ namespace MachEmu
 
 		@remark	Version 1.3.0 is implied when this method is not available.
 	*/
-	DLL_EXP_IMP std::string_view Version();
+	DLL_EXP_IMP const char* Version();
 	
 	/** Create a machine
 	

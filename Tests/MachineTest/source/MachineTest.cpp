@@ -62,7 +62,7 @@ namespace MachEmu::Tests
 	void MachineTest::SetUpTestCase()
 	{
 		machine_ = Make8080Machine();
-		memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
+		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
 	}
