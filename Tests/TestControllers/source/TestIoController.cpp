@@ -83,6 +83,7 @@ namespace MachEmu
 			{
 				if (t > 1000000000) // 1 seconds in nanos
 				{
+					lastTime_ = currTime;
 					isr = ISR::One;
 				}
 			}
@@ -90,7 +91,7 @@ namespace MachEmu
 			{
 				//If the cpu clock gets restarted for example,
 				//lastTime will be stale, so we reset it.
-				lastTime_ = 0;
+				lastTime_ = currTime;
 			}
 		}
 
