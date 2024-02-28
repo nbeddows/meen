@@ -42,6 +42,11 @@ if(MSVC)
     option(enablePythonModule "Enable Python module via Pybind" OFF)
 endif()
 
+if(enablePythonModule)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(pybind11 REQUIRED)
+endif()
+
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
 
 if(CMAKE_COMPILER_IS_GNUCXX)

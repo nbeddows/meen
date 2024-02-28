@@ -26,9 +26,6 @@ set (${lib_name}_source_files
 
 SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter Development.Module)
-find_package(pybind11 REQUIRED)
-
 pybind11_add_module(${lib_name} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
