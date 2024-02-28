@@ -6,8 +6,10 @@ from MachEmuPy import __version__
 from MachEmuPy import ErrorCode
 from MachEmuPy import Make8080Machine
 
-# relative path to controller test modules
+# relative path to Python controller test modules
 sys.path.append('../../TestControllers/source')
+# relative path to the C++ controller test module
+sys.path.append('../../../bin/')
 
 # import Python controller modules (a port of the c++ modules below)
 # always use the c++ memory controller module for performance reasons, the python module is available strictly for demonstration purposes
