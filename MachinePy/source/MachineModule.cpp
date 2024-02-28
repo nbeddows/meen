@@ -12,6 +12,7 @@
 
 namespace py = pybind11;
 
+//cppcheck-suppress unusedFunction
 PYBIND11_MODULE(MachEmuPy, MachEmu)
 {        
     MachEmu.attr("__version__") = MachEmu::Version();
