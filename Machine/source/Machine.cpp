@@ -21,14 +21,18 @@ SOFTWARE.
 */
 module;
 
+#include <fstream>
+
 #include "Base/Base.h"
 #include "Controller/IController.h"
+#include "nlohmann/json.hpp"
 
 module Machine;
 
 import <chrono>;
 import <functional>;
 import <memory>;
+import <string_view>;
 
 import ICpuClock;
 import ICpu;
@@ -40,20 +44,61 @@ using namespace std::chrono;
 
 namespace MachEmu
 {
-	Machine::Machine(CpuType cpuType)
+	Machine::Machine(const char* config)
 	{
-		switch (cpuType)
+		auto makeMachine = [this](std::string_view cpuType)
 		{
-			case CpuType::I8080:
+			if (cpuType == "i8080")
 			{
 				clock_ = MakeCpuClock(2000000);
 				cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
-				break;
 			}
-			default:
+			else
 			{
 				throw std::invalid_argument("Unsupported cpu type");
 			}
+		};
+
+		if (config != nullptr)
+		{
+			nlohmann::json json;
+			auto jsonStr = std::string_view(config);
+
+			if (jsonStr.starts_with("file://") == true)
+			{
+				jsonStr.remove_prefix(strlen("file://"));
+				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
+				json = nlohmann::json::parse(fin);
+			}
+			else
+			{
+				// parse as if raw json
+				json = nlohmann::json::parse(config);
+			}
+
+			if (json.contains("cpu") == true)
+			{
+				makeMachine(json["cpu"].get<std::string_view>());
+			}
+			else
+			{
+				// make i8080 by default
+				makeMachine("i8080");
+			}
+
+			if (json.contains("runAsync") == true)
+			{
+				runAsync_ = json["runAsync"].get<bool>();
+			}
+
+			if (json.contains("isrFreq") == true)
+			{
+				isrFreq_ = json["isrFreq"].get<double>();
+			}
+		}
+		else
+		{
+			makeMachine("i8080");
 		}
 	}
 

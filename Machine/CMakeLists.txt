@@ -58,4 +58,5 @@ set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION
 target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
+	nlohmann_json::nlohmann_json
 )

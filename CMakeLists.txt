@@ -47,6 +47,8 @@ if(enablePythonModule)
     find_package(pybind11 REQUIRED)
 endif()
 
+find_package(nlohmann_json REQUIRED)
+
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
 
 if(CMAKE_COMPILER_IS_GNUCXX)

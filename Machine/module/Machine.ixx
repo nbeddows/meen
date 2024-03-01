@@ -35,11 +35,6 @@ import SystemBus;
 
 namespace MachEmu
 {
-	export enum class CpuType
-	{
-		I8080
-	};
-
 	/** Machine
 		
 		@see IMachine.h
@@ -53,9 +48,12 @@ namespace MachEmu
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 
+		double isrFreq_{};
+		bool runAsync_{};
+
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
-		Machine(CpuType cpuType);
+		Machine(const char* json);
 		~Machine() = default;
 
 		/** Run
