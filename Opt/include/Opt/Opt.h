@@ -1,12 +1,12 @@
 #ifndef OPT_H
 #define OPT_H
 
-#include <string_view>
+#include <string>
 
 namespace MachEmu
 {
 	/** Machine options
-	
+
 		A wrapper around json option parsing.
 
 		Each public method documents a supported option.
@@ -15,20 +15,20 @@ namespace MachEmu
 	{
 		private:
 			/** Cpu type
-			
+
 				Supported cpus, currently only i8080 is supported.
 			*/
-			std::string_view cpuType_{ "i8080" };
+			std::string cpuType_{ "i8080" };
 
 			/** Interrupt service routine frequency
-			
+
 				A multipler applied to the machine clock resolution to alter the rate
 				at which interrupts are serviced.
 			*/
 			double isrFreq_{};
 
 			/** Machine run mode
-			
+
 				True for asynchronous, false for synchronous.
 			*/
 			bool runAsync_{};
@@ -42,13 +42,13 @@ namespace MachEmu
 
 				@throws		std::invalid_argument if the interrupt service routine is negative.
 			*/
-			void SetOptions(std::string_view json);
+			void SetOptions(const char* json);
 
 			/** Cpu type
-			
+
 				@see cpuType_
 			*/
-			std::string_view CpuType() const;
+			const char* CpuType() const;
 
 			/** Interrupt service routine frequency
 

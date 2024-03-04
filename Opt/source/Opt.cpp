@@ -5,9 +5,10 @@
 
 namespace MachEmu
 {
-	void Opt::SetOptions(std::string_view jsonStr)
+	void Opt::SetOptions(const char* opts)
 	{
 		nlohmann::json json;
+		std::string_view jsonStr(opts);
 
 		if (jsonStr.starts_with("file://") == true)
 		{
@@ -23,7 +24,7 @@ namespace MachEmu
 
 		if (json.contains("cpu") == true)
 		{
-			cpuType_ = json["cpu"].get<std::string_view>();
+			cpuType_ = json["cpu"].get<std::string>();
 		}
 
 		if (json.contains("runAsync") == true)
@@ -42,9 +43,9 @@ namespace MachEmu
 		}
 	}
 
-	std::string_view Opt::CpuType() const
+	const char* Opt::CpuType() const
 	{
-		return cpuType_;
+		return cpuType_.c_str();
 	}
 
 	double Opt::ISRFreq() const

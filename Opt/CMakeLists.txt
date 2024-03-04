@@ -28,7 +28,14 @@ set (${lib_name}_source_files
 	${source_dir}/${lib_name}.cpp
 )
 
-add_target(${lib_name} STATIC "${${lib_name}_include_files}" "" "" "${${lib_name}_source_files}")
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
+
+add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
+endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})
 target_link_libraries(${lib_name} PRIVATE nlohmann_json::nlohmann_json)

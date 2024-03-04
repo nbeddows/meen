@@ -43,26 +43,19 @@ namespace MachEmu
 {
 	Machine::Machine(const char* config)
 	{
-		auto makeMachine = [this](std::string_view cpuType)
-		{
-			if (cpuType == "i8080")
-			{
-				clock_ = MakeCpuClock(2000000);
-				cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
-			}
-			else
-			{
-				throw std::invalid_argument("Unsupported cpu type");
-			}
-		};
-
 		if (config != nullptr)
 		{
-			opt_.SetOptions(std::string_view(config));
+			opt_.SetOptions(config);
+		}
+
+		if (std::string("i8080") == opt_.CpuType())
+		{
+			clock_ = MakeCpuClock(2000000);
+			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
 		}
 		else
 		{
-			makeMachine(opt_.CpuType());
+			throw std::invalid_argument("Unsupported cpu type");
 		}
 	}
 
@@ -106,7 +99,7 @@ namespace MachEmu
 	}
 
 	uint64_t Machine::Run(uint16_t pc)
-	{		
+	{
 		if (memoryController_ == nullptr)
 		{
 			throw std::runtime_error ("No memory controller has been set");
@@ -161,7 +154,7 @@ namespace MachEmu
 		{
 			throw std::invalid_argument("Argument 'controller' can not be nullptr");
 		}
-		
+
 		memoryController_ = controller;
 	}
 
