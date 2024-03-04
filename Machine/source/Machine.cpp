@@ -21,11 +21,8 @@ SOFTWARE.
 */
 module;
 
-#include <fstream>
-
 #include "Base/Base.h"
 #include "Controller/IController.h"
-#include "nlohmann/json.hpp"
 
 module Machine;
 
@@ -61,44 +58,11 @@ namespace MachEmu
 
 		if (config != nullptr)
 		{
-			nlohmann::json json;
-			auto jsonStr = std::string_view(config);
-
-			if (jsonStr.starts_with("file://") == true)
-			{
-				jsonStr.remove_prefix(strlen("file://"));
-				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
-				json = nlohmann::json::parse(fin);
-			}
-			else
-			{
-				// parse as if raw json
-				json = nlohmann::json::parse(config);
-			}
-
-			if (json.contains("cpu") == true)
-			{
-				makeMachine(json["cpu"].get<std::string_view>());
-			}
-			else
-			{
-				// make i8080 by default
-				makeMachine("i8080");
-			}
-
-			if (json.contains("runAsync") == true)
-			{
-				runAsync_ = json["runAsync"].get<bool>();
-			}
-
-			if (json.contains("isrFreq") == true)
-			{
-				isrFreq_ = json["isrFreq"].get<double>();
-			}
+			opt_.SetOptions(std::string_view(config));
 		}
 		else
 		{
-			makeMachine("i8080");
+			makeMachine(opt_.CpuType());
 		}
 	}
 

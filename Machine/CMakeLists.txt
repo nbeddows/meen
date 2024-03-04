@@ -50,13 +50,14 @@ target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVe
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Opt/${include_dir})
 
-add_dependencies(${lib_name} Cpu CpuClock SystemBus)
+add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus)
 
 set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION ${machEmuVersion})
 
 target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
-	nlohmann_json::nlohmann_json
+	Opt
 )

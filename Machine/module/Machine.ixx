@@ -24,6 +24,7 @@ module;
 
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
+#include "Opt/Opt.h"
 
 export module Machine;
 
@@ -47,9 +48,7 @@ namespace MachEmu
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
-
-		double isrFreq_{};
-		bool runAsync_{};
+		Opt opt_;
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
