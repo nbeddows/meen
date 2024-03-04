@@ -1,3 +1,6 @@
+#ifndef MACHINEHOLDER_H
+#define MACHINEHOLDER_H
+
 #include "Machine/MachineFactory.h"
 
 namespace MachEmu
@@ -17,3 +20,5 @@ namespace MachEmu
         void SetMemoryController(MachEmu::IController* controller);
     };
 } // namespace MachEmu
+
+#endif // MACHINEHOLDER_H
