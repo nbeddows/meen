@@ -29,6 +29,7 @@ module Machine;
 import <chrono>;
 import <functional>;
 import <memory>;
+import <string_view>;
 
 import ICpuClock;
 import ICpu;
@@ -40,20 +41,21 @@ using namespace std::chrono;
 
 namespace MachEmu
 {
-	Machine::Machine(CpuType cpuType)
+	Machine::Machine(const char* config)
 	{
-		switch (cpuType)
+		if (config != nullptr)
 		{
-			case CpuType::I8080:
-			{
-				clock_ = MakeCpuClock(2000000);
-				cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
-				break;
-			}
-			default:
-			{
-				throw std::invalid_argument("Unsupported cpu type");
-			}
+			opt_.SetOptions(config);
+		}
+
+		if (std::string("i8080") == opt_.CpuType())
+		{
+			clock_ = MakeCpuClock(2000000);
+			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
+		}
+		else
+		{
+			throw std::invalid_argument("Unsupported cpu type");
 		}
 	}
 
@@ -97,7 +99,7 @@ namespace MachEmu
 	}
 
 	uint64_t Machine::Run(uint16_t pc)
-	{		
+	{
 		if (memoryController_ == nullptr)
 		{
 			throw std::runtime_error ("No memory controller has been set");
@@ -152,7 +154,7 @@ namespace MachEmu
 		{
 			throw std::invalid_argument("Argument 'controller' can not be nullptr");
 		}
-		
+
 		memoryController_ = controller;
 	}
 

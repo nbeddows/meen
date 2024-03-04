@@ -65,9 +65,42 @@ namespace MachEmu
 	
 		Build a machine based on the Intel 8080 cpu.
 
-		@return		std::unique_ptr<IMachine>	An empty i8080 machine that can be loaded with memory and io controllers.
+		@return		A unique i8080 machine pointer that can be loaded with memory and io controllers.
+	
+		@remark		Deprecated, please use MakeMachine
+	
+		@see		MakeMachine
 	*/
-	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
+	DLL_EXP_IMP [[deprecated("Will be removed in v2.0.0, please use MakeMachine which is more flexible")]] std::unique_ptr<IMachine> Make8080Machine();
+
+	/** Create a Machine
+	
+		Build a machine based on the supplied configuration.
+
+		@param		config	a json configuration string or the location of the json configuration file. When the config
+							string starts with a recognised protocol, the json will be loaded via that protocol, otherwise
+							it will be treated as raw json, for example R"({"option":"value"})".
+							
+							Supported Protocols:
+
+							| Protocol | Remarks                                   |
+							|:---------|:------------------------------------------|
+							| file://  | Load a json file from local disk storage  |
+
+							Configuration options:
+
+							| Option   | Type   | Value	           | Remarks                                                            |
+							|:---------|:-------|:-----------------|:-------------------------------------------------------------------|
+							| Cpu      | string | i8080 (default)  | A machine based on the Intel8080 cpu                               |
+							| runAsync | bool   | true             | IMachine::Run will be launced on a separate thread                 |
+							|          |        | false (default)  | IMachine:Run() will be run on the current thread                   |
+							| isrFreq  | double | 0 (default)      | Service interrupts at the completion of each instruction           |
+							|          |        | 1                | Service interrupts at after each clock tick                        |
+							|          |        | n                | Service interrupts frequency, example: 0.5 - twice per clock tick  |
+
+		@return		A unique machine pointer that can be loaded with memory and io controllers.
+	*/
+	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine(const char* config = nullptr);
 } // namespace MachEmu
 
 #endif // MACHINE_FACTORY_H

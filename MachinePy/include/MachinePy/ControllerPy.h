@@ -1,3 +1,6 @@
+#ifndef CONTROLLERPY_H
+#define CONTROLLERPY_H
+
 #include "Controller/IController.h"
 
 namespace MachEmu
@@ -9,3 +12,5 @@ namespace MachEmu
         MachEmu::ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
     };
 } // namespace MachEmu
+
+#endif // CONTROLLERPY_H

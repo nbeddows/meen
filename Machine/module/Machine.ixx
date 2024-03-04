@@ -24,6 +24,7 @@ module;
 
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
+#include "Opt/Opt.h"
 
 export module Machine;
 
@@ -35,11 +36,6 @@ import SystemBus;
 
 namespace MachEmu
 {
-	export enum class CpuType
-	{
-		I8080
-	};
-
 	/** Machine
 		
 		@see IMachine.h
@@ -52,10 +48,11 @@ namespace MachEmu
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
+		Opt opt_;
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
-		Machine(CpuType cpuType);
+		Machine(const char* json);
 		~Machine() = default;
 
 		/** Run

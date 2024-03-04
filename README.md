@@ -3,12 +3,13 @@
 
 MACHineEMUlator is a project which aims to define a simple framework for creating an emulated machine.
 
-It represents a challenge I laid out for myself many years ago but has only got up and running
-recently thanks to all the spare time we have all had due to the COVID-19 pandemic. It also gave
-me the opportunity to explore the lastet features of the C++20 draft and make use of them where
-applicable.
+##### Motivation
 
-Project Goals: 
+I needed something simple and extensible to keep myself busy during all the spare time we had during the COVID-19 pandemic
+and to allow myself to keep up with the latest c++ standards, learn about cpu emulation (an interest my mine) and to pick up
+a bit of Python and other scripting languages where applicable.
+
+##### Project Goals
 
 This list will expand as certain milestones are achieved.
 
@@ -50,6 +51,22 @@ IMachine.h specifies the MachEmu interface and outlines the basic principles of 
 
 ### Compilation
 
+##### Pre-requisites
+
+The following development packages require installation:
+
+[cmake](https://cmake.org/download/)<br>
+[nlohmann_json](https://github.com/nlohmann/json/releases)<br>
+
+When the python module is enabled, the following development packages require installtion:
+
+[Python3](https://www.python.org/downloads/windows/)<br>
+Python3 development - **Linux:** sudo apt install python3-dev **Windows:** available via the advanced options in the installer.<br>
+[pybind11](https://github.com/pybind/pybind11)<br>
+[numpy](https://github.com/numpy/numpy)<br>
+
+##### Configuration
+
 Untar the mach-emu archive.
 
 MachEmu uses CMake (3.28 is the minimum version required) for its build system and has been tested on both Window 10 and Ubuntu 23.10.
@@ -84,12 +101,7 @@ Remove the binary directory, reconfigure and rebuild.
 
 ##### Python
 
-When the enablePythonModule option is checked a MachEmu Python module will be built and installed in the same directory as the MachEmu shared library. Note the following pre-requisites:
-
-[Python3](https://www.python.org/downloads/windows/)<br>
-Python3 development - **Linux:** sudo apt install python3-dev **Windows:** available via the advanced options in the installer.<br>
-[pybind11](https://github.com/pybind/pybind11)<br>
-[numpy](https://github.com/numpy/numpy)<br>
+When the enablePythonModule option is checked a MachEmu Python module will be built and installed in the same directory as the MachEmu shared library.
 
 The MachuEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
 

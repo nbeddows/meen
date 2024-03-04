@@ -47,6 +47,8 @@ if(enablePythonModule)
     find_package(pybind11 REQUIRED)
 endif()
 
+find_package(nlohmann_json REQUIRED)
+
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -64,6 +66,7 @@ add_subdirectory(Machine)
 if(enablePythonModule)
     add_subdirectory(MachinePy)
 endif()
+add_subdirectory(Opt)
 add_subdirectory(SystemBus)
 add_subdirectory(Tests)
 add_subdirectory(Sdk)

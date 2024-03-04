@@ -36,6 +36,11 @@ namespace MachEmu
 	//cppcheck-suppress unusedFunction
 	std::unique_ptr<IMachine> Make8080Machine()
 	{
-		return std::make_unique<Machine>(CpuType::I8080);
+		return MakeMachine();
+	}
+
+	std::unique_ptr<IMachine> MakeMachine(const char* json)
+	{
+		return std::make_unique<Machine>(json);
 	}
 } // namespace MachEmu
