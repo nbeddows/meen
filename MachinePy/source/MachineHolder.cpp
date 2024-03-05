@@ -7,6 +7,11 @@ namespace MachEmu
 		machine_ = MachEmu::Make8080Machine();
 	}
 
+	MachineHolder::MachineHolder(const char* json)
+	{
+		machine_ = MachEmu::MakeMachine(json);
+	}
+
 	ErrorCode MachineHolder::SetClockResolution(int64_t clockResolution)
 	{
 		return machine_->SetClockResolution(clockResolution);

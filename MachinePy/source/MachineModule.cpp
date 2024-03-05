@@ -34,8 +34,9 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .value("NoInterrupt", MachEmu::ISR::NoInterrupt);
 
 #ifdef ENABLE_MACHINE_HOLDER
-    py::class_<MachEmu::MachineHolder>(MachEmu, "Make8080Machine")
+    py::class_<MachEmu::MachineHolder>(MachEmu, "MakeMachine")
         .def(py::init<>())
+        .def(py::init<const char*>())
         .def("Run", &MachEmu::MachineHolder::Run)
         .def("SetClockResolution", &MachEmu::MachineHolder::SetClockResolution)
         .def("SetIoController", &MachEmu::MachineHolder::SetIoController)

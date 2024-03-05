@@ -12,9 +12,9 @@ namespace MachEmu
         std::unique_ptr<MachEmu::IMachine> machine_;
     public:
         MachineHolder();
+        MachineHolder(const char* json);
 
         uint64_t Run(uint16_t offset);
-        
         ErrorCode SetClockResolution(int64_t clockResolution);
         void SetIoController(MachEmu::IController* controller);
         void SetMemoryController(MachEmu::IController* controller);
