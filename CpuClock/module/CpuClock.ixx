@@ -82,7 +82,7 @@ namespace MachEmu
 		~CpuClock() = default;
 
 		void Reset() final;
-		ErrorCode SetTickResolution(std::chrono::nanoseconds resolution) final;
+		ErrorCode SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks) final;
 
 		//Returns the host CPU time.
 		std::chrono::nanoseconds Tick(uint64_t ticks) final;
