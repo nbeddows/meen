@@ -61,7 +61,9 @@ namespace MachEmu::Tests
 
 	void MachineTest::SetUpTestCase()
 	{
-		machine_ = Make8080Machine();
+		// Note that the tests don't require a json string to be set as it just uses the default values,
+		// it is used here for demonstation purposes only
+		machine_ = MakeMachine(R"({"cpu":"i8080","runAsync":false,"isrFreq":0})");
 		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
