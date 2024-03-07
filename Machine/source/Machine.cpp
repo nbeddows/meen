@@ -21,6 +21,8 @@ SOFTWARE.
 */
 module;
 
+#include <cstring>
+
 #include "Base/Base.h"
 #include "Controller/IController.h"
 
@@ -48,7 +50,7 @@ namespace MachEmu
 			opt_.SetOptions(config);
 		}
 
-		if (std::string("i8080") == opt_.CpuType())
+		if (strncmp("i8080", opt_.CpuType(), strlen("i8080")) == 0)
 		{
 			clock_ = MakeCpuClock(2000000);
 			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
