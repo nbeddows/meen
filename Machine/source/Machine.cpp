@@ -21,6 +21,8 @@ SOFTWARE.
 */
 module;
 
+#include <cstring>
+
 #include "Base/Base.h"
 #include "Controller/IController.h"
 
@@ -48,7 +50,7 @@ namespace MachEmu
 			opt_.SetOptions(config);
 		}
 
-		if (std::string("i8080") == opt_.CpuType())
+		if (strncmp("i8080", opt_.CpuType(), strlen("i8080")) == 0)
 		{
 			clock_ = MakeCpuClock(2000000);
 			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
@@ -61,7 +63,16 @@ namespace MachEmu
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
 	{
-		return clock_->SetTickResolution(nanoseconds(clockResolution));
+		int64_t resInTicks = 0;
+
+		auto err = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
+
+		if (err == ErrorCode::NoError)
+		{
+			ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
+		}
+
+		return err;
 	}
 
 	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
@@ -113,22 +124,23 @@ namespace MachEmu
 		auto dataBus = systemBus_.dataBus;
 		auto controlBus = systemBus_.controlBus;
 		auto currTime = nanoseconds::zero();
+		int64_t totalTicks = 0;
+		int64_t lastTicks = 0;
 
 		cpu_->Reset(pc);
 		clock_->Reset();
 
-		uint64_t totalCycles = 0;
-
 		while (controlBus->Receive(Signal::PowerOff) == false)
 		{
 			//Execute the next instruction
-			auto cycles = cpu_->Execute();
-			currTime = clock_->Tick(cycles);
-			totalCycles += cycles;
+			auto ticks = cpu_->Execute();
+			currTime = clock_->Tick(ticks);
+			totalTicks += ticks;
 
-			if (ioController_ != nullptr)
+			// Check if it is time to service interrupts
+			if (totalTicks - lastTicks >= ticksPerIsr_)
 			{
-				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalCycles);
+				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
 
 				if (isr != ISR::NoInterrupt)
 				{
@@ -142,6 +154,8 @@ namespace MachEmu
 						controlBus->Send(Signal::PowerOff);
 					}
 				}
+
+				lastTicks = totalTicks;
 			}
 		}
 

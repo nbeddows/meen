@@ -4,7 +4,7 @@ import unittest
 
 from MachEmuPy import __version__
 from MachEmuPy import ErrorCode
-from MachEmuPy import Make8080Machine
+from MachEmuPy import MakeMachine
 
 # relative path to Python controller test modules
 sys.path.append('../../TestControllers/source')
@@ -29,7 +29,8 @@ class MachineTest(unittest.TestCase):
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()
-        self.machine = Make8080Machine()
+        # lock the servicing of interrupts to the clock resolution
+        self.machine = MakeMachine(r'{"isrFreq":1}')
         err = self.machine.SetClockResolution(-1)
         self.assertEqual(err, ErrorCode.NoError)
         self.machine.SetIoController(self.testIoController)
@@ -54,7 +55,8 @@ class MachineTest(unittest.TestCase):
         self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0000)
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC34F)
 
-        err = self.machine.SetClockResolution(16666667) # 60Hz
+        # 60Hz clock
+        err = self.machine.SetClockResolution(16666667)
         self.assertEqual(err, ErrorCode.NoError)
 
         nanos = 0

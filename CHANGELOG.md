@@ -2,6 +2,11 @@
 * Added Version API method.
 * Added Python module MachEmuPy.
 * Added Python unit tests.
+* Added factory method MakeMachine.
+* Deprecated factory method Make8080Machine.
+* Added json config file support.
+* Added interrupt frequency config option.
+* Added cpu type config option.
 
 1.3.0 [29/01/24]
 * Added CMake support.
