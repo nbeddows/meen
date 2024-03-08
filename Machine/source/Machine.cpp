@@ -22,6 +22,7 @@ SOFTWARE.
 module;
 
 #include <cstring>
+#include <future>
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
@@ -63,6 +64,11 @@ namespace MachEmu
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
 	{
+		if (running_ == false)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+		
 		int64_t resInTicks = 0;
 
 		auto err = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
@@ -121,45 +127,84 @@ namespace MachEmu
 			throw std::runtime_error("No io controller has been set");
 		}
 
-		auto dataBus = systemBus_.dataBus;
-		auto controlBus = systemBus_.controlBus;
-		auto currTime = nanoseconds::zero();
-		int64_t totalTicks = 0;
-		int64_t lastTicks = 0;
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
 
 		cpu_->Reset(pc);
 		clock_->Reset();
+		running_ = true;
+		uint64_t totalTime = 0;
 
-		while (controlBus->Receive(Signal::PowerOff) == false)
+		auto machineLoop = [this]()
 		{
-			//Execute the next instruction
-			auto ticks = cpu_->Execute();
-			currTime = clock_->Tick(ticks);
-			totalTicks += ticks;
-
-			// Check if it is time to service interrupts
-			if (totalTicks - lastTicks >= ticksPerIsr_)
+			auto dataBus = systemBus_.dataBus;
+			auto controlBus = systemBus_.controlBus;
+			auto currTime = nanoseconds::zero();
+			int64_t totalTicks = 0;
+			int64_t lastTicks = 0;
+				
+			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
-				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
+				//Execute the next instruction
+				auto ticks = cpu_->Execute();
+				currTime = clock_->Tick(ticks);
+				totalTicks += ticks;
 
-				if (isr != ISR::NoInterrupt)
+				// Check if it is time to service interrupts
+				if (totalTicks - lastTicks >= ticksPerIsr_)
 				{
-					if (isr != ISR::Quit)
-					{
-						controlBus->Send(Signal::Interrupt);
-						dataBus->Send(static_cast<uint8_t>(isr));
-					}
-					else
-					{
-						controlBus->Send(Signal::PowerOff);
-					}
-				}
+					auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
 
-				lastTicks = totalTicks;
+					if (isr != ISR::NoInterrupt)
+					{
+						if (isr != ISR::Quit)
+						{
+							controlBus->Send(Signal::Interrupt);
+							dataBus->Send(static_cast<uint8_t>(isr));
+						}
+						else
+						{
+							controlBus->Send(Signal::PowerOff);
+						}
+					}
+
+					lastTicks = totalTicks;
+				}
 			}
+
+			return currTime.count();
+		};
+
+		if (opt_.RunAsync() == true)
+		{
+			fut_ = std::async(std::launch::async, [this, ml = std::move(machineLoop)]()
+			{
+				return ml();
+			});
+		}
+		else
+		{
+			totalTime = machineLoop();
+			running_ = false;
 		}
 
-		return currTime.count();
+		return totalTime;
+	}
+
+	uint64_t Machine::WaitForCompletion()
+	{
+		uint64_t totalTime = 0;	
+		
+		if (running_ == true && opt_.RunAsync() == true)
+		{
+			fut_.wait();
+			running_ = false;
+			totalTime = fut_.get();
+		}
+
+		return totalTime;
 	}
 
 	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
@@ -167,6 +212,11 @@ namespace MachEmu
 		if (controller == nullptr)
 		{
 			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+		}
+
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
 		}
 
 		memoryController_ = controller;
@@ -179,11 +229,21 @@ namespace MachEmu
 			throw std::invalid_argument("Argument 'controller' can not be nullptr");
 		}
 
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
 		ioController_ = controller;
 	}
 
 	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
 	{
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
 		return cpu_->GetState(size);
 	}
 } // namespace MachEmu

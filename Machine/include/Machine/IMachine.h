@@ -62,6 +62,8 @@ namespace MachEmu
 
 		// machine->Run() is a blocking function, it won't return until the custom IO
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
+		// This can be run asynchronously by setting the following json config either
+		// in the MakeMachine factoy method or via IMachine::SetConfig: `{"runAsync":true}`
 
 		@endcode
 	*/
@@ -84,9 +86,23 @@ namespace MachEmu
 			@remark						When no program counter is specified cpu instruction
 										execution will begin from memory address 0x00.
 
+			@remark						When the run asynchronous configuration option is set to true
+										the return value will always be 0.
+
 			@see SetMemoryController
 		*/
 		virtual uint64_t Run(uint16_t pc = 0x00) = 0;
+
+		/** Wait for the machine to finish running
+
+			Block the current thread until the machine execution loop has completed.
+
+			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
+
+			@remark						When the run asynchronous option is set to false (default) or the Run method has not been called
+										this method will return 0 immediatley.
+		*/
+		virtual uint64_t WaitForCompletion() = 0;
 
 		/** Set a custom memory controller
 
