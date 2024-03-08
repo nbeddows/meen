@@ -4,7 +4,7 @@ namespace MachEmu
 {
 	MachineHolder::MachineHolder()
 	{
-		machine_ = MachEmu::Make8080Machine();
+		machine_ = MachEmu::MakeMachine();
 	}
 
 	MachineHolder::MachineHolder(const char* json)
