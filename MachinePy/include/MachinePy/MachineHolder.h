@@ -19,6 +19,7 @@ namespace MachEmu
         void SetIoController(MachEmu::IController* controller);
         void SetMemoryController(MachEmu::IController* controller);
         ErrorCode SetOptions(const char* options);
+        uint64_t WaitForCompletion();
     };
 } // namespace MachEmu
 

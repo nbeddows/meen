@@ -1,3 +1,5 @@
+#include <pybind11/pybind11.h>
+
 #include "MachinePy/MachineHolder.h"
 
 namespace MachEmu
@@ -36,5 +38,13 @@ namespace MachEmu
 	ErrorCode MachineHolder::SetOptions(const char* options)
 	{
 		return machine_->SetOptions(options);
+	}
+
+	uint64_t MachineHolder::WaitForCompletion()
+	{
+		// WaitForCompletion is a long running function that does not interract with Python.
+		// Release the Python Global Interpreter Lock so the calling script doesn't stall.
+		pybind11::gil_scoped_release nogil{};
+		return machine_->WaitForCompletion();
 	}
 } // namespace MachEmu
