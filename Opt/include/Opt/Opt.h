@@ -3,6 +3,8 @@
 
 #include <string>
 
+#include "Base/Base.h"
+
 namespace MachEmu
 {
 	/** Machine options
@@ -10,6 +12,8 @@ namespace MachEmu
 		A wrapper around json option parsing.
 
 		Each public method documents a supported option.
+
+		@todo	Add option for high resolution timer.
 	*/
 	class Opt
 	{
@@ -18,7 +22,7 @@ namespace MachEmu
 
 				Supported cpus, currently only i8080 is supported.
 			*/
-			std::string cpuType_{ "i8080" };
+			std::string cpuType_{};
 
 			/** Interrupt service routine frequency
 
@@ -38,11 +42,19 @@ namespace MachEmu
 
 				Process a json string view for supported options.
 
+				@param		opts	A json string specifying the desired options to update. Passing in a json string of nullptr will set all options
+									to their defaults.
+
+				@return		ErrorCode::NoError: all options were set successfully.
+							ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
+
 				@throws		any exception that the underlying json parser can throw, in this case nlohmann_json
 
-				@throws		std::invalid_argument if the interrupt service routine is negative.
+				@throws		std::runtime_error if the cpu option is specified.
+
+				@throws		std::invalid_argument if the interrupt service routine frequency is negative.
 			*/
-			void SetOptions(const char* json);
+			ErrorCode SetOptions(const char* json);
 
 			/** Cpu type
 
