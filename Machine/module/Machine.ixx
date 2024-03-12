@@ -84,6 +84,12 @@ namespace MachEmu
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
 
+		/** SetOpts
+
+			@see IMachine::SetOpts
+		*/
+		ErrorCode SetOptions(const char* options);
+
 		/** Set the clock resolution.
 		
 			@see IMachine::SetClockResolution

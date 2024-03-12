@@ -32,4 +32,9 @@ namespace MachEmu
 	{
 		machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
 	}
+
+	ErrorCode MachineHolder::SetOptions(const char* options)
+	{
+		return machine_->SetOptions(options);
+	}
 } // namespace MachEmu

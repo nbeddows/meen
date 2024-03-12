@@ -18,6 +18,7 @@ namespace MachEmu
         ErrorCode SetClockResolution(int64_t clockResolution);
         void SetIoController(MachEmu::IController* controller);
         void SetMemoryController(MachEmu::IController* controller);
+        ErrorCode SetOptions(const char* options);
     };
 } // namespace MachEmu
 

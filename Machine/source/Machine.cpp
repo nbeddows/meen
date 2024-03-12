@@ -44,11 +44,14 @@ using namespace std::chrono;
 
 namespace MachEmu
 {
-	Machine::Machine(const char* config)
+	Machine::Machine(const char* options)
 	{
-		if (config != nullptr)
+		SetOptions(options);
+
+		// if no cpu type specified, set the default
+		if (strlen(opt_.CpuType()) == 0)
 		{
-			opt_.SetOptions(config);
+			SetOptions(R"({"cpu":"i8080"})");
 		}
 
 		if (strncmp("i8080", opt_.CpuType(), strlen("i8080")) == 0)
@@ -62,9 +65,31 @@ namespace MachEmu
 		}
 	}
 
+	ErrorCode Machine::SetOptions(const char* options)
+	{		
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
+		auto err = ErrorCode::NoError;
+
+		if (options == nullptr)
+		{
+			// set all options to their default values
+			err = opt_.SetOptions(R"({"isrFreq":0,"runAsync":false})");
+		}
+		else
+		{
+			err = opt_.SetOptions(options);
+		}
+
+		return err;
+	}
+
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
 	{
-		if (running_ == false)
+		if (running_ == true)
 		{
 			throw std::runtime_error("The machine is running");
 		}

@@ -19,7 +19,8 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
 
     py::enum_<MachEmu::ErrorCode>(MachEmu, "ErrorCode")
         .value("NoError", MachEmu::ErrorCode::NoError)
-        .value("ClockResolution", MachEmu::ErrorCode::ClockResolution);
+        .value("ClockResolution", MachEmu::ErrorCode::ClockResolution)
+        .value("UnknownOption", MachEmu::ErrorCode::UnknownOption);
     
     py::enum_<MachEmu::ISR>(MachEmu, "ISR")
         .value("Zero", MachEmu::ISR::Zero)
@@ -40,7 +41,8 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .def("Run", &MachEmu::MachineHolder::Run)
         .def("SetClockResolution", &MachEmu::MachineHolder::SetClockResolution)
         .def("SetIoController", &MachEmu::MachineHolder::SetIoController)
-        .def("SetMemoryController", &MachEmu::MachineHolder::SetMemoryController);
+        .def("SetMemoryController", &MachEmu::MachineHolder::SetMemoryController)
+        .def("SetOptions", &MachEmu::MachineHolder::SetOptions);
 #else
     MachEmu.def("Make8080Machine", &MachEmu::Make8080Machine);
 
