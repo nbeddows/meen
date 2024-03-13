@@ -24,6 +24,7 @@ SOFTWARE.
 #define IMACHINE_H
 
 #include <memory>
+#include <string>
 #include "Controller/IController.h"
 
 namespace MachEmu
@@ -57,13 +58,15 @@ namespace MachEmu
 		// machine as fast as possible (default)
 		machine->SetResolution(20000000); // 20 millisecond clock resolution (50Hz)
 
-		// Run the machine
+		// Run the machine - this is a blocking function, it won't return until the custom IO
+		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
 		auto runTime = machine->Run();
 
-		// machine->Run() is a blocking function, it won't return until the custom IO
-		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
-		// This can be run asynchronously by setting the following json config either
-		// in the MakeMachine factoy method or via IMachine::SetConfig: `{"runAsync":true}`
+		// Run the machine asychronously - this can be done by setting the following json config either
+		// in the MakeMachine factory method or via IMachine::SetOptions: `{"runAsync":true}`
+		machine->SetOptions(R"({"runAsync":true})");
+		machine->Run();
+		runTime = machine->WaitForCompletion();
 
 		@endcode
 	*/
@@ -111,7 +114,7 @@ namespace MachEmu
 			
 			@param	controller		The memory controller to be used with this machine.
 
-			@throws					An invalid_argument exception when controller is nullptr.
+			@throws					std::invalid_argument exception when controller is nullptr.
 
 			@throws					std::runtime_error if the machine is currently running.
 
@@ -126,9 +129,9 @@ namespace MachEmu
 
 			@param	controller	The io controller to be used with this machine.
 
-			@throws				An invalid_argument exception when controller is nullptr.
+			@throws				std::invalid_argument when the controller is nullptr.
 
-			@throws				std::runtime_error if the machine is currently running.
+			@throws				std::runtime_error when the machine is currently running.
 
 			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
@@ -136,23 +139,49 @@ namespace MachEmu
 
 		/** Set machine options
 		
-			@param		opts		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
+			@param		options		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
 									to their defaults.
-
-									@see IMachine::MakeMachine for supported configuration options.
 			
-			@return					ErrorCode::NoError: all options were set successfully.
+			@return					ErrorCode::NoError: all options were set successfully.<br>
 									ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
 
-			@throws					Any exception that the underlying json parser throws (nlohmann json)
+			@throws					std::runtime_error or any other exception that the underlying json parser throws (nlohmann json)
 
-			@throws					std::runtime_error if the cpu option is specified or if the machine is currently running.
+			@throws					std::runtime_error when the cpu option is specified or if the machine is currently running.
 
-			@throws					std::invalid_argument if any option value is illegal.
+			@throws					std::invalid_argument when any option value is illegal.
 
 			@remark					The `cpu` configuration option can only be set via the factory machine constructor.
+		
+			@see					MakeMachine for supported configuration options.
 		*/
 		virtual ErrorCode SetOptions(const char* options) = 0;
+
+		/**	Get the state of the machine.
+
+			Returns the state of the machine as a JSON string.
+
+			@return				A copy of the internal state of the machine as a JSON string.
+
+			@throws				std::runtime_error if the machine is currently running.
+
+			@remark				The returned state of the machine currently just contains the cpu
+
+			<table>
+			<tr><td>Name</td><td>Value</td></tr>
+			<tr><td>cpu</td><td>Cpu type as a sting, ie; "i8080"</td></tr>
+			<tr><td>A</td><td>Contents of the A register</td></tr>
+			<tr><td>B</td><td>Contents of the B register</td></tr>
+			<tr><td>C</td><td>Contents of the C register</td></tr>
+			<tr><td>D</td><td>Contents of the D register</td></tr>
+			<tr><td>H</td><td>Contents of the H register</td></tr>
+			<tr><td>L</td><td>Contents of the L register</td></tr>
+			<tr><td>S</td><td>Contents of the status register</td></tr>
+			<tr><td>PC</td><td>Contents of the program counter</td></tr>
+			<tr><td>SP</td><td>Contents of the stack pointer</td></tr>
+			</table>
+		*/
+		virtual std::string GetState() const = 0;
 		
 		/**	Set the frequency at which the internal clock ticks.
 
@@ -160,7 +189,7 @@ namespace MachEmu
 													machine clock will tick. The clock is disabled by
 													default (run as fast as possible).
 
-			@return									ErrorCode::NoError: The resolution was set successfully.
+			@return									ErrorCode::NoError: The resolution was set successfully.<br>
 													ErrorCode::ClockResolution: The resolution was set,
 													however, the host does not support a high enough resolution
 													timer for this resolution. This may result in high CPU usage,
@@ -177,9 +206,11 @@ namespace MachEmu
 						Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
 						the clock speed and is not recommended.
 
-			@todo		Deprecate IMachine::SetClockResolution as it will be consumed by IMachine::SetOptions, ie; SetOptions(R"({"clockResolution"=-1})");
+			@deprecated	since 1.4.0
+
+			@see		SetOptions
 		*/
-		virtual ErrorCode SetClockResolution (int64_t clockResolution) = 0;
+		[[deprecated("Will be removed in v2.0.0, please use SetOptions")]] virtual ErrorCode SetClockResolution (int64_t clockResolution) = 0;
 
 		/**	Get the state of the machine.
 
@@ -190,6 +221,9 @@ namespace MachEmu
 
 			@throws				std::runtime_error if the machine is currently running.
 
+			@remark				Since 1.4.0 this method must explicity specify nullptr for the size, ie; relying on the default parameter will yield the following error:
+								'MachEmu::IMachine::GetState': ambiguous call to overloaded function since the new GetState method takes no arguments.
+
 			@remark				The returned state of the machine currently just contains the cpu as an array of bytes
 								in the following form:
 
@@ -198,10 +232,9 @@ namespace MachEmu
 			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td><td>96</td></tr>
 			</table>
 
-			@todo				Deprecate IMachine::GetState, replace with a method of the same name taking no argumemts retuning a json string with name/value pairs
-								of the above stated table.
+			@deprecated			since 1.4.0
 		*/
-		virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
+		[[deprecated("Will be removed in v2.0.0, please use std::string GetState()")]] virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
 
 		/** Destruct the machine
 

@@ -72,7 +72,7 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		auto err = ErrorCode::NoError;
+		ErrorCode err;
 
 		if (options == nullptr)
 		{
@@ -260,6 +260,11 @@ namespace MachEmu
 		}
 
 		ioController_ = controller;
+	}
+
+	std::string Machine::GetState() const
+	{
+		return "";
 	}
 
 	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
