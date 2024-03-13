@@ -51,8 +51,10 @@ namespace MachEmu
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 		Opt opt_;
+		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
 		std::future<int64_t> fut_;
+		//cppcheck-suppress unusedStructMember
 		bool running_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
@@ -89,6 +91,12 @@ namespace MachEmu
 			@see IMachine::SetOpts
 		*/
 		ErrorCode SetOptions(const char* options);
+
+		/** Get the machine state
+
+			@see IMachine::GetState
+		*/
+		std::string GetState() const;
 
 		/** Set the clock resolution.
 		

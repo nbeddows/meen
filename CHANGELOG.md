@@ -7,6 +7,9 @@
 * Added json config file support.
 * Added interrupt frequency config option.
 * Added cpu type config option.
+* Added run asynchronous config option.
+* Deprecated IMachine::GetState.
+* Deprecated IMachine::SetClockResolution.
 
 1.3.0 [29/01/24]
 * Added CMake support.

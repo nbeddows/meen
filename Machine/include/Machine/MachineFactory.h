@@ -65,11 +65,11 @@ namespace MachEmu
 	
 		Build a machine based on the Intel 8080 cpu.
 
-		@return		A unique i8080 machine pointer that can be loaded with memory and io controllers.
+		@return			A unique i8080 machine pointer that can be loaded with memory and io controllers.
 	
-		@remark		Deprecated, please use MakeMachine
+		@deprecated		since 1.4.0
 	
-		@see		MakeMachine
+		@see			MakeMachine
 	*/
 	DLL_EXP_IMP [[deprecated("Will be removed in v2.0.0, please use MakeMachine which is more flexible")]] std::unique_ptr<IMachine> Make8080Machine();
 
@@ -95,7 +95,7 @@ namespace MachEmu
 							| runAsync | bool   | true             | IMachine::Run will be launced on a separate thread                 |
 							|          |        | false (default)  | IMachine:Run() will be run on the current thread                   |
 							| isrFreq  | double | 0 (default)      | Service interrupts at the completion of each instruction           |
-							|          |        | 1                | Service interrupts at after each clock tick                        |
+							|          |        | 1                | Service interrupts after each clock tick                           |
 							|          |        | n                | Service interrupts frequency, example: 0.5 - twice per clock tick  |
 
 		@return		A unique machine pointer that can be loaded with memory and io controllers.

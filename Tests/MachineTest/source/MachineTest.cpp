@@ -90,7 +90,7 @@ namespace MachEmu::Tests
 			machine_->Run(0x100);
 		);
 
-		return machine_->GetState();
+		return machine_->GetState(nullptr);
 	}
 
 	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
@@ -171,7 +171,7 @@ namespace MachEmu::Tests
 
 		EXPECT_ANY_THROW
 		(
-			machine_->GetState();
+			machine_->GetState(nullptr);
 		);
 
 		// Since we are running async we need to wait for completion
@@ -201,7 +201,7 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			machine_->GetState();
+			machine_->GetState(nullptr);
 		);
 	}
 
