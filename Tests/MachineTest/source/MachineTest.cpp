@@ -47,8 +47,9 @@ namespace MachEmu::Tests
 			A, B, C, D, E, H, L, S, PC, SP = 10
 		};
 
-		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-		std::unique_ptr<uint8_t[]> LoadAndRun(const char* name) const;
+		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
+		static std::unique_ptr<uint8_t[]> LoadAndRun(const char* name);
+		static void Run(bool runAsync);
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -63,7 +64,7 @@ namespace MachEmu::Tests
 	{
 		// Note that the tests don't require a json string to be set as it just uses the default values,
 		// it is used here for demonstation purposes only
-		machine_ = MakeMachine(R"({"cpu":"i8080","runAsync":false,"isrFreq":0})");
+		machine_ = MakeMachine(R"({"cpu":"i8080","isrFreq":0,"runAsync":false})");
 		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
@@ -74,9 +75,13 @@ namespace MachEmu::Tests
 		memoryController_->Clear();
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
+		machine_->SetOptions(R"({"isrFreq":0,"runAsync":false})");
+		// restore back to as fast as possible
+		auto err = machine_->SetClockResolution(-1);
+		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
-	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name) const
+	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name)
 	{
 		EXPECT_NO_THROW
 		(
@@ -88,7 +93,7 @@ namespace MachEmu::Tests
 		return machine_->GetState();
 	}
 
-	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const
+	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
 	{
 		EXPECT_EQ(carry, (status & 0x01) != 0);
 		EXPECT_EQ(parity, (status & 0x04) != 0);
@@ -115,7 +120,92 @@ namespace MachEmu::Tests
 		);
 	}
 
-	TEST_F(MachineTest, RunTimed)
+	TEST_F(MachineTest, SetCpuAfterConstruction)
+	{
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->SetOptions(R"({"cpu":"i8080"})");
+		);
+	}
+
+	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
+	{
+		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
+		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+		//cppcheck-suppress unknownMacro
+		machine_->SetOptions(R"({"runAsync":true})"); // must be async so the Run method returns immediately
+		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
+		auto err = machine_->SetClockResolution(25000000);
+		EXPECT_EQ(ErrorCode::NoError, err);
+		
+		EXPECT_NO_THROW
+		(
+			machine_->Run();
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->Run(0x100);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetClockResolution(50000000);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetOptions(R"({"isrFreq":1})");
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetMemoryController(memoryController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->GetState();
+		);
+
+		// Since we are running async we need to wait for completion
+		machine_->WaitForCompletion();
+
+		// We are now no longer running, all these methods shouldn't throw
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetClockResolution(50000000);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetOptions(R"({"isrFreq":1})");
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetMemoryController(memoryController_);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->GetState();
+		);
+	}
+
+	void MachineTest::Run(bool runAsync)
 	{
 		EXPECT_NO_THROW
 		(
@@ -127,6 +217,12 @@ namespace MachEmu::Tests
 			// be perfect, but its close enough for testing purposes).
 			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+			
+			if (runAsync == true)
+			{
+				machine_->SetOptions(R"({"runAsync":true})");
+			}
+
 			// 25 millisecond resolution
 			auto err = machine_->SetClockResolution(25000000);
 			EXPECT_EQ(ErrorCode::NoError, err);
@@ -137,11 +233,19 @@ namespace MachEmu::Tests
 			// there is no way to compensate for this which means running a timed test just once will result in
 			// sporadic failures. To counter this we will run the machine multiples times and take the average
 			// of the accumulated run time, this should smooth out the errors caused by end of program over sleeps.
-			int64_t iterations = 5;
+			int64_t iterations = 1;
 
 			for (int i = 0; i < iterations; i++)
 			{
-				nanos += machine_->Run();
+				if (runAsync == true)
+				{
+					machine_->Run();
+					nanos += machine_->WaitForCompletion();
+				}
+				else
+				{
+					nanos += machine_->Run();
+				}
 			}
 
 			auto error = (nanos / iterations) - 1000000000;
@@ -151,6 +255,16 @@ namespace MachEmu::Tests
 			err = machine_->SetClockResolution(-1);
 			EXPECT_EQ(ErrorCode::NoError, err);
 		);
+	}
+
+	TEST_F(MachineTest, RunTimed)
+	{
+		Run(false);
+	}
+
+	TEST_F(MachineTest, RunTimedAsync)
+	{
+		Run(true);
 	}
 
 	TEST_F(MachineTest, BadClockResolution)
@@ -169,9 +283,6 @@ namespace MachEmu::Tests
 		// Sending in a value of 0 will satisfy both cases
 		auto err = machine_->SetClockResolution(0);
 		EXPECT_EQ(ErrorCode::ClockResolution, err);
-		// restore back to as fast as possible
-		err = machine_->SetClockResolution(-1);
-		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
 	#include "8080Test.cpp"

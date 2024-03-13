@@ -22,6 +22,8 @@ SOFTWARE.
 
 module;
 
+#include <future>
+
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Opt/Opt.h"
@@ -50,6 +52,8 @@ namespace MachEmu
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 		Opt opt_;
 		int64_t ticksPerIsr_{};
+		std::future<int64_t> fut_;
+		bool running_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
@@ -62,6 +66,12 @@ namespace MachEmu
 		*/
 		uint64_t Run(uint16_t pc) final;
 
+		/** WaitForCompletion
+
+			@see IMachine::WaitForCompletion
+		*/
+		uint64_t WaitForCompletion() final;
+
 		/** SetMemoryController
 
 			@see IMachine::SetMemoryController
@@ -73,6 +83,12 @@ namespace MachEmu
 			@see IMachine::SetIoController
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
+
+		/** SetOpts
+
+			@see IMachine::SetOpts
+		*/
+		ErrorCode SetOptions(const char* options);
 
 		/** Set the clock resolution.
 		

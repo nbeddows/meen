@@ -5,8 +5,9 @@
 
 namespace MachEmu
 {
-	void Opt::SetOptions(const char* opts)
+	ErrorCode Opt::SetOptions(const char* opts)
 	{
+		auto err = ErrorCode::NoError;
 		nlohmann::json json;
 		std::string_view jsonStr(opts);
 
@@ -22,25 +23,41 @@ namespace MachEmu
 			json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
 		}
 
-		if (json.contains("cpu") == true)
-		{
-			cpuType_ = json["cpu"].get<std::string>();
-		}
+		for (auto it = json.begin(); it != json.end(); ++it)
+		{		
+			const auto& key = it.key();
 
-		if (json.contains("runAsync") == true)
-		{
-			runAsync_ = json["runAsync"].get<bool>();
-		}
-
-		if (json.contains("isrFreq") == true)
-		{
-			isrFreq_ = json["isrFreq"].get<double>();
-
-			if (isrFreq_ < 0)
+			if (key == "cpu")
 			{
-				throw std::invalid_argument("isrFreq must be >= 0");
+				if (cpuType_.empty() == true)
+				{
+					cpuType_ = it.value();
+				}
+				else
+				{
+					throw std::runtime_error("cpu type has already been set");
+				}
+			}
+			else if (key == "isrFreq")
+			{
+				isrFreq_ = it.value();
+
+				if (isrFreq_ < 0)
+				{
+					throw std::invalid_argument("isrFreq must be >= 0");
+				}
+			}
+			else if (key == "runAsync")
+			{
+				runAsync_ = it.value();
+			}
+			else
+			{
+				err = ErrorCode::UnknownOption;
 			}
 		}
+
+		return err;
 	}
 
 	const char* Opt::CpuType() const

@@ -1,10 +1,12 @@
+#include <pybind11/pybind11.h>
+
 #include "MachinePy/MachineHolder.h"
 
 namespace MachEmu
 {
 	MachineHolder::MachineHolder()
 	{
-		machine_ = MachEmu::Make8080Machine();
+		machine_ = MachEmu::MakeMachine();
 	}
 
 	MachineHolder::MachineHolder(const char* json)
@@ -31,5 +33,18 @@ namespace MachEmu
 	void MachineHolder::SetMemoryController(MachEmu::IController* controller)
 	{
 		machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+	}
+
+	ErrorCode MachineHolder::SetOptions(const char* options)
+	{
+		return machine_->SetOptions(options);
+	}
+
+	uint64_t MachineHolder::WaitForCompletion()
+	{
+		// WaitForCompletion is a long running function that does not interract with Python.
+		// Release the Python Global Interpreter Lock so the calling script doesn't stall.
+		pybind11::gil_scoped_release nogil{};
+		return machine_->WaitForCompletion();
 	}
 } // namespace MachEmu

@@ -62,6 +62,8 @@ namespace MachEmu
 
 		// machine->Run() is a blocking function, it won't return until the custom IO
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
+		// This can be run asynchronously by setting the following json config either
+		// in the MakeMachine factoy method or via IMachine::SetConfig: `{"runAsync":true}`
 
 		@endcode
 	*/
@@ -78,15 +80,29 @@ namespace MachEmu
 
 			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
 
-			@throw	std::runtime_error	No memory or io controller has been set on this
+			@throws						std::runtime_error if no memory or io controller has been set on this
 										machine.
 
 			@remark						When no program counter is specified cpu instruction
 										execution will begin from memory address 0x00.
 
+			@remark						When the run asynchronous configuration option is set to true
+										the return value will always be 0.
+
 			@see SetMemoryController
 		*/
 		virtual uint64_t Run(uint16_t pc = 0x00) = 0;
+
+		/** Wait for the machine to finish running
+
+			Block the current thread until the machine execution loop has completed.
+
+			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
+
+			@remark						When the run asynchronous option is set to false (default) or the Run method has not been called
+										this method will return 0 immediatley.
+		*/
+		virtual uint64_t WaitForCompletion() = 0;
 
 		/** Set a custom memory controller
 
@@ -95,7 +111,9 @@ namespace MachEmu
 			
 			@param	controller		The memory controller to be used with this machine.
 
-			@throw					An invalid_argument exception when controller is nullptr.
+			@throws					An invalid_argument exception when controller is nullptr.
+
+			@throws					std::runtime_error if the machine is currently running.
 
 			@remark					See Tests/TestControllers/MemoryController.cpp
 		*/
@@ -108,12 +126,34 @@ namespace MachEmu
 
 			@param	controller	The io controller to be used with this machine.
 
-			@throw				An invalid_argument exception when controller is nullptr.
+			@throws				An invalid_argument exception when controller is nullptr.
+
+			@throws				std::runtime_error if the machine is currently running.
 
 			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
+		/** Set machine options
+		
+			@param		opts		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
+									to their defaults.
+
+									@see IMachine::MakeMachine for supported configuration options.
+			
+			@return					ErrorCode::NoError: all options were set successfully.
+									ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
+
+			@throws					Any exception that the underlying json parser throws (nlohmann json)
+
+			@throws					std::runtime_error if the cpu option is specified or if the machine is currently running.
+
+			@throws					std::invalid_argument if any option value is illegal.
+
+			@remark					The `cpu` configuration option can only be set via the factory machine constructor.
+		*/
+		virtual ErrorCode SetOptions(const char* options) = 0;
+		
 		/**	Set the frequency at which the internal clock ticks.
 
 			@param		clockResolution				A request in nanoseconds as to how frequently the
@@ -127,6 +167,8 @@ namespace MachEmu
 													high jitter and inaccurate timing.
 													This method should be called again with a lower resolution.
 
+			@throws									std::runtime_error if the machine is currently running.
+
 			@remark		Note that this is only a request and while best efforts are made to honour it, the consistency of the tick
 						rate will not be perfect, especially at higher resolutions when no high resolution clock is available.
 		
@@ -134,6 +176,8 @@ namespace MachEmu
 						A value of 0 will run the machine at realtime (or as close to) with the highest possible resolution.
 						Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
 						the clock speed and is not recommended.
+
+			@todo		Deprecate IMachine::SetClockResolution as it will be consumed by IMachine::SetOptions, ie; SetOptions(R"({"clockResolution"=-1})");
 		*/
 		virtual ErrorCode SetClockResolution (int64_t clockResolution) = 0;
 
@@ -144,6 +188,8 @@ namespace MachEmu
 
 			@return				A copy of the internal state of the machine as a uint8_t unique_ptr array.
 
+			@throws				std::runtime_error if the machine is currently running.
+
 			@remark				The returned state of the machine currently just contains the cpu as an array of bytes
 								in the following form:
 
@@ -151,6 +197,9 @@ namespace MachEmu
 			<tr><td>Cpu</td><td>Registers</td><td>Status</td><td>Program Counter</td><td>Stack Pointer</td><td>Total Bits</td></tr>
 			<tr><td>Intel8080</td><td>A B C D E H L (8 bits each)</td><td>S (8 bits)</td><td>PC (16 bits)</td><td>SP (16 bits)</td><td>96</td></tr>
 			</table>
+
+			@todo				Deprecate IMachine::GetState, replace with a method of the same name taking no argumemts retuning a json string with name/value pairs
+								of the above stated table.
 		*/
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
 
