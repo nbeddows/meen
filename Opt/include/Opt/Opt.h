@@ -4,6 +4,7 @@
 #include <string>
 
 #include "Base/Base.h"
+#include "nlohmann/json_fwd.hpp"
 
 namespace MachEmu
 {
@@ -11,33 +12,23 @@ namespace MachEmu
 
 		A wrapper around json option parsing.
 
-		Each public method documents a supported option.
+		@see	MachEmu::MakeMachine for configuration options.
 
 		@todo	Add option for high resolution timer.
 	*/
 	class Opt
 	{
 		private:
-			/** Cpu type
+			/**
+				json parser
 
-				Supported cpus, currently only i8080 is supported.
+				an implementation by nlohmann
 			*/
-			std::string cpuType_{};
-
-			/** Interrupt service routine frequency
-
-				A multipler applied to the machine clock resolution to alter the rate
-				at which interrupts are serviced.
-			*/
-			double isrFreq_{};
-
-			/** Machine run mode
-
-				True for asynchronous, false for synchronous.
-			*/
-			bool runAsync_{};
+			nlohmann::json* json_{};
 
 		public:
+			Opt();
+			~Opt();
 			/** Update machine options
 
 				Process a json string view for supported options.
@@ -58,19 +49,20 @@ namespace MachEmu
 
 			/** Cpu type
 
-				@see cpuType_
+				Supported cpus, currently only i8080 is supported.
 			*/
-			const char* CpuType() const;
+			std::string CpuType() const;
 
 			/** Interrupt service routine frequency
 
-				@see IsrFreq_
+				A multipler applied to the machine clock resolution to alter the rate
+				at which interrupts are serviced.
 			*/
 			double ISRFreq() const;
 
-			/** Run asynchronous
+			/** Machine run mode
 
-				@see runAsync_
+				True for asynchronous, false for synchronous.
 			*/
 			bool RunAsync() const;
 	};
