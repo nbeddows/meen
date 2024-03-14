@@ -22,7 +22,6 @@ SOFTWARE.
 module;
 
 #include <cstring>
-#include <future>
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
@@ -31,6 +30,9 @@ module Machine;
 
 import <chrono>;
 import <functional>;
+#ifdef _WINDOWS
+import <future>;
+#endif
 import <memory>;
 import <string_view>;
 
@@ -46,7 +48,12 @@ namespace MachEmu
 {
 	Machine::Machine(const char* options)
 	{
-		SetOptions(options);
+		auto err = SetOptions(options);
+
+		if (err != ErrorCode::NoError)
+		{
+			throw std::invalid_argument("All options must be valid, check your configuration!");
+		}
 
 		// if no cpu type specified, set the default
 		if (strlen(opt_.CpuType()) == 0)
@@ -66,7 +73,7 @@ namespace MachEmu
 	}
 
 	ErrorCode Machine::SetOptions(const char* options)
-	{		
+	{
 		if (running_ == true)
 		{
 			throw std::runtime_error("The machine is running");
@@ -93,7 +100,7 @@ namespace MachEmu
 		{
 			throw std::runtime_error("The machine is running");
 		}
-		
+
 		int64_t resInTicks = 0;
 
 		auto err = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
@@ -169,7 +176,7 @@ namespace MachEmu
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
-				
+
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
 				//Execute the next instruction
@@ -202,6 +209,7 @@ namespace MachEmu
 			return currTime.count();
 		};
 
+#ifdef _WINDOWS
 		if (opt_.RunAsync() == true)
 		{
 			fut_ = std::async(std::launch::async, [this, ml = std::move(machineLoop)]()
@@ -210,6 +218,7 @@ namespace MachEmu
 			});
 		}
 		else
+#endif
 		{
 			totalTime = machineLoop();
 			running_ = false;
@@ -220,14 +229,16 @@ namespace MachEmu
 
 	uint64_t Machine::WaitForCompletion()
 	{
-		uint64_t totalTime = 0;	
-		
+		uint64_t totalTime = 0;
+
+#ifdef _WINDOWS
 		if (running_ == true && opt_.RunAsync() == true)
 		{
 			fut_.wait();
 			running_ = false;
 			totalTime = fut_.get();
 		}
+#endif
 
 		return totalTime;
 	}

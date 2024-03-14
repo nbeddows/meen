@@ -53,6 +53,7 @@ namespace MachEmu
 	{
 		NoError,				/**< Success, no error has occured */
 		ClockResolution,		/**< Warning, clock resolution may be inaccurate */
+		NotImplemented,			/**< Warning, specifed configuration option is not implemented */
 		UnknownOption			/**< Warning, unrecognised configuration option found */
 	};
 } // namespace MachEmu

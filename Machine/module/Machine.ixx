@@ -22,8 +22,6 @@ SOFTWARE.
 
 module;
 
-#include <future>
-
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Opt/Opt.h"
@@ -31,6 +29,9 @@ module;
 export module Machine;
 
 import <cstdint>;
+#ifdef _WINDOWS
+import <future>;
+#endif
 import <memory>;
 import ICpu;
 import ICpuClock;
@@ -53,7 +54,9 @@ namespace MachEmu
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
+#ifdef _WINDOWS		
 		std::future<int64_t> fut_;
+#endif		
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
 

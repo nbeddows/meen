@@ -41,6 +41,11 @@ namespace MachEmu
 	export class MemoryController final : public IController
 	{
 	private:
+		/**
+			The size of the memory in bytes
+
+			This example is a 16 bit memory controller.
+		*/
 		size_t memorySize_{ 1 << 16 };
 		
 		/**

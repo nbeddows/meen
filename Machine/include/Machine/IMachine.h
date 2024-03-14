@@ -73,7 +73,7 @@ namespace MachEmu
 	struct IMachine
 	{
 		/** Run the machine
-		
+
 			Run the roms loaded into memory initialising execution at the given
 			program counter.
 
@@ -111,7 +111,7 @@ namespace MachEmu
 
 			The machine will use this controller when it needs to read
 			and/or write data to ram.
-			
+
 			@param	controller		The memory controller to be used with this machine.
 
 			@throws					std::invalid_argument exception when controller is nullptr.
@@ -138,10 +138,10 @@ namespace MachEmu
 		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
 		/** Set machine options
-		
+
 			@param		options		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
 									to their defaults.
-			
+
 			@return					ErrorCode::NoError: all options were set successfully.<br>
 									ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
 
@@ -152,7 +152,7 @@ namespace MachEmu
 			@throws					std::invalid_argument when any option value is illegal.
 
 			@remark					The `cpu` configuration option can only be set via the factory machine constructor.
-		
+
 			@see					MakeMachine for supported configuration options.
 		*/
 		virtual ErrorCode SetOptions(const char* options) = 0;
@@ -182,7 +182,7 @@ namespace MachEmu
 			</table>
 		*/
 		virtual std::string GetState() const = 0;
-		
+
 		/**	Set the frequency at which the internal clock ticks.
 
 			@param		clockResolution				A request in nanoseconds as to how frequently the
@@ -200,7 +200,7 @@ namespace MachEmu
 
 			@remark		Note that this is only a request and while best efforts are made to honour it, the consistency of the tick
 						rate will not be perfect, especially at higher resolutions when no high resolution clock is available.
-		
+
 						A value of less than 0 will run the machine as fast as possible with the highest possible resolution.
 						A value of 0 will run the machine at realtime (or as close to) with the highest possible resolution.
 						Note that a value of between 0 and a millisecond (1000000 nanoseconds) will always spin the cpu to maintain
