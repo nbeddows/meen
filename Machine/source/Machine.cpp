@@ -56,12 +56,12 @@ namespace MachEmu
 		}
 
 		// if no cpu type specified, set the default
-		if (strlen(opt_.CpuType()) == 0)
+		if(opt_.CpuType().empty() == true)
 		{
 			SetOptions(R"({"cpu":"i8080"})");
 		}
 
-		if (strncmp("i8080", opt_.CpuType(), strlen("i8080")) == 0)
+		if(opt_.CpuType() == "i8080")
 		{
 			clock_ = MakeCpuClock(2000000);
 			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));

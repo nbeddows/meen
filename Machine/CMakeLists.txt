@@ -60,4 +60,5 @@ target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
 	Opt
+	nlohmann_json::nlohmann_json
 )
