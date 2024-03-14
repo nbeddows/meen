@@ -73,7 +73,7 @@ namespace MachEmu
 	}
 
 	ErrorCode Machine::SetOptions(const char* options)
-	{		
+	{
 		if (running_ == true)
 		{
 			throw std::runtime_error("The machine is running");
@@ -100,7 +100,7 @@ namespace MachEmu
 		{
 			throw std::runtime_error("The machine is running");
 		}
-		
+
 		int64_t resInTicks = 0;
 
 		auto err = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
@@ -176,7 +176,7 @@ namespace MachEmu
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
-				
+
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
 				//Execute the next instruction
@@ -209,7 +209,7 @@ namespace MachEmu
 			return currTime.count();
 		};
 
-#ifdef _WINDOWS		
+#ifdef _WINDOWS
 		if (opt_.RunAsync() == true)
 		{
 			fut_ = std::async(std::launch::async, [this, ml = std::move(machineLoop)]()
@@ -229,9 +229,9 @@ namespace MachEmu
 
 	uint64_t Machine::WaitForCompletion()
 	{
-		uint64_t totalTime = 0;	
-		
-#ifdef _WINDOWS		
+		uint64_t totalTime = 0;
+
+#ifdef _WINDOWS
 		if (running_ == true && opt_.RunAsync() == true)
 		{
 			fut_.wait();

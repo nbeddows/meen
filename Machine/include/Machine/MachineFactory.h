@@ -60,27 +60,27 @@ namespace MachEmu
 		@remark	Version 1.3.0 is implied when this method is not available.
 	*/
 	DLL_EXP_IMP const char* Version();
-	
+
 	/** Create a machine
-	
+
 		Build a machine based on the Intel 8080 cpu.
 
 		@return			A unique i8080 machine pointer that can be loaded with memory and io controllers.
-	
+
 		@deprecated		since 1.4.0
-	
+
 		@see			MakeMachine
 	*/
 	DLL_EXP_IMP [[deprecated("Will be removed in v2.0.0, please use MakeMachine which is more flexible")]] std::unique_ptr<IMachine> Make8080Machine();
 
 	/** Create a Machine
-	
+
 		Build a machine based on the supplied configuration.
 
 		@param		config	a json configuration string or the location of the json configuration file. When the config
 							string starts with a recognised protocol, the json will be loaded via that protocol, otherwise
 							it will be treated as raw json, for example R"({"option":"value"})".
-							
+
 							Supported Protocols:
 
 							| Protocol | Remarks                                   |
