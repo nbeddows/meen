@@ -50,6 +50,13 @@ namespace MachEmu
 			else if (key == "runAsync")
 			{
 				runAsync_ = it.value();
+#ifndef _WINDOWS
+				if (runAsync_ == true)
+				{
+					runAsync_ == false;
+					err = ErrorCode::NotImplemented;
+				}
+#endif
 			}
 			else
 			{

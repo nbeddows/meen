@@ -131,12 +131,19 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
 	{
+		//cppcheck-suppress unknownMacro
+		auto err = machine_->SetOptions(R"({"runAsync":true})"); // must be async so the Run method returns immediately
+
+		// This is currently not supported on some platforms
+		if (err == ErrorCode::NotImplemented)
+		{
+			return;
+		}
+		
 		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
-		//cppcheck-suppress unknownMacro
-		machine_->SetOptions(R"({"runAsync":true})"); // must be async so the Run method returns immediately
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
-		auto err = machine_->SetClockResolution(25000000);
+		err = machine_->SetClockResolution(25000000);
 		EXPECT_EQ(ErrorCode::NoError, err);
 		
 		EXPECT_NO_THROW
@@ -209,6 +216,19 @@ namespace MachEmu::Tests
 	{
 		EXPECT_NO_THROW
 		(
+			ErrorCode err;
+
+			if (runAsync == true)
+			{
+				err = machine_->SetOptions(R"({"runAsync":true})");
+
+				// This is currently not supported on some platforms
+				if (err == ErrorCode::NotImplemented)
+				{
+					return;
+				}
+			}
+
 			// Run a program that should take a second to complete
 			// (in actual fact it's 2000047 ticks, 47 ticks over a second.
 			// We need to be as close a possible to 2000000 ticks without
@@ -217,14 +237,9 @@ namespace MachEmu::Tests
 			// be perfect, but its close enough for testing purposes).
 			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
-			
-			if (runAsync == true)
-			{
-				machine_->SetOptions(R"({"runAsync":true})");
-			}
-
+		
 			// 25 millisecond resolution
-			auto err = machine_->SetClockResolution(25000000);
+			err = machine_->SetClockResolution(25000000);
 			EXPECT_EQ(ErrorCode::NoError, err);
 
 			int64_t nanos = 0;
