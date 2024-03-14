@@ -139,13 +139,13 @@ namespace MachEmu::Tests
 		{
 			return;
 		}
-		
+
 		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
 		err = machine_->SetClockResolution(25000000);
 		EXPECT_EQ(ErrorCode::NoError, err);
-		
+
 		EXPECT_NO_THROW
 		(
 			machine_->Run();
@@ -237,7 +237,7 @@ namespace MachEmu::Tests
 			// be perfect, but its close enough for testing purposes).
 			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
-		
+
 			// 25 millisecond resolution
 			err = machine_->SetClockResolution(25000000);
 			EXPECT_EQ(ErrorCode::NoError, err);
