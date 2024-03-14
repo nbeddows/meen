@@ -24,14 +24,15 @@ namespace MachEmu
 		}
 
 		for (auto it = json.begin(); it != json.end(); ++it)
-		{		
+		{
 			const auto& key = it.key();
 
 			if (key == "cpu")
 			{
 				if (cpuType_.empty() == true)
 				{
-					cpuType_ = it.value();
+					std::string value = it.value();
+					cpuType_ = value;
 				}
 				else
 				{
