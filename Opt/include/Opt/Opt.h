@@ -36,10 +36,10 @@ namespace MachEmu
 				@param		opts	A json string specifying the desired options to update. Passing in a json string of nullptr will set all options
 									to their defaults.
 
-				@return		ErrorCode::NoError: all options were set successfully.
+				@return		ErrorCode::NoError: all options were set successfully.<br>
 							ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
 
-				@throws		any exception that the underlying json parser can throw, in this case nlohmann_json
+				@throws		std::runtime_error or any exception that the underlying json parser can throw, in this case nlohmann_json
 
 				@throws		std::runtime_error if the cpu option is specified.
 
@@ -47,6 +47,12 @@ namespace MachEmu
 			*/
 			ErrorCode SetOptions(const char* json);
 
+			/**	Clock resolution
+			
+				The frequency at which the internal clock ticks.
+			*/
+			int64_t ClockResolution() const;
+			
 			/** Cpu type
 
 				Supported cpus, currently only i8080 is supported.

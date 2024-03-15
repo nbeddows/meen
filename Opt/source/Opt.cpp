@@ -14,7 +14,7 @@ namespace MachEmu
 			throw std::bad_alloc();
 		}
 
-		std::string defaults = R"({"isrFreq":0,"runAsync":false})";
+		std::string defaults = R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})";
 		*json_ = nlohmann::json::parse(defaults);
 	}
 
@@ -50,6 +50,11 @@ namespace MachEmu
 			throw std::runtime_error("cpu type has already been set");
 		}
 
+		if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
+		{
+			throw std::invalid_argument("isrFreq must be >= 0");
+		}
+
 #ifndef _WINDOWS
 		if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
 		{
@@ -61,6 +66,11 @@ namespace MachEmu
 		json_->update(json);
 
 		return err;
+	}
+
+	int64_t Opt::ClockResolution() const
+	{
+		return (*json_)["clockResolution"].get<int64_t>();
 	}
 
 	std::string Opt::CpuType() const
@@ -77,14 +87,7 @@ namespace MachEmu
 
 	double Opt::ISRFreq() const
 	{
-		auto value = (*json_)["isrFreq"].get<double>();
-
-		if (value < 0)
-		{
-			throw std::invalid_argument("isrFreq must be >= 0");
-		}
-
-		return value;
+		return (*json_)["isrFreq"].get<double>();
 	}
 
 	bool Opt::RunAsync() const
