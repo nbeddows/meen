@@ -22,6 +22,7 @@ SOFTWARE.
 module;
 
 #include <cstring>
+#include <format>
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
@@ -86,7 +87,7 @@ namespace MachEmu
 		if (options == nullptr)
 		{
 			// set all options to their default values
-			err = opt_.SetOptions(R"({"isrFreq":0,"runAsync":false})");
+			err = opt_.SetOptions(R"({"clockResolution::-1,"isrFreq":0,"runAsync":false})");
 		}
 		else
 		{
@@ -102,6 +103,8 @@ namespace MachEmu
 		{
 			throw std::runtime_error("The machine is running");
 		}
+
+		opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
 		int64_t resInTicks = 0;
 
@@ -168,6 +171,7 @@ namespace MachEmu
 
 		cpu_->Reset(pc);
 		clock_->Reset();
+		SetClockResolution(opt_.ClockResolution());
 		running_ = true;
 		uint64_t totalTime = 0;
 
