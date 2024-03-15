@@ -64,7 +64,7 @@ namespace MachEmu::Tests
 	{
 		// Note that the tests don't require a json string to be set as it just uses the default values,
 		// it is used here for demonstation purposes only
-		machine_ = MakeMachine(R"({"cpu":"i8080","isrFreq":0,"runAsync":false})");
+		machine_ = MakeMachine(R"({"cpu":"i8080"})");
 		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
@@ -75,9 +75,7 @@ namespace MachEmu::Tests
 		memoryController_->Clear();
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
-		machine_->SetOptions(R"({"isrFreq":0,"runAsync":false})");
-		// restore back to as fast as possible
-		auto err = machine_->SetClockResolution(-1);
+		auto err = machine_->SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
@@ -129,10 +127,20 @@ namespace MachEmu::Tests
 		);
 	}
 
+	TEST_F(MachineTest, NegativeISRFrequency)
+	{
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->SetOptions(R"({"isrFreq":-1.0})");
+		);
+	}
+
 	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
 	{
 		//cppcheck-suppress unknownMacro
-		auto err = machine_->SetOptions(R"({"runAsync":true})"); // must be async so the Run method returns immediately
+		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
+		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
 
 		// This is currently not supported on some platforms
 		if (err == ErrorCode::NotImplemented)
@@ -142,9 +150,6 @@ namespace MachEmu::Tests
 
 		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
-		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
-		err = machine_->SetClockResolution(25000000);
-		EXPECT_EQ(ErrorCode::NoError, err);
 
 		EXPECT_NO_THROW
 		(
@@ -154,11 +159,6 @@ namespace MachEmu::Tests
 		EXPECT_ANY_THROW
 		(
 			machine_->Run(0x100);
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->SetClockResolution(50000000);
 		);
 
 		EXPECT_ANY_THROW
@@ -185,11 +185,6 @@ namespace MachEmu::Tests
 		machine_->WaitForCompletion();
 
 		// We are now no longer running, all these methods shouldn't throw
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetClockResolution(50000000);
-		);
 
 		EXPECT_NO_THROW
 		(
@@ -239,7 +234,7 @@ namespace MachEmu::Tests
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
 
 			// 25 millisecond resolution
-			err = machine_->SetClockResolution(25000000);
+			err = machine_->SetOptions(R"({"clockResolution":25000000})");
 			EXPECT_EQ(ErrorCode::NoError, err);
 
 			int64_t nanos = 0;
@@ -266,9 +261,6 @@ namespace MachEmu::Tests
 			auto error = (nanos / iterations) - 1000000000;
 			// Allow an average 500 micros of over sleep error
 			EXPECT_EQ(true, error >= 0 && error <= 500000);
-			// restore back to as fast as possible
-			err = machine_->SetClockResolution(-1);
-			EXPECT_EQ(ErrorCode::NoError, err);
 		);
 	}
 
@@ -280,24 +272,6 @@ namespace MachEmu::Tests
 	TEST_F(MachineTest, RunTimedAsync)
 	{
 		Run(true);
-	}
-
-	TEST_F(MachineTest, BadClockResolution)
-	{
-		// Linux high resolution timer will return 1 nanosecond resolution
-		// linux/include/linux/hrtimer.h:
-		// The resolution of the clocks. The resolution value is returned in
-		// the clock_getres() system call to give application programmers an
-		// idea of the (in)accuracy of timers. Timer values are rounded up to
-		// this resolution values.
-		//
-		// # define HIGH_RES_NSEC          1
-
-		// Windows high resolution timer will be around 500/1000 micros.
-
-		// Sending in a value of 0 will satisfy both cases
-		auto err = machine_->SetClockResolution(0);
-		EXPECT_EQ(ErrorCode::ClockResolution, err);
 	}
 
 	#include "8080Test.cpp"
