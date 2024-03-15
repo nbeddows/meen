@@ -20,6 +20,7 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
     py::enum_<MachEmu::ErrorCode>(MachEmu, "ErrorCode")
         .value("NoError", MachEmu::ErrorCode::NoError)
         .value("ClockResolution", MachEmu::ErrorCode::ClockResolution)
+        .value("NotImplemented", MachEmu::ErrorCode::NotImplemented)
         .value("UnknownOption", MachEmu::ErrorCode::UnknownOption);
     
     py::enum_<MachEmu::ISR>(MachEmu, "ISR")

@@ -89,14 +89,18 @@ namespace MachEmu
 
 							Configuration options:
 
-							| Option   | Type   | Value	           | Remarks                                                            |
-							|:---------|:-------|:-----------------|:-------------------------------------------------------------------|
-							| Cpu      | string | i8080 (default)  | A machine based on the Intel8080 cpu                               |
-							| runAsync | bool   | true             | IMachine::Run will be launced on a separate thread                 |
-							|          |        | false (default)  | IMachine:Run() will be run on the current thread                   |
-							| isrFreq  | double | 0 (default)      | Service interrupts at the completion of each instruction           |
-							|          |        | 1                | Service interrupts after each clock tick                           |
-							|          |        | n                | Service interrupts frequency, example: 0.5 - twice per clock tick  |
+							| Option          | Type   | Value	           | Remarks                                                                           |
+							|:----------------|:-------|:------------------|:----------------------------------------------------------------------------------|
+							| Cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu                                              |
+							| runAsync        | bool   | true              | IMachine::Run will be launced on a separate thread                                |
+							|                 |        | false (default)   | IMachine:Run() will be run on the current thread                                  |
+							| isrFreq         | double | 0 (default)       | Service interrupts at the completion of each instruction                          |
+							|                 |        | 1                 | Service interrupts after each clock tick                                          |
+							|                 |        | n                 | Service interrupts frequency, example: 0.5 - twice per clock tick                 |
+							| clockResolution | int64  | -1 (default)      | Run the machine as fast as possible with the highest possible resolution          |
+							|                 |        | 0                 | Run the machine at realtime (or as close to) with the highest possible resolution |
+							|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
+							|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
 
 		@return		A unique machine pointer that can be loaded with memory and io controllers.
 	*/

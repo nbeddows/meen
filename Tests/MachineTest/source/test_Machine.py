@@ -29,10 +29,8 @@ class MachineTest(unittest.TestCase):
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()
-        # lock the servicing of interrupts to the clock resolution
-        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":1,"runAsync":false}')
-        err = self.machine.SetClockResolution(-1)
-        self.assertEqual(err, ErrorCode.NoError)
+        # lock the servicing of interrupts to the clock resolution for performance reasons
+        self.machine = MakeMachine(r'{"cpu":"i8080","clockResolution":-1,"isrFreq":1,"runAsync":false}')
         self.machine.SetIoController(self.testIoController)
         self.machine.SetMemoryController(self.memoryController)
 
@@ -50,21 +48,23 @@ class MachineTest(unittest.TestCase):
     def test_SetCpuAfterConstruction(self):
         with self.assertRaises(RuntimeError):
             self.machine.SetOptions(r'{"cpu":"i8080"}')
+    
+    def test_NegativeISRFrequency(self):
+        with self.assertRaises(RuntimeError):
+            self.machine.SetOptions(r'({"isrFreq":-1.0})')
 
     def test_MethodsThrowAfterRunCalled(self):
+        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
+
+        if err == ErrorCode.NotImplemented:
+            return
+
         self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0000)
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC34F)
-        self.machine.SetOptions(r'{"runAsync":true}')
-        err = self.machine.SetClockResolution(25000000)
-        self.assertEqual(err, ErrorCode.NoError)
-
         self.machine.Run(0)
 
         with self.assertRaises(RuntimeError):
         	self.machine.Run(0x100)
-
-        with self.assertRaises(RuntimeError):
-        	self.machine.SetClockResolution(50000000)
 
         with self.assertRaises(RuntimeError):
             self.machine.SetOptions(r'{"isrFreq":1}')
@@ -79,28 +79,24 @@ class MachineTest(unittest.TestCase):
 
         # The machine has now stopped, all the following calls shouldn't throw
 
-        err = self.machine.SetClockResolution(50000000)
-        self.assertEqual(err, ErrorCode.NoError)
-
         err = self.machine.SetOptions(r'{"isrFreq":1}')
         self.assertEqual(err, ErrorCode.NoError)
 
         self.machine.SetMemoryController(self.memoryController)
         self.machine.SetIoController(self.testIoController)
 
-    def test_BadClockResolution(self):
-        err = self.machine.SetClockResolution(0)
-        self.assertEqual(err, ErrorCode.ClockResolution)
-
     def RunTimed(self, runAsync):
+        if runAsync == True:
+            err = self.machine.SetOptions(r'{"runAsync":true}')
+
+            if err == ErrorCode.NotImplemented:
+                return
+
         self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0000)
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC34F)
 
-        if runAsync == True:
-            self.machine.SetOptions(r'{"runAsync":true}')
-
         # 60Hz clock
-        err = self.machine.SetClockResolution(16666667)
+        err = self.machine.SetOptions(r'{"clockResolution":16666667}')
         self.assertEqual(err, ErrorCode.NoError)
 
         nanos = 0

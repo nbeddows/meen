@@ -38,7 +38,7 @@ namespace MachEmu
 
 		@code{.cpp}
 
-		// Create a machine
+		// Create a synchronous i8080 machine running as fast as possible 
 		auto machine = MakeMachine();
 
 		// Create a custom memory controller (See tests for examples)
@@ -56,7 +56,7 @@ namespace MachEmu
 
 		// set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
-		machine->SetResolution(20000000); // 20 millisecond clock resolution (50Hz)
+		machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
 
 		// Run the machine - this is a blocking function, it won't return until the custom IO
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
