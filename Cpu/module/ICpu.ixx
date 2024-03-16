@@ -24,6 +24,7 @@ export module ICpu;
 
 import <cstdint>;
 import <memory>;
+import <string>;
 
 namespace MachEmu
 {
@@ -37,6 +38,8 @@ namespace MachEmu
 		//virtual void Save() const = 0;
 
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
+
+		virtual std::string Save() const = 0;
 
 		virtual ~ICpu() = default;
 	};

@@ -157,7 +157,7 @@ namespace MachEmu
 		*/
 		virtual ErrorCode SetOptions(const char* options) = 0;
 
-		/**	Get the state of the machine.
+		/** Save the state of the machine.
 
 			Returns the state of the machine as a JSON string.
 
@@ -169,19 +169,20 @@ namespace MachEmu
 
 			<table>
 			<tr><td>Name</td><td>Value</td></tr>
-			<tr><td>cpu</td><td>Cpu type as a sting, ie; "i8080"</td></tr>
-			<tr><td>A</td><td>Contents of the A register</td></tr>
-			<tr><td>B</td><td>Contents of the B register</td></tr>
-			<tr><td>C</td><td>Contents of the C register</td></tr>
-			<tr><td>D</td><td>Contents of the D register</td></tr>
-			<tr><td>H</td><td>Contents of the H register</td></tr>
-			<tr><td>L</td><td>Contents of the L register</td></tr>
-			<tr><td>S</td><td>Contents of the status register</td></tr>
-			<tr><td>PC</td><td>Contents of the program counter</td></tr>
-			<tr><td>SP</td><td>Contents of the stack pointer</td></tr>
+			<tr><td>name</td><td>Cpu type as a sting, ie; "i8080"</td></tr>
+			<tr><td>a</td><td>Contents of the a register</td></tr>
+			<tr><td>b</td><td>Contents of the b register</td></tr>
+			<tr><td>c</td><td>Contents of the c register</td></tr>
+			<tr><td>d</td><td>Contents of the d register</td></tr>
+			<tr><td>e</td><td>Contents of the e register</td></tr>
+			<tr><td>h</td><td>Contents of the h register</td></tr>
+			<tr><td>l</td><td>Contents of the l register</td></tr>
+			<tr><td>s</td><td>Contents of the status register</td></tr>
+			<tr><td>pc</td><td>Contents of the program counter</td></tr>
+			<tr><td>sp</td><td>Contents of the stack pointer</td></tr>
 			</table>
 		*/
-		virtual std::string GetState() const = 0;
+		virtual std::string Save() const = 0;
 
 		/**	Set the frequency at which the internal clock ticks.
 
@@ -220,9 +221,6 @@ namespace MachEmu
 			@return				A copy of the internal state of the machine as a uint8_t unique_ptr array.
 
 			@throws				std::runtime_error if the machine is currently running.
-
-			@remark				Since 1.4.0 this method must explicity specify nullptr for the size, ie; relying on the default parameter will yield the following error:
-								'MachEmu::IMachine::GetState': ambiguous call to overloaded function since the new GetState method takes no arguments.
 
 			@remark				The returned state of the machine currently just contains the cpu as an array of bytes
 								in the following form:

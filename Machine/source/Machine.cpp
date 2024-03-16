@@ -22,7 +22,7 @@ SOFTWARE.
 module;
 
 #include <cstring>
-#include <format>
+//#include <format>
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
@@ -104,7 +104,15 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
+		if (clockResolution > 10000000000)
+		{
+			throw std::runtime_error("Clock resolution out of range");
+		}
+
+		char str[32]{};
+		snprintf(str, 31, R"({"clockResolution":%lld})", clockResolution);
+		opt_.SetOptions(str);
+		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
 		int64_t resInTicks = 0;
 
@@ -279,9 +287,9 @@ namespace MachEmu
 		ioController_ = controller;
 	}
 
-	std::string Machine::GetState() const
+	std::string Machine::Save() const
 	{
-		return "";
+		return cpu_->Save();
 	}
 
 	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const

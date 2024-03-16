@@ -99,7 +99,7 @@ namespace MachEmu
 
 			@see IMachine::GetState
 		*/
-		std::string GetState() const;
+		std::string Save() const;
 
 		/** Set the clock resolution.
 		
