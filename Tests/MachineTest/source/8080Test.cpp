@@ -1818,9 +1818,10 @@ TEST_F(MachineTest, ISR_1)
 	memoryController_->Load(PROGRAMS_DIR"/isr.bin", 0x08);
 
 	// Set to the resolution to 50Hz
-	machine_->SetClockResolution(20000000);
+	auto err = machine_->SetOptions(R"({"clockResolution":25000000})");
+	EXPECT_EQ(ErrorCode::NoError, err);
 
-	// There is a chance for an infinate spin if the test fails.
+	// There is a chance for an infinite spin if the test fails.
 	// TODO: since we fire every second we need to test that the Run
 	// method takes a second to complete, pass back the Run value
 	// from LoadAndRun or pass it in to LoadAndRun as a reference
@@ -1829,9 +1830,6 @@ TEST_F(MachineTest, ISR_1)
 
 	EXPECT_EQ(0x00, state[State::A]);
 	EXPECT_EQ(0x01, state[State::B]);
-
-	// restore back to as fast as possible
-	EXPECT_EQ(ErrorCode::NoError, machine_->SetClockResolution(-1));
 }
 
 TEST_F(MachineTest, Tst8080)
