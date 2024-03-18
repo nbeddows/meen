@@ -1,15 +1,17 @@
-1.4.0
+1.4.0 [19/03/24]
 * Added Version API method.
 * Added Python module MachEmuPy.
 * Added Python unit tests.
-* Added factory method MakeMachine.
-* Deprecated factory method Make8080Machine.
+* Added factory method `MakeMachine`.
+* Deprecated factory method `Make8080Machine`.
 * Added json config file support.
-* Added interrupt frequency config option.
-* Added cpu type config option.
-* Added run asynchronous config option.
-* Deprecated IMachine::GetState.
-* Deprecated IMachine::SetClockResolution.
+* Added `ISRFreq` config option.
+* Added `cpu` type config option.
+* Added `runAsync` config option.
+* Deprecated `IMachine::GetState`.
+* Deprecated `IMachine::SetClockResolution`.
+* Added Machine Interface method `Save`.
+* Added `clockResolution` config option.
 
 1.3.0 [29/01/24]
 * Added CMake support.
