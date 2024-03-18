@@ -15,6 +15,7 @@ namespace MachEmu
         MachineHolder(const char* json);
 
         uint64_t Run(uint16_t offset);
+        std::string Save() const;
         ErrorCode SetClockResolution(int64_t clockResolution);
         void SetIoController(MachEmu::IController* controller);
         void SetMemoryController(MachEmu::IController* controller);
