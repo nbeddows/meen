@@ -110,7 +110,7 @@ namespace MachEmu
 		}
 
 		char str[32]{};
-		snprintf(str, 32, R"({"clockResolution":%lld})", clockResolution);
+		snprintf(str, 32, R"({"clockResolution":%ld})", clockResolution);
 		opt_.SetOptions(str);
 		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
