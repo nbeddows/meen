@@ -334,8 +334,8 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 
 std::string Intel8080::Save() const
 {
-	char str[118];
-	snprintf(str, 117, "{\"name\":\"i8080\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}",
+	char str[118]{};
+	snprintf(str, 118, "{\"name\":\"i8080\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}",
 		Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	return str;
 }

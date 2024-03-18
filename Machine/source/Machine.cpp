@@ -104,13 +104,13 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		if (clockResolution > 10000000000)
+		if (clockResolution < -1 || clockResolution > 10000000000)
 		{
 			throw std::runtime_error("Clock resolution out of range");
 		}
 
 		char str[32]{};
-		snprintf(str, 31, R"({"clockResolution":%lld})", clockResolution);
+		snprintf(str, 32, R"({"clockResolution":%ld})", clockResolution);
 		opt_.SetOptions(str);
 		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
@@ -289,6 +289,11 @@ namespace MachEmu
 
 	std::string Machine::Save() const
 	{
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
 		std::string state{ "{" };
 		state += "\"cpu\":"; 
 		state += cpu_->Save();
