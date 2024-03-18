@@ -91,7 +91,7 @@ namespace MachEmu
 
 							| Option          | Type   | Value	           | Remarks                                                                           |
 							|:----------------|:-------|:------------------|:----------------------------------------------------------------------------------|
-							| Cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu                                              |
+							| cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)   |
 							| runAsync        | bool   | true              | IMachine::Run will be launced on a separate thread                                |
 							|                 |        | false (default)   | IMachine:Run() will be run on the current thread                                  |
 							| isrFreq         | double | 0 (default)       | Service interrupts at the completion of each instruction                          |
@@ -102,6 +102,10 @@ namespace MachEmu
 							|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
 							|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
 
+		@throws		std::runtime_error or any exception that the underlying json parser can throw.
+
+		@throws		std::invalid_argument if any of the configuration options are invalid (negative isrFreq, unsupported cpu or clock resolution).
+		
 		@return		A unique machine pointer that can be loaded with memory and io controllers.
 	*/
 	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine(const char* config = nullptr);
