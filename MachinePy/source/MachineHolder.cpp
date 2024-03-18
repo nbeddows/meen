@@ -19,6 +19,11 @@ namespace MachEmu
 		return machine_->SetClockResolution(clockResolution);
 	}
 
+	std::string MachineHolder::Save() const
+	{
+		return machine_->Save();
+	}
+
 	uint64_t MachineHolder::Run(uint16_t offset)
 	{
 		return machine_->Run(offset);
