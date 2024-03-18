@@ -289,7 +289,11 @@ namespace MachEmu
 
 	std::string Machine::Save() const
 	{
-		return cpu_->Save();
+		std::string state{ "{" };
+		state += "\"cpu\":"; 
+		state += cpu_->Save();
+		state += "}";
+		return state;
 	}
 
 	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
