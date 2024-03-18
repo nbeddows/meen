@@ -31,6 +31,7 @@ import CpmIoController;
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Machine/MachineFactory.h"
+#include "nlohmann/json.hpp"
 
 namespace MachEmu::Tests
 {
@@ -42,13 +43,8 @@ namespace MachEmu::Tests
 		static std::shared_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
-		enum State
-		{
-			A, B, C, D, E, H, L, S, PC, SP = 10
-		};
-
 		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
-		static std::unique_ptr<uint8_t[]> LoadAndRun(const char* name);
+		static nlohmann::json LoadAndRun(const char* name);
 		static void Run(bool runAsync);
 	public:
 		static void SetUpTestCase();
@@ -79,7 +75,7 @@ namespace MachEmu::Tests
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
-	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name)
+	nlohmann::json MachineTest::LoadAndRun(const char* name)
 	{
 		EXPECT_NO_THROW
 		(
@@ -88,7 +84,7 @@ namespace MachEmu::Tests
 			machine_->Run(0x100);
 		);
 
-		return machine_->GetState();
+		return nlohmann::json::parse(machine_->Save());
 	}
 
 	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
