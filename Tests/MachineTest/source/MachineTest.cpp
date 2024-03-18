@@ -174,7 +174,7 @@ namespace MachEmu::Tests
 
 		EXPECT_ANY_THROW
 		(
-			machine_->GetState();
+			machine_->Save();
 		);
 
 		// Since we are running async we need to wait for completion
@@ -199,7 +199,7 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			machine_->GetState();
+			machine_->Save();
 		);
 	}
 
