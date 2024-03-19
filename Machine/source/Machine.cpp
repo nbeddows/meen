@@ -87,7 +87,7 @@ namespace MachEmu
 		if (options == nullptr)
 		{
 			// set all options to their default values
-			err = opt_.SetOptions(R"({"clockResolution::-1,"isrFreq":0,"runAsync":false})");
+			err = opt_.SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
 		}
 		else
 		{
