@@ -30,6 +30,7 @@ target_link_libraries(${exe_name} PRIVATE
   GTest::gtest
   GTest::gtest_main
   ${libMachEmu}
+  nlohmann_json::nlohmann_json
   TestControllers
 )
 

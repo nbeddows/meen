@@ -81,6 +81,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
   "set(source_dir source)\n"
   "project(mach-emu)\n"
   "find_library(libMachEmu MachEmu PATHS \${CMAKE_SOURCE_DIR}/bin/)\n"
+  "find_package(nlohmann_json REQUIRED)\n"
   ${findPythonPackage}
   ${buildModules}
   "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
