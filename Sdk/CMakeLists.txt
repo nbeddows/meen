@@ -49,7 +49,7 @@ endif()
 if(enablePythonModule)
 	set(copyPythonModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${pythonModule} ${sdkDir}/bin/${pythonModule})
 	set(copyTestControllersModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${testControllersModule} ${sdkDir}/bin/${testControllersModule})
-  set(findPythonPackage "find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)\nfind_package(pybind11 REQUIRED)\n")
+  set(findPythonPackage "find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)\n")
   set(installPythonModule "install(FILES \${CMAKE_SOURCE_DIR}/bin/${pythonModule} DESTINATION lib)\n")
 endif()
 
@@ -121,4 +121,8 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
 )
 
-add_dependencies(${target_name} MachEmu)
+if(enablePythonModule)
+  add_dependencies(${target_name} MachEmuPy)
+else()
+  add_dependencies(${target_name} MachEmu)
+endif()
