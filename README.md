@@ -62,11 +62,11 @@ The following development packages require installation:
 When the python module is enabled, the following development packages require installtion:
 
 - [Python3](https://www.python.org/downloads/windows/)<br>
-- Python3 development<br>
+- Python3 development (when building from source)<br>
     - **Linux:** `sudo apt install python3-dev`<br>
     - **Windows:** available via the advanced options in the installer.<br>
-- [pybind11](https://github.com/pybind/pybind11)<br>
-- [numpy](https://github.com/numpy/numpy)<br>
+- [pybind11](https://github.com/pybind/pybind11) (when building from source)<br>
+- [numpy](https://github.com/numpy/numpy) (when using the Python example memory controller)<br>
 
 ##### Configuration
 
