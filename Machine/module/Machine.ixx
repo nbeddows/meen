@@ -24,10 +24,14 @@ module;
 
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
+#include "Opt/Opt.h"
 
 export module Machine;
 
 import <cstdint>;
+#ifdef _WINDOWS
+import <future>;
+#endif
 import <memory>;
 import ICpu;
 import ICpuClock;
@@ -35,11 +39,6 @@ import SystemBus;
 
 namespace MachEmu
 {
-	export enum class CpuType
-	{
-		I8080
-	};
-
 	/** Machine
 		
 		@see IMachine.h
@@ -52,10 +51,18 @@ namespace MachEmu
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
 		SystemBus<uint16_t, uint8_t, 8> systemBus_;
+		Opt opt_;
+		//cppcheck-suppress unusedStructMember
+		int64_t ticksPerIsr_{};
+#ifdef _WINDOWS		
+		std::future<int64_t> fut_;
+#endif		
+		//cppcheck-suppress unusedStructMember
+		bool running_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
-		Machine(CpuType cpuType);
+		Machine(const char* json);
 		~Machine() = default;
 
 		/** Run
@@ -63,6 +70,12 @@ namespace MachEmu
 			@see IMachine::Run
 		*/
 		uint64_t Run(uint16_t pc) final;
+
+		/** WaitForCompletion
+
+			@see IMachine::WaitForCompletion
+		*/
+		uint64_t WaitForCompletion() final;
 
 		/** SetMemoryController
 
@@ -75,6 +88,18 @@ namespace MachEmu
 			@see IMachine::SetIoController
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
+
+		/** SetOpts
+
+			@see IMachine::SetOpts
+		*/
+		ErrorCode SetOptions(const char* options);
+
+		/** Get the machine state
+
+			@see IMachine::GetState
+		*/
+		std::string Save() const;
 
 		/** Set the clock resolution.
 		

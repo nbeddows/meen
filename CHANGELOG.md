@@ -1,3 +1,18 @@
+1.4.0 [19/03/24]
+* Added Version API method.
+* Added Python module MachEmuPy.
+* Added Python unit tests.
+* Added factory method `MakeMachine`.
+* Deprecated factory method `Make8080Machine`.
+* Added json config file support.
+* Added `ISRFreq` config option.
+* Added `cpu` type config option.
+* Added `runAsync` config option.
+* Deprecated `IMachine::GetState`.
+* Deprecated `IMachine::SetClockResolution`.
+* Added Machine Interface method `Save`.
+* Added `clockResolution` config option.
+
 1.3.0 [29/01/24]
 * Added CMake support.
   Tested with Visual Studio 22 (Windows 10) and

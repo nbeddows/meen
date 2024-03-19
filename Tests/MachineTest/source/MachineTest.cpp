@@ -31,6 +31,7 @@ import CpmIoController;
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Machine/MachineFactory.h"
+#include "nlohmann/json.hpp"
 
 namespace MachEmu::Tests
 {
@@ -42,13 +43,9 @@ namespace MachEmu::Tests
 		static std::shared_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
-		enum State
-		{
-			A, B, C, D, E, H, L, S, PC, SP = 10
-		};
-
-		void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const;
-		std::unique_ptr<uint8_t[]> LoadAndRun(const char* name) const;
+		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
+		static nlohmann::json LoadAndRun(const char* name);
+		static void Run(bool runAsync);
 	public:
 		static void SetUpTestCase();
 		void SetUp();
@@ -61,8 +58,10 @@ namespace MachEmu::Tests
 
 	void MachineTest::SetUpTestCase()
 	{
-		machine_ = Make8080Machine();
-		memoryController_ = std::make_shared<MemoryController>(16); //16 bit memory bus size
+		// Note that the tests don't require a json string to be set as it just uses the default values,
+		// it is used here for demonstation purposes only
+		machine_ = MakeMachine(R"({"cpu":"i8080"})");
+		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
 	}
@@ -72,9 +71,11 @@ namespace MachEmu::Tests
 		memoryController_->Clear();
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
+		auto err = machine_->SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
+		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
-	std::unique_ptr<uint8_t[]> MachineTest::LoadAndRun(const char* name) const
+	nlohmann::json MachineTest::LoadAndRun(const char* name)
 	{
 		EXPECT_NO_THROW
 		(
@@ -83,10 +84,10 @@ namespace MachEmu::Tests
 			machine_->Run(0x100);
 		);
 
-		return machine_->GetState();
+		return nlohmann::json::parse(machine_->Save());
 	}
 
-	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry) const
+	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
 	{
 		EXPECT_EQ(carry, (status & 0x01) != 0);
 		EXPECT_EQ(parity, (status & 0x04) != 0);
@@ -113,10 +114,112 @@ namespace MachEmu::Tests
 		);
 	}
 
-	TEST_F(MachineTest, RunTimed)
+	TEST_F(MachineTest, SetCpuAfterConstruction)
+	{
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->SetOptions(R"({"cpu":"i8080"})");
+		);
+	}
+
+	TEST_F(MachineTest, NegativeISRFrequency)
+	{
+		EXPECT_ANY_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			machine_->SetOptions(R"({"isrFreq":-1.0})");
+		);
+	}
+
+	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
+	{
+		//cppcheck-suppress unknownMacro
+		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
+		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+
+		// This is currently not supported on some platforms
+		if (err == ErrorCode::NotImplemented)
+		{
+			return;
+		}
+
+		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
+		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+
+		EXPECT_NO_THROW
+		(
+			machine_->Run();
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->Run(0x100);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetOptions(R"({"isrFreq":1})");
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetMemoryController(memoryController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->Save();
+		);
+
+		// Since we are running async we need to wait for completion
+		machine_->WaitForCompletion();
+
+		// We are now no longer running, all these methods shouldn't throw
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetOptions(R"({"isrFreq":1})");
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetMemoryController(memoryController_);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->Save();
+		);
+	}
+
+	void MachineTest::Run(bool runAsync)
 	{
 		EXPECT_NO_THROW
 		(
+			ErrorCode err;
+
+			if (runAsync == true)
+			{
+				err = machine_->SetOptions(R"({"runAsync":true})");
+
+				// This is currently not supported on some platforms
+				if (err == ErrorCode::NotImplemented)
+				{
+					return;
+				}
+			}
+
 			// Run a program that should take a second to complete
 			// (in actual fact it's 2000047 ticks, 47 ticks over a second.
 			// We need to be as close a possible to 2000000 ticks without
@@ -125,8 +228,9 @@ namespace MachEmu::Tests
 			// be perfect, but its close enough for testing purposes).
 			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
 			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+
 			// 25 millisecond resolution
-			auto err = machine_->SetClockResolution(25000000);
+			err = machine_->SetOptions(R"({"clockResolution":25000000})");
 			EXPECT_EQ(ErrorCode::NoError, err);
 
 			int64_t nanos = 0;
@@ -135,41 +239,35 @@ namespace MachEmu::Tests
 			// there is no way to compensate for this which means running a timed test just once will result in
 			// sporadic failures. To counter this we will run the machine multiples times and take the average
 			// of the accumulated run time, this should smooth out the errors caused by end of program over sleeps.
-			int64_t iterations = 5;
+			int64_t iterations = 1;
 
 			for (int i = 0; i < iterations; i++)
 			{
-				nanos += machine_->Run();
+				if (runAsync == true)
+				{
+					machine_->Run();
+					nanos += machine_->WaitForCompletion();
+				}
+				else
+				{
+					nanos += machine_->Run();
+				}
 			}
 
 			auto error = (nanos / iterations) - 1000000000;
 			// Allow an average 500 micros of over sleep error
 			EXPECT_EQ(true, error >= 0 && error <= 500000);
-			// restore back to as fast as possible
-			err = machine_->SetClockResolution(-1);
-			EXPECT_EQ(ErrorCode::NoError, err);
 		);
 	}
 
-	TEST_F(MachineTest, BadClockResolution)
+	TEST_F(MachineTest, RunTimed)
 	{
-		// Linux high resolution timer will return 1 nanosecond resolution
-		// linux/include/linux/hrtimer.h:
-		// The resolution of the clocks. The resolution value is returned in
-		// the clock_getres() system call to give application programmers an
-		// idea of the (in)accuracy of timers. Timer values are rounded up to
-		// this resolution values.
-		//
-		// # define HIGH_RES_NSEC          1
+		Run(false);
+	}
 
-		// Windows high resolution timer will be around 500/1000 micros.
-
-		// Sending in a value of 0 will satisfy both cases
-		auto err = machine_->SetClockResolution(0);
-		EXPECT_EQ(ErrorCode::ClockResolution, err);
-		// restore back to as fast as possible
-		err = machine_->SetClockResolution(-1);
-		EXPECT_EQ(ErrorCode::NoError, err);
+	TEST_F(MachineTest, RunTimedAsync)
+	{
+		Run(true);
 	}
 
 	#include "8080Test.cpp"

@@ -37,8 +37,21 @@ set(bugfix 0)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
 
+# Not currently working under gcc, turn off
+if(MSVC)
+    option(enablePythonModule "Enable Python module via Pybind" OFF)
+endif()
+
+if(enablePythonModule)
+    find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
+    find_package(pybind11 REQUIRED)
+endif()
+
+find_package(nlohmann_json REQUIRED)
+
+set(machEmuVersion ${CMAKE_PROJECT_VERSION})
+
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(machEmuVersion ${CMAKE_PROJECT_VERSION})
     set(STD_MODULES bitset chrono cstdint filesystem functional memory string string_view thread vector)
     include(${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)
 endif()
@@ -50,6 +63,10 @@ add_subdirectory(Controller)
 add_subdirectory(Cpu)
 add_subdirectory(CpuClock)
 add_subdirectory(Machine)
+if(enablePythonModule)
+    add_subdirectory(MachinePy)
+endif()
+add_subdirectory(Opt)
 add_subdirectory(SystemBus)
 add_subdirectory(Tests)
 add_subdirectory(Sdk)

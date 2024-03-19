@@ -52,7 +52,9 @@ namespace MachEmu
 	enum class ErrorCode
 	{
 		NoError,				/**< Success, no error has occured */
-		ClockResolution			/**< Warning, clock resolution may be inaccurate */
+		ClockResolution,		/**< Warning, clock resolution may be inaccurate */
+		NotImplemented,			/**< Warning, specifed configuration option is not implemented */
+		UnknownOption			/**< Warning, unrecognised configuration option found */
 	};
 } // namespace MachEmu
 

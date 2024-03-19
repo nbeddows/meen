@@ -41,7 +41,7 @@ namespace MachEmu::Tests
 	void ControllerTest::SetUpTestCase()
 	{
 		//16 - size of the address bus in bits
-		memoryController_ = std::make_unique<MemoryController>(16);
+		memoryController_ = std::make_unique<MemoryController>();
 	}
 
 	TEST_F(ControllerTest, Load)

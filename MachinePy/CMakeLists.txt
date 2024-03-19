@@ -18,47 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmu)
+set (lib_name MachEmuPy)
 
 set (${lib_name}_include_files
-	${include_dir}/Machine/IMachine.h
-	${include_dir}/Machine/MachineFactory.h
+	${include_dir}/MachinePy/ControllerPy.h
+	${include_dir}/MachinePy/MachineHolder.h
 )
-
-set (${lib_name}_module_files
-	${module_dir}/Machine.ixx
-)
-
-if(MSVC)
-	set (${lib_name}_resource_files
-		${resource_dir}/Machine.rc
-	)
-endif()
 
 set (${lib_name}_source_files
-	${source_dir}/Machine.cpp
-	${source_dir}/MachineFactory.cpp
+	${source_dir}/ControllerPy.cpp
+	${source_dir}/MachineHolder.cpp
+	${source_dir}/MachineModule.cpp
 )
 
-add_target(${lib_name} SHARED "${${lib_name}_include_files}" "${${lib_name}_module_files}" "${${lib_name}_resource_files}" "${${lib_name}_source_files}")
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
+
+pybind11_add_module(${lib_name} ${${lib_name}_include_files} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
+	target_compile_options(${lib_name} PRIVATE -lto=auto -fPIC -Wno-attributes)
 endif()
 
-target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVersion}\")
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Opt/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/MachinePy/${include_dir})
 
-add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus)
-
-set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION ${machEmuVersion})
-
-target_link_libraries(${lib_name} PRIVATE
-	Cpu
-	CpuClock
-	Opt
-	nlohmann_json::nlohmann_json
-)
+target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
+target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu)

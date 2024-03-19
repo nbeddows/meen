@@ -95,7 +95,7 @@ namespace MachEmu
 #endif
 	}
 
-	ErrorCode CpuClock::SetTickResolution(std::chrono::nanoseconds resolution)
+	ErrorCode CpuClock::SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks)
 	{
 		auto err = ErrorCode::NoError;
 
@@ -111,6 +111,11 @@ namespace MachEmu
 		else
 		{
 			totalTicks_ = -1;
+		}
+
+		if (resolutionInTicks != nullptr)
+		{
+			*resolutionInTicks = totalTicks_;
 		}
 
 		return err;

@@ -3,12 +3,13 @@
 
 MACHineEMUlator is a project which aims to define a simple framework for creating an emulated machine.
 
-It represents a challenge I laid out for myself many years ago but has only got up and running
-recently thanks to all the spare time we have all had due to the COVID-19 pandemic. It also gave
-me the opportunity to explore the lastet features of the C++20 draft and make use of them where
-applicable.
+##### Motivation
 
-Project Goals: 
+I needed something simple and extensible to keep myself busy during all the spare time we had during the COVID-19 pandemic
+and to allow myself to keep up with the latest c++ standards, learn about cpu emulation (an interest my mine) and to pick up
+a bit of Python and other scripting languages where applicable.
+
+##### Project Goals
 
 This list will expand as certain milestones are achieved.
 
@@ -21,6 +22,8 @@ This list will expand as certain milestones are achieved.
 4. Implement a basic system bus which can be used as 'lines' of communication between the cpu and various controllers. **COMPLETE**
 
 5. Implement a Zilog Z80 cpu emulator complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
+
+6. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **IN PROGRESS**
 
 ### Overview
 
@@ -44,9 +47,28 @@ The following table displays the current defacto test suites that these unit tes
 |       | CPUTEST          | PASS   |
 |       | TST8080          | PASS   |
 
-IMachine.h specifies the MachEmu interface and outlines the basic principles of operation.
+IMachine.h specifies the MachEmu interface and outlines the basic principles of operation.<br>
+MachineFactory.h specifies the MachEmu shared library entry point.
 
 ### Compilation
+
+##### Pre-requisites
+
+The following development packages require installation:
+
+- [cmake](https://cmake.org/download/)<br>
+- [nlohmann_json](https://github.com/nlohmann/json/releases)<br>
+
+When the python module is enabled, the following development packages require installtion:
+
+- [Python3](https://www.python.org/downloads/windows/)<br>
+- Python3 development (when building from source)<br>
+    - **Linux:** `sudo apt install python3-dev`<br>
+    - **Windows:** available via the advanced options in the installer.<br>
+- [pybind11](https://github.com/pybind/pybind11) (when building from source)<br>
+- [numpy](https://github.com/numpy/numpy) (when using the Python example memory controller)<br>
+
+##### Configuration
 
 Untar the mach-emu archive.
 
@@ -80,10 +102,60 @@ Solution:
 
 Remove the binary directory, reconfigure and rebuild.
 
+##### Python
+
+When the enablePythonModule option is checked a MachEmu Python module will be built and installed in the same directory as the MachEmu shared library.
+
+The MachEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
+
+1. Add the MachEmu lib install path to your PYTHONPATH environment variable:<br>
+    `export PYTHONPATH=${mach-emu-install-dir}/lib`
+2. At run time via the Python sys module:<br>
+    `sys.path.append(${mach-emu-install-dir}/lib)`
+
+Currently, the Python module is disabled on non Windows platforms.
+
+### Configuration Options
+
+A number of configuration options are available that can be used to control the behaviour of the machine. The options must be supplied as a string in json format or the location of the json configuration file preceded with a recognised protocol.
+
+Supported protocols:
+
+| Protocol | Remarks                                   |
+|:---------|:------------------------------------------|
+| file://  | Load a json file from local disk storage  |
+
+The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
+
+| Option          | Type   | Value	           | Remarks                                                                           |
+|:----------------|:-------|:------------------|:----------------------------------------------------------------------------------|
+| cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)   |
+| runAsync        | bool   | true              | IMachine::Run will be launced on a separate thread                                |
+|                 |        | false (default)   | IMachine:Run() will be run on the current thread                                  |
+| isrFreq         | double | 0 (default)       | Service interrupts at the completion of each instruction                          |
+|                 |        | 1                 | Service interrupts after each clock tick                                          |
+|                 |        | n                 | Service interrupts frequency, example: 0.5 - twice per clock tick                 |
+| clockResolution | int64  | -1 (default)      | Run the machine as fast as possible with the highest possible resolution          |
+|                 |        | 0                 | Run the machine at realtime (or as close to) with the highest possible resolution |
+|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
+|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
+
+There are two methods of supplying configuration options:
+
+1. Via the `MakeMachine` factory method:<br>
+    C++ - `auto machine = MachEmu::MakeMachine(R"({"cpu":"i8080"})")`<br>
+    Python - `self.machine = MakeMachine(r"{"cpu":"i8080"}")`
+
+2. Via the `IMachine` interface method:<br>
+    C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
+    Python - `self.machine.SetOptions(r"{"isrFreq":1.0}")`
+
+See `MachEmu::MakeMachine` and `IMachine::SetOptions` for further details.
+
 ### Acknowledgements
 
 Special thanks to the following sites:
 
-https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf<br>
-https://altairclone.com/downloads/cpu_tests/<br>
-https://caglrc.cc/~svo/i8080/
+- [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
+- [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
+- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)

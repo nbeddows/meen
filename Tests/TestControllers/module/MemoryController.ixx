@@ -27,7 +27,6 @@ module;
 
 export module MemoryController;
 
-import <cstdint>;
 import <vector>;
 
 namespace MachEmu
@@ -43,6 +42,13 @@ namespace MachEmu
 	{
 	private:
 		/**
+			The size of the memory in bytes
+
+			This example is a 16 bit memory controller.
+		*/
+		size_t memorySize_{ 1 << 16 };
+		
+		/**
 			Machine memory
 
 			All the memory that the machine will have access to.
@@ -51,12 +57,8 @@ namespace MachEmu
 	public:
 		/**
 			Memory controller constructor
-
-			@remark		The address bus size should not be larger
-						than 16. A value larger than this will result
-						in the additional memory being unaddressable.
 		*/
-		explicit MemoryController(uint8_t addressBusSize);
+		MemoryController();
 
 		/**
 			Load a program

@@ -42,13 +42,73 @@ SOFTWARE.
 
 namespace MachEmu
 {
-	/** Create a machine.
-	
+	/**
+		The shared library version
+
+		@return A string containing the current version, in a format
+				described by [semantic versioning](https://semver.org/)
+
+				```
+				<major>"."<minor>"."<patch>
+				<major>"."<minor>"."<patch>"-"<pre-release>
+				<major>"."<minor>"."<patch>"+"<build>
+				<major>"."<minor>"."<patch>"-"<pre-release>"+"<build>
+				```
+
+		@remark Available since 1.4.0.
+
+		@remark	Version 1.3.0 is implied when this method is not available.
+	*/
+	DLL_EXP_IMP const char* Version();
+
+	/** Create a machine
+
 		Build a machine based on the Intel 8080 cpu.
 
-		@return		std::unique_ptr<IMachine>	An empty i8080 machine that can be loaded with memory and io controllers.
+		@return			A unique i8080 machine pointer that can be loaded with memory and io controllers.
+
+		@deprecated		since 1.4.0
+
+		@see			MakeMachine
 	*/
-	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
+	DLL_EXP_IMP [[deprecated("Will be removed in v2.0.0, please use MakeMachine which is more flexible")]] std::unique_ptr<IMachine> Make8080Machine();
+
+	/** Create a Machine
+
+		Build a machine based on the supplied configuration.
+
+		@param		config	a json configuration string or the location of the json configuration file. When the config
+							string starts with a recognised protocol, the json will be loaded via that protocol, otherwise
+							it will be treated as raw json, for example R"({"option":"value"})".
+
+							Supported Protocols:
+
+							| Protocol | Remarks                                   |
+							|:---------|:------------------------------------------|
+							| file://  | Load a json file from local disk storage  |
+
+							Configuration options:
+
+							| Option          | Type   | Value	           | Remarks                                                                           |
+							|:----------------|:-------|:------------------|:----------------------------------------------------------------------------------|
+							| cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)   |
+							| runAsync        | bool   | true              | IMachine::Run will be launced on a separate thread                                |
+							|                 |        | false (default)   | IMachine:Run() will be run on the current thread                                  |
+							| isrFreq         | double | 0 (default)       | Service interrupts at the completion of each instruction                          |
+							|                 |        | 1                 | Service interrupts after each clock tick                                          |
+							|                 |        | n                 | Service interrupts frequency, example: 0.5 - twice per clock tick                 |
+							| clockResolution | int64  | -1 (default)      | Run the machine as fast as possible with the highest possible resolution          |
+							|                 |        | 0                 | Run the machine at realtime (or as close to) with the highest possible resolution |
+							|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
+							|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
+
+		@throws		std::runtime_error or any exception that the underlying json parser can throw.
+
+		@throws		std::invalid_argument if any of the configuration options are invalid (negative isrFreq, unsupported cpu or clock resolution).
+		
+		@return		A unique machine pointer that can be loaded with memory and io controllers.
+	*/
+	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine(const char* config = nullptr);
 } // namespace MachEmu
 
 #endif // MACHINE_FACTORY_H
