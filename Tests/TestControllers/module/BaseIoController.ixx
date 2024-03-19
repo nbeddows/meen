@@ -68,7 +68,7 @@ namespace MachEmu
 			
 			/**	Base IO interrupt handler
 			
-				Checks the powerOff_ signal. When it is true generate an ISR::Quit interrupt
+				Checks the powerOff_ signal. When it is true, generate an ISR::Quit interrupt.
 
 				@param	currTime	The time in nanoseconds of the machine clock.
 

@@ -106,10 +106,14 @@ Remove the binary directory, reconfigure and rebuild.
 
 When the enablePythonModule option is checked a MachEmu Python module will be built and installed in the same directory as the MachEmu shared library.
 
-The MachuEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
+The MachEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
 
-1. Add the MachEmu lib install path to your PYTHONPATH environment variable: `export PYTHONPATH=${mach-emu-install-dir}/lib`
-2. At run time via the Python sys module: `sys.path.append(${mach-emu-install-dir}/lib)`
+1. Add the MachEmu lib install path to your PYTHONPATH environment variable:<br>
+    `export PYTHONPATH=${mach-emu-install-dir}/lib`
+2. At run time via the Python sys module:<br>
+    `sys.path.append(${mach-emu-install-dir}/lib)`
+
+Currently, the Python module is disabled on non Windows platforms.
 
 ### Configuration Options
 
@@ -140,11 +144,11 @@ There are two methods of supplying configuration options:
 
 1. Via the `MakeMachine` factory method:<br>
     C++ - `auto machine = MachEmu::MakeMachine(R"({"cpu":"i8080"})")`<br>
-    Python - `self.machine = MakeMachine(r'{"cpu":"i8080"}')`
+    Python - `self.machine = MakeMachine(r"{"cpu":"i8080"}")`
 
 2. Via the `IMachine` interface method:<br>
     C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
-    Python - `self.machine.SetOptions(r'{"isrFreq":1.0}')`
+    Python - `self.machine.SetOptions(r"{"isrFreq":1.0}")`
 
 See `MachEmu::MakeMachine` and `IMachine::SetOptions` for further details.
 
