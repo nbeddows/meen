@@ -51,7 +51,7 @@ class MachineTest(unittest.TestCase):
     
     def test_NegativeISRFrequency(self):
         with self.assertRaises(RuntimeError):
-            self.machine.SetOptions(r'({"isrFreq":-1.0})')
+            self.machine.SetOptions(r'{"isrFreq":-1.0}')
 
     def test_MethodsThrowAfterRunCalled(self):
         err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
