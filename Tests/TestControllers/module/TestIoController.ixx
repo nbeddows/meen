@@ -26,6 +26,7 @@ module;
 
 export module TestIoController;
 
+import <array>;
 import <cstdint>;
 import BaseIoController;
 
@@ -50,7 +51,7 @@ namespace MachEmu
 			Track the cpu time so we can trigger interrupts
 			at one second intervals.
 		*/
-		uint64_t lastTime_;
+		uint64_t lastTime_{};
 
 		/** deviceData_
 
@@ -63,6 +64,14 @@ namespace MachEmu
 		//cppcheck-suppress unusedStructMember
 		uint8_t deviceData_{ 0xAA };
 	public:
+		/**	Uuid
+		
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
+		
 		/**	Read from a device
 
 			Read the contents of the specifed io device.
