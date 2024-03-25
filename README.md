@@ -58,6 +58,7 @@ The following development packages require installation:
 
 - [cmake](https://cmake.org/download/)<br>
 - [nlohmann_json](https://github.com/nlohmann/json/releases)<br>
+- [zlib](https://github.com/madler/zlib/releases) (when building from source with zlib enabled)<br>
 
 When the python module is enabled, the following development packages require installtion:
 
@@ -158,4 +159,5 @@ Special thanks to the following sites:
 
 - [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
 - [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
-- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)
+- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)<br>
+- [tobiaslocker](https://github.com/tobiaslocker/base64)
