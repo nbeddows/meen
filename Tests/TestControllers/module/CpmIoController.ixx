@@ -26,6 +26,7 @@ module;
 
 export module CpmIoController;
 
+import <array>;
 import <memory>;
 import <string>;
 import BaseIoController;
@@ -106,6 +107,14 @@ namespace MachEmu
 			@see		CpmIoController::message_
 		*/
 		std::string Message();
+
+		/**	Uuid
+
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
 
 		/** CP/M IO controller read
 

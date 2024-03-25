@@ -38,6 +38,11 @@ namespace MachEmu
 		return std::move(message_);
 	}
 
+	std::array<uint8_t, 16> CpmIoController::Uuid() const
+	{
+		return{ 0x32, 0x8C, 0xCF, 0x78, 0x76, 0x1B, 0x48, 0xA4, 0x98, 0x2C, 0x1A, 0xAA, 0x5F, 0x14, 0x31, 0x24 };
+	}
+
 	//Not used, just return 0;
 	uint8_t CpmIoController::Read(uint16_t deviceNumber)
 	{

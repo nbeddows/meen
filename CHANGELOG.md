@@ -1,3 +1,6 @@
+1.5.0
+* Added Controller interface method `Uuid`. 
+
 1.4.0 [19/03/24]
 * Added Version API method.
 * Added Python module MachEmuPy.

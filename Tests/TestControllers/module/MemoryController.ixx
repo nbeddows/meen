@@ -27,6 +27,7 @@ module;
 
 export module MemoryController;
 
+import <array>;
 import <vector>;
 
 namespace MachEmu
@@ -88,6 +89,14 @@ namespace MachEmu
 			@return					The total size of the memory in bytes.
 		*/
 		size_t Size() const;
+
+		/**	Uuid
+
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
 
 		/** Read a byte of memory
 

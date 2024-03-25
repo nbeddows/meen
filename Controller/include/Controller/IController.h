@@ -23,6 +23,7 @@ SOFTWARE.
 #ifndef ICONTROLLER_H
 #define ICONTROLLER_H
 
+#include <array>
 #include <cstdint>
 #include "Base/Base.h"
 
@@ -38,6 +39,13 @@ namespace MachEmu
 	*/
 	struct IController
 	{
+		/**
+			A unique universal identifier for this controller.
+
+			@return				The Uuid as a std::array
+		*/
+		virtual std::array<uint8_t, 16> Uuid() const = 0;
+
 		/** Read from a device
 		
 			Reads 8 bits from a device at the specifed 16 bit address.
@@ -49,7 +57,7 @@ namespace MachEmu
 
 			@param	address		The 16 bit address to read from.
 
-			@return	uint8_t		The 8 bits of data read from the device.
+			@return				The 8 bits of data read from the device.
 		*/
 		virtual uint8_t Read(uint16_t address) = 0;
 

@@ -25,6 +25,7 @@ module;
 
 export module _8080;
 
+import <array>;
 import <bitset>;
 import <cstdint>;
 import <memory>;
@@ -44,9 +45,11 @@ namespace MachEmu
 		using Register = std::bitset<8>;
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
-		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		static constexpr const char registerName_[maxRegisters_] = {'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A'};
 		//cppcheck-suppress unusedStructMember
 		static constexpr bool dbg = false;
+
+		static constexpr std::array<uint8_t, 16> uuid_{ 0x3B, 0xE8, 0x4F, 0x1F, 0x9D, 0x7A, 0x4B, 0x70, 0xA5, 0x45, 0xD9, 0xF3, 0x49, 0x12, 0xFC, 0xAD };
 
 		enum /*class*/Condition
 		{

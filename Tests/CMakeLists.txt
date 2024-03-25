@@ -30,7 +30,7 @@ FetchContent_MakeAvailable(googletest)
 
 if(CMAKE_COMPILER_IS_GNUCXX)
   # our required std modules for the unit tests
-  set(STD_MODULES cstdint memory string vector)
+  set(STD_MODULES array cstdint memory string vector)
 
   # One time build only
   add_custom_target(TestStdModules ALL
