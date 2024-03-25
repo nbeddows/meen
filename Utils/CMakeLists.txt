@@ -40,3 +40,8 @@ endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})
 
+if(enableZlib)
+	target_compile_definitions(${lib_name} PRIVATE ENABLE_ZLIB)
+	target_link_libraries(${lib_name} PRIVATE ZLIB::ZLIB)
+endif()
+

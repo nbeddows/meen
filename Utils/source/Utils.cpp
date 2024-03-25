@@ -1,5 +1,9 @@
-#include "Utils/base64.hpp"
+#ifdef ENABLE_ZLIB
+#include <zlib.h>
+#endif
+
 #include "Utils/Utils.h"
+#include "Utils/base64.hpp"
 
 namespace MachEmu::Utils
 {
@@ -10,12 +14,39 @@ namespace MachEmu::Utils
 			throw std::invalid_argument("Invalid binary to text encoder parameter");
 		}
 
+		std::string binToTxt;
+
 		if (compressor != "none")
 		{
-			throw std::invalid_argument("Invalid compressor parameter");
+#ifdef ENABLE_ZLIB
+			if (compressor == "zlib")
+			{
+				std::vector<uint8_t> dst(compressBound(binLen));
+				uLongf len = dst.size();
+
+				// do the compression - zlib
+				auto err = compress(dst.data(), &len, bin, binLen);
+
+				if (err != Z_OK)
+				{
+					throw std::runtime_error("Failed to compress binary data");
+				}
+
+				binToTxt = base64::encode_into<std::string>(dst.begin(), dst.begin() + len);
+			}
+			else
+#endif
+			{
+				throw std::invalid_argument("Invalid compressor parameter");
+			}
+
+		}
+		else
+		{
+			binToTxt = base64::encode_into<std::string>(bin, bin + binLen);
 		}
 
-		return base64::encode_into<std::string>(bin, bin + binLen);
+		return binToTxt;
 	}
 
 	// dst needs to be of a size equal to the uncompressed input - this needs to be determined by external means
@@ -26,11 +57,37 @@ namespace MachEmu::Utils
 			throw std::invalid_argument("Invalid binary to text decoder parameter");
 		}
 
+		auto bin = base64::decode_into<std::vector<uint8_t>>(src.begin(), src.end());
+
 		if (decompressor != "none")
 		{
-			throw std::invalid_argument("Invalid compressor parameter");
-		}
+			std::vector<uint8_t> dst;
 
-		return base64::decode_into<std::vector<uint8_t>>(src.begin(), src.end());
+#ifdef ENABLE_ZLIB			
+			if (decompressor == "zlib")
+			{
+				dst.resize(dstSize);
+				uLongf size = dstSize;
+				auto err = uncompress(dst.data(), &size, bin.data(), bin.size());
+
+				if (err != Z_OK)
+				{
+					throw std::runtime_error("Failed to decompress binary data");
+				}
+
+				dst.resize(size);
+			}
+			else
+#endif
+			{
+				throw std::invalid_argument("Invalid compressor parameter");
+			}
+
+			return dst;
+		}
+		else
+		{
+			return bin;
+		}
 	}
 } // namespace MachEmu::Utils

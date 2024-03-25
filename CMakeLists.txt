@@ -37,6 +37,8 @@ set(bugfix 0)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
 
+option(enableZlib "Enable zlib compression" ON)
+
 # Not currently working under gcc, turn off
 if(MSVC)
     option(enablePythonModule "Enable Python module via Pybind" OFF)
@@ -45,6 +47,10 @@ endif()
 if(enablePythonModule)
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
     find_package(pybind11 REQUIRED)
+endif()
+
+if(enableZlib)
+    find_package(ZLIB REQUIRED)
 endif()
 
 find_package(nlohmann_json REQUIRED)
