@@ -52,7 +52,7 @@ find_package(nlohmann_json REQUIRED)
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-    set(STD_MODULES bitset chrono cstdint filesystem functional memory string string_view thread vector)
+    set(STD_MODULES array bitset chrono cstdint filesystem functional memory string string_view thread vector)
     include(${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)
 endif()
 
