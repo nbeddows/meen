@@ -66,6 +66,12 @@ namespace MachEmu
 			*/
 			double ISRFreq() const;
 
+			/** Text to binary encoder
+				
+				Supported encoders, currently only base64 is supported.
+			*/
+			std::string Encoder() const;
+
 			/** Machine run mode
 
 				True for asynchronous, false for synchronous.
