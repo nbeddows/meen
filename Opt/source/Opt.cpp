@@ -14,7 +14,7 @@ namespace MachEmu
 			throw std::bad_alloc();
 		}
 
-		std::string defaults = R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})";
+		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","isrFreq":0,"runAsync":false})";
 		*json_ = nlohmann::json::parse(defaults);
 	}
 
@@ -88,6 +88,11 @@ namespace MachEmu
 	double Opt::ISRFreq() const
 	{
 		return (*json_)["isrFreq"].get<double>();
+	}
+
+	std::string Opt::Encoder() const
+	{
+		return (*json_)["encoder"].get<std::string>();
 	}
 
 	bool Opt::RunAsync() const
