@@ -52,6 +52,12 @@ namespace MachEmu
 				The frequency at which the internal clock ticks.
 			*/
 			int64_t ClockResolution() const;
+
+			/** Compressor
+
+				Supported compressors, currently only zlib is supported.
+			*/
+			std::string Compressor() const;
 			
 			/** Cpu type
 
@@ -59,18 +65,18 @@ namespace MachEmu
 			*/
 			std::string CpuType() const;
 
+			/** Text to binary encoder
+
+				Supported encoders, currently only base64 is supported.
+			*/
+			std::string Encoder() const;
+
 			/** Interrupt service routine frequency
 
 				A multipler applied to the machine clock resolution to alter the rate
 				at which interrupts are serviced.
 			*/
 			double ISRFreq() const;
-
-			/** Text to binary encoder
-				
-				Supported encoders, currently only base64 is supported.
-			*/
-			std::string Encoder() const;
 
 			/** Machine run mode
 
