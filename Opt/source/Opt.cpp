@@ -14,7 +14,11 @@ namespace MachEmu
 			throw std::bad_alloc();
 		}
 
-		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","isrFreq":0,"runAsync":false})";
+#ifdef ENABLE_ZLIB		
+		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","compressor":"zlib","isrFreq":0,"runAsync":false})";
+#else
+		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","compressor":"none","isrFreq":0,"runAsync":false})";
+#endif
 		*json_ = nlohmann::json::parse(defaults);
 	}
 
@@ -55,6 +59,13 @@ namespace MachEmu
 			throw std::invalid_argument("isrFreq must be >= 0");
 		}
 
+#ifndef ENABLE_ZLIB
+		if (json_->contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
+		{
+			throw std::runtime_error("mach-emu has been compiled with no zlib support");
+		}
+#endif
+
 #ifndef _WINDOWS
 		if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
 		{
@@ -73,6 +84,11 @@ namespace MachEmu
 		return (*json_)["clockResolution"].get<int64_t>();
 	}
 
+	std::string Opt::Compressor() const
+	{
+		return (*json_)["compressor"].get<std::string>();
+	}
+
 	std::string Opt::CpuType() const
 	{
 		if (json_->contains("cpu") == true)
@@ -85,14 +101,14 @@ namespace MachEmu
 		}
 	}
 
-	double Opt::ISRFreq() const
-	{
-		return (*json_)["isrFreq"].get<double>();
-	}
-
 	std::string Opt::Encoder() const
 	{
 		return (*json_)["encoder"].get<std::string>();
+	}
+
+	double Opt::ISRFreq() const
+	{
+		return (*json_)["isrFreq"].get<double>();
 	}
 
 	bool Opt::RunAsync() const
