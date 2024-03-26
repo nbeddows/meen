@@ -1,5 +1,8 @@
 1.5.0
-* Added Controller interface method `Uuid`. 
+* Added Controller interface method `Uuid`.
+* Added `encoder` config option.
+* Added `compressor` config option.
+* Added cmake option `enableZlib`.
 
 1.4.0 [19/03/24]
 * Added Version API method.
