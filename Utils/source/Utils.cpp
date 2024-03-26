@@ -39,7 +39,6 @@ namespace MachEmu::Utils
 			{
 				throw std::invalid_argument("Invalid compressor parameter");
 			}
-
 		}
 		else
 		{
