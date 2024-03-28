@@ -78,6 +78,30 @@ namespace MachEmu
 			*/
 			double ISRFreq() const;
 
+			/**	The ram offset
+			
+				@return The offset in bytes from the start of memory to the ram.
+			*/
+			uint16_t RamOffset() const;
+
+			/**	The ram size
+
+				@return The size in bytes of the ram.
+			*/
+			uint16_t RamSize() const;
+
+			/**	The rom offset
+
+				@return The offset in bytes from the start of memory to the rom.
+			*/
+			uint16_t RomOffset() const;
+
+			/**	The rom offset
+
+				@return The size in bytes of the ram.
+			*/
+			uint16_t RomSize() const;
+
 			/** Machine run mode
 
 				True for asynchronous, false for synchronous.

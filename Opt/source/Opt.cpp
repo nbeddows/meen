@@ -15,9 +15,9 @@ namespace MachEmu
 		}
 
 #ifdef ENABLE_ZLIB		
-		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","compressor":"zlib","isrFreq":0,"runAsync":false})";
+		std::string defaults = R"({"clockResolution":-1,"compressor":"zlib","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})";
 #else
-		std::string defaults = R"({"clockResolution":-1,"encoder":"base64","compressor":"none","isrFreq":0,"runAsync":false})";
+		std::string defaults = R"({"clockResolution":-1,"compressor":"none","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})";
 #endif
 		*json_ = nlohmann::json::parse(defaults);
 	}
@@ -109,6 +109,26 @@ namespace MachEmu
 	double Opt::ISRFreq() const
 	{
 		return (*json_)["isrFreq"].get<double>();
+	}
+
+	uint16_t Opt::RamOffset() const
+	{
+		return (*json_)["ramOffset"].get<uint16_t>();
+	}
+
+	uint16_t Opt::RamSize() const
+	{
+		return (*json_)["ramSize"].get<uint16_t>();
+	}
+
+	uint16_t Opt::RomOffset() const
+	{
+		return (*json_)["romOffset"].get<uint16_t>();
+	}
+
+	uint16_t Opt::RomSize() const
+	{
+		return (*json_)["romSize"].get<uint16_t>();
 	}
 
 	bool Opt::RunAsync() const
