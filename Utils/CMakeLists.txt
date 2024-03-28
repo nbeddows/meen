@@ -23,10 +23,12 @@ set (lib_name Utils)
 set (${lib_name}_include_files
 	${include_dir}/${lib_name}/${lib_name}.h
 	${include_dir}/${lib_name}/base64.hpp
+	${include_dir}/${lib_name}/md5.h
 )
 
 set (${lib_name}_source_files
 	${source_dir}/${lib_name}.cpp
+	${source_dir}/md5.c
 )
 
 SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
