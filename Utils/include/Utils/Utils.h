@@ -1,6 +1,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -44,6 +45,18 @@ namespace MachEmu::Utils
 		@throws	std::runtime_error		The binary data failed to decompress.
 	*/
 	std::vector<uint8_t> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& txt);
+
+	/** MD5 hash
+	
+		Currently used for ROM hashing, but may have other uses moving forward.
+
+		@param	input					The binary input to the md5 hash function.
+
+		@param	len						The length of the binary data in bytes.
+
+		@return							The 128 bit hash as a std::array of 16 bytes.
+	*/
+	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len);
 } // namespace MachEmu::Utils
 
 #endif // UTILS_H

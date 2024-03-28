@@ -5,6 +5,14 @@
 #include "Utils/Utils.h"
 #include "Utils/base64.hpp"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+#include "Utils/md5.h"
+#ifdef __cplusplus
+}
+#endif
+
 namespace MachEmu::Utils
 {
 	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, uint32_t binLen)
@@ -88,5 +96,16 @@ namespace MachEmu::Utils
 		{
 			return bin;
 		}
+	}
+
+	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len)
+	{
+		MD5Context ctx;
+		md5Init(&ctx);
+		md5Update(&ctx, input, len);
+		md5Finalize(&ctx);
+		auto d = ctx.digest;
+	
+		return std::array{ d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15] };
 	}
 } // namespace MachEmu::Utils
