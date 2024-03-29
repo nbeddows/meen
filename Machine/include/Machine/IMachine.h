@@ -23,6 +23,7 @@ SOFTWARE.
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
+#include <functional>
 #include <memory>
 #include <string>
 #include "Controller/IController.h"
@@ -156,6 +157,54 @@ namespace MachEmu
 			@see					MakeMachine for supported configuration options.
 		*/
 		virtual ErrorCode SetOptions(const char* options) = 0;
+
+		/** Save the state of the machine.
+		
+			Upon saving the state of the machine, call the method `onSave` to process the save state.
+		
+			The json layout of an example save state is specifed in the json snippet below:
+
+			@code{.json}
+
+			{
+				"cpu":
+				{
+					"uuid":"O+hPH516S3ClRdnzSRL8rQ==",	// The base64 unique identifier of the cpu
+					"registers":
+					{
+						"a":0,							// The a register
+						"b":0,							// The b register
+						"c":0,							// The c register
+						"d":0,							// The d register
+						"e":0,							// The e register
+						"h":0,							// The h register
+						"l":0,							// The l register
+						"s":2							// The status register
+					},
+					"pc":0,								// The program counter
+					"sp":0								// The stack pointer
+				},
+			{
+			"memory":
+			{
+				"uuid":"zRjYZ92/TaqtWroc666wMQ==",		// The base64 unique identifier for the memory controller
+				"rom":"FkgjfhUYrudiMj7y65789Io=",		// The base64 MD5 hash of the rom
+				"ram":
+				{
+					"encoder":"base64",					// The binary to text encoding for the ram
+					"compressor":"zlib",				// The compressor to use for the ram
+					"size":57343,						// The size of the uncompressed ram
+					"bytes":"... the ram bytes ..."		// The compressed and encoded ram bytes
+				}
+			}
+
+			@endcode
+
+			@param	onSave		The method to call once the save state has been processed.
+
+			@since version 1.5.0
+		*/
+		virtual void OnSave(std::function<void(std::string&& json)>&& onSave) = 0;
 
 		/** Save the state of the machine.
 

@@ -59,6 +59,7 @@ namespace MachEmu
 #endif		
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
+		std::function<void(std::string&& json)> onSave_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
@@ -89,17 +90,23 @@ namespace MachEmu
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
 
-		/** SetOpts
+		/** SetOptions
 
 			@see IMachine::SetOpts
 		*/
-		ErrorCode SetOptions(const char* options);
+		ErrorCode SetOptions(const char* options) final;
+
+		/** OnSave
+
+			@see IMachine::OnSave
+		*/
+		void OnSave(std::function<void(std::string&& json)>&& onSave) final;
 
 		/** Get the machine state
 
 			@see IMachine::GetState
 		*/
-		std::string Save() const;
+		std::string Save() const final;
 
 		/** Set the clock resolution.
 		

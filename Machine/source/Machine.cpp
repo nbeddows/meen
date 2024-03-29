@@ -26,6 +26,7 @@ module;
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
+#include "Utils/Utils.h"
 
 module Machine;
 
@@ -110,7 +111,7 @@ namespace MachEmu
 		}
 
 		char str[32]{};
-		snprintf(str, 32, R"({"clockResolution":%ld})", clockResolution);
+		snprintf(str, 32, R"({"clockResolution":%I64d})", clockResolution);
 		opt_.SetOptions(str);
 		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
@@ -205,14 +206,82 @@ namespace MachEmu
 
 					if (isr != ISR::NoInterrupt)
 					{
-						if (isr != ISR::Quit)
+						switch (isr)
 						{
-							controlBus->Send(Signal::Interrupt);
-							dataBus->Send(static_cast<uint8_t>(isr));
-						}
-						else
-						{
-							controlBus->Send(Signal::PowerOff);
+							case ISR::Zero:
+							case ISR::One:
+							case ISR::Two:
+							case ISR::Three:
+							case ISR::Four:
+							case ISR::Five:
+							case ISR::Six:
+							case ISR::Seven:
+							{
+								controlBus->Send(Signal::Interrupt);
+								dataBus->Send(static_cast<uint8_t>(isr));
+								break;
+							}
+							case ISR::Save:
+							{
+								// Don't do the save if the onSave method has not been set.
+								if (onSave_ != nullptr)
+								{
+									std::vector<uint8_t> rom(opt_.RamSize());
+									std::vector<uint8_t> ram(opt_.RomSize());
+
+									for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
+									{
+										rom[addr] = memoryController_->Read(addr);
+									}
+
+									for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
+									{
+										ram[addr] = memoryController_->Read(addr);
+									}
+
+									auto fmtStr = "{\n\t\"cpu\":\n\t%s,\n\t\"memory\":\n\t{\n\t\t\"uuid\":\"%s\",\n\t\t\"rom\":\"%s\",\n\t\t\"ram\":\n\t\t{\n\t\t\t\"encoder\":\"%s\",\n\t\t\t\"compressor\":\"%s\",\n\t\t\t\"size\":%d,\n\t\t\t\"bytes\":\"%s\"\n\t\t}\n\t}\n}";
+									auto memUuid = memoryController_->Uuid();
+									auto romMd5 = Utils::Md5(rom.data(), rom.size());
+									auto writeState = [&](char* data, size_t dataSize)
+									{
+										auto count = snprintf(data, dataSize, fmtStr,
+											cpu_->Save().c_str(),
+											Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
+											Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
+											opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
+											Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
+										return count;
+									};
+
+									auto count = writeState(nullptr, 0) + 1;
+									std::string state(count, '\0');
+									writeState(state.data(), count);
+#ifdef __WINDOWS__
+									if (opt_.RunAsync() == true)
+									{
+										auto f = std::async(std::launch::async, [this]()
+										{
+											onSave_(std::move(state));
+										});
+									}
+									else
+#endif
+									{
+										onSave_(std::move(state));
+									}
+								}
+								break;
+							}
+							case ISR::Quit:
+							{
+								controlBus->Send(Signal::PowerOff);
+								break;
+							}
+							default:
+							{
+								//assert(0);
+								break;
+							}
 						}
 					}
 
@@ -287,6 +356,16 @@ namespace MachEmu
 		ioController_ = controller;
 	}
 
+	void Machine::OnSave(std::function<void(std::string&& json)>&& onSave)
+	{
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
+		onSave_ = std::move(onSave);
+	}
+
 	std::string Machine::Save() const
 	{
 		if (running_ == true)
@@ -294,10 +373,41 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		std::string state{ "{" };
-		state += "\"cpu\":"; 
-		state += cpu_->Save();
-		state += "}";
+		if (memoryController_ == nullptr)
+		{
+			throw std::runtime_error("memory controller not set!");
+		}
+
+		std::vector<uint8_t> rom(opt_.RamSize());
+		std::vector<uint8_t> ram(opt_.RomSize());
+
+		for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
+		{
+			rom[addr] = memoryController_->Read(addr);
+		}
+
+		for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
+		{
+			ram[addr] = memoryController_->Read(addr);
+		}
+
+		auto fmtStr = "{\n\t\"cpu\":\n\t%s,\n\t\"memory\":\n\t{\n\t\t\"uuid\":\"%s\",\n\t\t\"rom\":\"%s\",\n\t\t\"ram\":\n\t\t{\n\t\t\t\"encoder\":\"%s\",\n\t\t\t\"compressor\":\"%s\",\n\t\t\t\"size\":%d,\n\t\t\t\"bytes\":\"%s\"\n\t\t}\n\t}\n}";
+		auto memUuid = memoryController_->Uuid();
+		auto romMd5 = Utils::Md5(rom.data(), rom.size());
+		auto writeState = [&](char* data, size_t dataSize)
+		{
+			auto count = snprintf(data, dataSize, fmtStr,
+				cpu_->Save().c_str(),
+				Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
+				Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
+				opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
+				Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
+			return count;
+		};
+
+		auto count = writeState(nullptr, 0) + 1;
+		std::string state(count, '\0');
+		writeState(state.data(), count);
 		return state;
 	}
 
