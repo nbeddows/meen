@@ -101,6 +101,10 @@ namespace MachEmu
 							|                 |        | 0                 | Run the machine at realtime (or as close to) with the highest possible resolution |
 							|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
 							|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
+							| romOffset		  | uint16 | n                 | The offset in bytes from the start of the memory to the start of the rom          |
+							| romSize         | uint16 | n                 | The size of the rom in bytes                                                      |
+							| ramOffset       | uint16 | n                 | The offset in bytes from the start of the memory to the start of the ram          |
+							| ramSize         | uint16 | n                 | The size of the ram in bytes                                                      |
 
 		@throws		std::runtime_error or any exception that the underlying json parser can throw.
 
