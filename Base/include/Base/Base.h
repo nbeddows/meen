@@ -33,14 +33,15 @@ namespace MachEmu
 	*/
 	enum class ISR
 	{
-		Zero,					/**< Interrupt 0 */
-		One,					/**< Interrupt 1 */
-		Two,					/**< Interrupt 2 */
-		Three,					/**< Interrupt 3 */
-		Four,					/**< Interrupt 4 */
-		Five,					/**< Interrupt 5 */
-		Six,					/**< Interrupt 6 */
-		Seven,					/**< Interrupt 7 */
+		Zero,					/**< Interrupt 0. */
+		One,					/**< Interrupt 1. */
+		Two,					/**< Interrupt 2. */
+		Three,					/**< Interrupt 3. */
+		Four,					/**< Interrupt 4. */
+		Five,					/**< Interrupt 5. */
+		Six,					/**< Interrupt 6. */
+		Seven,					/**< Interrupt 7. */
+		Save = 0xFFCF,			/**< Save the machine state. */
 		Quit = 0xFFEF,			/**< Exit the IMachine::Run control loop. */
 		NoInterrupt,			/**< No interrupt has occurred. */
 	};
