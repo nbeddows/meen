@@ -230,8 +230,10 @@ namespace MachEmu
 			<tr><td>pc</td><td>Contents of the program counter</td></tr>
 			<tr><td>sp</td><td>Contents of the stack pointer</td></tr>
 			</table>
+
+			@deprecated	since 1.5.0
 		*/
-		virtual std::string Save() const = 0;
+		[[deprecated("Will be removed in v2.0.0, please use OnSave")]] virtual std::string Save() const = 0;
 
 		/**	Set the frequency at which the internal clock ticks.
 
