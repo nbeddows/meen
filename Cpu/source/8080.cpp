@@ -39,6 +39,10 @@ import SystemBus;
 namespace MachEmu
 {
 
+#ifndef _WINDOWS
+constexpr std::array<uint8_t, 16> Intel8080::uuid_;
+#endif
+
 Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
 	: addressBus_(systemBus.addressBus),
 	dataBus_(systemBus.dataBus),
@@ -339,7 +343,7 @@ std::string Intel8080::Save() const
 	auto fmtStr = "{\n\t\t\"uuid\":\"%s\",\n\t\t\"registers\":\n\t\t{\n\t\t\t\"a\":%d,\n\t\t\t\"b\":%d,\n\t\t\t\"c\":%d,\n\t\t\t\"d\":%d,\n\t\t\t\"e\":%d,\n\t\t\t\"h\":%d,\n\t\t\t\"l\":%d,\n\t\t\t\"s\":%d\n\t\t},\n\t\t\"pc\":%d,\n\t\t\"sp\":%d\n\t}";
 	auto count = snprintf(nullptr, 0, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	std::string str(count + 1, '\0');
-	count = snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
+	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	return str;
 }
 

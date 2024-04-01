@@ -98,7 +98,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
 # copy out the required modules/sources/libraries, perform static analysis
 add_custom_target(
   ${target_name}
-  COMMAND cppcheck -i build -i Tests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
+  COMMAND cppcheck -i build -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
   COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Base/include ${sdkDir}/Base/include
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/CMakeIncludes ${sdkDir}/CMakeIncludes/

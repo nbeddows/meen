@@ -21,6 +21,7 @@ SOFTWARE.
 */
 module;
 
+#include <cinttypes>
 #include <cstring>
 //#include <format>
 
@@ -111,7 +112,7 @@ namespace MachEmu
 		}
 
 		char str[32]{};
-		snprintf(str, 32, R"({"clockResolution":%I64d})", clockResolution);
+		snprintf(str, 32, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
 		opt_.SetOptions(str);
 		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
