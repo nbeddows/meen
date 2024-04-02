@@ -50,6 +50,19 @@ namespace MachEmu
 			*/
 			//cppcheck-suppress unusedStructMember
 			bool powerOff_{};
+
+			/** Machine save signal
+			
+				A signal to indicate to the ServiceInterrupts routine that the machine
+				should save its current state.
+
+				@remark		The signal is handled during the servicing of interrupts as it
+							is guaranteed that no instructions are currently executing
+							at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool save_{};
+
 		protected:
 			/** Base IO controller write
 			
