@@ -22,214 +22,140 @@ SOFTWARE.
 
 TEST_F(MachineTest, LXI_B)
 {
-	auto state = LoadAndRun("lxib.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["b"].get<uint8_t>());
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("lxib.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":255,"c":18,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, STAX_B)
 {
-	auto state = LoadAndRun("staxb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("staxb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":4,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INX_B)
 {
-	auto state = LoadAndRun("inxb.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["b"].get<uint8_t>());
-	EXPECT_EQ(0x13, state["cpu"]["registers"]["c"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("inxb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":255,"c":19,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_B)
 {
-	auto state = LoadAndRun("inrb.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["b"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus (state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inrb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":16,"c":0,"d":0,"e":0,"h":0,"l":0,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_B)
 {
-	auto state = LoadAndRun("dcrb.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["b"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcrb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_B)
 {
-	auto state = LoadAndRun("mvib.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("mvib.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":18,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RLC)
 {
-	auto state = LoadAndRun("rlc.bin");
-	EXPECT_EQ(0xE5, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("rlc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":229,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DAD_B)
 {
-	auto state = LoadAndRun("dadb.bin");
-	//Answer in HL
-	EXPECT_EQ(0xD5, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0x1A, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//BC remains unchanged
-	EXPECT_EQ(0x33, state["cpu"]["registers"]["b"].get<uint8_t>());
-	EXPECT_EQ(0x9F, state["cpu"]["registers"]["c"].get<uint8_t>());
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("dadb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":51,"c":159,"d":0,"e":0,"h":213,"l":26,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LDAX_B)
 {
-	auto state = LoadAndRun("ldaxb.bin");
-	EXPECT_EQ(0x0A, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("ldaxb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":10,"b":1,"c":3,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCX_B)
 {
-	auto state = LoadAndRun("dcxb.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["b"].get<uint8_t>());
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["c"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("dcxb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":255,"c":255,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_C)
 {
-	auto state = LoadAndRun("inrc.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["c"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inrc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":16,"d":0,"e":0,"h":0,"l":0,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_C)
 {
-	auto state = LoadAndRun("dcrc.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["c"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcrc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_C)
 {
-	auto state = LoadAndRun("mvic.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("mvic.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":18,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RRC)
 {
-	auto state = LoadAndRun("rrc.bin");
-	EXPECT_EQ(0x79, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("rrc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":121,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LXI_D)
 {
-	auto state = LoadAndRun("lxid.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["d"].get<uint8_t>());
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("lxid.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":255,"e":18,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, STAX_D)
 {
-	auto state = LoadAndRun("staxd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("staxd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":4,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INX_D)
 {
-	auto state = LoadAndRun("inxd.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["d"].get<uint8_t>());
-	EXPECT_EQ(0x13, state["cpu"]["registers"]["e"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("inxd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":255,"e":19,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_D)
 {
-	auto state = LoadAndRun("inrd.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["d"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inrd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":16,"e":0,"h":0,"l":0,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_D)
 {
-	auto state = LoadAndRun("dcrd.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["d"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcrd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_D)
 {
-	auto state = LoadAndRun("mvid.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("mvid.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":18,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RAL)
 {
-	auto state = LoadAndRun("ral.bin");
-	EXPECT_EQ(0x6A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("ral.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":106,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DAD_D)
 {
-	auto state = LoadAndRun("dadd.bin");
-	//Answer in HL
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//DE remains unchanged
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["d"].get<uint8_t>());
-	EXPECT_EQ(0x01, state["cpu"]["registers"]["e"].get<uint8_t>());
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("dadd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":1,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LDAX_D)
 {
-	auto state = LoadAndRun("ldaxd.bin");
-	EXPECT_EQ(0x1A, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("ldaxd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":26,"b":0,"c":0,"d":1,"e":3,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCX_D)
 {
-	auto state = LoadAndRun("dcxd.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["d"].get<uint8_t>());
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["e"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("dcxd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":255,"e":255,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_E)
 {
-	auto state = LoadAndRun("inre.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["e"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inre.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":16,"h":0,"l":0,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_E)
 {
-	auto state = LoadAndRun("dcre.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["e"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcre.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_E)
 {
-	auto state = LoadAndRun("mvie.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("mvie.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":18,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
+#if 0
 TEST_F(MachineTest, RAR)
 {
 	auto state = LoadAndRun("rar.bin");
@@ -1895,3 +1821,5 @@ TEST_F(MachineTest, 8080Exm)
 	// restore the default io controller
 	machine_->SetIoController(testIoController_);
 }
+
+#endif

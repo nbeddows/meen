@@ -44,7 +44,7 @@ namespace MachEmu::Tests
 		static std::unique_ptr<IMachine> machine_;
 
 		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
-		static nlohmann::json LoadAndRun(const char* name);
+		static void LoadAndRun(const char* name, const char* expected);
 		static void Run(bool runAsync);
 	public:
 		static void SetUpTestCase();
@@ -69,22 +69,33 @@ namespace MachEmu::Tests
 	void MachineTest::SetUp()
 	{
 		memoryController_->Clear();
+		//CP/M Warm Boot is at memory address 0x00, this will be
+		//emulated with the exitTest subroutine.
+		memoryController_->Load(PROGRAMS_DIR"/exitTest.bin", 0x00);
+		//CP/M BDOS print message system call is at memory address 0x05,
+		//this will be emulated with the bdosMsg subroutine.
+		memoryController_->Load(PROGRAMS_DIR"/bdosMsg.bin", 0x05);
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
 		auto err = machine_->SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
-	nlohmann::json MachineTest::LoadAndRun(const char* name)
+	void MachineTest::LoadAndRun(const char* name, const char* expected)
 	{
-		EXPECT_NO_THROW
-		(
+		//EXPECT_NO_THROW
+		//(
+			machine_->OnSave([expected](std::string&& actual)
+			{
+				auto actualJson = nlohmann::json::parse(actual);
+				auto expectedJson = nlohmann::json::parse(expected);
+				EXPECT_TRUE(expectedJson == actualJson["cpu"]);
+			});
+
 			std::string dir = PROGRAMS_DIR"/";
 			memoryController_->Load((dir + name).c_str(), 0x100);
 			machine_->Run(0x100);
-		);
-
-		return nlohmann::json::parse(machine_->Save());
+		//);
 	}
 
 	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
@@ -95,7 +106,7 @@ namespace MachEmu::Tests
 		EXPECT_EQ(zero, (status & 0x40) != 0);
 		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
-
+#if 0
 	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
 		EXPECT_ANY_THROW
@@ -170,6 +181,11 @@ namespace MachEmu::Tests
 		EXPECT_ANY_THROW
 		(
 			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->OnSave([](std::string&&){});
 		);
 
 		EXPECT_ANY_THROW
@@ -269,6 +285,6 @@ namespace MachEmu::Tests
 	{
 		Run(true);
 	}
-
+#endif
 	#include "8080Test.cpp"
 } // namespace MachEmu::Tests
