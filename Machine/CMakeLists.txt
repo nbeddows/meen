@@ -51,6 +51,7 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${includ
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Opt/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Utils/${include_dir})
 
 add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus)
 
@@ -61,4 +62,5 @@ target_link_libraries(${lib_name} PRIVATE
 	CpuClock
 	Opt
 	nlohmann_json::nlohmann_json
+	Utils
 )

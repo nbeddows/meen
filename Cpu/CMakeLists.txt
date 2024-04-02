@@ -38,5 +38,6 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Utils/${include_dir})
 
 add_dependencies(${lib_name} CpuClock SystemBus)
