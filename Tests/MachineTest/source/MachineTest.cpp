@@ -43,7 +43,6 @@ namespace MachEmu::Tests
 		static std::shared_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
-		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
 		static void LoadAndRun(const char* name, const char* expected);
 		static void Run(bool runAsync);
 	public:
@@ -98,15 +97,6 @@ namespace MachEmu::Tests
 		);
 	}
 
-	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
-	{
-		EXPECT_EQ(carry, (status & 0x01) != 0);
-		EXPECT_EQ(parity, (status & 0x04) != 0);
-		EXPECT_EQ(auxCarry, (status & 0x10) != 0);
-		EXPECT_EQ(zero, (status & 0x40) != 0);
-		EXPECT_EQ(sign, (status & 0x80) != 0);
-	}
-#if 0
 	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
 		EXPECT_ANY_THROW
@@ -155,12 +145,12 @@ namespace MachEmu::Tests
 			return;
 		}
 
-		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
-		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
+		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
 
 		EXPECT_NO_THROW
 		(
-			machine_->Run();
+			machine_->Run(0x04);
 		);
 
 		EXPECT_ANY_THROW
@@ -215,6 +205,11 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
+			machine_->OnSave([](std::string&&) {});
+		);
+
+		EXPECT_NO_THROW
+		(
 			machine_->Save();
 		);
 	}
@@ -242,8 +237,8 @@ namespace MachEmu::Tests
 			// going under so the cpu sleeps at the end
 			// of the program so it maintains sync. It's never going to
 			// be perfect, but its close enough for testing purposes).
-			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
-			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
+			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
 
 			// 25 millisecond resolution
 			err = machine_->SetOptions(R"({"clockResolution":25000000})");
@@ -261,12 +256,12 @@ namespace MachEmu::Tests
 			{
 				if (runAsync == true)
 				{
-					machine_->Run();
+					machine_->Run(0x04);
 					nanos += machine_->WaitForCompletion();
 				}
 				else
 				{
-					nanos += machine_->Run();
+					nanos += machine_->Run(0x04);
 				}
 			}
 
@@ -285,6 +280,6 @@ namespace MachEmu::Tests
 	{
 		Run(true);
 	}
-#endif
+
 	#include "8080Test.cpp"
 } // namespace MachEmu::Tests
