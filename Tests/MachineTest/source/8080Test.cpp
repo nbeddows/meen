@@ -155,536 +155,413 @@ TEST_F(MachineTest, MVI_E)
 	LoadAndRun("mvie.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":18,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
-#if 0
 TEST_F(MachineTest, RAR)
 {
-	auto state = LoadAndRun("rar.bin");
-	EXPECT_EQ(0xB5, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("rar.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":181,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LXI_H)
 {
-	auto state = LoadAndRun("lxih.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("lxih.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":255,"l":18,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, SHLD)
 {
-	auto state = LoadAndRun("shld.bin");
-	EXPECT_EQ(0xAB, state["cpu"]["registers"]["a"].get<uint8_t>());
-	EXPECT_EQ(0xCD, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("shld.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":171,"b":205,"c":0,"d":0,"e":0,"h":171,"l":205,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INX_H)
 {
-	auto state = LoadAndRun("inxh.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0x13, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("inxh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":255,"l":19,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_H)
 {
-	auto state = LoadAndRun("inrh.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["h"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inrh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":16,"l":0,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_H)
 {
-	auto state = LoadAndRun("dcrh.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["h"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcrh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_H)
 {
-	auto state = LoadAndRun("mvih.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("mvih.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":18,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
-
-//Need accumulator mvi, instruction needs more work
 TEST_F(MachineTest, DAA)
 {
-	auto state = LoadAndRun("daa.bin");
-	EXPECT_EQ(0x01, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, true);
+	LoadAndRun("daa.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":1,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":19},"pc":2,"sp":0})");
 }
-
 
 TEST_F(MachineTest, DAD_H)
 {
-	auto state = LoadAndRun("dadh.bin");
-	//Answer in HL
-	EXPECT_EQ(0x42, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0xF6, state["cpu"]["registers"]["l"].get<uint8_t>());
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("dadh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":66,"l":246,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LHLD)
 {
-	auto state = LoadAndRun("lhld.bin");
-	EXPECT_EQ(0x7B, state["cpu"]["registers"]["l"].get<uint8_t>());
-	EXPECT_EQ(0x2A, state["cpu"]["registers"]["h"].get<uint8_t>());
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("lhld.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":123,"c":161,"d":0,"e":0,"h":42,"l":123,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCX_H)
 {
-
-	auto state = LoadAndRun("dcxh.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//No flags should be changed by this instruction
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, false);
+	LoadAndRun("dcxh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":255,"l":255,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INR_L)
 {
-	auto state = LoadAndRun("inrl.bin");
-	EXPECT_EQ(0x10, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("inrl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":16,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_L)
 {
-	auto state = LoadAndRun("dcrl.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), true, false, true, true, false);
+	LoadAndRun("dcrl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":86},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_L)
 {
-	auto state = LoadAndRun("mvil.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("mvil.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":18,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, CMA)
 {
-	auto state = LoadAndRun("cma.bin");
-	EXPECT_EQ(0x00, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("cma.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, LXI_SP)
 {
-	auto state = LoadAndRun("lxisp.bin");
-	EXPECT_EQ(0xCDAB, state["cpu"]["sp"].get<uint16_t>());
+	LoadAndRun("lxisp.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":52651})");
 }
 
 TEST_F(MachineTest, STA)
 {
-	auto state = LoadAndRun("sta.bin");
-	EXPECT_EQ(0xFF, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("sta.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":255,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, INX_SP)
 {
-	auto state = LoadAndRun("inxsp.bin");
-	EXPECT_EQ(0xCDAC, state["cpu"]["sp"].get<uint16_t>());
+	LoadAndRun("inxsp.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":52652})");
 }
 
 TEST_F(MachineTest, INR_M)
 {
-	auto state = LoadAndRun("inrm.bin");
-	EXPECT_EQ(0x22, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//EXPECT_EQ(0x35, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, true, false, false);
+	LoadAndRun("inrm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":34,"s":6},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCR_M)
 {
-	auto state = LoadAndRun("dcrm.bin");
-	EXPECT_EQ(0x20, state["cpu"]["registers"]["l"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, true, false);
+	LoadAndRun("dcrm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":32,"s":18},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_M)
 {
-	auto state = LoadAndRun("mvim.bin");
-	EXPECT_EQ(0xDD, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("mvim.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":221,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, STC)
 {
-	auto state = LoadAndRun("stc.bin");
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("stc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DAD_SP)
 {
-	auto state = LoadAndRun("dadsp.bin");
-	EXPECT_EQ(0x57, state["cpu"]["registers"]["h"].get<uint8_t>());
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["l"].get<uint8_t>());
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("dadsp.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":87,"l":154,"s":3},"pc":2,"sp":43981})");
 }
 
 TEST_F(MachineTest, LDA)
 {
-	auto state = LoadAndRun("lda.bin");
-	EXPECT_EQ(0x3A, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("lda.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":58,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, DCX_SP)
 {
-	auto state = LoadAndRun("dcxsp.bin");
-	EXPECT_EQ(0xCDAA, state["cpu"]["sp"].get<uint16_t>());
+	LoadAndRun("dcxsp.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":52650})");
 }
 
 TEST_F(MachineTest, INR_A)
 {
-	auto state = LoadAndRun("inra.bin");
-	EXPECT_EQ(0x3B, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("inra.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":59,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
+// The inr/dcr programs start out by setting the carry bit
+// which tests the fact that the inr/dcr programs don't modify the carry bit
 TEST_F(MachineTest, DCR_A)
 {
-	//This program starts out by setting the carry bit
-	//which tests the fact that inr does not modify the carry bit
-	auto state = LoadAndRun("dcra.bin");
-	EXPECT_EQ(0x39, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, true, true, true);
+	LoadAndRun("dcra.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":57,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":23},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MVI_A)
 {
-	auto state = LoadAndRun("mvia.bin");
-	EXPECT_EQ(0x12, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("mvia.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":18,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, CMC)
 {
-	auto state = LoadAndRun("cmc.bin");
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, false, false, false, true);
+	LoadAndRun("cmc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":3},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BB)
 {
-	auto state = LoadAndRun("movbb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BC)
 {
-	auto state = LoadAndRun("movbc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":33,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BD)
 {
-	auto state = LoadAndRun("movbd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BE)
 {
-	auto state = LoadAndRun("movbe.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbe.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BH)
 {
-	auto state = LoadAndRun("movbh.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BL)
 {
-	auto state = LoadAndRun("movbl.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BM)
 {
-	auto state = LoadAndRun("movbm.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movbm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":1,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_BA)
 {
-	auto state = LoadAndRun("movba.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["b"].get<uint8_t>());
+	LoadAndRun("movba.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":33,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CB)
 {
-	auto state = LoadAndRun("movcb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movcb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":33,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CC)
 {
-	auto state = LoadAndRun("movcc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movcc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CD)
 {
-	auto state = LoadAndRun("movcd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movcd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CE)
 {
-	auto state = LoadAndRun("movce.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movce.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CH)
 {
-	auto state = LoadAndRun("movch.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movch.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CL)
 {
-	auto state = LoadAndRun("movcl.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movcl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CM)
 {
-	auto state = LoadAndRun("movcm.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movcm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":1,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_CA)
 {
-	auto state = LoadAndRun("movca.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["c"].get<uint8_t>());
+	LoadAndRun("movca.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":33,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DB)
 {
-	auto state = LoadAndRun("movdb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DC)
 {
-	auto state = LoadAndRun("movdc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DD)
 {
-	auto state = LoadAndRun("movdd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DE)
 {
-	auto state = LoadAndRun("movde.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movde.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DH)
 {
-	auto state = LoadAndRun("movdh.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DL)
 {
-	auto state = LoadAndRun("movdl.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DM)
 {
-	auto state = LoadAndRun("movdm.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movdm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":1,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_DA)
 {
-	auto state = LoadAndRun("movda.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["d"].get<uint8_t>());
+	LoadAndRun("movda.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EB)
 {
-	auto state = LoadAndRun("moveb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("moveb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EC)
 {
-	auto state = LoadAndRun("movec.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("movec.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_ED)
 {
-	auto state = LoadAndRun("moved.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("moved.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EE)
 {
-	auto state = LoadAndRun("movee.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("movee.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EH)
 {
-	auto state = LoadAndRun("moveh.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("moveh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EL)
 {
-	auto state = LoadAndRun("movel.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("movel.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EM)
 {
-	auto state = LoadAndRun("movem.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("movem.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":1,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_EA)
 {
-	auto state = LoadAndRun("movea.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["e"].get<uint8_t>());
+	LoadAndRun("movea.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HB)
 {
-	auto state = LoadAndRun("movhb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HC)
 {
-	auto state = LoadAndRun("movhc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HD)
 {
-	auto state = LoadAndRun("movhd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HE)
 {
-	auto state = LoadAndRun("movhe.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhe.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HH)
 {
-	auto state = LoadAndRun("movhh.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HL)
 {
-	auto state = LoadAndRun("movhl.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":33,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HM)
 {
-	auto state = LoadAndRun("movhm.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movhm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_HA)
 {
-	auto state = LoadAndRun("movha.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["h"].get<uint8_t>());
+	LoadAndRun("movha.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LB)
 {
-	auto state = LoadAndRun("movlb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movlb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":33,"c":0,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LC)
 {
-	auto state = LoadAndRun("movlc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movlc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":33,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LD)
 {
-	auto state = LoadAndRun("movld.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movld.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":33,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LE)
 {
-	auto state = LoadAndRun("movle.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movle.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":33,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LH)
 {
-	auto state = LoadAndRun("movlh.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movlh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":33,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LL)
 {
-	auto state = LoadAndRun("movll.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movll.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LM)
 {
-	auto state = LoadAndRun("movlm.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movlm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":0,"d":0,"e":0,"h":1,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_LA)
 {
-	auto state = LoadAndRun("movla.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["l"].get<uint8_t>());
+	LoadAndRun("movla.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 //Using MovA for the memory tests since
 //we store the result in the accumulator
 TEST_F(MachineTest, MOV_MB)
 {
-	auto state = LoadAndRun("movmb.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movmb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":33,"c":0,"d":0,"e":0,"h":0,"l":4,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_MC)
 {
-	auto state = LoadAndRun("movmc.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movmc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":33,"d":0,"e":0,"h":0,"l":4,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_MD)
 {
-	auto state = LoadAndRun("movmd.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movmd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":33,"e":0,"h":0,"l":4,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_ME)
 {
-	auto state = LoadAndRun("movme.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movme.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":33,"h":0,"l":4,"s":2},"pc":2,"sp":0})");
 }
 
 /*
@@ -726,128 +603,95 @@ TEST_F(MachineTest, MOV_ML)
 
 TEST_F(MachineTest, MOV_MA)
 {
-	auto state = LoadAndRun("movma.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movma.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":0,"l":4,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AB)
 {
-	auto state = LoadAndRun("movab.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movab.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":33,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AC)
 {
-	auto state = LoadAndRun("movac.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movac.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":33,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AD)
 {
-	auto state = LoadAndRun("movad.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movad.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":33,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AE)
 {
-	auto state = LoadAndRun("movae.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movae.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":33,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AH)
 {
-	auto state = LoadAndRun("movah.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movah.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":33,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AL)
 {
-	auto state = LoadAndRun("moval.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("moval.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":0,"l":33,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AM)
 {
-	auto state = LoadAndRun("movam.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movam.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":1,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MOV_AA)
 {
-	auto state = LoadAndRun("movaa.bin");
-	EXPECT_EQ(0x21, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movaa.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":33,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, MovIncDec)
 {
-	auto state = LoadAndRun("movIncDec.bin");
-	EXPECT_EQ(0x77, state["cpu"]["registers"]["a"].get<uint8_t>());
+	LoadAndRun("movIncDec.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":119,"b":119,"c":119,"d":119,"e":119,"h":119,"l":119,"s":22},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_B)
 {
-	auto state = LoadAndRun("addb.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addb.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":46,"c":0,"d":0,"e":0,"h":0,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_C)
 {
-	auto state = LoadAndRun("addc.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addc.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":0,"c":46,"d":0,"e":0,"h":0,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_D)
 {
-	auto state = LoadAndRun("addd.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addd.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":0,"c":0,"d":46,"e":0,"h":0,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_E)
 {
-	auto state = LoadAndRun("adde.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("adde.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":0,"c":0,"d":0,"e":46,"h":0,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_H)
 {
-	auto state = LoadAndRun("addh.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addh.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":0,"c":0,"d":0,"e":0,"h":46,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_L)
 {
-	auto state = LoadAndRun("addl.bin");
-	EXPECT_EQ(0x9A, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addl.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":154,"b":0,"c":0,"d":0,"e":0,"h":0,"l":46,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_M)
 {
-	auto state = LoadAndRun("addm.bin");
-	EXPECT_EQ(0xD8, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("addm.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":216,"b":0,"c":0,"d":0,"e":0,"h":1,"l":1,"s":150},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, ADD_A)
 {
-	auto state = LoadAndRun("adda.bin");
-	EXPECT_EQ(0xD8, state["cpu"]["registers"]["a"].get<uint8_t>());
-	//zero, sign, parity, auxCarry, carry
-	CheckStatus(state["cpu"]["registers"]["s"].get<uint8_t>(), false, true, true, true, false);
+	LoadAndRun("adda.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":216,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":150},"pc":2,"sp":0})");
 }
 
+#if 0
 TEST_F(MachineTest, ADC_B)
 {
 	auto state = LoadAndRun("adcb.bin");
