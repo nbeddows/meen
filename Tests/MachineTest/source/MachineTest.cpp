@@ -43,8 +43,7 @@ namespace MachEmu::Tests
 		static std::shared_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
-		static void CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry);
-		static nlohmann::json LoadAndRun(const char* name);
+		static void LoadAndRun(const char* name, const char* expected);
 		static void Run(bool runAsync);
 	public:
 		static void SetUpTestCase();
@@ -69,31 +68,33 @@ namespace MachEmu::Tests
 	void MachineTest::SetUp()
 	{
 		memoryController_->Clear();
+		//CP/M Warm Boot is at memory address 0x00, this will be
+		//emulated with the exitTest subroutine.
+		memoryController_->Load(PROGRAMS_DIR"/exitTest.bin", 0x00);
+		//CP/M BDOS print message system call is at memory address 0x05,
+		//this will be emulated with the bdosMsg subroutine.
+		memoryController_->Load(PROGRAMS_DIR"/bdosMsg.bin", 0x05);
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
 		auto err = machine_->SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
-	nlohmann::json MachineTest::LoadAndRun(const char* name)
+	void MachineTest::LoadAndRun(const char* name, const char* expected)
 	{
 		EXPECT_NO_THROW
 		(
+			machine_->OnSave([expected](std::string&& actual)
+			{
+				auto actualJson = nlohmann::json::parse(actual);
+				auto expectedJson = nlohmann::json::parse(expected);
+				EXPECT_TRUE(expectedJson == actualJson["cpu"]);
+			});
+
 			std::string dir = PROGRAMS_DIR"/";
 			memoryController_->Load((dir + name).c_str(), 0x100);
 			machine_->Run(0x100);
 		);
-
-		return nlohmann::json::parse(machine_->Save());
-	}
-
-	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
-	{
-		EXPECT_EQ(carry, (status & 0x01) != 0);
-		EXPECT_EQ(parity, (status & 0x04) != 0);
-		EXPECT_EQ(auxCarry, (status & 0x10) != 0);
-		EXPECT_EQ(zero, (status & 0x40) != 0);
-		EXPECT_EQ(sign, (status & 0x80) != 0);
 	}
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
@@ -144,12 +145,12 @@ namespace MachEmu::Tests
 			return;
 		}
 
-		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
-		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
+		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
 
 		EXPECT_NO_THROW
 		(
-			machine_->Run();
+			machine_->Run(0x04);
 		);
 
 		EXPECT_ANY_THROW
@@ -170,6 +171,11 @@ namespace MachEmu::Tests
 		EXPECT_ANY_THROW
 		(
 			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_ANY_THROW
+		(
+			machine_->OnSave([](std::string&&){});
 		);
 
 		EXPECT_ANY_THROW
@@ -195,6 +201,11 @@ namespace MachEmu::Tests
 		EXPECT_NO_THROW
 		(
 			machine_->SetIoController(testIoController_);
+		);
+
+		EXPECT_NO_THROW
+		(
+			machine_->OnSave([](std::string&&) {});
 		);
 
 		EXPECT_NO_THROW
@@ -226,8 +237,8 @@ namespace MachEmu::Tests
 			// going under so the cpu sleeps at the end
 			// of the program so it maintains sync. It's never going to
 			// be perfect, but its close enough for testing purposes).
-			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x00);
-			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC34F);
+			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
+			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
 
 			// 25 millisecond resolution
 			err = machine_->SetOptions(R"({"clockResolution":25000000})");
@@ -245,12 +256,12 @@ namespace MachEmu::Tests
 			{
 				if (runAsync == true)
 				{
-					machine_->Run();
+					machine_->Run(0x04);
 					nanos += machine_->WaitForCompletion();
 				}
 				else
 				{
-					nanos += machine_->Run();
+					nanos += machine_->Run(0x04);
 				}
 			}
 
