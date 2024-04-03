@@ -83,8 +83,8 @@ namespace MachEmu::Tests
 
 	void MachineTest::LoadAndRun(const char* name, const char* expected)
 	{
-		//EXPECT_NO_THROW
-		//(
+		EXPECT_NO_THROW
+		(
 			machine_->OnSave([expected](std::string&& actual)
 			{
 				auto actualJson = nlohmann::json::parse(actual);
@@ -95,7 +95,7 @@ namespace MachEmu::Tests
 			std::string dir = PROGRAMS_DIR"/";
 			memoryController_->Load((dir + name).c_str(), 0x100);
 			machine_->Run(0x100);
-		//);
+		);
 	}
 
 	void MachineTest::CheckStatus(uint8_t status, bool zero, bool sign, bool parity, bool auxCarry, bool carry)
