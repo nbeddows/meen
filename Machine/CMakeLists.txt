@@ -53,7 +53,7 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${inc
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Opt/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Utils/${include_dir})
 
-add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus)
+add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus Utils)
 
 set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION ${machEmuVersion})
 
