@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #define ENABLE_MACHINE_HOLDER
 
@@ -62,5 +63,6 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .def(py::init<>())
         .def("Read", &MachEmu::IController::Read)
         .def("Write", &MachEmu::IController::Write)
-        .def("ServiceInterrupts", &MachEmu::IController::ServiceInterrupts);
+        .def("ServiceInterrupts", &MachEmu::IController::ServiceInterrupts)
+        .def("Uuid", &MachEmu::IController::Uuid);
 }
