@@ -60,7 +60,7 @@ namespace MachEmu
 		}
 
 #ifndef ENABLE_ZLIB
-		if (json_->contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
+		if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
 		{
 			throw std::runtime_error("mach-emu has been compiled with no zlib support");
 		}
