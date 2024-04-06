@@ -88,7 +88,7 @@ namespace MachEmu::Tests
 			{
 				auto actualJson = nlohmann::json::parse(actual);
 				auto expectedJson = nlohmann::json::parse(expected);
-				EXPECT_TRUE(expectedJson == actualJson["cpu"]);
+				EXPECT_STREQ(expectedJson.dump().c_str(), actualJson["cpu"].dump().c_str());
 			});
 
 			std::string dir = PROGRAMS_DIR"/";
