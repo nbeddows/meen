@@ -1,3 +1,4 @@
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
@@ -33,6 +34,7 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .value("Five", MachEmu::ISR::Five)
         .value("Six", MachEmu::ISR::Six)
         .value("Seven", MachEmu::ISR::Seven)
+        .value("Save", MachEmu::ISR::Save)
         .value("Quit", MachEmu::ISR::Quit)
         .value("NoInterrupt", MachEmu::ISR::NoInterrupt);
 
@@ -40,6 +42,7 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
     py::class_<MachEmu::MachineHolder>(MachEmu, "MakeMachine")
         .def(py::init<>())
         .def(py::init<const char*>())
+        .def("OnSave", &MachEmu::MachineHolder::OnSave)
         .def("Run", &MachEmu::MachineHolder::Run)
         .def("Save", &MachEmu::MachineHolder::Save)
         .def("SetClockResolution", &MachEmu::MachineHolder::SetClockResolution)
