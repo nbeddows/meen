@@ -367,6 +367,16 @@ namespace MachEmu
 		onSave_ = std::move(onSave);
 	}
 
+	void Machine::OnLoad(std::function<std::string()>&& onLoad)
+	{
+		if (running_ == true)
+		{
+			throw std::runtime_error("The machine is running");
+		}
+
+		onLoad_ = std::move(onLoad);
+	}
+
 	std::string Machine::Save() const
 	{
 		if (running_ == true)
