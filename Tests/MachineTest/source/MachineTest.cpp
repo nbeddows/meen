@@ -175,12 +175,12 @@ namespace MachEmu::Tests
 
 		EXPECT_ANY_THROW
 		(
-			machine_->OnSave([](std::string&&){});
+			machine_->OnLoad([]() {return "";});
 		);
 
 		EXPECT_ANY_THROW
 		(
-			machine_->Save();
+			machine_->OnSave([](std::string&&){});
 		);
 
 		// Since we are running async we need to wait for completion
@@ -205,12 +205,12 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			machine_->OnSave([](std::string&&) {});
+			machine_->OnLoad([]() {return "";});
 		);
 
 		EXPECT_NO_THROW
 		(
-			machine_->Save();
+			machine_->OnSave([](std::string&&) {});
 		);
 	}
 
