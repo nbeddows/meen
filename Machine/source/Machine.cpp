@@ -240,7 +240,7 @@ namespace MachEmu
 										ram[addr] = memoryController_->Read(addr);
 									}
 
-									auto fmtStr = "{\n\t\"cpu\":\n\t%s,\n\t\"memory\":\n\t{\n\t\t\"uuid\":\"%s\",\n\t\t\"rom\":\"%s\",\n\t\t\"ram\":\n\t\t{\n\t\t\t\"encoder\":\"%s\",\n\t\t\t\"compressor\":\"%s\",\n\t\t\t\"size\":%d,\n\t\t\t\"bytes\":\"%s\"\n\t\t}\n\t}\n}";
+									auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 									auto memUuid = memoryController_->Uuid();
 									auto romMd5 = Utils::Md5(rom.data(), rom.size());
 									auto writeState = [&](char* data, size_t dataSize)
@@ -392,7 +392,7 @@ namespace MachEmu
 			ram[addr] = memoryController_->Read(addr);
 		}
 
-		auto fmtStr = "{\n\t\"cpu\":\n\t%s,\n\t\"memory\":\n\t{\n\t\t\"uuid\":\"%s\",\n\t\t\"rom\":\"%s\",\n\t\t\"ram\":\n\t\t{\n\t\t\t\"encoder\":\"%s\",\n\t\t\t\"compressor\":\"%s\",\n\t\t\t\"size\":%d,\n\t\t\t\"bytes\":\"%s\"\n\t\t}\n\t}\n}";
+		auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 		auto memUuid = memoryController_->Uuid();
 		auto romMd5 = Utils::Md5(rom.data(), rom.size());
 		auto writeState = [&](char* data, size_t dataSize)

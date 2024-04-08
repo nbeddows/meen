@@ -340,7 +340,7 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 std::string Intel8080::Save() const
 {
 	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
-	auto fmtStr = "{\n\t\t\"uuid\":\"%s\",\n\t\t\"registers\":\n\t\t{\n\t\t\t\"a\":%d,\n\t\t\t\"b\":%d,\n\t\t\t\"c\":%d,\n\t\t\t\"d\":%d,\n\t\t\t\"e\":%d,\n\t\t\t\"h\":%d,\n\t\t\t\"l\":%d,\n\t\t\t\"s\":%d\n\t\t},\n\t\t\"pc\":%d,\n\t\t\"sp\":%d\n\t}";
+	auto fmtStr = "{\"uuid\":\"%s\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}";
 	auto count = snprintf(nullptr, 0, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	std::string str(count + 1, '\0');
 	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);

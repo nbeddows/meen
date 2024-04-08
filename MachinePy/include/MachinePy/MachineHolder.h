@@ -14,6 +14,7 @@ namespace MachEmu
         MachineHolder();
         MachineHolder(const char* json);
 
+        void OnSave(std::function<void(std::string&& json)>& onSave);
         uint64_t Run(uint16_t offset);
         std::string Save() const;
         ErrorCode SetClockResolution(int64_t clockResolution);
