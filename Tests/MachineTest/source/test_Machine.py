@@ -73,6 +73,9 @@ class MachineTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             self.machine.SetIoController(self.testIoController)
+
+        with self.assertRaises(RuntimeError):
+            self.machine.OnSave(lambda x: print(x))
         
         self.machine.WaitForCompletion()
 
@@ -83,6 +86,7 @@ class MachineTest(unittest.TestCase):
 
         self.machine.SetMemoryController(self.memoryController)
         self.machine.SetIoController(self.testIoController)
+        self.machine.OnSave(lambda x: print(x))
 
     def RunTimed(self, runAsync):
         if runAsync == True:
