@@ -281,5 +281,38 @@ namespace MachEmu::Tests
 		Run(true);
 	}
 
+	TEST_F(MachineTest, OnLoad)
+	{
+		std::vector<std::string> saveStates;
+		// Call the out instruction
+		memoryController_->Write(0x0098, 0xD3);
+		// The data to write to the controller that will trigger the ISR::Load interrupt 
+		memoryController_->Write(0x0099, 0xFD);
+		memoryController_->Load(PROGRAMS_DIR"/TST8080.COM", 0x100);
+		//machine_->SetOptions(R"({"runAsync":true})");
+		machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":57343})");
+		machine_->SetIoController(cpmIoController_);
+		machine_->OnSave([&](std::string&& json)
+		{
+			saveStates.emplace_back(json);
+		});
+		machine_->OnLoad([&]()
+		{	
+			// 0 - mid program save state, 1 and 2 - end of program save states
+			return saveStates[0]; // since there are less than 6000 cycles, we should only get 3 save states, we can assert on this
+		});
+
+		machine_->Run(0x0100);
+		//machine_->WaitForCompletion();
+
+		// run it again, but this time trigger the load interrupt
+		machine_->Run(0x0098);
+		//machine_->WaitForCompletion();
+
+		EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"gi09EdL3h5T/Q+SpMgKhdg==","ram":{"encoder":"base64","compressor":"zlib","size":57343,"bytes":"eJztwTEBAAAAwqD1T20IX6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4Dbf/wAB"}}})", saveStates[0].c_str());
+		ASSERT_EQ(saveStates.size(), 3);
+		EXPECT_STREQ(saveStates[1].c_str(), saveStates[2].c_str());
+	}
+
 	#include "8080Test.cpp"
 } // namespace MachEmu::Tests
