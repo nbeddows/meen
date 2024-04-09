@@ -227,8 +227,8 @@ namespace MachEmu
 								// Don't do the save if the onSave method has not been set.
 								if (onSave_ != nullptr)
 								{
-									std::vector<uint8_t> rom(opt_.RamSize());
-									std::vector<uint8_t> ram(opt_.RomSize());
+									std::vector<uint8_t> rom(opt_.RomSize());
+									std::vector<uint8_t> ram(opt_.RamSize());
 
 									for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
 									{
