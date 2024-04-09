@@ -63,7 +63,18 @@ namespace MachEmu
 			//cppcheck-suppress unusedStructMember
 			bool save_{};
 
-		protected:
+			/** Machine load signal
+
+				A signal to indicate to the ServiceInterrupts routine that the machine
+				should load a new machine state.
+
+				@remark		The signal is handled during the servicing of interrupts as it
+							is guaranteed that no instructions are currently executing
+							at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool load_{};
+	protected:
 			/** Base IO controller write
 			
 				Writes a specifed value to the give port number.
