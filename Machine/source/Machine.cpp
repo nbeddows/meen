@@ -192,6 +192,8 @@ namespace MachEmu
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
+			auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
+			std::future<std::string> onLoad;
 
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
@@ -205,84 +207,116 @@ namespace MachEmu
 				{
 					auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
 
-					if (isr != ISR::NoInterrupt)
+					
+					switch (isr)
 					{
-						switch (isr)
+						case ISR::Zero:
+						case ISR::One:
+						case ISR::Two:
+						case ISR::Three:
+						case ISR::Four:
+						case ISR::Five:
+						case ISR::Six:
+						case ISR::Seven:
 						{
-							case ISR::Zero:
-							case ISR::One:
-							case ISR::Two:
-							case ISR::Three:
-							case ISR::Four:
-							case ISR::Five:
-							case ISR::Six:
-							case ISR::Seven:
+							controlBus->Send(Signal::Interrupt);
+							dataBus->Send(static_cast<uint8_t>(isr));
+							break;
+						}
+						case ISR::Load:
+						{								
+							if (onLoad_ != nullptr)
 							{
-								controlBus->Send(Signal::Interrupt);
-								dataBus->Send(static_cast<uint8_t>(isr));
-								break;
-							}
-							case ISR::Save:
-							{
-								// Don't do the save if the onSave method has not been set.
-								if (onSave_ != nullptr)
+								onLoad = std::async(launchPolicy, [this]()
 								{
-									std::vector<uint8_t> rom(opt_.RomSize());
-									std::vector<uint8_t> ram(opt_.RamSize());
+									return onLoad_();
+								});
+							}
+							break;
+						}
+						case ISR::Save:
+						{
+							// Don't do the save if the onSave method has not been set.
+							if (onSave_ != nullptr)
+							{
+								std::vector<uint8_t> rom(opt_.RomSize());
+								std::vector<uint8_t> ram(opt_.RamSize());
 
-									for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
-									{
-										rom[addr] = memoryController_->Read(addr);
-									}
+								for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
+								{
+									rom[addr] = memoryController_->Read(addr);
+								}
 
-									for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
-									{
-										ram[addr] = memoryController_->Read(addr);
-									}
+								for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
+								{
+									ram[addr] = memoryController_->Read(addr);
+								}
 
-									auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
-									auto memUuid = memoryController_->Uuid();
-									auto romMd5 = Utils::Md5(rom.data(), rom.size());
-									auto writeState = [&](char* data, size_t dataSize)
-									{
-										auto count = snprintf(data, dataSize, fmtStr,
-											cpu_->Save().c_str(),
-											Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
-											Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
-											opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
-											Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
-										return count;
-									};
+								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
+								auto memUuid = memoryController_->Uuid();
+								auto romMd5 = Utils::Md5(rom.data(), rom.size());
+								auto writeState = [&](char* data, size_t dataSize)
+								{
+									auto count = snprintf(data, dataSize, fmtStr,
+										cpu_->Save().c_str(),
+										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
+										Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
+										opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
+										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
+									return count;
+								};
 
-									auto count = writeState(nullptr, 0) + 1;
-									std::string state(count, '\0');
-									writeState(state.data(), count);
+								auto count = writeState(nullptr, 0) + 1;
+								std::string state(count, '\0');
+								writeState(state.data(), count);
 #ifdef __WINDOWS__
-									if (opt_.RunAsync() == true)
-									{
-										auto f = std::async(std::launch::async, [this]()
-										{
-											onSave_(std::move(state));
-										});
-									}
-									else
-#endif
+								if (opt_.RunAsync() == true)
+								{
+									auto f = std::async(std::launch::async, [this]()
 									{
 										onSave_(std::move(state));
-									}
+									});
+
+									//f can be checked and logged when completed
 								}
-								break;
+								else
+#endif
+								{
+									onSave_(std::move(state));
+								}
 							}
-							case ISR::Quit:
+							break;
+						}
+						case ISR::Quit:
+						{
+							controlBus->Send(Signal::PowerOff);
+							break;
+						}
+						case ISR::NoInterrupt:
+						{
+							// no interrupts pending, do any work that is outstanding
+
+							if (onLoad.valid() == true)
 							{
-								controlBus->Send(Signal::PowerOff);
-								break;
+								auto status = onLoad.wait_for(nanoseconds::zero());
+
+								if (status == std::future_status::deferred || status == std::future_status::ready)
+								{
+									// todo load cpu and memory controller from json
+									auto json = onLoad.get();
+								}
 							}
-							default:
-							{
-								//assert(0);
-								break;
-							}
+
+							// could also dump any pending logs to disk here
+							// example for onLoad could include:
+							// when cpu does not match the load state cpu
+							// when the memory controller does not match the load state memory controller
+							// when the rom does not match the load state rom
+						}
+						default:
+						{
+							//assert(0);
+							break;
 						}
 					}
 
