@@ -33,6 +33,7 @@ namespace MachEmu
 	*/
 	enum class ISR
 	{
+		// Cpu level interrupts
 		Zero,					/**< Interrupt 0. */
 		One,					/**< Interrupt 1. */
 		Two,					/**< Interrupt 2. */
@@ -41,8 +42,10 @@ namespace MachEmu
 		Five,					/**< Interrupt 5. */
 		Six,					/**< Interrupt 6. */
 		Seven,					/**< Interrupt 7. */
+		// Machine level interrupts
 		Save = 0xFFCF,			/**< Save the machine state. */
-		Quit = 0xFFEF,			/**< Exit the IMachine::Run control loop. */
+		Load,					/**< Load the machine state. */
+		Quit,					/**< Exit the IMachine::Run control loop. */
 		NoInterrupt,			/**< No interrupt has occurred. */
 	};
 
