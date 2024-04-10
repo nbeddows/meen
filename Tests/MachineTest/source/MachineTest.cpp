@@ -342,12 +342,12 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, OnLoad)
 	{
-		Load(true);
+		Load(false);
 	}
 
 	TEST_F(MachineTest, OnLoadAsync)
 	{
-		Load(false);
+		Load(true);
 	}
 
 	#include "8080Test.cpp"
