@@ -194,6 +194,7 @@ namespace MachEmu
 			int64_t lastTicks = 0;
 			auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
 			std::future<std::string> onLoad;
+			std::future<void> onSave;
 
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
@@ -239,56 +240,69 @@ namespace MachEmu
 							// Don't do the save if the onSave method has not been set.
 							if (onSave_ != nullptr)
 							{
-								std::vector<uint8_t> rom(opt_.RomSize());
-								std::vector<uint8_t> ram(opt_.RamSize());
-
-								for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
+								auto rm = [this](uint16_t offset, uint16_t size)
 								{
-									rom[addr] = memoryController_->Read(addr);
-								}
+									std::vector<uint8_t> mem(size);
+									
+									for (auto addr = offset; addr < size; addr++)
+									{
+										mem[addr] = memoryController_->Read(addr);
+									}
 
-								for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
-								{
-									ram[addr] = memoryController_->Read(addr);
-								}
+									return mem;
+								};
 
+								auto rom = rm(opt_.RomOffset(), opt_.RomSize());
+								auto ram = rm(opt_.RamOffset(), opt_.RamSize());
 								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 								auto memUuid = memoryController_->Uuid();
 								auto romMd5 = Utils::Md5(rom.data(), rom.size());
-								auto writeState = [&](char* data, size_t dataSize)
+								// todo - replace snprintf with std::format
+								auto writeState = [&](size_t& dataSize)
 								{
-									auto count = snprintf(data, dataSize, fmtStr,
+									std::string str;
+									char* data = nullptr;
+
+									if (dataSize > 0)
+									{
+										str.resize(dataSize);
+										data = str.data();
+									}
+									
+									dataSize = snprintf(data, dataSize, fmtStr,
 										cpu_->Save().c_str(),
 										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
 										Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
 										opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
-										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
-									return count;
+										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str()) + 1;
+
+									return str;
 								};
 
-								auto count = writeState(nullptr, 0) + 1;
-								std::string state(count, '\0');
-								writeState(state.data(), count);
-#ifdef __WINDOWS__
-								if (opt_.RunAsync() == true)
-								{
-									auto f = std::async(std::launch::async, [this]()
-									{
-										onSave_(std::move(state));
-									});
-
-									//f can be checked and logged when completed
-								}
-								else
-#endif
+								size_t count = 0;
+								writeState(count);
+								
+								onSave = std::async(launchPolicy, [this](std::string&& state)
 								{
 									onSave_(std::move(state));
-								}
+								}, writeState(count));
 							}
 							break;
 						}
 						case ISR::Quit:
 						{
+							// Wait for any outstanding requests to complete
+
+							if (onLoad.valid() == true)
+							{
+								auto json = onLoad.get();
+							}
+
+							if (onSave.valid() == true)
+							{
+								onSave.get();
+							}
+
 							controlBus->Send(Signal::PowerOff);
 							break;
 						}
@@ -304,6 +318,21 @@ namespace MachEmu
 								{
 									// todo load cpu and memory controller from json
 									auto json = onLoad.get();
+
+									// todo - log success/failure
+								}
+							}
+
+							if (onSave.valid() == true)
+							{
+								auto status = onSave.wait_for(nanoseconds::zero());
+
+								if (status == std::future_status::deferred || status == std::future_status::ready)
+								{
+									// todo onSave needs to return an error
+									onSave.get();
+
+									// todo - log success/failure
 								}
 							}
 
