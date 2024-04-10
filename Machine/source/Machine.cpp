@@ -33,9 +33,7 @@ module Machine;
 
 import <chrono>;
 import <functional>;
-#ifdef _WINDOWS
 import <future>;
-#endif
 import <memory>;
 import <string_view>;
 
@@ -184,15 +182,16 @@ namespace MachEmu
 		SetClockResolution(opt_.ClockResolution());
 		running_ = true;
 		uint64_t totalTime = 0;
+		auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
 
-		auto machineLoop = [this]()
+		auto machineLoop = [this, launchPolicy]()
 		{
 			auto dataBus = systemBus_.dataBus;
 			auto controlBus = systemBus_.controlBus;
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
-			auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
+			
 			std::future<std::string> onLoad;
 			std::future<void> onSave;
 
@@ -356,18 +355,14 @@ namespace MachEmu
 			return currTime.count();
 		};
 
-#ifdef _WINDOWS
-		if (opt_.RunAsync() == true)
+		fut_ = std::async(launchPolicy, [this, ml = std::move(machineLoop)]()
 		{
-			fut_ = std::async(std::launch::async, [this, ml = std::move(machineLoop)]()
-			{
-				return ml();
-			});
-		}
-		else
-#endif
+			return ml();
+		});
+
+		if (launchPolicy == std::launch::deferred)
 		{
-			totalTime = machineLoop();
+			totalTime = fut_.get();
 			running_ = false;
 		}
 
@@ -378,14 +373,11 @@ namespace MachEmu
 	{
 		uint64_t totalTime = 0;
 
-#ifdef _WINDOWS
-		if (running_ == true && opt_.RunAsync() == true)
+		if (fut_.valid() == true)
 		{
-			fut_.wait();
-			running_ = false;
 			totalTime = fut_.get();
+			running_ = false;
 		}
-#endif
 
 		return totalTime;
 	}
