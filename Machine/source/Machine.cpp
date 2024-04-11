@@ -200,7 +200,7 @@ namespace MachEmu
 				{
 					auto json = nlohmann::json::parse(str);
 
-					//cpu_->Load(json["cpu"].dump());
+					cpu_->Load(json["cpu"].dump());
 					
 					// perform checks to make sure that this machine load state is compatible with this machine
 
