@@ -216,7 +216,7 @@ namespace MachEmu
 		/** Machine load state initiation handler
 		
 			Registers a method that will be called when the ISR::Load interrupt is triggered. The register
-			method returns a std::string which is the json state to load.
+			method returns a std::string which is the json machine state to load.
 
 			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
 										interrupt is triggered.
@@ -231,6 +231,9 @@ namespace MachEmu
 										- when the machine memory controller does not match the load state memory controller.
 										- when the machine memory rom does not match the load state rom.
 										- invalid json file.
+			
+			@remark						When the format of the returned json string is invalid or a load error occurs the state
+										of the machine shall remain unchanged.
 
 			@todo						Log when errors occur.
 
