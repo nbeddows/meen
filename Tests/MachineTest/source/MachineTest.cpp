@@ -305,20 +305,15 @@ namespace MachEmu::Tests
 			// The data to write to the controller that will trigger the ISR::Load interrupt 
 			memoryController_->Write(0x0099, 0xFD);
 			memoryController_->Load(PROGRAMS_DIR"/TST8080.COM", 0x100);
-			
-			err = machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":57343})");
+			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
+			// located at the end of the program so this will make up the ram size since the program
+			// never writes beyond this.			
+			err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
 			EXPECT_EQ(ErrorCode::NoError, err);
 			machine_->SetIoController(cpmIoController_);
-			machine_->OnSave([&](std::string&& json)
-			{
-				saveStates.emplace_back(json);
-			});
-			machine_->OnLoad([&]()
-			{
-				// 0 - mid program save state, 1 and 2 - end of program save states
-				return saveStates[0];
-			});
-
+			machine_->OnSave([&](std::string&& json) { saveStates.emplace_back(json); });
+			// 0 - mid program save state, 1 and 2 - end of program save states
+			machine_->OnLoad([&] { return saveStates[0]; });
 			machine_->Run(0x0100);
 			
 			if (runAsync == true)
@@ -335,7 +330,7 @@ namespace MachEmu::Tests
 			}
 
 			ASSERT_EQ(saveStates.size(), 3);
-			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"gi09EdL3h5T/Q+SpMgKhdg==","ram":{"encoder":"base64","compressor":"zlib","size":57343,"bytes":"eJztwTEBAAAAwqD1T20IX6AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4Dbf/wAB"}}})", saveStates[0].c_str());
+			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"DWUXrX1oU0gpn7vJIqqHIw==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}})", saveStates[0].c_str());
 			EXPECT_STREQ(saveStates[1].c_str(), saveStates[2].c_str());
 		);
 	}
