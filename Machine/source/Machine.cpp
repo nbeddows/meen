@@ -23,10 +23,10 @@ module;
 
 #include <cinttypes>
 #include <cstring>
-//#include <format>
 
 #include "Base/Base.h"
 #include "Controller/IController.h"
+#include "nlohmann/json.hpp"
 #include "Utils/Utils.h"
 
 module Machine;
@@ -191,9 +191,71 @@ namespace MachEmu
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
-			
 			std::future<std::string> onLoad;
 			std::future<void> onSave;
+
+			auto loadMachineState = [this](std::string&& str)
+			{
+				try
+				{
+					auto json = nlohmann::json::parse(str);
+
+					//cpu_->Load(json["cpu"].dump());
+					
+					// perform checks to make sure that this machine load state is compatible with this machine
+
+					// The memory controllers must be the same
+					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["memory"]["uuid"].get<std::string>());
+					auto memUuid = memoryController_->Uuid();
+
+					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
+					{
+						throw std::runtime_error("Incompatible memory controller");
+					}
+
+					std::vector<uint8_t> rom(opt_.RomSize());
+
+					for (auto addr = opt_.RomOffset(); addr < opt_.RomSize(); addr++)
+					{
+						rom[addr] = memoryController_->Read(addr);
+					}
+
+					// The rom must be the same
+					auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, json["memory"]["rom"].get<std::string>());
+					auto romMd5 = Utils::Md5(rom.data(), rom.size());
+
+					if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
+					{
+						throw std::runtime_error("Incompatible rom");
+					}
+
+					// decode and decompress the ram
+					auto jsonRam = json["memory"]["ram"];
+					auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
+						jsonRam["compressor"].get<std::string>(),
+						jsonRam["size"].get<uint32_t>(),
+						jsonRam["bytes"].get<std::string>());
+
+					// Make sure the ram size matches the layout
+					if (ram.size() != opt_.RamSize())
+					{
+						throw std::runtime_error("Incompatible ram");
+					}
+					
+					// write it back to memory
+					auto addr = opt_.RamOffset();
+
+					for (const auto& r : ram)
+					{
+						memoryController_->Write(addr++, r);
+					}
+				}
+				catch (const std::exception& e)
+				{
+					// log the exception - e.what()
+					printf("%s\n", e.what());
+				}
+			};
 
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
@@ -206,7 +268,6 @@ namespace MachEmu
 				if (totalTicks - lastTicks >= ticksPerIsr_)
 				{
 					auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
-
 					
 					switch (isr)
 					{
@@ -243,9 +304,9 @@ namespace MachEmu
 								{
 									std::vector<uint8_t> mem(size);
 									
-									for (auto addr = offset; addr < size; addr++)
+									for (auto& byte : mem)
 									{
-										mem[addr] = memoryController_->Read(addr);
+										byte = memoryController_->Read(offset++);
 									}
 
 									return mem;
@@ -256,6 +317,7 @@ namespace MachEmu
 								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 								auto memUuid = memoryController_->Uuid();
 								auto romMd5 = Utils::Md5(rom.data(), rom.size());
+								
 								// todo - replace snprintf with std::format
 								auto writeState = [&](size_t& dataSize)
 								{
@@ -294,7 +356,7 @@ namespace MachEmu
 
 							if (onLoad.valid() == true)
 							{
-								auto json = onLoad.get();
+								loadMachineState(onLoad.get());
 							}
 
 							if (onSave.valid() == true)
@@ -315,10 +377,7 @@ namespace MachEmu
 
 								if (status == std::future_status::deferred || status == std::future_status::ready)
 								{
-									// todo load cpu and memory controller from json
-									auto json = onLoad.get();
-
-									// todo - log success/failure
+									loadMachineState(onLoad.get());
 								}
 							}
 
@@ -444,19 +503,20 @@ namespace MachEmu
 			throw std::runtime_error("memory controller not set!");
 		}
 
-		std::vector<uint8_t> rom(opt_.RamSize());
-		std::vector<uint8_t> ram(opt_.RomSize());
-
-		for (auto addr = opt_.RomOffset(); addr < rom.size(); addr++)
+		auto rm = [this](uint16_t offset, uint16_t size)
 		{
-			rom[addr] = memoryController_->Read(addr);
-		}
+			std::vector<uint8_t> mem(size);
 
-		for (auto addr = opt_.RamOffset(); addr < ram.size(); addr++)
-		{
-			ram[addr] = memoryController_->Read(addr);
-		}
+			for (auto& byte : mem)
+			{
+				byte = memoryController_->Read(offset++);
+			}
 
+			return mem;
+		};
+
+		auto rom = rm(opt_.RomOffset(), opt_.RomSize());
+		auto ram = rm(opt_.RamOffset(), opt_.RamSize());
 		auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 		auto memUuid = memoryController_->Uuid();
 		auto romMd5 = Utils::Md5(rom.data(), rom.size());
