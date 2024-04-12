@@ -118,7 +118,7 @@ namespace MachEmu
 
 				@param	cycleCount	The number of the cpu cycles to execute before the save interrupt is triggered.
 				
-				@remark				The cycle count must be one that seen by the ServiceInterrupts method 
+				@remark				The cycle count must be one that is seen by the ServiceInterrupts method 
 									otherwise no interrupt will be generated.
 			*/
 			void SaveStateOn(int64_t cycleCount);

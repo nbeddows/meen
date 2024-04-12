@@ -86,7 +86,8 @@ namespace MachEmu
 		// Set the timer resolution to the highest - if we do set it we MUST call it again with FALSE
 		// when we exit to restore the system default.
 		//NtSetTimerResolution(maximum, TRUE, &current);
-		maxResolution_ = nanoseconds(current * 100);
+		// This is the resolution that the high resolution timer should run at
+		maxResolution_ = nanoseconds(maximum * 100);
 		// We are done
 		FreeLibrary(ntdll);
 
@@ -144,7 +145,8 @@ namespace MachEmu
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
 						sleepPeriod.QuadPart = -(sleepTime / 100);
 
-						// Create the timer, sleep until time has passed, and clean up.
+						// Create the timer, sleep until time has passed, and clean up - available since the 1803 version of Windows 10.
+						// Sleep down to 0.5 ms intervals without raising the system level interrupt frequency, which is much friendlier.
 						HANDLE timer = CreateWaitableTimerEx(nullptr, nullptr, CREATE_WAITABLE_TIMER_HIGH_RESOLUTION, TIMER_ALL_ACCESS);
 						SetWaitableTimer(timer, &sleepPeriod, 0, nullptr, nullptr, 0);
 						WaitForSingleObject(timer, INFINITE);
