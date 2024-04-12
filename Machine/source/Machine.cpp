@@ -87,7 +87,7 @@ namespace MachEmu
 		if (options == nullptr)
 		{
 			// set all options to their default values
-			err = opt_.SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
+			err = opt_.SetOptions(R"({"clockResolution":-1,"compressor":"zlib","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})");
 		}
 		else
 		{
@@ -330,6 +330,7 @@ namespace MachEmu
 										data = str.data();
 									}
 									
+									//cppcheck-suppress nullPointer
 									dataSize = snprintf(data, dataSize, fmtStr,
 										cpu_->Save().c_str(),
 										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),

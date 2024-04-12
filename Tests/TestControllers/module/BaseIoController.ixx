@@ -75,6 +75,11 @@ namespace MachEmu
 			//cppcheck-suppress unusedStructMember
 			bool load_{};
 
+			/** Save on cycle count
+			
+				The number of cycles processed as seen by the ServiceInterrupts methods before an
+				ISR::Save interrupt is generated.
+			*/
 			//cppcheck-suppress unusedStructMember
 			int64_t saveCycleCount_{-1};
 		protected:
@@ -113,7 +118,7 @@ namespace MachEmu
 
 				@param	cycleCount	The number of the cpu cycles to execute before the save interrupt is triggered.
 				
-				@remark				The cycle count must be one that is produced during the execution of the program
+				@remark				The cycle count must be one that seen by the ServiceInterrupts method 
 									otherwise no interrupt will be generated.
 			*/
 			void SaveStateOn(int64_t cycleCount);
