@@ -74,7 +74,10 @@ namespace MachEmu
 			*/
 			//cppcheck-suppress unusedStructMember
 			bool load_{};
-	protected:
+
+			//cppcheck-suppress unusedStructMember
+			int64_t saveCycleCount_{-1};
+		protected:
 			/** Base IO controller write
 			
 				Writes a specifed value to the give port number.
@@ -103,5 +106,16 @@ namespace MachEmu
 				@remark				The only way a machine can exit is when an ISR::Quit interrupt is generated.
 			*/
 			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) override;
+		public:
+			/** Save state after N cycles
+
+				Generate an ISR::Save interrupt from ServiceInterrupts when the Nth cycle has elapsed.
+
+				@param	cycleCount	The number of the cpu cycles to execute before the save interrupt is triggered.
+				
+				@remark				The cycle count must be one that is produced during the execution of the program
+									otherwise no interrupt will be generated.
+			*/
+			void SaveStateOn(int64_t cycleCount);
 	};
 } // namespace MachEmu

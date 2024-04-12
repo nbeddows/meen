@@ -35,7 +35,9 @@ namespace MachEmu
 
 	std::string CpmIoController::Message()
 	{
-		return std::move(message_);
+		auto str = std::move(message_);
+		message_.clear();
+		return str;
 	}
 
 	std::array<uint8_t, 16> CpmIoController::Uuid() const
@@ -105,16 +107,6 @@ namespace MachEmu
 	//No interrupts
 	ISR CpmIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
 	{
-		auto isr = BaseIoController::ServiceInterrupts(currTime, cycles);
-
-		// For specific unit tests we trigger a save interrupt at 3000 cycles.
-		// This will only have an effect if IMachine::OnSave has been called,
-		// otherwise the interrupt will be dropped.
-		if (cycles == 3000) // this value should be set via a method - SaveAfterNCycles(n), that way it won't affect other cpm unit tests
-		{
-			isr = ISR::Save;
-		}
-
-		return isr;
+		return BaseIoController::ServiceInterrupts(currTime, cycles);
 	}
 } // namespace MachEmu

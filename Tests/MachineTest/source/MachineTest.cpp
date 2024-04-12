@@ -300,6 +300,9 @@ namespace MachEmu::Tests
 			}
 
 			std::vector<std::string> saveStates;
+			auto cpmIoController = static_pointer_cast<CpmIoController>(cpmIoController_);
+			// Trigger a save when the 3000th cycle has executed.
+			cpmIoController->SaveStateOn(3000);
 			// Call the out instruction
 			memoryController_->Write(0x00FE, 0xD3);
 			// The data to write to the controller that will trigger the ISR::Load interrupt 
@@ -321,7 +324,7 @@ namespace MachEmu::Tests
 				machine_->WaitForCompletion();
 			}
 
-			EXPECT_EQ(74, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU IS OPERATIONAL"));
+			EXPECT_EQ(74, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 
 			// run it again, but this time trigger the load interrupt
 			machine_->Run(0x00FE);
@@ -335,7 +338,7 @@ namespace MachEmu::Tests
 				
 				// Since we are not saving/loading the io state the contents of the message buffer can
 				// be in one of two states depending on how long the OnLoad initiation handler took to complete.
-				auto pos = static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU IS OPERATIONAL");
+				auto pos = cpmIoController->Message().find("CPU IS OPERATIONAL");
 				// If the OnLoad initiation handler was quick to complete (sub 150 ticks) the preamble message would
 				// not have been written to the message string and the success message should be found at pos 3, otherwise
 				// the preamble message was written and it should be found at pos 74
@@ -346,12 +349,14 @@ namespace MachEmu::Tests
 				// Since we loaded mid program the message from the tests won't contain the premable
 				// (since we are not saving/loading the io state), just the result,
 				// hence we should find the success message earlier in the message string.
-				EXPECT_EQ(3, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU IS OPERATIONAL"));
+				EXPECT_EQ(3, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 			}
 
 			ASSERT_EQ(saveStates.size(), 3);
 			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}})", saveStates[0].c_str());
 			EXPECT_STREQ(saveStates[1].c_str(), saveStates[2].c_str());
+			// Disable triggering a save from this controller so the other cpm tests will pass
+			cpmIoController->SaveStateOn(-1);
 		);
 	}
 
