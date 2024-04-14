@@ -24,6 +24,7 @@ module;
 #include <assert.h>
 
 #include "Base/Base.h"
+#include "nlohmann/json.hpp"
 #include "Utils/Utils.h"
 
 module _8080;
@@ -335,6 +336,30 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 	}
 
 	return state;
+}
+
+void Intel8080::Load(const std::string&& str)
+{
+	auto json = nlohmann::json::parse(str);
+
+	// The cpus must be the same
+	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].get<std::string>());
+
+	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+	{
+		throw std::runtime_error("Incompatible cpu");
+	}
+
+	a_ = json["registers"]["a"].get<uint8_t>();
+	b_ = json["registers"]["b"].get<uint8_t>();
+	c_ = json["registers"]["c"].get<uint8_t>();
+	d_ = json["registers"]["d"].get<uint8_t>();
+	e_ = json["registers"]["e"].get<uint8_t>();
+	h_ = json["registers"]["h"].get<uint8_t>();
+	l_ = json["registers"]["l"].get<uint8_t>();
+	status_ = json["registers"]["s"].get<uint8_t>();
+	pc_ = json["pc"].get<uint16_t>();
+	sp_ = json["sp"].get<uint16_t>();
 }
 
 std::string Intel8080::Save() const

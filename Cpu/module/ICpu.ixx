@@ -39,6 +39,8 @@ namespace MachEmu
 
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
 
+		virtual void Load(const std::string&& json) = 0;
+		
 		virtual std::string Save() const = 0;
 
 		virtual ~ICpu() = default;

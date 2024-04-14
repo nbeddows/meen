@@ -59,6 +59,7 @@ namespace MachEmu
 #endif		
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
+		std::function<std::string()> onLoad_{};
 		std::function<void(std::string&& json)> onSave_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
@@ -95,6 +96,12 @@ namespace MachEmu
 			@see IMachine::SetOpts
 		*/
 		ErrorCode SetOptions(const char* options) final;
+
+		/** OnLoad
+
+			@see IMachine::OnLoad
+		*/
+		void OnLoad(std::function<std::string()>&& onLoad) final;
 
 		/** OnSave
 

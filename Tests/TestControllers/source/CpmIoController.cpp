@@ -35,7 +35,9 @@ namespace MachEmu
 
 	std::string CpmIoController::Message()
 	{
-		return std::move(message_);
+		auto str = std::move(message_);
+		message_.clear();
+		return str;
 	}
 
 	std::array<uint8_t, 16> CpmIoController::Uuid() const

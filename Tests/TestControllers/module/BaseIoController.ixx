@@ -63,6 +63,25 @@ namespace MachEmu
 			//cppcheck-suppress unusedStructMember
 			bool save_{};
 
+			/** Machine load signal
+
+				A signal to indicate to the ServiceInterrupts routine that the machine
+				should load a new machine state.
+
+				@remark		The signal is handled during the servicing of interrupts as it
+							is guaranteed that no instructions are currently executing
+							at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool load_{};
+
+			/** Save on cycle count
+			
+				The number of cycles processed as seen by the ServiceInterrupts methods before an
+				ISR::Save interrupt is generated.
+			*/
+			//cppcheck-suppress unusedStructMember
+			int64_t saveCycleCount_{-1};
 		protected:
 			/** Base IO controller write
 			
@@ -92,5 +111,16 @@ namespace MachEmu
 				@remark				The only way a machine can exit is when an ISR::Quit interrupt is generated.
 			*/
 			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) override;
+		public:
+			/** Save state after N cycles
+
+				Generate an ISR::Save interrupt from ServiceInterrupts when the Nth cycle has elapsed.
+
+				@param	cycleCount	The number of the cpu cycles to execute before the save interrupt is triggered.
+				
+				@remark				The cycle count must be one that is seen by the ServiceInterrupts method 
+									otherwise no interrupt will be generated.
+			*/
+			void SaveStateOn(int64_t cycleCount);
 	};
 } // namespace MachEmu

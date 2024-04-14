@@ -28,10 +28,16 @@ module BaseIoController;
 
 namespace MachEmu
 {
+	void BaseIoController::SaveStateOn(int64_t cycleCount)
+	{
+		saveCycleCount_ = cycleCount;
+	}
+
     void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
 	{
 		powerOff_ = port == 0xFF;
 		save_ = port == 0xFE;
+		load_ = port == 0xFD;
 	}
 
 	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
@@ -43,10 +49,15 @@ namespace MachEmu
 			isr = ISR::Quit;
 			powerOff_ = false;
 		}
-		else if (save_ == true)
+		else if (save_ == true || saveCycleCount_ == cycles)
 		{
 			isr = ISR::Save;
 			save_ = false;
+		}
+		else if (load_ == true)
+		{
+			isr = ISR::Load;
+			load_ = false;
 		}
 		
 		return isr;

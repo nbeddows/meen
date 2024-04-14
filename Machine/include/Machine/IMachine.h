@@ -158,9 +158,10 @@ namespace MachEmu
 		*/
 		virtual ErrorCode SetOptions(const char* options) = 0;
 
-		/** Save the state of the machine.
+		/** Machine save state completion handler
 		
-			Upon saving the state of the machine, call the method `onSave` to process the save state.
+			Registers a method which will be called when the ISR::Save interrupt is triggered. The register
+			method accepts a std::string which is the machine save state in json format. 
 		
 			The json layout of an example save state is specifed in the json snippet below:
 
@@ -200,11 +201,45 @@ namespace MachEmu
 
 			@endcode
 
-			@param	onSave		The method to call once the save state has been processed.
+			@param	onSave				The method to call with the json machine save state after it has has been
+										generated via the ISR::Save interrupt.
 
-			@since version 1.5.0
+			@throws						std::runtime_error if the machine is currently running.
+
+			@remark						The function parameter onSave will be called from a different thread from which this
+										method was called if the runAsync config option has been specified.
+
+			@since	version 1.5.0
 		*/
 		virtual void OnSave(std::function<void(std::string&& json)>&& onSave) = 0;
+
+		/** Machine load state initiation handler
+		
+			Registers a method that will be called when the ISR::Load interrupt is triggered. The register
+			method returns a std::string which is the json machine state to load.
+
+			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
+										interrupt is triggered.
+
+			@throws						std::runtime_error if machine is currently running.
+
+			@remark						The function parameter onLoad will be called from a different thread from which this
+										method was called if the runAsync config option has been specified.
+
+			@remark						The machine state can fail to load for numerous reasons:
+										- when the machine cpu does not match the load state cpu.
+										- when the machine memory controller does not match the load state memory controller.
+										- when the machine memory rom does not match the load state rom.
+										- invalid json file.
+			
+			@remark						When the format of the returned json string is invalid or a load error occurs the state
+										of the machine shall remain unchanged.
+
+			@todo						Log when errors occur.
+
+			@since	version 1.5.0
+		*/
+		virtual void OnLoad(std::function<std::string()>&& onLoad) = 0;
 
 		/** Save the state of the machine.
 
