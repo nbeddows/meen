@@ -121,6 +121,45 @@ class MachineTest(unittest.TestCase):
     def test_RunTimedAsync(self):
         self.RunTimed(True)
 
+    def Load(self, runAsync):        
+        if runAsync == True:
+            err = self.machine.SetOptions(r'{"runAsync":true}')
+
+            if err == ErrorCode.NotImplemented:
+                return
+        
+        saveStates = []
+        self.cpmIoController.SaveStateOn(3000)
+        self.memoryController.Write(0x00FE, 0xD3)
+        self.memoryController.Write(0x00FF, 0xFD)
+        self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
+        err = self.machine.SetOptions(r'{"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256}')
+        self.assertEqual(err, ErrorCode.NoError)
+        self.machine.SetIoController(self.cpmIoController)
+        self.machine.OnSave(lambda x: saveStates.append(x.rstrip('\0')))
+        self.machine.OnLoad(lambda: saveStates[0])
+        self.machine.Run(0x0100)
+
+        if runAsync == True:
+            self.machine.WaitForCompletion()
+
+        self.machine.Run(0x00FE)
+
+        if runAsync == True:
+            self.machine.WaitForCompletion()
+
+        self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
+        self.assertEqual(len(saveStates), 3)
+        self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}}')
+        self.assertEqual(saveStates[1], saveStates[2])
+        self.cpmIoController.SaveStateOn(-1)
+
+    def test_OnLoad(self):
+        self.Load(False)
+    
+    def test_OnLoadAsync(self):
+        self.Load(True)
+
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)
         a = json.loads(actual.rstrip('\0'))        
