@@ -14,6 +14,7 @@ namespace MachEmu
         MachineHolder();
         MachineHolder(const char* json);
 
+        void OnLoad(std::function<std::string()>& onSave);
         void OnSave(std::function<void(std::string&& json)>& onSave);
         uint64_t Run(uint16_t offset);
         std::string Save() const;

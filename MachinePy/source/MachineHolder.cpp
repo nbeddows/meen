@@ -19,6 +19,11 @@ namespace MachEmu
 		return machine_->SetClockResolution(clockResolution);
 	}
 
+	void MachineHolder::OnLoad(std::function<std::string()>& onLoad)
+	{
+		return machine_->OnLoad(std::move(onLoad));
+	}
+
 	void MachineHolder::OnSave(std::function<void(std::string&& json)>& onSave)
 	{
 		return machine_->OnSave(std::move(onSave));
