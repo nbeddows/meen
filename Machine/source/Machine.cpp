@@ -288,9 +288,29 @@ namespace MachEmu
 						{								
 							if (onLoad_ != nullptr)
 							{
-								onLoad = std::async(launchPolicy, [this]()
+								onLoad = std::async(launchPolicy, [this]
 								{
-									return onLoad_();
+									// Calling out into user land, make sure we don't leak any exceptions
+									try
+									{
+										auto json = onLoad_();
+
+										if (json != nullptr)
+										{
+											// return a copy of the json c string as a std::string
+											return std::string(json);
+										}
+										else
+										{
+											throw std::runtime_error("empty json load state");
+										}
+									}
+									catch (const std::exception& e)
+									{
+										// todo: log the exception to a log file
+										printf("%s\n", e.what());
+										return std::string("");
+									}
 								});
 							}
 							break;
@@ -344,10 +364,19 @@ namespace MachEmu
 								size_t count = 0;
 								writeState(count);
 								
-								onSave = std::async(launchPolicy, [this](std::string&& state)
+								onSave = std::async(launchPolicy, [this, state = writeState(count)]
 								{
-									onSave_(std::move(state));
-								}, writeState(count));
+									// Calling out into user land, make sure we don't leak any exceptions
+									try
+									{
+										onSave_(state.c_str());
+									}
+									catch (const std::exception& e)
+									{
+										// todo: log the exception to a log file
+										printf("%s\n", e.what());
+									}
+								});
 							}
 							break;
 						}
@@ -472,7 +501,7 @@ namespace MachEmu
 		ioController_ = controller;
 	}
 
-	void Machine::OnSave(std::function<void(std::string&& json)>&& onSave)
+	void Machine::OnSave(std::function<void(const char* json)>&& onSave)
 	{
 		if (running_ == true)
 		{
@@ -482,7 +511,7 @@ namespace MachEmu
 		onSave_ = std::move(onSave);
 	}
 
-	void Machine::OnLoad(std::function<std::string()>&& onLoad)
+	void Machine::OnLoad(std::function<const char*()>&& onLoad)
 	{
 		if (running_ == true)
 		{
