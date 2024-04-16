@@ -211,7 +211,7 @@ namespace MachEmu
 
 			@since	version 1.5.0
 		*/
-		virtual void OnSave(std::function<void(std::string&& json)>&& onSave) = 0;
+		virtual void OnSave(std::function<void(const char* json)>&& onSave) = 0;
 
 		/** Machine load state initiation handler
 		
@@ -239,7 +239,7 @@ namespace MachEmu
 
 			@since	version 1.5.0
 		*/
-		virtual void OnLoad(std::function<std::string()>&& onLoad) = 0;
+		virtual void OnLoad(std::function<const char*()>&& onLoad) = 0;
 
 		/** Save the state of the machine.
 
@@ -318,7 +318,7 @@ namespace MachEmu
 
 			@deprecated			since 1.4.0
 		*/
-		[[deprecated("Will be removed in v2.0.0, please use std::string GetState()")]] virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
+		[[deprecated("Will be removed in v2.0.0, please use OnSave")]] virtual std::unique_ptr<uint8_t[]> GetState(int* size = nullptr) const = 0;
 
 		/** Destruct the machine
 
