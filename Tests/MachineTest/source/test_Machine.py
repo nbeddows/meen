@@ -155,10 +155,12 @@ class MachineTest(unittest.TestCase):
         self.cpmIoController.SaveStateOn(-1)
 
     def test_OnLoad(self):
-        self.Load(False)
+        for i in range(50):
+            self.Load(False)
     
     def test_OnLoadAsync(self):
-        self.Load(True)
+        for i in range(50):
+            self.Load(True)
 
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)

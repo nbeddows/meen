@@ -85,7 +85,7 @@ namespace MachEmu::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			machine_->OnSave([expected](std::string&& actual)
+			machine_->OnSave([expected](const char* actual)
 			{
 				auto actualJson = nlohmann::json::parse(actual);
 				auto expectedJson = nlohmann::json::parse(expected);
@@ -176,12 +176,12 @@ namespace MachEmu::Tests
 
 		EXPECT_ANY_THROW
 		(
-			machine_->OnLoad([]() {return "";});
+			machine_->OnLoad([]{ return ""; });
 		);
 
 		EXPECT_ANY_THROW
 		(
-			machine_->OnSave([](std::string&&){});
+			machine_->OnSave([](const char*){});
 		);
 
 		// Since we are running async we need to wait for completion
@@ -206,12 +206,12 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			machine_->OnLoad([]() {return "";});
+			machine_->OnLoad([]{ return ""; });
 		);
 
 		EXPECT_NO_THROW
 		(
-			machine_->OnSave([](std::string&&) {});
+			machine_->OnSave([](const char*){});
 		);
 	}
 
@@ -314,9 +314,9 @@ namespace MachEmu::Tests
 			err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
 			EXPECT_EQ(ErrorCode::NoError, err);
 			machine_->SetIoController(cpmIoController_);
-			machine_->OnSave([&](std::string&& json) { saveStates.emplace_back(json); });
+			machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
 			// 0 - mid program save state, 1 and 2 - end of program save states
-			machine_->OnLoad([&] { return saveStates[0]; });
+			machine_->OnLoad([&] { return saveStates[0].c_str(); });
 			machine_->Run(0x0100);
 			
 			if (runAsync == true)
