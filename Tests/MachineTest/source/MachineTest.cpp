@@ -305,12 +305,12 @@ namespace MachEmu::Tests
 			cpmIoController->SaveStateOn(3000);
 			// Call the out instruction
 			memoryController_->Write(0x00FE, 0xD3);
-			// The data to write to the controller that will trigger the ISR::Load interrupt 
+			// The data to write to the controller that will trigger the ISR::Load interrupt
 			memoryController_->Write(0x00FF, 0xFD);
 			memoryController_->Load(PROGRAMS_DIR"/TST8080.COM", 0x100);
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
-			// never writes beyond this.			
+			// never writes beyond this.
 			err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
 			EXPECT_EQ(ErrorCode::NoError, err);
 			machine_->SetIoController(cpmIoController_);
@@ -318,7 +318,7 @@ namespace MachEmu::Tests
 			// 0 - mid program save state, 1 and 2 - end of program save states
 			machine_->OnLoad([&] { return saveStates[0].c_str(); });
 			machine_->Run(0x0100);
-			
+
 			if (runAsync == true)
 			{
 				machine_->WaitForCompletion();
@@ -326,16 +326,21 @@ namespace MachEmu::Tests
 
 			EXPECT_EQ(74, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 
+			// Disable triggering a save from this controller so the other cpm tests will pass.
+			// Needs to be done before the next Run call so the async version of this test won't
+			// trigger a spurious ISR::Save interurpt if the ISR::Load interrupt takes too long
+			// to process
+			cpmIoController->SaveStateOn(-1);
+
 			// run it again, but this time trigger the load interrupt
 			machine_->Run(0x00FE);
 
-			
 			// Currently we are not saving the state of the io (do we need to?????)
 			// This can cause variable output as discussed below
 			if (runAsync == true)
 			{
 				machine_->WaitForCompletion();
-				
+
 				// Since we are not saving/loading the io state the contents of the message buffer can
 				// be in one of two states depending on how long the OnLoad initiation handler took to complete.
 				auto pos = cpmIoController->Message().find("CPU IS OPERATIONAL");
@@ -355,8 +360,6 @@ namespace MachEmu::Tests
 			ASSERT_EQ(saveStates.size(), 3);
 			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}})", saveStates[0].c_str());
 			EXPECT_STREQ(saveStates[1].c_str(), saveStates[2].c_str());
-			// Disable triggering a save from this controller so the other cpm tests will pass
-			cpmIoController->SaveStateOn(-1);
 		);
 	}
 
