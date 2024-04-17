@@ -77,7 +77,8 @@ namespace MachEmu::Tests
 		memoryController_->Load(PROGRAMS_DIR"/bdosMsg.bin", 0x05);
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
-		auto err = machine_->SetOptions(R"({"clockResolution":-1,"isrFreq":0,"runAsync":false})");
+		// Set default options
+		auto err = machine_->SetOptions(nullptr);
 		EXPECT_EQ(ErrorCode::NoError, err);
 	}
 
@@ -290,7 +291,7 @@ namespace MachEmu::Tests
 
 			if (runAsync == true)
 			{
-				err = machine_->SetOptions(R"({"runAsync":true})");
+				err = machine_->SetOptions(R"({"runAsync":true,"loadAsync":true,"saveAsync":true})");
 
 				// This is currently not supported on some platforms
 				if (err == ErrorCode::NotImplemented)
