@@ -27,7 +27,7 @@ class MachineTest(unittest.TestCase):
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()
         # lock the servicing of interrupts to the clock resolution for performance reasons
-        self.machine = MakeMachine(r'{"cpu":"i8080","clockResolution":-1,"isrFreq":1,"runAsync":false}')
+        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":1}')
         self.machine.SetIoController(self.testIoController)
         self.machine.SetMemoryController(self.memoryController)
         self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
@@ -123,7 +123,7 @@ class MachineTest(unittest.TestCase):
 
     def Load(self, runAsync):
         if runAsync == True:
-            err = self.machine.SetOptions(r'{"runAsync":true}')
+            err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":true,"saveAsync":true}')
 
             if err == ErrorCode.NotImplemented:
                 return

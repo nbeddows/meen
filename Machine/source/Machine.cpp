@@ -82,19 +82,7 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		ErrorCode err;
-
-		if (options == nullptr)
-		{
-			// set all options to their default values
-			err = opt_.SetOptions(R"({"clockResolution":-1,"compressor":"zlib","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})");
-		}
-		else
-		{
-			err = opt_.SetOptions(options);
-		}
-
-		return err;
+		return opt_.SetOptions(options);
 	}
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
@@ -184,13 +172,15 @@ namespace MachEmu
 		uint64_t totalTime = 0;
 		auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
 
-		auto machineLoop = [this, launchPolicy]()
+		auto machineLoop = [this]
 		{
 			auto dataBus = systemBus_.dataBus;
 			auto controlBus = systemBus_.controlBus;
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
+			auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
+			auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 			std::future<std::string> onLoad;
 			std::future<void> onSave;
 
@@ -201,7 +191,7 @@ namespace MachEmu
 					auto json = nlohmann::json::parse(str);
 
 					cpu_->Load(json["cpu"].dump());
-					
+
 					// perform checks to make sure that this machine load state is compatible with this machine
 
 					// The memory controllers must be the same
@@ -241,7 +231,7 @@ namespace MachEmu
 					{
 						throw std::runtime_error("Incompatible ram");
 					}
-					
+
 					// write it back to memory
 					auto addr = opt_.RamOffset();
 
@@ -268,7 +258,7 @@ namespace MachEmu
 				if (totalTicks - lastTicks >= ticksPerIsr_)
 				{
 					auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
-					
+
 					switch (isr)
 					{
 						case ISR::Zero:
@@ -285,10 +275,10 @@ namespace MachEmu
 							break;
 						}
 						case ISR::Load:
-						{								
+						{
 							if (onLoad_ != nullptr)
 							{
-								onLoad = std::async(launchPolicy, [this]
+								onLoad = std::async(loadLaunchPolicy, [this]
 								{
 									// Calling out into user land, make sure we don't leak any exceptions
 									try
@@ -323,7 +313,7 @@ namespace MachEmu
 								auto rm = [this](uint16_t offset, uint16_t size)
 								{
 									std::vector<uint8_t> mem(size);
-									
+
 									for (auto& byte : mem)
 									{
 										byte = memoryController_->Read(offset++);
@@ -337,7 +327,7 @@ namespace MachEmu
 								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 								auto memUuid = memoryController_->Uuid();
 								auto romMd5 = Utils::Md5(rom.data(), rom.size());
-								
+
 								// todo - replace snprintf with std::format
 								auto writeState = [&](size_t& dataSize)
 								{
@@ -349,7 +339,7 @@ namespace MachEmu
 										str.resize(dataSize);
 										data = str.data();
 									}
-									
+
 									//cppcheck-suppress nullPointer
 									dataSize = snprintf(data, dataSize, fmtStr,
 										cpu_->Save().c_str(),
@@ -363,8 +353,8 @@ namespace MachEmu
 
 								size_t count = 0;
 								writeState(count);
-								
-								onSave = std::async(launchPolicy, [this, state = writeState(count)]
+
+								onSave = std::async(saveLaunchPolicy, [this, state = writeState(count)]
 								{
 									// Calling out into user land, make sure we don't leak any exceptions
 									try
@@ -444,7 +434,7 @@ namespace MachEmu
 			return currTime.count();
 		};
 
-		fut_ = std::async(launchPolicy, [this, ml = std::move(machineLoop)]()
+		fut_ = std::async(launchPolicy, [this, ml = std::move(machineLoop)]
 		{
 			return ml();
 		});

@@ -1,14 +1,17 @@
 1.5.0
+* Added Machine interface method `OnLoad`.
+* Added Machine interface method `OnSave`.
 * Added Controller interface method `Uuid`.
+* Deprecated `IMachine::Save`.
+* Added cmake option `enableZlib`.
 * Added `encoder` config option.
 * Added `compressor` config option.
-* Added cmake option `enableZlib`.
-* Deprecated `IMachine::Save`.
-* Added Machine interface method `OnSave`.
-* Added `ramOffset` type config option.
-* Added `ramSize` type config option.
-* Added `romOffset` type config option.
-* Added `romSize` type config option.
+* Added `loadAsync` config option.
+* Added `saveAsync` config option.
+* Added `ramOffset` config option.
+* Added `ramSize` config option.
+* Added `romOffset` config option.
+* Added `romSize` config option.
 
 1.4.0 [19/03/24]
 * Added Version API method.
