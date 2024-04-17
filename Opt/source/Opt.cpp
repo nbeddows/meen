@@ -36,12 +36,7 @@ namespace MachEmu
 			throw std::bad_alloc();
 		}
 
-#ifdef ENABLE_ZLIB
-		std::string defaults = R"({"clockResolution":-1,"compressor":"zlib","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})";
-#else
-		std::string defaults = R"({"clockResolution":-1,"compressor":"none","encoder":"base64","isrFreq":0,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false})";
-#endif
-		*json_ = nlohmann::json::parse(defaults);
+		*json_ = nlohmann::json::parse(Opt::DefaultOpts());
 	}
 
 	Opt::~Opt()
@@ -53,48 +48,68 @@ namespace MachEmu
 		}
 	}
 
+	constexpr std::string Opt::DefaultOpts()
+	{
+		std::string defaults =	R"({"clockResolution":-1,"compressor":")"
+#ifdef ENABLE_ZLIB
+								"zlib"
+#else
+								"none"
+#endif
+								R"(","encoder":"base64","isrFreq":0,"loadAsync":false,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false,"saveAsync":false})";
+		return defaults;
+	}
+
 	ErrorCode Opt::SetOptions(const char* opts)
 	{
-		std::string_view jsonStr(opts);
 		nlohmann::json json;
 		auto err = ErrorCode::NoError;
 
-		if (jsonStr.starts_with("file://") == true)
+		if(opts == nullptr)
 		{
-			jsonStr.remove_prefix(strlen("file://"));
-			std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
-			json = nlohmann::json::parse(fin);
+			json = nlohmann::json::parse(Opt::DefaultOpts());
 		}
 		else
 		{
-			// parse as if raw json
-			json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
-		}
+			std::string_view jsonStr(opts);
 
-		if (json_->contains("cpu") == true && json.contains("cpu") == true)
-		{
-			throw std::runtime_error("cpu type has already been set");
-		}
+			if (jsonStr.starts_with("file://") == true)
+			{
+				jsonStr.remove_prefix(strlen("file://"));
+				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
+				json = nlohmann::json::parse(fin);
+			}
+			else
+			{
+				// parse as if raw json
+				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
+			}
 
-		if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
-		{
-			throw std::invalid_argument("isrFreq must be >= 0");
-		}
+			if (json_->contains("cpu") == true && json.contains("cpu") == true)
+			{
+				throw std::runtime_error("cpu type has already been set");
+			}
+
+			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
+			{
+				throw std::invalid_argument("isrFreq must be >= 0");
+			}
 
 #ifndef ENABLE_ZLIB
-		if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
-		{
-			throw std::runtime_error("mach-emu has been compiled with no zlib support");
-		}
+			if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
+			{
+				throw std::runtime_error("mach-emu has been compiled with no zlib support");
+			}
 #endif
 
 #ifndef _WINDOWS
-		if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
-		{
-			json["runAsync"] = false;
-			err = ErrorCode::NotImplemented;
+			if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
+			{
+				json["runAsync"] = false;
+				err = ErrorCode::NotImplemented;
+			}
+#endif	
 		}
-#endif
 
 		json_->update(json);
 

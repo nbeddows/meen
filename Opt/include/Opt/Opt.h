@@ -48,6 +48,13 @@ namespace MachEmu
 			*/
 			nlohmann::json* json_{};
 
+			/**
+				Default options
+
+				The default options to use when nullptr is passed to SetOptions
+			*/
+			static constexpr std::string DefaultOpts();
+
 		public:
 			Opt();
 			~Opt();

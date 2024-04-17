@@ -82,19 +82,7 @@ namespace MachEmu
 			throw std::runtime_error("The machine is running");
 		}
 
-		ErrorCode err;
-
-		if (options == nullptr)
-		{
-			// set all options to their default values
-			err = opt_.SetOptions(R"({"clockResolution":-1,"compressor":"zlib","encoder":"base64","isrFreq":0,"loadAsync":false,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false,"saveAsync":false})");
-		}
-		else
-		{
-			err = opt_.SetOptions(options);
-		}
-
-		return err;
+		return opt_.SetOptions(options);
 	}
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
