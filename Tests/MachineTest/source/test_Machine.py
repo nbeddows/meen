@@ -47,7 +47,7 @@ class MachineTest(unittest.TestCase):
     def test_SetCpuAfterConstruction(self):
         with self.assertRaises(RuntimeError):
             self.machine.SetOptions(r'{"cpu":"i8080"}')
-    
+
     def test_NegativeISRFrequency(self):
         with self.assertRaises(ValueError):
             self.machine.SetOptions(r'{"isrFreq":-1.0}')
@@ -76,7 +76,7 @@ class MachineTest(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             self.machine.OnSave(lambda x: print(x))
-        
+
         self.machine.WaitForCompletion()
 
         # The machine has now stopped, all the following calls shouldn't throw
@@ -121,13 +121,13 @@ class MachineTest(unittest.TestCase):
     def test_RunTimedAsync(self):
         self.RunTimed(True)
 
-    def Load(self, runAsync):        
+    def Load(self, runAsync):
         if runAsync == True:
             err = self.machine.SetOptions(r'{"runAsync":true}')
 
             if err == ErrorCode.NotImplemented:
                 return
-        
+
         saveStates = []
         self.cpmIoController.SaveStateOn(3000)
         self.memoryController.Write(0x00FE, 0xD3)
@@ -143,6 +143,7 @@ class MachineTest(unittest.TestCase):
         if runAsync == True:
             self.machine.WaitForCompletion()
 
+        self.cpmIoController.SaveStateOn(-1)
         self.machine.Run(0x00FE)
 
         if runAsync == True:
@@ -152,19 +153,18 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(len(saveStates), 3)
         self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}}')
         self.assertEqual(saveStates[1], saveStates[2])
-        self.cpmIoController.SaveStateOn(-1)
 
     def test_OnLoad(self):
         for i in range(50):
             self.Load(False)
-    
+
     def test_OnLoadAsync(self):
         for i in range(50):
             self.Load(True)
 
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)
-        a = json.loads(actual.rstrip('\0'))        
+        a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
 
     def test_8080Pre(self):
