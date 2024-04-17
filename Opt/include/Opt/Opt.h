@@ -78,6 +78,12 @@ namespace MachEmu
 			*/
 			double ISRFreq() const;
 
+			/** Machine state load mode
+			
+				True for asynchronous, false for synchronous.
+			*/
+			bool LoadAsync() const;
+
 			/**	The ram offset
 			
 				@return The offset in bytes from the start of memory to the ram.
@@ -107,6 +113,12 @@ namespace MachEmu
 				True for asynchronous, false for synchronous.
 			*/
 			bool RunAsync() const;
+
+			/** Machine state save mode
+
+				True for asynchronous, false for synchronous.
+			*/
+			bool SaveAsync() const;
 	};
 } // namespace MachEmu
 

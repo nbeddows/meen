@@ -111,6 +111,11 @@ namespace MachEmu
 		return (*json_)["isrFreq"].get<double>();
 	}
 
+	bool Opt::LoadAsync() const
+	{
+		return (*json_)["loadAsync"].get<bool>();
+	}
+
 	uint16_t Opt::RamOffset() const
 	{
 		return (*json_)["ramOffset"].get<uint16_t>();
@@ -134,5 +139,10 @@ namespace MachEmu
 	bool Opt::RunAsync() const
 	{
 		return (*json_)["runAsync"].get<bool>();
+	}
+
+	bool Opt::SaveAsync() const
+	{
+		return (*json_)["saveAsync"].get<bool>();
 	}
 } // namespace MachEmu
