@@ -12,6 +12,7 @@
 * Added `ramSize` config option.
 * Added `romOffset` config option.
 * Added `romSize` config option.
+* Removed the use of c++20 modules.
 
 1.4.0 [19/03/24]
 * Added Version API method.
