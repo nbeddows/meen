@@ -40,7 +40,7 @@ SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -Wno-attributes)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
