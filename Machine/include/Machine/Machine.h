@@ -35,7 +35,7 @@ SOFTWARE.
 namespace MachEmu
 {
 	/** Machine
-		
+
 		@see IMachine.h
 	*/
 	struct Machine final : public IMachine
@@ -49,9 +49,7 @@ namespace MachEmu
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
-#ifdef _WINDOWS		
 		std::future<int64_t> fut_;
-#endif		
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
 		std::function<const char*()> onLoad_{};
@@ -63,7 +61,7 @@ namespace MachEmu
 		~Machine() = default;
 
 		/** Run
-		
+
 			@see IMachine::Run
 		*/
 		uint64_t Run(uint16_t pc) final;
@@ -111,13 +109,13 @@ namespace MachEmu
 		std::string Save() const final;
 
 		/** Set the clock resolution.
-		
+
 			@see IMachine::SetClockResolution
 		*/
 		ErrorCode SetClockResolution(int64_t clockResolution) final;
 
 		/** GetCpuState
-		
+
 			@see IMachine::GetCpuState
 		*/
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;

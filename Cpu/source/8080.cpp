@@ -29,10 +29,6 @@ SOFTWARE.
 namespace MachEmu
 {
 
-#ifndef _WINDOWS
-constexpr std::array<uint8_t, 16> Intel8080::uuid_;
-#endif
-
 Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
 	: addressBus_(systemBus.addressBus),
 	dataBus_(systemBus.dataBus),
@@ -305,7 +301,7 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 {
 	auto state = std::make_unique<uint8_t[]>(12);
-	
+
 	state[0] = Value(a_);
 	state[1] = Value(b_);
 	state[2] = Value(c_);
@@ -1617,7 +1613,7 @@ uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	}
 
 	++pc_;
-	
+
 	if (status == true)
 	{
 		sp_ += 0xFFFF;
