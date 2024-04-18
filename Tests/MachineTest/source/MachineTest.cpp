@@ -138,12 +138,7 @@ namespace MachEmu::Tests
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
-
-		// This is currently not supported on some platforms
-		if (err == ErrorCode::NotImplemented)
-		{
-			return;
-		}
+		EXPECT_EQ(ErrorCode::NoError, err);
 
 		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
 		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
@@ -223,12 +218,7 @@ namespace MachEmu::Tests
 			if (runAsync == true)
 			{
 				err = machine_->SetOptions(R"({"runAsync":true})");
-
-				// This is currently not supported on some platforms
-				if (err == ErrorCode::NotImplemented)
-				{
-					return;
-				}
+				EXPECT_EQ(ErrorCode::NoError, err);
 			}
 
 			// Run a program that should take a second to complete
