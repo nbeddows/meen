@@ -101,14 +101,6 @@ namespace MachEmu
 				throw std::runtime_error("mach-emu has been compiled with no zlib support");
 			}
 #endif
-
-#ifndef _WINDOWS
-			if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
-			{
-				json["runAsync"] = false;
-				err = ErrorCode::NotImplemented;
-			}
-#endif	
 		}
 
 		json_->update(json);
