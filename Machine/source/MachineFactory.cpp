@@ -20,10 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import <memory>;
-import Machine;
-
-#include "Machine/IMachine.h"
+#include "Machine/Machine.h"
 #include "Machine/MachineFactory.h"
 
 namespace MachEmu

@@ -20,22 +20,17 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef MACHINE_H
+#define MACHINE_H
+
+#include <future>
 
 #include "Controller/IController.h"
+#include "Cpu/ICpu.h"
+#include "CpuClock/ICpuClock.h"
 #include "Machine/IMachine.h"
 #include "Opt/Opt.h"
-
-export module Machine;
-
-import <cstdint>;
-#ifdef _WINDOWS
-import <future>;
-#endif
-import <memory>;
-import ICpu;
-import ICpuClock;
-import SystemBus;
+#include "SystemBus/SystemBus.h"
 
 namespace MachEmu
 {
@@ -43,7 +38,7 @@ namespace MachEmu
 		
 		@see IMachine.h
 	*/
-	export struct Machine final : public IMachine
+	struct Machine final : public IMachine
 	{
 	private:
 		std::unique_ptr<ICpuClock> clock_;
@@ -128,3 +123,5 @@ namespace MachEmu
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 	};
 } // namespace MachEmu
+
+#endif // MACHINE_H

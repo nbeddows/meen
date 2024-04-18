@@ -19,27 +19,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-module;
+
+#ifndef _8080_H
+#define _8080_H
+
+#include <array>
+#include <bitset>
+#include <cstdint>
+#include <memory>
+#include <functional>
+#include <string_view>
 
 #include "Base/Base.h"
-
-export module _8080;
-
-import <array>;
-import <bitset>;
-import <cstdint>;
-import <memory>;
-import <functional>;
-import <string_view>;
-
-import ICpu;
-import SystemBus;
+#include "Cpu/ICpu.h"
+#include "SystemBus/SystemBus.h"
 
 //#define ENABLE_OPCODE_TABLE
 
 namespace MachEmu
 {
-	export class Intel8080 final : public ICpu
+	class Intel8080 final : public ICpu
 	{
 	private:
 		using Register = std::bitset<8>;
@@ -217,3 +216,5 @@ namespace MachEmu
 		~Intel8080() = default;
 	};
 } // namespace MachEmu
+
+#endif // _8080_H

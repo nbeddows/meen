@@ -20,15 +20,19 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module CpuFactory;
+#ifndef CPU_FACTORY_H
+#define CPU_FACTORY_H
 
-import <cstdint>;
-import <functional>;
-import <memory>;
-import ICpu;
-import SystemBus;
+#include <cstdint>
+#include <functional>
+#include <memory>
+
+#include "Cpu/ICpu.h"
+#include "SystemBus/SystemBus.h"
 
 namespace MachEmu
 {
-	export std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process);
+	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process);
 } // namespace MachEmu
+
+#endif // CPU_FACTORY_H

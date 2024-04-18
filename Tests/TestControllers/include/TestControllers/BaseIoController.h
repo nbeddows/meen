@@ -20,14 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef BASEIOCONTROLLER_H
+#define BASEIOCONTROLLER_H
 
-#include "Base/Base.h"
+#include <cstdint>
+
 #include "Controller/IController.h"
-
-export module BaseIoController;
-
-import <cstdint>;
 
 namespace MachEmu
 {
@@ -36,7 +34,7 @@ namespace MachEmu
 		A minimal base class that contains shared functionality between all
 		the test IO Controllers.
 	*/
-    export class BaseIoController : public IController
+    class BaseIoController : public IController
 	{
 		private:
 			/** Power off signal
@@ -124,3 +122,5 @@ namespace MachEmu
 			void SaveStateOn(int64_t cycleCount);
 	};
 } // namespace MachEmu
+
+#endif // BASEIOCONTROLLER_H

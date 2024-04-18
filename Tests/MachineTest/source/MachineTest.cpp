@@ -20,18 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import <memory>;
-import MemoryController;
-import TestIoController;
-
 #include <gtest/gtest.h>
-// Needs to be declared after gtest due to g++/gtest
-// compilation issues: fixme
-import CpmIoController;
+#include <memory>
+#include <nlohmann/json.hpp>
+
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Machine/MachineFactory.h"
-#include "nlohmann/json.hpp"
+#include "TestControllers/MemoryController.h"
+#include "TestControllers/TestIoController.h"
+#include "TestControllers/CpmIoController.h"
 
 namespace MachEmu::Tests
 {

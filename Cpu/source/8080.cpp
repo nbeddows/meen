@@ -20,22 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
 #include <assert.h>
+#include <nlohmann/json.hpp>
 
-#include "Base/Base.h"
-#include "nlohmann/json.hpp"
+#include "Cpu/8080.h"
 #include "Utils/Utils.h"
-
-module _8080;
-
-import <bitset>;
-import <cstdint>;
-import <memory>;
-import <functional>;
-import <string_view>;
-
-import SystemBus;
 
 namespace MachEmu
 {

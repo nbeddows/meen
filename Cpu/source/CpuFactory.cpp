@@ -20,15 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuFactory;
-
-import <cstdint>;
-import <functional>;
-import <memory>;
-
-import _8080;
-import ICpu;
-import SystemBus;
+#include "Cpu/8080.h"
 
 namespace MachEmu
 {

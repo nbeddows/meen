@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
-#include "Controller/IController.h"
 
-import CpmIoController;
-import MemoryController;
-import TestIoController;
+#include "Controller/IController.h"
+#include "TestControllers/CpmIoController.h"
+#include "TestControllers/MemoryController.h"
+#include "TestControllers/TestIoController.h"
 
 namespace py = pybind11;
 
