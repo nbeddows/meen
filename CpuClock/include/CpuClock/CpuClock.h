@@ -20,22 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef CPUCLOCK_H
+#define CPUCLOCK_H
+
+#include <cstdint>
+#include <chrono>
+#include <memory>
 
 #include "Base/Base.h"
-
-export module CpuClock;
-
-import <cstdint>;
-import <chrono>;
-import <memory>;
-import ICpuClock;
+#include "CpuClock/ICpuClock.h"
 
 namespace MachEmu
 {
 	//Slow down the current thread to emulate the desired clock speed.
 	//Achieved through a combination of sleep/spin.
-	export class CpuClock final : public ICpuClock
+	class CpuClock final : public ICpuClock
 	{
 	private:
 		//Since sleep only guarantees a minimim sleep time, asking for
@@ -88,3 +87,5 @@ namespace MachEmu
 		std::chrono::nanoseconds Tick(uint64_t ticks) final;
 	};
 } // namespace MachEmu
+
+#endif // CPUCLOCK_H

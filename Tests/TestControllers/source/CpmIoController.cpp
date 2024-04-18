@@ -20,11 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-
 #include "Base/Base.h"
-
-module CpmIoController;
+#include "TestControllers/CpmIoController.h"
 
 namespace MachEmu
 {

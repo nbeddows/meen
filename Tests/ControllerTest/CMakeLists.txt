@@ -24,7 +24,9 @@ set(${exe_name}_source_files
   ${source_dir}/ControllerTest.cpp
 )
 
-add_target(${exe_name} EXE "" "" "" "${${exe_name}_source_files}")
+SOURCE_GROUP("Source Files" FILES ${${exe_name}_source_files})
+
+add_executable(${exe_name} ${${exe_name}_source_files})
 
 target_link_libraries(${exe_name} PRIVATE
   GTest::gtest
@@ -35,3 +37,4 @@ target_link_libraries(${exe_name} PRIVATE
 target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
+target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})

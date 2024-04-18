@@ -19,29 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-module;
 
 #include <cinttypes>
-#include <cstring>
+#include <nlohmann/json.hpp>
 
-#include "Base/Base.h"
-#include "Controller/IController.h"
-#include "nlohmann/json.hpp"
+#include "CpuClock/CpuClockFactory.h"
+#include "Cpu/CpuFactory.h"
+#include "Machine/Machine.h"
 #include "Utils/Utils.h"
-
-module Machine;
-
-import <chrono>;
-import <functional>;
-import <future>;
-import <memory>;
-import <string_view>;
-
-import ICpuClock;
-import ICpu;
-import CpuClockFactory;
-import CpuFactory;
-import SystemBus;
 
 using namespace std::chrono;
 

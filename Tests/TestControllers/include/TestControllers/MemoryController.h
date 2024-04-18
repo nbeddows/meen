@@ -20,15 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef MEMORYCONTROLLER_H
+#define MEMORYCONTROLLER_H
 
-#include "Base/Base.h"
+#include <array>
+#include <vector>
+
 #include "Controller/IController.h"
-
-export module MemoryController;
-
-import <array>;
-import <vector>;
 
 namespace MachEmu
 {
@@ -39,7 +37,7 @@ namespace MachEmu
 		on disk one byte at a time. The maximum addressable size
 		is 16 bits.
 	*/
-	export class MemoryController final : public IController
+	class MemoryController final : public IController
 	{
 	private:
 		/**
@@ -133,3 +131,5 @@ namespace MachEmu
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
+
+#endif // MEMORYCONTROLLER_H

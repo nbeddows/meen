@@ -20,8 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-
 #ifdef __GNUC__
 // use nanosleep
 #include <time.h>
@@ -33,12 +31,7 @@ module;
 #include <thread>
 #endif
 
-#include "Base/Base.h"
-
-module CpuClock;
-
-import <cstdint>;
-import <chrono>;
+#include "CpuClock/CpuClock.h"
 
 using namespace std::chrono;
 

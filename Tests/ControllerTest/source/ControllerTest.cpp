@@ -21,13 +21,13 @@ SOFTWARE.
 */
 
 
-import <array>;
-import <memory>;
-import CpmIoController;
-import MemoryController;
-import TestIoController;
-
+#include <array>
 #include <gtest/gtest.h>
+#include <memory>
+
+#include "TestControllers/CpmIoController.h"
+#include "TestControllers/MemoryController.h"
+#include "TestControllers/TestIoController.h"
 
 namespace MachEmu::Tests
 {

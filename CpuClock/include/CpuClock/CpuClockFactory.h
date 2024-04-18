@@ -20,11 +20,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module CpuClockFactory;
+#ifndef CPUCLOCK_FACTORY_H
+#define CPUCLOCK_FACTORY_H
 
-import <chrono>;
-import <memory>;
-import ICpuClock;
+#include <memory>
+
+#include "CpuClock/ICpuClock.h"
 
 namespace MachEmu
 {
@@ -37,5 +38,7 @@ namespace MachEmu
 
 		@return	unique_ptr				A unique_ptr to the CpuClock interface.
 	*/
-	export std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
+	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
 } // namespace MachEmu
+
+#endif // CPUCLOCK_FACTORY_H

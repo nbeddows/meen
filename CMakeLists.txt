@@ -27,7 +27,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(include_dir include)
-set(module_dir module)
 set(resource_dir resource)
 set(source_dir source)
 set(libMachEmu MachEmu)
@@ -38,11 +37,7 @@ set(bugfix 0)
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
 
 option(enableZlib "Enable zlib compression" ON)
-
-# Not currently working under gcc, turn off
-if(MSVC)
-    option(enablePythonModule "Enable Python module via Pybind" OFF)
-endif()
+option(enablePythonModule "Enable Python module via Pybind" OFF)
 
 if(enablePythonModule)
     find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
@@ -56,13 +51,6 @@ endif()
 find_package(nlohmann_json REQUIRED)
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
-
-if(CMAKE_COMPILER_IS_GNUCXX)
-    set(STD_MODULES array bitset chrono cstdint filesystem functional memory string string_view thread vector)
-    include(${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)
-endif()
-
-include(${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)
 
 add_subdirectory(Base)
 add_subdirectory(Controller)

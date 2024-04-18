@@ -20,14 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module SystemBus;
+#ifndef SYSTEMBUS_H
+#define SYSTEMBUS_H
 
-import <bitset>;
-import <memory>;
+#include <bitset>
+#include <memory>
 
 namespace MachEmu
 {
-	export enum Signal
+	enum Signal
 	{
 		Clock,
 		Interrupt,
@@ -40,7 +41,7 @@ namespace MachEmu
 	};
 
 	//cppcheck-suppress syntaxError
-	export template <class T>
+	template <class T>
 	class DataBus
 	{
 		private:
@@ -64,7 +65,7 @@ namespace MachEmu
 			}
 	};
 	
-	export template <class T>
+	template <class T>
 	class AddressBus
 	{
 	private:
@@ -88,7 +89,7 @@ namespace MachEmu
 		}
 	};
 	
-	export template <uint8_t size>
+	template <uint8_t size>
 	class ControlBus
 	{
 		private:
@@ -112,7 +113,7 @@ namespace MachEmu
 			}
 	};
 
-	export template <class addrW, class dataW, uint8_t ctrlW>
+	template <class addrW, class dataW, uint8_t ctrlW>
 	struct SystemBus
 	{
 		std::shared_ptr<AddressBus<addrW>> addressBus;
@@ -134,9 +135,11 @@ namespace MachEmu
 		}
 	};
 
-	export template <class addrW, class dataW, uint8_t ctrlW>
+	template <class addrW, class dataW, uint8_t ctrlW>
 	std::unique_ptr<SystemBus<addrW, dataW, ctrlW>> MakeSystemBus()
 	{
 		return std::make_unique<SystemBus<addrW, dataW, ctrlW>>();
 	}
 } // namespace MachEmu
+
+#endif // SYSTEMBUS_H

@@ -20,18 +20,16 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-import <memory>;
-import MemoryController;
-import TestIoController;
-
 #include <gtest/gtest.h>
-// Needs to be declared after gtest due to g++/gtest
-// compilation issues: fixme
-import CpmIoController;
+#include <memory>
+#include <nlohmann/json.hpp>
+
 #include "Controller/IController.h"
 #include "Machine/IMachine.h"
 #include "Machine/MachineFactory.h"
-#include "nlohmann/json.hpp"
+#include "TestControllers/MemoryController.h"
+#include "TestControllers/TestIoController.h"
+#include "TestControllers/CpmIoController.h"
 
 namespace MachEmu::Tests
 {
@@ -140,12 +138,7 @@ namespace MachEmu::Tests
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
-
-		// This is currently not supported on some platforms
-		if (err == ErrorCode::NotImplemented)
-		{
-			return;
-		}
+		EXPECT_EQ(ErrorCode::NoError, err);
 
 		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
 		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
@@ -225,12 +218,7 @@ namespace MachEmu::Tests
 			if (runAsync == true)
 			{
 				err = machine_->SetOptions(R"({"runAsync":true})");
-
-				// This is currently not supported on some platforms
-				if (err == ErrorCode::NotImplemented)
-				{
-					return;
-				}
+				EXPECT_EQ(ErrorCode::NoError, err);
 			}
 
 			// Run a program that should take a second to complete

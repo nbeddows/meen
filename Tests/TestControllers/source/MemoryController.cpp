@@ -20,12 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-#include <cstdint>
 #include <fstream>
-#include "Base/Base.h"
 
-module MemoryController;
+#include "Base/Base.h"
+#include "TestControllers/MemoryController.h"
 
 namespace MachEmu
 {

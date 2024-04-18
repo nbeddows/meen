@@ -20,22 +20,21 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module ICpu;
+#ifndef ICPU_H
+#define ICPU_H
 
-import <cstdint>;
-import <memory>;
-import <string>;
+#include <cstdint>
+#include <memory>
+#include <string>
 
 namespace MachEmu
 {
-	export struct ICpu
+	struct ICpu
 	{
 		//Executes the next instruction
 		virtual uint8_t Execute() = 0;
 
 		virtual void Reset(uint16_t pc) = 0;
-
-		//virtual void Save() const = 0;
 
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
 
@@ -46,3 +45,5 @@ namespace MachEmu
 		virtual ~ICpu() = default;
 	};
 } // namespace MachEmu
+
+#endif // ICPU_H

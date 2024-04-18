@@ -20,15 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef TESTIOCONTROLLER_H
+#define TESTIOCONTROLLER_H
 
-#include "Base/Base.h"
-
-export module TestIoController;
-
-import <array>;
-import <cstdint>;
-import BaseIoController;
+#include <array>
+#include "TestControllers/BaseIoController.h"
 
 namespace MachEmu
 {
@@ -43,7 +39,7 @@ namespace MachEmu
 					device data would interface with actual
 					IO, for example, a keyboard or a mouse.
 	*/
-	export class TestIoController final : public BaseIoController
+	class TestIoController final : public BaseIoController
 	{
 	private:
 		/** lastTime_
@@ -119,3 +115,5 @@ namespace MachEmu
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
+
+#endif // TESTIOCONTROLLER_H
