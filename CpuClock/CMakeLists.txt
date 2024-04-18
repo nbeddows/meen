@@ -20,10 +20,10 @@
 
 set (lib_name CpuClock)
 
-set (${lib_name}_module_files
-	${module_dir}/I${lib_name}.ixx
-	${module_dir}/${lib_name}.ixx
-	${module_dir}/${lib_name}Factory.ixx
+set (${lib_name}_include_files
+	${include_dir}/${lib_name}/I${lib_name}.h
+	${include_dir}/${lib_name}/${lib_name}.h
+	${include_dir}/${lib_name}/${lib_name}Factory.h
 )
 
 set (${lib_name}_source_files
@@ -31,11 +31,14 @@ set (${lib_name}_source_files
 	${source_dir}/${lib_name}Factory.cpp
 )
 
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
-add_target(${lib_name} STATIC "" "${${lib_name}_module_files}" "" "${${lib_name}_source_files}")
+add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})

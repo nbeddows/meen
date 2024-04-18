@@ -24,7 +24,9 @@ set(${exe_name}_source_files
   ${source_dir}/MachineTest.cpp
 )
 
-add_target(${exe_name} EXE "" "" "" "${${exe_name}_source_files}")
+SOURCE_GROUP("Source Files" FILES ${${exe_name}_source_files})
+
+add_executable(${exe_name} ${${exe_name}_source_files})
 
 if (MSVC)
   if(enableZlib)
@@ -59,8 +61,6 @@ file(WRITE "source/MachineTestDeps.py"
   "sys.path.append(\"${CMAKE_SOURCE_DIR}/bin\")\n"
 )
 
-
-
 target_link_libraries(${exe_name} PRIVATE
   GTest::gtest
   GTest::gtest_main
@@ -73,3 +73,4 @@ target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
+target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})

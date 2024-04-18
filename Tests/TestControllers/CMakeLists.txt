@@ -20,11 +20,11 @@
 
 set(lib_name TestControllers)
 
-set(${lib_name}_module_files
-  ${module_dir}/BaseIoController.ixx
-  ${module_dir}/CpmIoController.ixx
-  ${module_dir}/MemoryController.ixx
-  ${module_dir}/TestIoController.ixx
+set(${lib_name}_include_files
+  ${include_dir}/${lib_name}/BaseIoController.h
+  ${include_dir}/${lib_name}/CpmIoController.h
+  ${include_dir}/${lib_name}/MemoryController.h
+  ${include_dir}/${lib_name}/TestIoController.h
 )
 
 set(${lib_name}_source_files
@@ -34,7 +34,10 @@ set(${lib_name}_source_files
   ${source_dir}/TestIoController.cpp
 )
 
-add_target(${lib_name} STATIC "" "${${lib_name}_module_files}" "" "${${lib_name}_source_files}")
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
+
+add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -Wno-attributes)
@@ -42,3 +45,4 @@ endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})

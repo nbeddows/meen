@@ -20,8 +20,10 @@
 
 set (lib_name SystemBus)
 
-set (${lib_name}_module_files
-	${module_dir}/${lib_name}.ixx
+set (${lib_name}_include_files
+	${include_dir}/${lib_name}/${lib_name}.h
 )
 
-add_target(${lib_name} STATIC "" ${${lib_name}_module_files} "" "")
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+
+add_library(${lib_name} INTERFACE ${${lib_name}_include_files})
