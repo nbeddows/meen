@@ -13,6 +13,8 @@
 * Added `romOffset` config option.
 * Added `romSize` config option.
 * Removed the use of c++20 modules.
+* Enabled MachEmuPy for Linux.
+* Implemented `runAsync` option for Linux.
 
 1.4.0 [19/03/24]
 * Added Version API method.
