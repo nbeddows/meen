@@ -27,22 +27,25 @@ if(MSVC)
   set(postfix dll)
 
   if(enablePythonModule)
-	    set(pythonModule MachEmuPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
-	    set(testControllersModule TestControllersPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
+	  if(enableZlib)
+		  set(findZlibPackage "set(enableZlib ON)\nfind_package(zlib REQUIRED)\n")
+	  endif()
+
+	  set(pythonModule MachEmuPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
+	  set(testControllersModule TestControllersPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
   endif()
 else()
   set(escape \\)
   set(postfix so)
   set(prefix lib)
   set(versionExt .${machEmuVersion})
-  set(buildModules "set(STD_MODULES cstdint memory string vector)\ninclude(\${CMAKE_SOURCE_DIR}/CMakeIncludes/stdModules.cmake)\n")
   set(installSoLink "install(CODE \"execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix}${versionExt} ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix})\")\n")
   set(soLink COMMAND ${CMAKE_COMMAND} -E create_symlink ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix})
   set(stripLib COMMAND strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
 
   if(enablePythonModule)
-	    set(pythonModule MachEmuPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
-	    set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+	  set(pythonModule MachEmuPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+	  set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
   endif()
 endif()
 
@@ -83,8 +86,7 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
   "find_library(libMachEmu MachEmu PATHS \${CMAKE_SOURCE_DIR}/bin/)\n"
   "find_package(nlohmann_json REQUIRED)\n"
   ${findPythonPackage}
-  ${buildModules}
-  "include(\${CMAKE_SOURCE_DIR}/CMakeIncludes/addTarget.cmake)\n"
+  ${findZlibPackage}
   "add_subdirectory(Tests)\n"
   ${installPythonModule}
   "install(FILES \${CMAKE_SOURCE_DIR}/bin/${prefix}MachEmu.${postfix}${versionExt} DESTINATION lib)\n"
@@ -98,13 +100,14 @@ file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
 # copy out the required modules/sources/libraries, perform static analysis
 add_custom_target(
   ${target_name}
-  COMMAND cppcheck -i build -i Tests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
+  COMMAND cppcheck -i build -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
   COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Base/include ${sdkDir}/Base/include
-  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/CMakeIncludes ${sdkDir}/CMakeIncludes/
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Controller/include ${sdkDir}/Controller/include
-  COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Machine/include ${sdkDir}/Machine/include
   COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
+#  COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}/Machine/include
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/IMachine.h ${sdkDir}/Machine/include/Machine/IMachine.h
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/MachineFactory.h ${sdkDir}/Machine/include/Machine/MachineFactory.h
   COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
   ${copyPythonModule}
   ${copyTestControllersModule}

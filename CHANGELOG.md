@@ -1,3 +1,21 @@
+1.5.0 [19/04/24]
+* Added Machine interface method `OnLoad`.
+* Added Machine interface method `OnSave`.
+* Added Controller interface method `Uuid`.
+* Deprecated `IMachine::Save`.
+* Added cmake option `enableZlib`.
+* Added `encoder` config option.
+* Added `compressor` config option.
+* Added `loadAsync` config option.
+* Added `saveAsync` config option.
+* Added `ramOffset` config option.
+* Added `ramSize` config option.
+* Added `romOffset` config option.
+* Added `romSize` config option.
+* Removed the use of c++20 modules.
+* Enabled MachEmuPy for Linux.
+* Implemented `runAsync` option for Linux.
+
 1.4.0 [19/03/24]
 * Added Version API method.
 * Added Python module MachEmuPy.

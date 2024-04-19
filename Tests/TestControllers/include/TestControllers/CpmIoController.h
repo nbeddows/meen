@@ -20,15 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef CPMIOCONTROLLER_H
+#define CPMIOCONTROLLER_H
 
-#include "Base/Base.h"
+#include <array>
+#include <memory>
+#include <string>
 
-export module CpmIoController;
-
-import <memory>;
-import <string>;
-import BaseIoController;
+#include "TestControllers/BaseIoController.h"
 
 namespace MachEmu
 {
@@ -37,7 +36,7 @@ namespace MachEmu
 		A minimal IO controller which emulates 8 bit CP/M BDOS
 		console output and output string system calls.
 	*/
-	export class CpmIoController final : public BaseIoController
+	class CpmIoController final : public BaseIoController
 	{
 	private:
 		/** CP/M IO Port
@@ -107,6 +106,14 @@ namespace MachEmu
 		*/
 		std::string Message();
 
+		/**	Uuid
+
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
+
 		/** CP/M IO controller read
 
 			@param	port	The port number to read from.
@@ -152,3 +159,5 @@ namespace MachEmu
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
+
+#endif // CPMIOCONTROLLER_H

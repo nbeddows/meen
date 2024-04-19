@@ -37,7 +37,10 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
+if(enableZlib)
+	target_compile_definitions(${lib_name} PRIVATE ENABLE_ZLIB)
+endif()
+
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})
 target_link_libraries(${lib_name} PRIVATE nlohmann_json::nlohmann_json)
-

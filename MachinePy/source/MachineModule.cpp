@@ -1,4 +1,6 @@
+#include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #define ENABLE_MACHINE_HOLDER
 
@@ -32,6 +34,8 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .value("Five", MachEmu::ISR::Five)
         .value("Six", MachEmu::ISR::Six)
         .value("Seven", MachEmu::ISR::Seven)
+        .value("Load", MachEmu::ISR::Load)
+        .value("Save", MachEmu::ISR::Save)
         .value("Quit", MachEmu::ISR::Quit)
         .value("NoInterrupt", MachEmu::ISR::NoInterrupt);
 
@@ -39,6 +43,8 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
     py::class_<MachEmu::MachineHolder>(MachEmu, "MakeMachine")
         .def(py::init<>())
         .def(py::init<const char*>())
+        .def("OnLoad", &MachEmu::MachineHolder::OnLoad)
+        .def("OnSave", &MachEmu::MachineHolder::OnSave)
         .def("Run", &MachEmu::MachineHolder::Run)
         .def("Save", &MachEmu::MachineHolder::Save)
         .def("SetClockResolution", &MachEmu::MachineHolder::SetClockResolution)
@@ -62,5 +68,6 @@ PYBIND11_MODULE(MachEmuPy, MachEmu)
         .def(py::init<>())
         .def("Read", &MachEmu::IController::Read)
         .def("Write", &MachEmu::IController::Write)
-        .def("ServiceInterrupts", &MachEmu::IController::ServiceInterrupts);
+        .def("ServiceInterrupts", &MachEmu::IController::ServiceInterrupts)
+        .def("Uuid", &MachEmu::IController::Uuid);
 }

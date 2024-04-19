@@ -18,20 +18,32 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set(STD_MODULES_BUILD_TIMESTAMP_FILE std_modules_build_timestamp)
-# One time build only
-add_custom_target(StdModules ALL
-    DEPENDS ${STD_MODULES_BUILD_TIMESTAMP_FILE}
+set (lib_name Utils)
+
+set (${lib_name}_include_files
+	${include_dir}/${lib_name}/${lib_name}.h
+	${include_dir}/${lib_name}/base64.hpp
+	${include_dir}/${lib_name}/md5.h
 )
 
-set(STD_MODULES_OPTIONS -fmodules-ts -std=c++20 -c -x c++-system-header)
-
-# compile the required std modules
-add_custom_command(
-    OUTPUT ${STD_MODULES_BUILD_TIMESTAMP_FILE}
-    COMMAND ${CMAKE_COMMAND} -E echo "Building standard libraries modules"
-    COMMAND ${CMAKE_CXX_COMPILER} ${STD_MODULES_OPTIONS} ${STD_MODULES}
-    COMMAND ${CMAKE_COMMAND} -E touch ${STD_MODULES_BUILD_TIMESTAMP_FILE}
-    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
-    BYPRODUCTS
+set (${lib_name}_source_files
+	${source_dir}/${lib_name}.cpp
+	${source_dir}/md5.c
 )
+
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
+
+add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
+
+if(CMAKE_COMPILER_IS_GNUCXX)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
+endif()
+
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})
+
+if(enableZlib)
+	target_compile_definitions(${lib_name} PRIVATE ENABLE_ZLIB)
+	target_link_libraries(${lib_name} PRIVATE ZLIB::ZLIB)
+endif()
+

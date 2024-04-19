@@ -20,30 +20,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef MACHINE_H
+#define MACHINE_H
+
+#include <future>
 
 #include "Controller/IController.h"
+#include "Cpu/ICpu.h"
+#include "CpuClock/ICpuClock.h"
 #include "Machine/IMachine.h"
 #include "Opt/Opt.h"
-
-export module Machine;
-
-import <cstdint>;
-#ifdef _WINDOWS
-import <future>;
-#endif
-import <memory>;
-import ICpu;
-import ICpuClock;
-import SystemBus;
+#include "SystemBus/SystemBus.h"
 
 namespace MachEmu
 {
 	/** Machine
-		
+
 		@see IMachine.h
 	*/
-	export struct Machine final : public IMachine
+	struct Machine final : public IMachine
 	{
 	private:
 		std::unique_ptr<ICpuClock> clock_;
@@ -54,11 +49,11 @@ namespace MachEmu
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
-#ifdef _WINDOWS		
 		std::future<int64_t> fut_;
-#endif		
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
+		std::function<const char*()> onLoad_{};
+		std::function<void(const char* json)> onSave_{};
 
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
@@ -66,7 +61,7 @@ namespace MachEmu
 		~Machine() = default;
 
 		/** Run
-		
+
 			@see IMachine::Run
 		*/
 		uint64_t Run(uint16_t pc) final;
@@ -89,28 +84,42 @@ namespace MachEmu
 		*/
 		void SetIoController(const std::shared_ptr<IController>& controller) final;
 
-		/** SetOpts
+		/** SetOptions
 
 			@see IMachine::SetOpts
 		*/
-		ErrorCode SetOptions(const char* options);
+		ErrorCode SetOptions(const char* options) final;
+
+		/** OnLoad
+
+			@see IMachine::OnLoad
+		*/
+		void OnLoad(std::function<const char*()>&& onLoad) final;
+
+		/** OnSave
+
+			@see IMachine::OnSave
+		*/
+		void OnSave(std::function<void(const char* json)>&& onSave) final;
 
 		/** Get the machine state
 
 			@see IMachine::GetState
 		*/
-		std::string Save() const;
+		std::string Save() const final;
 
 		/** Set the clock resolution.
-		
+
 			@see IMachine::SetClockResolution
 		*/
 		ErrorCode SetClockResolution(int64_t clockResolution) final;
 
 		/** GetCpuState
-		
+
 			@see IMachine::GetCpuState
 		*/
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 	};
 } // namespace MachEmu
+
+#endif // MACHINE_H

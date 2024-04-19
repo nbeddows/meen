@@ -10,10 +10,13 @@ namespace MachEmu
     {
     private:
         std::unique_ptr<MachEmu::IMachine> machine_;
+        std::string json_;
     public:
         MachineHolder();
         MachineHolder(const char* json);
 
+        void OnLoad(std::function<std::string()>&& onLoad);
+        void OnSave(std::function<void(std::string&&)>&& onSave);
         uint64_t Run(uint16_t offset);
         std::string Save() const;
         ErrorCode SetClockResolution(int64_t clockResolution);

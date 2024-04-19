@@ -20,15 +20,30 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module CpuFactory;
+#ifndef ICPU_H
+#define ICPU_H
 
-import <cstdint>;
-import <functional>;
-import <memory>;
-import ICpu;
-import SystemBus;
+#include <cstdint>
+#include <memory>
+#include <string>
 
 namespace MachEmu
 {
-	export std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process);
+	struct ICpu
+	{
+		//Executes the next instruction
+		virtual uint8_t Execute() = 0;
+
+		virtual void Reset(uint16_t pc) = 0;
+
+		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
+
+		virtual void Load(const std::string&& json) = 0;
+		
+		virtual std::string Save() const = 0;
+
+		virtual ~ICpu() = default;
+	};
 } // namespace MachEmu
+
+#endif // ICPU_H

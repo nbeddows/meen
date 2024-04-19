@@ -1,4 +1,5 @@
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 
 #include "MachinePy/ControllerPy.h"
 
@@ -33,6 +34,17 @@ namespace MachEmu
             ServiceInterrupts,  /* Name of function in C++ (must match Python name) */
             currTime,           /* Argument(s) */
             cycles
+        );
+    }
+
+    std::array<uint8_t, 16> ControllerPy::Uuid() const
+    {
+        using Uint8Array16 = std::array<uint8_t, 16>;
+
+        PYBIND11_OVERRIDE_PURE(
+            Uint8Array16,       /* Return type */
+            IController,        /* Parent class */
+            Uuid                /* Name of function in C++ (must match Python name) */
         );
     }
 }

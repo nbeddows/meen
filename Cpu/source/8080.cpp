@@ -20,20 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
 #include <assert.h>
+#include <nlohmann/json.hpp>
 
-#include "Base/Base.h"
-
-module _8080;
-
-import <bitset>;
-import <cstdint>;
-import <memory>;
-import <functional>;
-import <string_view>;
-
-import SystemBus;
+#include "Cpu/8080.h"
+#include "Utils/Utils.h"
 
 namespace MachEmu
 {
@@ -310,7 +301,7 @@ Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::func
 std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 {
 	auto state = std::make_unique<uint8_t[]>(12);
-	
+
 	state[0] = Value(a_);
 	state[1] = Value(b_);
 	state[2] = Value(c_);
@@ -332,11 +323,37 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 	return state;
 }
 
+void Intel8080::Load(const std::string&& str)
+{
+	auto json = nlohmann::json::parse(str);
+
+	// The cpus must be the same
+	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].get<std::string>());
+
+	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+	{
+		throw std::runtime_error("Incompatible cpu");
+	}
+
+	a_ = json["registers"]["a"].get<uint8_t>();
+	b_ = json["registers"]["b"].get<uint8_t>();
+	c_ = json["registers"]["c"].get<uint8_t>();
+	d_ = json["registers"]["d"].get<uint8_t>();
+	e_ = json["registers"]["e"].get<uint8_t>();
+	h_ = json["registers"]["h"].get<uint8_t>();
+	l_ = json["registers"]["l"].get<uint8_t>();
+	status_ = json["registers"]["s"].get<uint8_t>();
+	pc_ = json["pc"].get<uint16_t>();
+	sp_ = json["sp"].get<uint16_t>();
+}
+
 std::string Intel8080::Save() const
 {
-	char str[118]{};
-	snprintf(str, 118, "{\"name\":\"i8080\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}",
-		Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
+	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
+	auto fmtStr = "{\"uuid\":\"%s\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}";
+	auto count = snprintf(nullptr, 0, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
+	std::string str(count + 1, '\0');
+	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	return str;
 }
 
@@ -1596,7 +1613,7 @@ uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	}
 
 	++pc_;
-	
+
 	if (status == true)
 	{
 		sp_ += 0xFFFF;

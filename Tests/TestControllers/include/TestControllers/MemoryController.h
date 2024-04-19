@@ -20,14 +20,13 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef MEMORYCONTROLLER_H
+#define MEMORYCONTROLLER_H
 
-#include "Base/Base.h"
+#include <array>
+#include <vector>
+
 #include "Controller/IController.h"
-
-export module MemoryController;
-
-import <vector>;
 
 namespace MachEmu
 {
@@ -38,7 +37,7 @@ namespace MachEmu
 		on disk one byte at a time. The maximum addressable size
 		is 16 bits.
 	*/
-	export class MemoryController final : public IController
+	class MemoryController final : public IController
 	{
 	private:
 		/**
@@ -89,6 +88,14 @@ namespace MachEmu
 		*/
 		size_t Size() const;
 
+		/**	Uuid
+
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
+
 		/** Read a byte of memory
 
 			The maximum size of each read is 8 bits from a 16 address.
@@ -124,3 +131,5 @@ namespace MachEmu
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
+
+#endif // MEMORYCONTROLLER_H

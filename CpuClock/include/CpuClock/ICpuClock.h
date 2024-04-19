@@ -19,14 +19,14 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-module;
+
+#ifndef ICPUCLOCK_H
+#define ICPUCLOCK_H
+
+#include <chrono>
+#include <cstdint>
 
 #include "Base/Base.h"
-
-export module ICpuClock;
-
-import <chrono>;
-import <cstdint>;
 
 namespace MachEmu
 {
@@ -34,7 +34,7 @@ namespace MachEmu
 	
 		Represents the clock of an emulated cpu.
 	*/
-	export struct ICpuClock
+	struct ICpuClock
 	{		
 		/** Tick.
 		
@@ -94,3 +94,5 @@ namespace MachEmu
 		virtual ~ICpuClock() = default;
 	};
 } // namespace MachEmu
+
+#endif // ICPUCLOCK_H

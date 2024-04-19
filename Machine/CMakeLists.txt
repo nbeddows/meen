@@ -21,12 +21,9 @@
 set (lib_name MachEmu)
 
 set (${lib_name}_include_files
+	${include_dir}/Machine/Machine.h
 	${include_dir}/Machine/IMachine.h
 	${include_dir}/Machine/MachineFactory.h
-)
-
-set (${lib_name}_module_files
-	${module_dir}/Machine.ixx
 )
 
 if(MSVC)
@@ -40,7 +37,13 @@ set (${lib_name}_source_files
 	${source_dir}/MachineFactory.cpp
 )
 
-add_target(${lib_name} SHARED "${${lib_name}_include_files}" "${${lib_name}_module_files}" "${${lib_name}_resource_files}" "${${lib_name}_source_files}")
+SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
+SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
+if(MSVC)
+	SOURCE_GROUP("Resource Files" FILES ${${lib_name}_resource_files})
+endif()
+
+add_library(${lib_name} SHARED ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})
 
 if(CMAKE_COMPILER_IS_GNUCXX)
 	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
@@ -48,11 +51,15 @@ endif()
 
 target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVersion}\")
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Cpu/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/CpuClock/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Opt/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/SystemBus/${include_dir})
+target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Utils/${include_dir})
 
-add_dependencies(${lib_name} Cpu CpuClock Opt SystemBus)
+add_dependencies(${lib_name} Cpu CpuClock Opt Utils)
 
 set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION ${machEmuVersion})
 
@@ -61,4 +68,5 @@ target_link_libraries(${lib_name} PRIVATE
 	CpuClock
 	Opt
 	nlohmann_json::nlohmann_json
+	Utils
 )

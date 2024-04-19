@@ -1,3 +1,4 @@
+#include <format> 
 #include <pybind11/pybind11.h>
 
 #include "MachinePy/MachineHolder.h"
@@ -16,7 +17,24 @@ namespace MachEmu
 
 	ErrorCode MachineHolder::SetClockResolution(int64_t clockResolution)
 	{
-		return machine_->SetClockResolution(clockResolution);
+		return machine_->SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
+	}
+
+	void MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
+	{
+		machine_->OnLoad([this, ol = std::move(onLoad)]
+		{
+			json_ = ol();
+			return json_.c_str();
+		});
+	}
+
+	void MachineHolder::OnSave(std::function<void(std::string&&)>&& onSave)
+	{
+		machine_->OnSave([os = std::move(onSave)](const char* json)
+		{
+			os(json);
+		});
 	}
 
 	std::string MachineHolder::Save() const

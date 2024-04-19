@@ -20,11 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-
 #include "Base/Base.h"
-
-module CpmIoController;
+#include "TestControllers/CpmIoController.h"
 
 namespace MachEmu
 {
@@ -35,7 +32,14 @@ namespace MachEmu
 
 	std::string CpmIoController::Message()
 	{
-		return std::move(message_);
+		auto str = std::move(message_);
+		message_.clear();
+		return str;
+	}
+
+	std::array<uint8_t, 16> CpmIoController::Uuid() const
+	{
+		return{ 0x32, 0x8C, 0xCF, 0x78, 0x76, 0x1B, 0x48, 0xA4, 0x98, 0x2C, 0x1A, 0xAA, 0x5F, 0x14, 0x31, 0x24 };
 	}
 
 	//Not used, just return 0;

@@ -19,34 +19,36 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
-module;
+
+#ifndef _8080_H
+#define _8080_H
+
+#include <array>
+#include <bitset>
+#include <cstdint>
+#include <memory>
+#include <functional>
+#include <string_view>
 
 #include "Base/Base.h"
-
-export module _8080;
-
-import <bitset>;
-import <cstdint>;
-import <memory>;
-import <functional>;
-import <string_view>;
-
-import ICpu;
-import SystemBus;
+#include "Cpu/ICpu.h"
+#include "SystemBus/SystemBus.h"
 
 //#define ENABLE_OPCODE_TABLE
 
 namespace MachEmu
 {
-	export class Intel8080 final : public ICpu
+	class Intel8080 final : public ICpu
 	{
 	private:
 		using Register = std::bitset<8>;
 		static constexpr uint8_t maxRegisters_ = 8;
 		//cppcheck-suppress unusedStructMember
-		static constexpr char registerName_[maxRegisters_] = { 'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A' };
+		static constexpr const char registerName_[maxRegisters_] = {'B', 'C', 'D', 'E', 'H', 'L', 'M', 'A'};
 		//cppcheck-suppress unusedStructMember
 		static constexpr bool dbg = false;
+		//cppcheck-suppress unusedStructMember
+		static constexpr std::array<uint8_t, 16> uuid_{ 0x3B, 0xE8, 0x4F, 0x1F, 0x9D, 0x7A, 0x4B, 0x70, 0xA5, 0x45, 0xD9, 0xF3, 0x49, 0x12, 0xFC, 0xAD };
 
 		enum /*class*/Condition
 		{
@@ -204,6 +206,7 @@ namespace MachEmu
 		/* I8080 overrides */
 		uint8_t Execute() final;
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
+		void Load(const std::string&& json) final;
 		std::string Save() const final;
 		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */
@@ -213,3 +216,5 @@ namespace MachEmu
 		~Intel8080() = default;
 	};
 } // namespace MachEmu
+
+#endif // _8080_H

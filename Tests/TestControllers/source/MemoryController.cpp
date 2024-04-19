@@ -20,12 +20,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
-#include <cstdint>
 #include <fstream>
-#include "Base/Base.h"
 
-module MemoryController;
+#include "Base/Base.h"
+#include "TestControllers/MemoryController.h"
 
 namespace MachEmu
 {
@@ -66,6 +64,11 @@ namespace MachEmu
 		{
 			throw std::invalid_argument("The program specified failed to load");
 		}
+	}
+
+	std::array<uint8_t, 16> MemoryController::Uuid() const
+	{
+		return{ 0xCD, 0x18, 0xD8, 0x67, 0xDD, 0xBF, 0x4D, 0xAA, 0xAD, 0x5A, 0xBA, 0x1C, 0xEB, 0xAE, 0xB0, 0x31 };
 	}
 
 	uint8_t MemoryController::Read(uint16_t addr)

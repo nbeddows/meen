@@ -1,9 +1,9 @@
 #include <pybind11/pybind11.h>
-#include "Controller/IController.h"
 
-import CpmIoController;
-import MemoryController;
-import TestIoController;
+#include "Controller/IController.h"
+#include "TestControllers/CpmIoController.h"
+#include "TestControllers/MemoryController.h"
+#include "TestControllers/TestIoController.h"
 
 namespace py = pybind11;
 
@@ -21,6 +21,7 @@ PYBIND11_MODULE(TestControllersPy, TestControllers)
         .def(py::init<>())
         .def("Read", &MachEmu::TestIoController::Read)
         .def("Write", &MachEmu::TestIoController::Write)
+        .def("SaveStateOn", &MachEmu::TestIoController::SaveStateOn)
         .def("ServiceInterrupts", &MachEmu::TestIoController::ServiceInterrupts);
 
     py::class_<MachEmu::CpmIoController, MachEmu::IController>(TestControllers, "CpmIoController")
@@ -28,5 +29,6 @@ PYBIND11_MODULE(TestControllersPy, TestControllers)
         .def("Message", &MachEmu::CpmIoController::Message)
         .def("Read", &MachEmu::CpmIoController::Read)
         .def("Write", &MachEmu::CpmIoController::Write)
+        .def("SaveStateOn", &MachEmu::CpmIoController::SaveStateOn)
         .def("ServiceInterrupts", &MachEmu::CpmIoController::ServiceInterrupts);
 }

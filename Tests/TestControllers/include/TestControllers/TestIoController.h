@@ -20,14 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module;
+#ifndef TESTIOCONTROLLER_H
+#define TESTIOCONTROLLER_H
 
-#include "Base/Base.h"
-
-export module TestIoController;
-
-import <cstdint>;
-import BaseIoController;
+#include <array>
+#include "TestControllers/BaseIoController.h"
 
 namespace MachEmu
 {
@@ -42,7 +39,7 @@ namespace MachEmu
 					device data would interface with actual
 					IO, for example, a keyboard or a mouse.
 	*/
-	export class TestIoController final : public BaseIoController
+	class TestIoController final : public BaseIoController
 	{
 	private:
 		/** lastTime_
@@ -50,7 +47,7 @@ namespace MachEmu
 			Track the cpu time so we can trigger interrupts
 			at one second intervals.
 		*/
-		uint64_t lastTime_;
+		uint64_t lastTime_{};
 
 		/** deviceData_
 
@@ -63,6 +60,14 @@ namespace MachEmu
 		//cppcheck-suppress unusedStructMember
 		uint8_t deviceData_{ 0xAA };
 	public:
+		/**	Uuid
+		
+			Unique universal identifier for this controller.
+
+			@return					The uuid as a 16 byte array.
+		*/
+		std::array<uint8_t, 16> Uuid() const final;
+		
 		/**	Read from a device
 
 			Read the contents of the specifed io device.
@@ -110,3 +115,5 @@ namespace MachEmu
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
 } // namespace MachEmu
+
+#endif // TESTIOCONTROLLER_H

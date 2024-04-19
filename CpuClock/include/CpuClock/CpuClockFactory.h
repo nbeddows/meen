@@ -20,27 +20,25 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-export module ICpu;
+#ifndef CPUCLOCK_FACTORY_H
+#define CPUCLOCK_FACTORY_H
 
-import <cstdint>;
-import <memory>;
-import <string>;
+#include <memory>
+
+#include "CpuClock/ICpuClock.h"
 
 namespace MachEmu
 {
-	export struct ICpu
-	{
-		//Executes the next instruction
-		virtual uint8_t Execute() = 0;
+	/** Factory function to make a cpu clock
+	
+		The CPU clock contols the timing for the target CPU so that all instructions executed
+		execute at the correct rate.
 
-		virtual void Reset(uint16_t pc) = 0;
+		@param	speed					The desired clock speed in ticks per second, for the i8080 cpu this will be 2000000 (2Mhz)
 
-		//virtual void Save() const = 0;
-
-		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
-
-		virtual std::string Save() const = 0;
-
-		virtual ~ICpu() = default;
-	};
+		@return	unique_ptr				A unique_ptr to the CpuClock interface.
+	*/
+	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
 } // namespace MachEmu
+
+#endif // CPUCLOCK_FACTORY_H

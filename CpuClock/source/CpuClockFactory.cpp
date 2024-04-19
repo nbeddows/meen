@@ -20,14 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-module CpuClockFactory;
-
-import <chrono>;
-import <memory>;
-import ICpuClock;
-import CpuClock;
-
-using namespace std::chrono;
+#include "CpuClock/CpuClock.h"
+#include "CpuClock/CpuClockFactory.h"
 
 namespace MachEmu
 {
