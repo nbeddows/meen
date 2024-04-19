@@ -40,7 +40,7 @@ set (${lib_name}_source_files
 SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
 SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 if(MSVC)
-	SOURCE_GROUP("Resource Files" FILES ${${lib_name}_source_files})
+	SOURCE_GROUP("Resource Files" FILES ${${lib_name}_resource_files})
 endif()
 
 add_library(${lib_name} SHARED ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})

@@ -232,6 +232,21 @@ namespace MachEmu
 				}
 			};
 
+			auto waitOnHandlers = [&]
+			{
+				// Make sure that any outstanding onLoad requests have completed
+				if (onLoad.valid() == true)
+				{
+					loadMachineState(onLoad.get());
+				}
+
+				// Make sure that any outstanding onSave requests have completed
+				if (onSave.valid() == true)
+				{
+					onSave.get();
+				}
+			};
+
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
 				//Execute the next instruction
@@ -263,6 +278,8 @@ namespace MachEmu
 						{
 							if (onLoad_ != nullptr)
 							{
+								waitOnHandlers();
+
 								onLoad = std::async(loadLaunchPolicy, [this]
 								{
 									// Calling out into user land, make sure we don't leak any exceptions
@@ -295,6 +312,8 @@ namespace MachEmu
 							// Don't do the save if the onSave method has not been set.
 							if (onSave_ != nullptr)
 							{
+								waitOnHandlers();
+
 								auto rm = [this](uint16_t offset, uint16_t size)
 								{
 									std::vector<uint8_t> mem(size);
@@ -357,18 +376,8 @@ namespace MachEmu
 						}
 						case ISR::Quit:
 						{
-							// Wait for any outstanding requests to complete
-
-							if (onLoad.valid() == true)
-							{
-								loadMachineState(onLoad.get());
-							}
-
-							if (onSave.valid() == true)
-							{
-								onSave.get();
-							}
-
+							// Wait for any outstanding load/save requests to complete
+							waitOnHandlers();
 							controlBus->Send(Signal::PowerOff);
 							break;
 						}

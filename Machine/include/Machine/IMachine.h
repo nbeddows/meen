@@ -33,7 +33,9 @@ namespace MachEmu
 	/** Machine interface
 
 		An abstract representation of a basic machine with a cpu, clock and
-		custom memory and IO.
+		custom memory and IO. Unless specifically stated in this API, there is no
+		guarantee in regards to thread safety. All methods should be called
+		from the same thread.
 
 		Basic Principles of Operation:
 
@@ -55,18 +57,39 @@ namespace MachEmu
 		machine->SetIOController(customIOController);
 		machine->SetMemoryController(customMemoryController);
 
-		// set the clock resolution - not setting this will run the
+		// Can be called from a different thread if the runAsync/loadAsync options are specifed
+		machine_->OnLoad([]
+		{
+			// Return the json state to load, could be read from disk for example
+			return "json state as passed to OnSave";
+		});
+
+		// Can be called from a different thread if the runAsync/saveAsync options are specifed
+		machine->OnSave([](const char* json)
+		{
+			// Handle the machines current state, for example, writing it to disk
+			std::cout << json << std::endl;
+		});		
+		
+		// Set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
 		machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
 
-		// Run the machine - this is a blocking function, it won't return until the custom IO
-		// controller ServiceInterrupts override generates an ISR::Quit interrupt.
+		// Run the machine sychronously, it won't return until the custom IO
+		// controller ServiceInterrupts override generates an ISR::Quit interrupt
 		auto runTime = machine->Run();
 
-		// Run the machine asychronously - this can be done by setting the following json config either
-		// in the MakeMachine factory method or via IMachine::SetOptions: `{"runAsync":true}`
+		// Run the machine asychronously - this can be done by setting the following json config
+		// option either in the MakeMachine factory method or via IMachine::SetOptions
 		machine->SetOptions(R"({"runAsync":true})");
 		machine->Run();
+
+		// ...
+		// Do additional work here while the machine is running
+		// ...
+
+		// Will not return until the custom IO
+		// controller ServiceInterrupts override generates an ISR::Quit interrupt
 		runTime = machine->WaitForCompletion();
 
 		@endcode
@@ -161,7 +184,7 @@ namespace MachEmu
 		/** Machine save state completion handler
 		
 			Registers a method which will be called when the ISR::Save interrupt is triggered. The register
-			method accepts a std::string which is the machine save state in json format. 
+			method accepts a const char* which is the machine save state in json format. 
 		
 			The json layout of an example save state is specifed in the json snippet below:
 
@@ -202,12 +225,19 @@ namespace MachEmu
 			@endcode
 
 			@param	onSave				The method to call with the json machine save state after it has has been
-										generated via the ISR::Save interrupt.
+										generated via the ISR::Save interrupt. Is mutually exclusive with the OnLoad
+										initiation handler.
 
 			@throws						std::runtime_error if the machine is currently running.
 
 			@remark						The function parameter onSave will be called from a different thread from which this
-										method was called if the runAsync config option has been specified.
+										method was called if the runAsync or saveAsync config options have been specified.
+
+			@remark						Save requests should not be a frequent operation, therefore (by design) each save
+										request will be processed before moving to the next one, ie, if a save request is
+										being processed while another save has been requested, the thread processing the
+										current save request will block until it has completed before moving onto the next
+										one, ie, save requests are not queued (don't spam the ISR::Save interrupt).
 
 			@since	version 1.5.0
 		*/
@@ -216,15 +246,15 @@ namespace MachEmu
 		/** Machine load state initiation handler
 		
 			Registers a method that will be called when the ISR::Load interrupt is triggered. The register
-			method returns a std::string which is the json machine state to load.
+			method returns a const char* which is the json machine state to load.
 
 			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
-										interrupt is triggered.
+										interrupt is triggered. Is mutually exclusive with the OnSave completion handler.
 
 			@throws						std::runtime_error if machine is currently running.
 
 			@remark						The function parameter onLoad will be called from a different thread from which this
-										method was called if the runAsync config option has been specified.
+										method was called if the runAsync or loadAsync config options have been specified.
 
 			@remark						The machine state can fail to load for numerous reasons:
 										- when the machine cpu does not match the load state cpu.
@@ -234,6 +264,12 @@ namespace MachEmu
 			
 			@remark						When the format of the returned json string is invalid or a load error occurs the state
 										of the machine shall remain unchanged.
+
+			@remark						Load requests should not be a frequent operation, therefore (by design) each load
+										request will be processed before moving to the next one, ie, if a load request is
+										being processed while another load has been requested, the thread processing the
+										current load request will block until it has completed before moving onto the next
+										one, ie, load requests are not queued (don't spam the ISR::Load interrupt).
 
 			@todo						Log when errors occur.
 

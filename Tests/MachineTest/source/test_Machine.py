@@ -123,7 +123,7 @@ class MachineTest(unittest.TestCase):
 
     def Load(self, runAsync):
         if runAsync == True:
-            err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":true,"saveAsync":true}')
+            err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":false,"saveAsync":true}')
 
             if err == ErrorCode.NotImplemented:
                 return

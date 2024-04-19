@@ -1,4 +1,4 @@
-1.5.0
+1.5.0 [19/04/24]
 * Added Machine interface method `OnLoad`.
 * Added Machine interface method `OnSave`.
 * Added Controller interface method `Uuid`.
@@ -13,6 +13,8 @@
 * Added `romOffset` config option.
 * Added `romSize` config option.
 * Removed the use of c++20 modules.
+* Enabled MachEmuPy for Linux.
+* Implemented `runAsync` option for Linux.
 
 1.4.0 [19/03/24]
 * Added Version API method.
