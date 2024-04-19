@@ -279,7 +279,7 @@ namespace MachEmu::Tests
 
 			if (runAsync == true)
 			{
-				err = machine_->SetOptions(R"({"runAsync":true,"loadAsync":true,"saveAsync":true})");
+				err = machine_->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
 
 				// This is currently not supported on some platforms
 				if (err == ErrorCode::NotImplemented)
