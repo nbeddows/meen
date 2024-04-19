@@ -89,22 +89,30 @@ namespace MachEmu
 
 							Configuration options:
 
-							| Option          | Type   | Value	           | Remarks                                                                           |
-							|:----------------|:-------|:------------------|:----------------------------------------------------------------------------------|
-							| cpu             | string | i8080 (default)   | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)   |
-							| runAsync        | bool   | true              | IMachine::Run will be launced on a separate thread                                |
-							|                 |        | false (default)   | IMachine:Run() will be run on the current thread                                  |
-							| isrFreq         | double | 0 (default)       | Service interrupts at the completion of each instruction                          |
-							|                 |        | 1                 | Service interrupts after each clock tick                                          |
-							|                 |        | n                 | Service interrupts frequency, example: 0.5 - twice per clock tick                 |
-							| clockResolution | int64  | -1 (default)      | Run the machine as fast as possible with the highest possible resolution          |
-							|                 |        | 0                 | Run the machine at realtime (or as close to) with the highest possible resolution |
-							|                 |        | 0 - 1000000       | Will always spin the cpu to maintain the clock speed and is not recommended       |
-							|                 |        | n                 | A request in nanoseconds as to how frequently the machine clock will tick         |
-							| romOffset		  | uint16 | n                 | The offset in bytes from the start of the memory to the start of the rom          |
-							| romSize         | uint16 | n                 | The size of the rom in bytes                                                      |
-							| ramOffset       | uint16 | n                 | The offset in bytes from the start of the memory to the start of the ram          |
-							| ramSize         | uint16 | n                 | The size of the ram in bytes                                                      |
+							| Option          | Type   | Value	            | Remarks                                                                            |
+							|:----------------|:-------|:-------------------|:-----------------------------------------------------------------------------------|
+							| clockResolution | int64  | -1 (default)       | Run the machine as fast as possible with the highest possible resolution           |
+							|                 |        | 0                  | Run the machine at realtime (or as close to) with the highest possible resolution  |
+							|                 |        | 0 - 1000000        | Will always spin the cpu to maintain the clock speed and is not recommended        |
+							|                 |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick          |
+							| compressor      | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
+							|                 |        | "none"             | No compression will be used when saving the state of the ram                       |
+							| encoder         | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
+							| cpu             | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)    |
+							| isrFreq         | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
+							|                 |        | 1                  | Service interrupts after each clock tick                                           |
+							|                 |        | n                  | Service interrupts frequency, example: 0.5 - twice per clock tick                  |
+							| loadAsync       | bool   | true               | Run the load initiation handler on a separate thread                               |
+							|                 |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
+							| ramOffset       | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram           |
+							| ramSize         | uint16 | n (default: 0)     | The size of the ram in bytes                                                       |
+							| romOffset		  | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the rom           |
+							| romSize         | uint16 | n (default: 0)     | The size of the rom in bytes                                                       |
+							| runAsync        | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                |
+							|                 |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                  |
+							| saveAsync       | bool   | true               | Run the save completion handler on a separate thread                               |
+							|                 |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option  |
+
 
 		@throws		std::runtime_error or any exception that the underlying json parser can throw.
 
