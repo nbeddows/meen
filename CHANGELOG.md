@@ -1,3 +1,6 @@
+1.5.1
+* Fixed api compatibility break in 1.5.0.
+
 1.5.0 [19/04/24]
 * Added Machine interface method `OnLoad`.
 * Added Machine interface method `OnSave`.
