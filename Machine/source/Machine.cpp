@@ -173,6 +173,13 @@ namespace MachEmu
 			{
 				try
 				{
+					auto memUuid = memoryController_->Uuid();
+
+					if (memUuid == std::array<uint8_t, 16>{})
+					{
+						throw std::runtime_error("Invalid memory controller uuid");
+					}
+
 					auto json = nlohmann::json::parse(str);
 
 					cpu_->Load(json["cpu"].dump());
@@ -181,7 +188,6 @@ namespace MachEmu
 
 					// The memory controllers must be the same
 					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["memory"]["uuid"].get<std::string>());
-					auto memUuid = memoryController_->Uuid();
 
 					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
 					{
