@@ -177,7 +177,7 @@ namespace MachEmu
 
 					if (memUuid == std::array<uint8_t, 16>{})
 					{
-						throw std::runtime_error("Invalid memory controller uuid");
+						throw std::runtime_error("Invalid memory controller uuid for load interrupt");
 					}
 
 					auto json = nlohmann::json::parse(str);
@@ -318,65 +318,79 @@ namespace MachEmu
 							// Don't do the save if the onSave method has not been set.
 							if (onSave_ != nullptr)
 							{
-								waitOnHandlers();
-
-								auto rm = [this](uint16_t offset, uint16_t size)
+								try
 								{
-									std::vector<uint8_t> mem(size);
+									auto memUuid = memoryController_->Uuid();
 
-									for (auto& byte : mem)
+									if (memUuid == std::array<uint8_t, 16>{})
 									{
-										byte = memoryController_->Read(offset++);
+										throw std::runtime_error("Invalid memory controller uuid for save interrupt");
 									}
 
-									return mem;
-								};
+									waitOnHandlers();
 
-								auto rom = rm(opt_.RomOffset(), opt_.RomSize());
-								auto ram = rm(opt_.RamOffset(), opt_.RamSize());
-								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
-								auto memUuid = memoryController_->Uuid();
-								auto romMd5 = Utils::Md5(rom.data(), rom.size());
+									auto rm = [this](uint16_t offset, uint16_t size)
+									{
+										std::vector<uint8_t> mem(size);
 
-								// todo - replace snprintf with std::format
-								auto writeState = [&](size_t& dataSize)
+										for (auto& byte : mem)
+										{
+											byte = memoryController_->Read(offset++);
+										}
+
+										return mem;
+									};
+
+									auto rom = rm(opt_.RomOffset(), opt_.RomSize());
+									auto ram = rm(opt_.RamOffset(), opt_.RamSize());
+									auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
+									auto romMd5 = Utils::Md5(rom.data(), rom.size());
+
+									// todo - replace snprintf with std::format
+									auto writeState = [&](size_t& dataSize)
+									{
+										std::string str;
+										char* data = nullptr;
+
+										if (dataSize > 0)
+										{
+											str.resize(dataSize);
+											data = str.data();
+										}
+
+										//cppcheck-suppress nullPointer
+										dataSize = snprintf(data, dataSize, fmtStr,
+											cpu_->Save().c_str(),
+											Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
+											Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
+											opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
+											Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str()) + 1;
+
+										return str;
+									};
+
+									size_t count = 0;
+									writeState(count);
+
+									onSave = std::async(saveLaunchPolicy, [this, state = writeState(count)]
+									{
+										// Calling out into user land, make sure we don't leak any exceptions
+										try
+										{
+											onSave_(state.c_str());
+										}
+										catch (const std::exception& e)
+										{
+											// todo: log the exception to a log file
+											printf("%s\n", e.what());
+										}
+									});
+								}
+								catch (const std::exception& e)
 								{
-									std::string str;
-									char* data = nullptr;
-
-									if (dataSize > 0)
-									{
-										str.resize(dataSize);
-										data = str.data();
-									}
-
-									//cppcheck-suppress nullPointer
-									dataSize = snprintf(data, dataSize, fmtStr,
-										cpu_->Save().c_str(),
-										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
-										Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
-										opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
-										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str()) + 1;
-
-									return str;
-								};
-
-								size_t count = 0;
-								writeState(count);
-
-								onSave = std::async(saveLaunchPolicy, [this, state = writeState(count)]
-								{
-									// Calling out into user land, make sure we don't leak any exceptions
-									try
-									{
-										onSave_(state.c_str());
-									}
-									catch (const std::exception& e)
-									{
-										// todo: log the exception to a log file
-										printf("%s\n", e.what());
-									}
-								});
+									// log the exception - e.what()
+									printf("%s\n", e.what());
+								}
 							}
 							break;
 						}
