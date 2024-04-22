@@ -167,90 +167,93 @@ namespace MachEmu
 			auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 			auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 			std::future<std::string> onLoad;
-			std::future<void> onSave;
+			std::future<std::string> onSave;
 
 			auto loadMachineState = [this](std::string&& str)
 			{
-				try
+				if (str.empty() == false)
 				{
-					auto memUuid = memoryController_->Uuid();
-
-					if (memUuid == std::array<uint8_t, 16>{})
+					try
 					{
-						throw std::runtime_error("Invalid memory controller uuid for load interrupt");
+						// perform checks to make sure that this machine load state is compatible with this machine
+
+						auto memUuid = memoryController_->Uuid();
+
+						if (memUuid == std::array<uint8_t, 16>{})
+						{
+							throw std::runtime_error("Invalid memory controller uuid for load interrupt");
+						}
+
+						auto json = nlohmann::json::parse(str);
+						// The memory controllers must be the same
+						auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["memory"]["uuid"].get<std::string>());
+
+						if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
+						{
+							throw std::runtime_error("Incompatible memory controller");
+						}
+
+						cpu_->Load(json["cpu"].dump());
+						std::vector<uint8_t> rom(opt_.RomSize());
+
+						for (auto addr = opt_.RomOffset(); addr < opt_.RomSize(); addr++)
+						{
+							rom[addr] = memoryController_->Read(addr);
+						}
+
+						// The rom must be the same
+						auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, json["memory"]["rom"].get<std::string>());
+						auto romMd5 = Utils::Md5(rom.data(), rom.size());
+
+						if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
+						{
+							throw std::runtime_error("Incompatible rom");
+						}
+
+						// decode and decompress the ram
+						auto jsonRam = json["memory"]["ram"];
+						auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
+							jsonRam["compressor"].get<std::string>(),
+							jsonRam["size"].get<uint32_t>(),
+							jsonRam["bytes"].get<std::string>());
+							
+						// Make sure the ram size matches the layout
+						if (ram.size() != opt_.RamSize())
+						{
+							throw std::runtime_error("Incompatible ram");
+						}
+
+						// write it back to memory
+						auto addr = opt_.RamOffset();
+
+						for (const auto& r : ram)
+						{
+							memoryController_->Write(addr++, r);
+						}
 					}
-
-					auto json = nlohmann::json::parse(str);
-
-					cpu_->Load(json["cpu"].dump());
-
-					// perform checks to make sure that this machine load state is compatible with this machine
-
-					// The memory controllers must be the same
-					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["memory"]["uuid"].get<std::string>());
-
-					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
+					catch (const std::exception& e)
 					{
-						throw std::runtime_error("Incompatible memory controller");
+						// log the exception - e.what()
+						printf("%s\n", e.what());
 					}
-
-					std::vector<uint8_t> rom(opt_.RomSize());
-
-					for (auto addr = opt_.RomOffset(); addr < opt_.RomSize(); addr++)
-					{
-						rom[addr] = memoryController_->Read(addr);
-					}
-
-					// The rom must be the same
-					auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, json["memory"]["rom"].get<std::string>());
-					auto romMd5 = Utils::Md5(rom.data(), rom.size());
-
-					if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
-					{
-						throw std::runtime_error("Incompatible rom");
-					}
-
-					// decode and decompress the ram
-					auto jsonRam = json["memory"]["ram"];
-					auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
-						jsonRam["compressor"].get<std::string>(),
-						jsonRam["size"].get<uint32_t>(),
-						jsonRam["bytes"].get<std::string>());
-
-					// Make sure the ram size matches the layout
-					if (ram.size() != opt_.RamSize())
-					{
-						throw std::runtime_error("Incompatible ram");
-					}
-
-					// write it back to memory
-					auto addr = opt_.RamOffset();
-
-					for (const auto& r : ram)
-					{
-						memoryController_->Write(addr++, r);
-					}
-				}
-				catch (const std::exception& e)
-				{
-					// log the exception - e.what()
-					printf("%s\n", e.what());
 				}
 			};
 
-			auto waitOnHandlers = [&]
+			auto checkHandler = [](std::future<std::string>& fut)
 			{
-				// Make sure that any outstanding onLoad requests have completed
-				if (onLoad.valid() == true)
+				std::string str;
+
+				if (fut.valid() == true)
 				{
-					loadMachineState(onLoad.get());
+					auto status = fut.wait_for(nanoseconds::zero());
+
+					if (status == std::future_status::deferred || status == std::future_status::ready)
+					{
+						str = fut.get();
+					}
 				}
 
-				// Make sure that any outstanding onSave requests have completed
-				if (onSave.valid() == true)
-				{
-					onSave.get();
-				}
+				return str;
 			};
 
 			while (controlBus->Receive(Signal::PowerOff) == false)
@@ -282,12 +285,13 @@ namespace MachEmu
 						}
 						case ISR::Load:
 						{
-							if (onLoad_ != nullptr)
+							// If a user defined callback is set and we are not processing a load or save request
+							if (onLoad_ != nullptr && onLoad.valid() == false && onSave.valid() == false)
 							{
-								waitOnHandlers();
-
 								onLoad = std::async(loadLaunchPolicy, [this]
 								{
+									std::string str;
+										
 									// Calling out into user land, make sure we don't leak any exceptions
 									try
 									{
@@ -296,7 +300,7 @@ namespace MachEmu
 										if (json != nullptr)
 										{
 											// return a copy of the json c string as a std::string
-											return std::string(json);
+											str = json;
 										}
 										else
 										{
@@ -307,16 +311,19 @@ namespace MachEmu
 									{
 										// todo: log the exception to a log file
 										printf("%s\n", e.what());
-										return std::string("");
 									}
+
+									return str;
 								});
+
+								loadMachineState(checkHandler(onLoad));
 							}
 							break;
 						}
 						case ISR::Save:
 						{
-							// Don't do the save if the onSave method has not been set.
-							if (onSave_ != nullptr)
+							// If a user defined callback is set and we are not processing a save or load request
+							if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 							{
 								try
 								{
@@ -326,8 +333,6 @@ namespace MachEmu
 									{
 										throw std::runtime_error("Invalid memory controller uuid for save interrupt");
 									}
-
-									waitOnHandlers();
 
 									auto rm = [this](uint16_t offset, uint16_t size)
 									{
@@ -384,7 +389,11 @@ namespace MachEmu
 											// todo: log the exception to a log file
 											printf("%s\n", e.what());
 										}
+
+										return std::string("");
 									});
+
+									checkHandler(onSave);
 								}
 								catch (const std::exception& e)
 								{
@@ -397,42 +406,27 @@ namespace MachEmu
 						case ISR::Quit:
 						{
 							// Wait for any outstanding load/save requests to complete
-							waitOnHandlers();
+
+							if (onLoad.valid() == true)
+							{
+								// we are quitting, wait for the onLoad handler to complete
+								loadMachineState(onLoad.get());
+							}
+
+							if (onSave.valid() == true)
+							{
+								// we are quitting, wait for the onSave handler to complete
+								onSave.get();
+							}
 							controlBus->Send(Signal::PowerOff);
 							break;
 						}
 						case ISR::NoInterrupt:
 						{
 							// no interrupts pending, do any work that is outstanding
-
-							if (onLoad.valid() == true)
-							{
-								auto status = onLoad.wait_for(nanoseconds::zero());
-
-								if (status == std::future_status::deferred || status == std::future_status::ready)
-								{
-									loadMachineState(onLoad.get());
-								}
-							}
-
-							if (onSave.valid() == true)
-							{
-								auto status = onSave.wait_for(nanoseconds::zero());
-
-								if (status == std::future_status::deferred || status == std::future_status::ready)
-								{
-									// todo onSave needs to return an error
-									onSave.get();
-
-									// todo - log success/failure
-								}
-							}
-
-							// could also dump any pending logs to disk here
-							// example for onLoad could include:
-							// when cpu does not match the load state cpu
-							// when the memory controller does not match the load state memory controller
-							// when the rom does not match the load state rom
+							loadMachineState(checkHandler(onLoad));							
+							checkHandler(onSave);
+							break;
 						}
 						default:
 						{
