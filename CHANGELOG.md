@@ -1,5 +1,7 @@
-1.5.1
+1.5.1 [22/04/16]
 * Fixed api compatibility break in 1.5.0.
+* Drop load/save requests while a load/save
+  is in progress.
 
 1.5.0 [19/04/24]
 * Added Machine interface method `OnLoad`.
