@@ -32,7 +32,7 @@ set(source_dir source)
 set(libMachEmu MachEmu)
 set(major 1)
 set(minor 5)
-set(bugfix 0)
+set(bugfix 1)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
 
