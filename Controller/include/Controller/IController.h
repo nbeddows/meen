@@ -43,8 +43,15 @@ namespace MachEmu
 			A unique universal identifier for this controller.
 
 			@return				The Uuid as a std::array
+
+			@remark				To preserve 1.x api compatibility this method has been made
+								non-pure and returns an empty uuid by default. When a machine
+								load/save is requested the controller must implement this
+								method and a non-empty uuid returned otherwise no load/save
+								operation will be performed and an error will be logged.
+			@remark				This method will be made pure in 2.0.0
 		*/
-		virtual std::array<uint8_t, 16> Uuid() const = 0;
+		virtual std::array<uint8_t, 16> Uuid() const { return {}; }
 
 		/** Read from a device
 		

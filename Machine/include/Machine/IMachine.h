@@ -233,12 +233,8 @@ namespace MachEmu
 			@remark						The function parameter onSave will be called from a different thread from which this
 										method was called if the runAsync or saveAsync config options have been specified.
 
-			@remark						Save requests should not be a frequent operation, therefore (by design) each save
-										request will be processed before moving to the next one, ie, if a save request is
-										being processed while another save has been requested, the thread processing the
-										current save request will block until it has completed before moving onto the next
-										one, ie, save requests are not queued (don't spam the ISR::Save interrupt).
-
+			@remark						Save requests are not queued. When a save is in progress, additional save interrupts
+										will be ignored.
 			@since	version 1.5.0
 		*/
 		virtual void OnSave(std::function<void(const char* json)>&& onSave) = 0;
@@ -265,11 +261,8 @@ namespace MachEmu
 			@remark						When the format of the returned json string is invalid or a load error occurs the state
 										of the machine shall remain unchanged.
 
-			@remark						Load requests should not be a frequent operation, therefore (by design) each load
-										request will be processed before moving to the next one, ie, if a load request is
-										being processed while another load has been requested, the thread processing the
-										current load request will block until it has completed before moving onto the next
-										one, ie, load requests are not queued (don't spam the ISR::Load interrupt).
+			@remark						Load requests are not queued. When a load is in progress, additional load interrupts
+										will be ignored.
 
 			@todo						Log when errors occur.
 

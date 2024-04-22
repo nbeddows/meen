@@ -280,12 +280,7 @@ namespace MachEmu::Tests
 			if (runAsync == true)
 			{
 				err = machine_->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
-
-				// This is currently not supported on some platforms
-				if (err == ErrorCode::NotImplemented)
-				{
-					return;
-				}
+				EXPECT_EQ(ErrorCode::NoError, err);
 			}
 
 			std::vector<std::string> saveStates;
@@ -346,9 +341,16 @@ namespace MachEmu::Tests
 				EXPECT_EQ(3, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 			}
 
-			ASSERT_EQ(saveStates.size(), 3);
+			// When we are in the middle of a save when another save is requested it will be dropped.
+			// This may or may not happen depending on how fast the first save takes to complete.
+			ASSERT_TRUE(saveStates.size() == 3 || saveStates.size() == 2);
 			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}})", saveStates[0].c_str());
-			EXPECT_STREQ(saveStates[1].c_str(), saveStates[2].c_str());
+			EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJw7w2ZczrCXnWFkAGlmfmZm5u9MYauCGFet2sXGwAAAYNgG1w=="}}})", saveStates[1].c_str());
+
+			if (saveStates.size() == 3)
+			{
+				EXPECT_STREQ(R"({"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJw7w2ZczrCXnWFkAGlmfmZm5u9MYauCGFet2sXGwAAAYNgG1w=="}}})", saveStates[2].c_str());
+			}
 		);
 	}
 
