@@ -1,3 +1,7 @@
+1.5.2
+* Perform all compatibility checks before
+  attempting to restore the machine state.
+
 1.5.1 [22/04/16]
 * Fixed api compatibility break in 1.5.0.
 * Drop load/save requests while a load/save

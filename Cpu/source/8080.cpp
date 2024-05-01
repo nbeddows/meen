@@ -335,16 +335,29 @@ void Intel8080::Load(const std::string&& str)
 		throw std::runtime_error("Incompatible cpu");
 	}
 
-	a_ = json["registers"]["a"].get<uint8_t>();
-	b_ = json["registers"]["b"].get<uint8_t>();
-	c_ = json["registers"]["c"].get<uint8_t>();
-	d_ = json["registers"]["d"].get<uint8_t>();
-	e_ = json["registers"]["e"].get<uint8_t>();
-	h_ = json["registers"]["h"].get<uint8_t>();
-	l_ = json["registers"]["l"].get<uint8_t>();
-	status_ = json["registers"]["s"].get<uint8_t>();
-	pc_ = json["pc"].get<uint16_t>();
-	sp_ = json["sp"].get<uint16_t>();
+	// Make sure everything exists and is copied out
+	auto a = json["registers"]["a"].get<uint8_t>();
+	auto b = json["registers"]["b"].get<uint8_t>();
+	auto c = json["registers"]["c"].get<uint8_t>();
+	auto d = json["registers"]["d"].get<uint8_t>();
+	auto e = json["registers"]["e"].get<uint8_t>();
+	auto h = json["registers"]["h"].get<uint8_t>();
+	auto l = json["registers"]["l"].get<uint8_t>();
+	auto s = json["registers"]["s"].get<uint8_t>();
+	auto pc = json["pc"].get<uint16_t>();
+	auto sp = json["sp"].get<uint16_t>();
+
+	// Restore the state of the cpu
+	a_ = a;
+	b_ = b;
+	c_ = c;
+	d_ = d;
+	e_ = e;
+	h_ = h;
+	l_ = l;
+	status_ = s;
+	pc_ = pc;
+	sp_ = sp;
 }
 
 std::string Intel8080::Save() const
