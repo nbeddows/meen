@@ -37,7 +37,7 @@ SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
+	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes -Wno-psabi)
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
