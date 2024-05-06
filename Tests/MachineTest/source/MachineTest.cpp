@@ -91,8 +91,8 @@ namespace MachEmu::Tests
 				EXPECT_STREQ(expectedJson.dump().c_str(), actualJson["cpu"].dump().c_str());
 			});
 
-			std::string dir = PROGRAMS_DIR"/";
-			memoryController_->Load((dir + name).c_str(), 0x100);
+			auto dir = std::string(PROGRAMS_DIR) + name;
+			memoryController_->Load(dir.c_str(), 0x100);
 			machine_->Run(0x100);
 		);
 	}
