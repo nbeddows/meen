@@ -78,7 +78,7 @@ Untar the mach-emu archive.
 
 MachEmu uses CMake (3.28 is the minimum version required) for its build system and has been tested on both Window 10 and Ubuntu 23.10.
 
-Open cmake-gui (feel free to use command line cmake, but the remainder of this readme will use cmake-gui). Set the source code text field to the mach-emu directory and binary directory for the build files.
+Open cmake-gui (feel free to use command line cmake, but the remainder of this readme will use cmake-gui). Set the source code text field to the mach-emu directory and the binaries text field to a desired directory for the build files.
 
 Click configure and choose Visual Studio 16 or 17 for Windows or Unix Makefiles for Linux (if prompted to create the build directory, accept), then click generate.
 
@@ -97,6 +97,41 @@ The following image gives a possible Linux CMake configuration (note that we don
 ![Example Linux configuration](Docs/images/CMake(Linux).png)
 
 MachEmu has been tested with g++ version 13.2 with GNU Make 4.3. Earlier versions of g++ may work though they are untested. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
+
+##### Arm Linux
+
+MachEmu can be cross compiled for Arm Linux. It has been tested successfully against Raspberry Pi OS on a Raspberry Pi 5 with gcc-arm-linux-gnueabihf 12.3.
+
+Install the arm compiler: `sudo apt install gcc-arm-linux-gnueabihf`.
+
+Before an Arm cross compile can be started any dependent libraries must be cross compiled for Arm.
+
+**Building zlib** (only required if the enableZlib cmake config option has been enabled)
+
+1. Get the latest zlib from github.
+2. Open cmake-gui, set the source code text field to the zlib directory and the binaries text field to a desired directory for the build files, then click configure.
+3. Select `Unix Makefiles` for the project generator and check `Specify options for cross-compiling`, click `Next`.
+4. Specify the options for the target system.<br>
+![Target System Options](Docs/images/TargetSystemOptions.png)<br>
+Note: the Fortran compiler and Find Program/Libraty/Include options remain unchanged.<br>
+5. The following image gives a possible Arm Linux configuration<br>
+![Example Arm Linux Configuration](Docs/images/CMake(zLib).png)<br>
+Note: the CMAKE_INSTALL_PREFIX and other install location prefixes (bin/inc/lib/etc) **must** be set to the CMAKE_FIND_ROOT_PATH directory as set in the Tools/arm-linux-gnueabihf.cmake toolchain file. By default it is set to `${CMAKE_SOURCE_DIR}/Arm` but can be changed to any location of your choosing as long as they both match.
+6. Change directory into the binaries directory that was configured in step 2 and run `make install`. This will install zlib into the Arm build environment as specifed in the previous step: `${CMAKE_SOURCE_DIR}/Arm`.
+
+**Building MachEmu**
+
+1. Open cmake-gui, set the source code text field to the mach-emu directory and the binaries text field to a desired directory for the build files, then click configure.
+2. Select `Unix Makefiles` for the project generator and check `Specify toolchain file for cross-compiling`, click `Next`.
+3. Select the toolchain file located in the tools directory: `arm-linux-gnueabihf.cmake`, click `Finish`. Once it completes click `Generate`.
+4. Change into the binaries directory and run `make`.
+5. When make completes, run `make Sdk`, this should generate a tar.gz archive with a binary mach-emu arm distribution.
+6. Copy the distribution to the arm machine: `scp mach-emu-v1.5.1-Linux-Arm-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`
+7. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
+8. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
+9. Change directory to mach-emu.
+10. Install the mach-emu shared library: `./mach-emu-install.sh`. This will install the shared library to /usr/lib
+11. Change directory to bin and run the Controller and Machine Tests programs, they should run successfully.
 
 ##### Python
 
