@@ -92,11 +92,11 @@ MachEmu has been tested using Microsoft Visual Studio and requires at least vers
 
 ##### Linux
 
-The following image gives a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be g++ (Clang is currently not supported). If the gui output displays a different compiler you can open the root CMakeLists.txt and uncomment the following line `set(CMAKE_CXX_COMPILER g++-13)`
+The following image gives a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be gcc or clang. If the gui output displays a different compiler you can open the root CMakeLists.txt and uncomment the following lines `set(CMAKE_CXX_COMPILER g++)` and update it with a supported compiler.
 
 ![Example Linux configuration](Docs/images/CMake(Linux).png)
 
-MachEmu has been tested with g++ version 13.2 with GNU Make 4.3. Earlier versions of g++ may work though they are untested. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
+MachEmu has been tested with gcc version 13.2 with GNU Make 4.3. Earlier versions of gcc may work though they are untested. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
 
 ##### Arm Linux
 
