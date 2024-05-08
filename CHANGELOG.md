@@ -1,7 +1,8 @@
-1.5.2
+1.6.0
 * Perform all compatibility checks before
   attempting to restore the machine state.
 * Added Clang support.
+* Added Arm Linux GCC support.
 
 1.5.1 [22/04/16]
 * Fixed api compatibility break in 1.5.0.
@@ -44,7 +45,7 @@
 1.3.0 [29/01/24]
 * Added CMake support.
   Tested with Visual Studio 22 (Windows 10) and
-  g++ 13.2 (Ubuntu 23.10).
+  gcc 13.2 (Ubuntu 23.10).
 * Moved Space Invaders to it's own repository.
 * Removed the Windows specific sdk batch script
   (now building via CMake).

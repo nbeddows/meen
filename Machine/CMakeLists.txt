@@ -46,7 +46,7 @@ endif()
 add_library(${lib_name} SHARED ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden)
+	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden -Wno-psabi)
 endif()
 
 target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVersion}\")
