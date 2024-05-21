@@ -62,8 +62,7 @@ file(WRITE "source/MachineTestDeps.py"
 )
 
 target_link_libraries(${exe_name} PRIVATE
-  GTest::gtest
-  GTest::gtest_main
+  gtest::gtest
   ${libMachEmu}
   nlohmann_json::nlohmann_json
   TestControllers

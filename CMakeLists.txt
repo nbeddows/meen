@@ -19,12 +19,6 @@
 # SOFTWARE.
 
 cmake_minimum_required (VERSION 3.28)
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
-#set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Tools/arm-linux-gnueabihf.cmake)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
@@ -50,6 +44,7 @@ if(enableZlib)
     find_package(ZLIB REQUIRED)
 endif()
 
+find_package(gtest REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
