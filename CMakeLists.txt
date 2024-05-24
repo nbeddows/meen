@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required (VERSION 3.28)
+cmake_minimum_required (VERSION 3.25)
 set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
