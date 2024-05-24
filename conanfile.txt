@@ -11,3 +11,5 @@ cmake_layout
 [options]
 zlib*:shared=True
 gtest*:build_gmock=False
+[tool_requires]
+cppcheck/2.14
