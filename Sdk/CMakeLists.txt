@@ -22,8 +22,8 @@ set(target_name Sdk)
 set(sdkDir ${CMAKE_BINARY_DIR}/${target_name}/mach-emu)
 
 if(MSVC)
-  set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
-  set(installLinkLib "install(FILES \${CMAKE_SOURCE_DIR}/bin/MachEmu.lib DESTINATION lib)\n")
+  set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/lib/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
+  set(installLinkLib "install(FILES \${artifactsDir}/lib/MachEmu.lib DESTINATION lib)\n")
   set(postfix dll)
 
   if(enablePythonModule)
@@ -38,7 +38,7 @@ else()
   set(postfix so)
   set(prefix lib)
   set(versionExt .${machEmuVersion})
-  
+
   if(${CMAKE_CROSSCOMPILING})
     set(stripLib COMMAND arm-linux-gnueabihf-strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
   else()
@@ -54,15 +54,15 @@ else()
 endif()
 
 if(enablePythonModule)
-  set(copyPythonModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${pythonModule} ${sdkDir}/bin/${pythonModule})
-  set(copyTestControllersModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${testControllersModule} ${sdkDir}/bin/${testControllersModule})
+  set(copyPythonModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${pythonModule} ${sdkDir}/bin/${pythonModule})
+  set(copyTestControllersModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${testControllersModule} ${sdkDir}/bin/${testControllersModule})
   set(findPythonPackage "find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)\n")
-  set(installPythonModule "install(FILES \${CMAKE_SOURCE_DIR}/bin/${pythonModule} DESTINATION lib)\n")
+  set(installPythonModule "install(FILES \${artifactsDir}/bin/${pythonModule} DESTINATION lib)\n")
 endif()
 
 if(${CMAKE_CROSSCOMPILING})
   file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/mach-emu-install.sh
-    "sudo mv bin/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/ && sudo ln -s /usr/lib/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/${prefix}MachEmu.${postfix}"
+    "sudo mv ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/ && sudo ln -s /usr/lib/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/${prefix}MachEmu.${postfix}"
   )
 
   add_custom_target(
@@ -71,9 +71,9 @@ if(${CMAKE_CROSSCOMPILING})
     COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/mach-emu-install.sh ${sdkDir}/mach-emu-install.sh
     COMMAND chmod 755 ${sdkDir}/mach-emu-install.sh
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/ControllerTest ${sdkDir}/bin/ControllerTest
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/MachineTest ${sdkDir}/bin/MachineTest
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/ControllerTest ${sdkDir}/bin/ControllerTest
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/MachineTest ${sdkDir}/bin/MachineTest
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Tests/Programs ${sdkDir}/bin/Programs
     ${stripLib}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
@@ -103,20 +103,23 @@ else()
     "# SOFTWARE.\n\n"
     "cmake_minimum_required (VERSION 3.28)\n"
     "#set(CMAKE_CXX_COMPILER g++-13)\n"
-    "set(CMAKE_CXX_STANDARD 20)\n"
-    "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-    "set(CMAKE_CXX_EXTENSIONS OFF)\n"
+    "#set(CMAKE_CXX_STANDARD 20)\n"
+    "#set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
+    "#set(CMAKE_CXX_EXTENSIONS OFF)\n"
     "set(include_dir include)\n"
     "set(module_dir module)\n"
     "set(source_dir source)\n"
     "project(mach-emu)\n"
-    "find_library(libMachEmu MachEmu PATHS \${CMAKE_SOURCE_DIR}/bin/)\n"
+    "set(artifactsDir \${CMAKE_SOURCE_DIR})\n"
+    "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \$<1:\${artifactsDir}/bin>)\n"
+    "find_library(libMachEmu MachEmu PATHS \${artifactsDir}/bin)\n"
+    "find_package(gtest REQUIRED)\n"
     "find_package(nlohmann_json REQUIRED)\n"
     ${findPythonPackage}
     ${findZlibPackage}
     "add_subdirectory(Tests)\n"
     ${installPythonModule}
-    "install(FILES \${CMAKE_SOURCE_DIR}/bin/${prefix}MachEmu.${postfix}${versionExt} DESTINATION lib)\n"
+    "install(FILES \${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} DESTINATION lib)\n"
     ${installLinkLib}
     "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Base/include/Base DESTINATION include)\n"
     "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Controller/include/Controller DESTINATION include)\n"
@@ -124,10 +127,25 @@ else()
     ${installSoLink}
   )
 
+  file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/conanfile.txt
+    "[requires]\n"
+    "gtest/1.14.0\n"
+    "nlohmann_json/3.11.3\n"
+    "zlib/1.3.1\n"
+    "[generators]\n"
+    "CMakeDeps\n"
+    "CMakeToolchain\n"
+    "[layout]\n"
+    "cmake_layout\n"
+    "[options]\n"
+    "zlib*:shared=True\n"
+    "gtest*:build_gmock=False\n"
+  )
+
   # copy out the required modules/sources/libraries, perform static analysis
   add_custom_target(
     ${target_name}
-    COMMAND cppcheck -i build -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
+    COMMAND cppcheck -i build -i CMakeFiles -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
     COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Base/include ${sdkDir}/Base/include
     COMMAND ${CMAKE_COMMAND} -E copy_directory_if_different ${CMAKE_SOURCE_DIR}/Controller/include ${sdkDir}/Controller/include
@@ -135,10 +153,11 @@ else()
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/IMachine.h ${sdkDir}/Machine/include/Machine/IMachine.h
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/MachineFactory.h ${sdkDir}/Machine/include/Machine/MachineFactory.h
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/conanfile.txt ${sdkDir}/conanfile.txt
     ${copyPythonModule}
     ${copyTestControllersModule}
     ${copyLib}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
     ${soLink}
     ${stripLib}
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
