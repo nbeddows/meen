@@ -19,9 +19,6 @@
 # SOFTWARE.
 
 cmake_minimum_required (VERSION 3.28)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
 set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
@@ -31,6 +28,18 @@ set(minor 5)
 set(bugfix 1)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
+
+if(MSVC)
+  set(buildType $<CONFIG>)
+else()
+  set(buildType ${CMAKE_BUILD_TYPE})
+endif()
+
+set(artifactsDir ${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${CMAKE_SYSTEM_PROCESSOR})
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/bin)
 
 option(enableZlib "Enable zlib compression" ON)
 option(enablePythonModule "Enable Python module via Pybind" OFF)
