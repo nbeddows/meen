@@ -1,4 +1,4 @@
-#include <format> 
+//#include <format> 
 #include <pybind11/pybind11.h>
 
 #include "MachinePy/MachineHolder.h"
@@ -17,7 +17,11 @@ namespace MachEmu
 
 	ErrorCode MachineHolder::SetClockResolution(int64_t clockResolution)
 	{
-		return machine_->SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
+		auto count = snprintf(nullptr, 0, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
+		auto str = std::string(count + 1, '\0');
+		snprintf(str.data(), count + 1, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
+		return machine_->SetOptions(str.c_str());
+		//return machine_->SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 	}
 
 	void MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
