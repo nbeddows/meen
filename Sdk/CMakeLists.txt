@@ -62,7 +62,7 @@ endif()
 
 if(${CMAKE_CROSSCOMPILING})
   file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/mach-emu-install.sh
-    "sudo mv ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/ && sudo ln -s /usr/lib/${prefix}MachEmu.${postfix}${versionExt} /usr/lib/${prefix}MachEmu.${postfix}"
+    "sudo mv bin/${prefix}MachEmu.${postfix}${versionExt} \${1} && sudo ln -s \${1}/${prefix}MachEmu.${postfix}${versionExt} \${1}/${prefix}MachEmu.${postfix}"
   )
 
   add_custom_target(
