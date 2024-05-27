@@ -71,6 +71,10 @@ namespace MachEmu
 			std::cout << json << std::endl;
 		});		
 		
+		// Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
+		// These values are used for load and save requests
+		machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":16384})");
+
 		// Set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
 		machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
