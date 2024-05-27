@@ -45,12 +45,15 @@ namespace MachEmu::Tests
 		static void Run(bool runAsync);
 		static void Load(bool runAsync);
 	public:
+		static std::string programsDir_;
+
 		static void SetUpTestCase();
 		void SetUp();
 	};
 
 	std::shared_ptr<IController> MachineTest::cpmIoController_;
 	std::shared_ptr<MemoryController> MachineTest::memoryController_;
+	std::string MachineTest::programsDir_;
 	std::shared_ptr<IController> MachineTest::testIoController_;
 	std::unique_ptr<IMachine> MachineTest::machine_;
 
@@ -62,6 +65,12 @@ namespace MachEmu::Tests
 		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
+
+		// Use the default directory if it has not been set by the user
+		if(programsDir_.empty() == true)
+		{
+			programsDir_ = PROGRAMS_DIR;
+		}
 	}
 
 	void MachineTest::SetUp()
@@ -69,10 +78,10 @@ namespace MachEmu::Tests
 		memoryController_->Clear();
 		//CP/M Warm Boot is at memory address 0x00, this will be
 		//emulated with the exitTest subroutine.
-		memoryController_->Load(PROGRAMS_DIR"/exitTest.bin", 0x00);
+		memoryController_->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00);
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
-		memoryController_->Load(PROGRAMS_DIR"/bdosMsg.bin", 0x05);
+		memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05);
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
 		// Set default options
@@ -91,7 +100,7 @@ namespace MachEmu::Tests
 				EXPECT_STREQ(expectedJson.dump().c_str(), actualJson["cpu"].dump().c_str());
 			});
 
-			auto dir = std::string(PROGRAMS_DIR) + name;
+			auto dir = programsDir_ + name;
 			memoryController_->Load(dir.c_str(), 0x100);
 			machine_->Run(0x100);
 		);
@@ -140,8 +149,8 @@ namespace MachEmu::Tests
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
 		EXPECT_EQ(ErrorCode::NoError, err);
 
-		memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
-		memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
+		memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
+		memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
 
 		EXPECT_NO_THROW
 		(
@@ -227,8 +236,8 @@ namespace MachEmu::Tests
 			// going under so the cpu sleeps at the end
 			// of the program so it maintains sync. It's never going to
 			// be perfect, but its close enough for testing purposes).
-			memoryController_->Load(PROGRAMS_DIR"nopStart.bin", 0x04);
-			memoryController_->Load(PROGRAMS_DIR"nopEnd.bin", 0xC353);
+			memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
+			memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
 
 			// 25 millisecond resolution
 			err = machine_->SetOptions(R"({"clockResolution":25000000})");
@@ -291,7 +300,7 @@ namespace MachEmu::Tests
 			memoryController_->Write(0x00FE, 0xD3);
 			// The data to write to the controller that will trigger the ISR::Load interrupt
 			memoryController_->Write(0x00FF, 0xFD);
-			memoryController_->Load(PROGRAMS_DIR"/TST8080.COM", 0x100);
+			memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100);
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
 			// never writes beyond this.
@@ -372,3 +381,16 @@ namespace MachEmu::Tests
 
 	#include "8080Test.cpp"
 } // namespace MachEmu::Tests
+
+int main(int argc, char** argv)
+{
+	std::cout << "Running main() from MachineTest.cpp" << std::endl;
+	testing::InitGoogleTest(&argc, argv);
+
+	if (argc > 1)
+	{
+		MachEmu::Tests::MachineTest::programsDir_ = argv[1];
+	}
+
+	return RUN_ALL_TESTS();
+}
