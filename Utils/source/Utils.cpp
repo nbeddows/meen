@@ -20,12 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <bit>
+#include <libbase64.h>
+#include <stdexcept>
 #ifdef ENABLE_ZLIB
 #include <zlib.h>
 #endif
 
 #include "Utils/Utils.h"
-#include "Utils/base64.hpp"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,7 +46,14 @@ namespace MachEmu::Utils
 			throw std::invalid_argument("Invalid binary to text encoder parameter");
 		}
 
-		std::string binToTxt;
+		auto encode = [](const char* src, size_t srcLen)
+		{
+			// dst string needs to be at least 4/3 times the size of the input 
+			std::string binToTxt(srcLen * 1.5, '\0');
+			base64_encode(src, srcLen, binToTxt.data(), &srcLen, 0);
+			binToTxt.resize(srcLen);
+			return binToTxt;
+		};
 
 		if (compressor != "none")
 		{
@@ -62,7 +71,7 @@ namespace MachEmu::Utils
 					throw std::runtime_error("Failed to compress binary data");
 				}
 
-				binToTxt = base64::encode_into<std::string>(dst.begin(), dst.begin() + len);
+				return encode(std::bit_cast<const char*>(dst.data()), len);
 			}
 			else
 #endif
@@ -72,10 +81,8 @@ namespace MachEmu::Utils
 		}
 		else
 		{
-			binToTxt = base64::encode_into<std::string>(bin, bin + binLen);
+			return encode(std::bit_cast<const char*>(bin), binLen);
 		}
-
-		return binToTxt;
 	}
 
 	// dst needs to be of a size equal to the uncompressed input - this needs to be determined by external means
@@ -86,7 +93,10 @@ namespace MachEmu::Utils
 			throw std::invalid_argument("Invalid binary to text decoder parameter");
 		}
 
-		auto bin = base64::decode_into<std::vector<uint8_t>>(src.begin(), src.end());
+		std::vector<uint8_t> bin(src.length(), '\0');
+		auto binLen = bin.size();
+		base64_decode(src.data(), src.length(), std::bit_cast<char*>(bin.data()), &binLen, 0);
+		bin.resize(binLen);
 
 		if (decompressor != "none")
 		{

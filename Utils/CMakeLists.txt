@@ -22,7 +22,6 @@ set (lib_name Utils)
 
 set (${lib_name}_include_files
 	${include_dir}/${lib_name}/${lib_name}.h
-	${include_dir}/${lib_name}/base64.hpp
 	${include_dir}/${lib_name}/md5.h
 )
 
@@ -44,6 +43,6 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/$
 
 if(enableZlib)
 	target_compile_definitions(${lib_name} PRIVATE ENABLE_ZLIB)
-	target_link_libraries(${lib_name} PRIVATE ZLIB::ZLIB)
+	target_link_libraries(${lib_name} PRIVATE aklomp::base64 ZLIB::ZLIB)
 endif()
 

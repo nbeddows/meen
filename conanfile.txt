@@ -1,4 +1,5 @@
 [requires]
+base64/0.5.2
 gtest/1.14.0
 nlohmann_json/3.11.3
 pybind11/2.12.0
