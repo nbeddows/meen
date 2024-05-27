@@ -22,7 +22,7 @@ from TestControllersPy import MemoryController
 
 class MachineTest(unittest.TestCase):
     def setUp(self):
-        self.programsDir = '../../Programs/'
+        self.programsDir = MachineTestDeps.programsDir
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()

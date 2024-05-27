@@ -38,12 +38,15 @@ namespace MachEmu::Tests
 		static std::unique_ptr<MemoryController> memoryController_;
 		static std::unique_ptr<TestIoController> testIoController_;
 	public:
+		static std::string programsDir_;
+
 		static void SetUpTestCase();
 	};
 
 	std::unique_ptr<CpmIoController> ControllerTest::cpmIoController_;
 	std::unique_ptr<MemoryController> ControllerTest::memoryController_;
 	std::unique_ptr<TestIoController> ControllerTest::testIoController_;
+	std::string ControllerTest::programsDir_;
 
 	void ControllerTest::SetUpTestCase()
 	{
@@ -51,6 +54,12 @@ namespace MachEmu::Tests
 		memoryController_ = std::make_unique<MemoryController>();
 		cpmIoController_ = std::make_unique<CpmIoController>(nullptr);
 		testIoController_ = std::make_unique<TestIoController>();
+
+		// Use the default directory if it has not been set by the user
+		if (programsDir_.empty() == true)
+		{
+			programsDir_ = PROGRAMS_DIR;
+		}
 	}
 
 	TEST_F(ControllerTest, Uuids)
@@ -70,7 +79,7 @@ namespace MachEmu::Tests
 		(
 			//load one byte compliment carry program into memory
 			//cppcheck-suppress unknownMacro
-			memoryController_->Load (PROGRAMS_DIR"cmc.bin", 0);
+			memoryController_->Load ((programsDir_ + "/cmc.bin").c_str(), 0);
 		);
 	}
 
@@ -79,7 +88,7 @@ namespace MachEmu::Tests
 		EXPECT_ANY_THROW
 		(
 			//load three byte compliment accumulator program starting at the end of memory, this should throw
-			memoryController_->Load(PROGRAMS_DIR"cma.bin", static_cast<uint16_t>(memoryController_->Size() - 1));
+			memoryController_->Load((programsDir_ + "/cma.bin").c_str(), static_cast<uint16_t>(memoryController_->Size() - 1));
 		);
 	}
 
@@ -102,10 +111,23 @@ namespace MachEmu::Tests
 
 		EXPECT_NO_THROW
 		(
-			memoryController_->Load(PROGRAMS_DIR"cmc.bin", 0x00);
+			memoryController_->Load((programsDir_ + "/cmc.bin").c_str(), 0x00);
 			value = memoryController_->Read(0x00);
 		);
 
 		EXPECT_EQ(0x3F, value);
 	}
 } // namespace MachEmu::Tests
+
+int main(int argc, char** argv)
+{
+	std::cout << "Running main() from ControllerTest.cpp" << std::endl;
+	testing::InitGoogleTest(&argc, argv);
+
+	if (argc > 1)
+	{
+		MachEmu::Tests::ControllerTest::programsDir_ = argv[1];
+	}
+
+	return RUN_ALL_TESTS();
+}

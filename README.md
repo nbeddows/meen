@@ -48,101 +48,171 @@ The following table displays the current defacto test suites that these unit tes
 |       | CPUTEST          | PASS   |
 |       | TST8080          | PASS   |
 
-IMachine.h specifies the MachEmu API and outlines the basic principles of operation.<br>
-MachineFactory.h specifies the MachEmu shared library entry point.
+`IMachine.h` specifies the MachEmu API.<br>
+`MachineFactory.h` specifies the MachEmu shared library entry point.
+
+##### Basic principles of operation
+
+The following code snippet gives and example of how a machine can be instantiated, configured and executed:
+
+```cpp
+// Create a synchronous i8080 machine running as fast as possible 
+auto machine = MakeMachine();
+
+// Create a custom memory controller (See tests for examples)
+auto customMemoryController = std::make_unique<CustomMemoryController>();
+
+// Load memory with program via custom controller method
+customMemoryController->LoadProgram("myProgram.com");
+
+// Create custom IO Controller (See tests for examples)
+auto customIOController = std::make_unique<CustomIOController>();
+
+// Set the memory and IO controllers with the machine
+machine->SetIOController(customIOController);
+machine->SetMemoryController(customMemoryController);
+
+// Can be called from a different thread if the runAsync/loadAsync options are specifed
+machine_->OnLoad([]
+{
+	// Return the json state to load, could be read from disk for example
+	return "json state as passed to OnSave";
+});
+
+// Can be called from a different thread if the runAsync/saveAsync options are specifed
+machine->OnSave([](const char* json)
+{
+	// Handle the machines current state, for example, writing it to disk
+	std::cout << json << std::endl;
+});		
+
+// Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
+// These values are used for load and save requests
+machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":16384})");
+
+// Set the clock resolution - not setting this will run the
+// machine as fast as possible (default)
+machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
+
+// Run the machine sychronously, it won't return until the custom IO
+// controller ServiceInterrupts override generates an ISR::Quit interrupt
+auto runTime = machine->Run();
+
+// Run the machine asychronously - this can be done by setting the following json config
+// option either in the MakeMachine factory method or via IMachine::SetOptions
+machine->SetOptions(R"({"runAsync":true})");
+machine->Run();
+
+// ...
+// Do additional work here while the machine is running
+// ...
+
+// Will not return until the custom IO
+// controller ServiceInterrupts override generates an ISR::Quit interrupt
+runTime = machine->WaitForCompletion();
+```
 
 ### Compilation
 
-The compilation steps below are geard towards installing MachEmu and building the tests from the development package, however, these steps closely align when building the develoment package from source. When you are building from source and want to create a development package you need to run the Sdk project.
+MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppchek for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
 
-##### Pre-requisites
-
-The following development packages require installation:
-
-- [cmake](https://cmake.org/download/)<br>
-- [nlohmann_json](https://github.com/nlohmann/json/releases)<br>
-- [zlib](https://github.com/madler/zlib/releases) (when the development package has been built with the enableZlib cmake config option enabled)<br>
-
-When the MachEmu development package has been built with the enablePythonModule cmake config option enabled, the following development packages require installtion:
-
-- [Python3](https://www.python.org/downloads/windows/)<br>
-- Python3 development (when building from source)<br>
-    - **Linux:** `sudo apt install python3-dev`<br>
-    - **Windows:** available via the advanced options in the installer.<br>
-- [pybind11](https://github.com/pybind/pybind11) (when building the development package)<br>
-- [numpy](https://github.com/numpy/numpy) (when using the Python example memory controller)<br>
-
-##### Configuration
-
-Untar the mach-emu archive.
-
-MachEmu uses CMake (3.28 is the minimum version required) for its build system and has been tested on both Window 10 and Ubuntu 23.10.
-
-Open cmake-gui (feel free to use command line cmake, but the remainder of this readme will use cmake-gui). Set the source code text field to the mach-emu directory and the binaries text field to a desired directory for the build files.
-
-Click configure and choose Visual Studio 16 or 17 for Windows or Unix Makefiles for Linux (if prompted to create the build directory, accept), then click generate.
-
-##### Windows
-
-The following image give a possible Windows CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Make sure that your install location is in your PATH environment variable otherwise MachEmu.dll will fail to load when the unit tests are run.
-
-![Example Windows configuration](Docs/images/CMake(Windows).png)
-
-MachEmu has been tested using Microsoft Visual Studio and requires at least version 16 (2019). Open the mach-emu visual studio solution, (depending on your install location you may need to open visual studio with admin privileges) set the configuration to Release and project to INSTALL, then build. Once this builds successfully you will be able to change your project to the machine and controller unit tests and they should run successfully.
+#### Pre-requisites
 
 ##### Linux
 
-The following image gives a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be gcc or clang. If the gui output displays a different compiler you can open the root CMakeLists.txt and uncomment the following lines `set(CMAKE_CXX_COMPILER g++)` and update it with a supported compiler.
+- `sudo apt install cppcheck` (if building a distribution, see step 7).
+- `sudo apt install cmake`.
+- `sudo apt install doxygen` (if building a distribution, see step 7).
+- `sudo apt install python3`.
+- `sudo apt install python3-dev` (if building the Python module, see step 4).
+- `pipx install conan`.
+- `sudo apt install gcc-arm-linux-gnueabihf`. (if cross compiling for Arm, see step 3).
 
-![Example Linux configuration](Docs/images/CMake(Linux).png)
+##### Windows
 
-MachEmu has been tested with gcc version 13.2 with GNU Make 4.3. Earlier versions of gcc may work though they are untested. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
+- [CppCheck static analysis](http://cppcheck.net/) (if building a distribution, see step 7).<br>
+- [CMake build system](https://cmake.org/download/).<br>
+- [Doxygen](https://www.doxygen.nl/download.html) (if building a distribution, see step 7).<br>
+- [Python3](https://www.python.org/downloads/windows/).<br>
+- `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
+- `pip install conan`.
 
-##### Arm Linux
+#### Configuration
 
-MachEmu can be cross compiled for Arm Linux. It has been tested successfully against Raspberry Pi OS on a Raspberry Pi 5 with gcc-arm-linux-gnueabihf 12.3.
+**1.** Create a default profile: `conan profile detect`. This will detect the operating system, build architecture, compiler settings and set the build configuration as Release by default. The profile will be named `default` and will reside in $HOME/.conan2/profiles. 
 
-Install the arm compiler: `sudo apt install gcc-arm-linux-gnueabihf`.
+**2.** The created profile is an educated guess, open it and make sure that it is correct for your system, ensure that the compiler standard is set to 20: `compiler.cppstd=20`.
 
-Before an Arm cross compile can be started any dependent libraries must be cross compiled for Arm.
+**3.** Run conan to install the dependent packages.
+- Using the default build and host profiles: `conan install . --build=missing`.
+- Using the default build profile targeting Raspberry Pi: `conan install . --build=missing -pr:h=profiles/raspberry`.<br>
+NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (See Pre-requisites).
 
-**Building zlib** (only required if the enableZlib cmake config option has been enabled)
+This will (compile if required and) install the following dependent packages:
 
-1. Get the latest zlib from github.
-2. Open cmake-gui, set the source code text field to the zlib directory and the binaries text field to a desired directory for the build files, then click configure.
-3. Select `Unix Makefiles` for the project generator and check `Specify options for cross-compiling`, click `Next`.
-4. Specify the options for the target system.<br>
-![Target System Options](Docs/images/TargetSystemOptions.png)<br>
-Note: the Fortran compiler and Find Program/Libraty/Include options remain unchanged.<br>
-5. The following image gives a possible Arm Linux configuration<br>
-![Example Arm Linux Configuration](Docs/images/CMake(zLib).png)<br>
-Note: the CMAKE_INSTALL_PREFIX and other install location prefixes (bin/inc/lib/etc) **must** be set to the CMAKE_FIND_ROOT_PATH directory as set in the Tools/arm-linux-gnueabihf.cmake toolchain file. By default it is set to `${CMAKE_SOURCE_DIR}/Arm` but can be changed to any location of your choosing as long as they both match.
-6. Change directory into the binaries directory that was configured in step 2 and run `make install`. This will install zlib into the Arm build environment as specifed in the previous step: `${CMAKE_SOURCE_DIR}/Arm`.
+- `gtest`: for running the machine and controller unit tests.
+- `nlohmann_json`: for parsing machine configuration options.
+- `pybind`: for creating Python C++ bindings.
+- `zlib`: for memory (de)compression when loading and saving files.<br>
+If you are not interested in building the Python module or zlib support the pybind and zlib packages can be removed from the conanfile.txt `[requires]` section. Make sure to disable zlib support if you remove zlib (see step 4 below).
 
-**Building MachEmu**
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --settings=build_type=Debug`.
 
-1. Open cmake-gui, set the source code text field to the mach-emu directory and the binaries text field to a desired directory for the build files, then click configure.
-2. Select `Unix Makefiles` for the project generator and check `Specify toolchain file for cross-compiling`, click `Next`.
-3. Select the toolchain file located in the tools directory: `arm-linux-gnueabihf.cmake`, click `Finish`. Once it completes click `Generate`.
-4. Change into the binaries directory and run `make`.
-5. When make completes, run `make Sdk`, this should generate a tar.gz archive with a binary mach-emu arm distribution.
-6. Copy the distribution to the arm machine: `scp mach-emu-v1.5.1-Linux-Arm-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`
-7. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-8. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
-9. Change directory to mach-emu.
-10. Install the mach-emu shared library: `./mach-emu-install.sh`. This will install the shared library to /usr/lib
-11. Change directory to bin and run the Controller and Machine Tests programs, they should run successfully.
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --options=zlib/*:shared=False`.
 
-##### Python
+**4.** Run cmake to configure and generate the build system.
 
-When the enablePythonModule option is checked a MachEmu Python module will be built (when building the development package) and installed in the same directory as the MachEmu shared library.
+- Multi configuration generators (MSVC for example): `cmake --preset conan-default [-Wno-dev]`.
+- Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
+A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
 
-The MachEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
+The following error has been encountered on Linux with conan 2.3.0 and cmake 3.25.1:<br>
+`Error in find_package: By not providing "Findgtest.cmake" in CMAKE_MODULE_PATH ...`.<br>
+The name of the include is case sensitive, make sure that it is the case:<br>
+`mv build/Release/generators/FindGTest.cmake build/Release/generators/Findgtest.cmake`.
 
-1. Add the MachEmu lib install path to your PYTHONPATH environment variable:<br>
-    `export PYTHONPATH=${mach-emu-install-dir}/lib`
-2. At run time via the Python sys module:<br>
-    `sys.path.append(${mach-emu-install-dir}/lib)`
+The following MachEmu cmake options are supported:
+- Disable zlib support: `cmake --preset conan-default -D enableZlib=False`.
+- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=True`.
+
+**5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
+The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
+
+NOTE: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
+
+**6.** Run the unit tests:
+
+C++ - Windows:
+- `artifacts\Release\AMD64\bin\MachineTest.exe`.
+- `artifacts\Release\AMD64\bin\ControllerTest.exe`.
+
+C++ - Linux:
+- `artifacts/Release/x86_64/bin/MachineTest.exe`.
+- `artifacts/Release/x86_64/bin/ControllerTest.exe`.
+
+C++ - Arm Linux:<br>
+
+When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
+1. Create an Arm Linux binary distribution: `cmake --build --preset conan-release --target=Sdk`. 
+2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-Arm-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
+4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
+5. Change directory to mach-emu: `cd mach-emu`.
+6. Install the mach-emu shared library at a specifed location (optional): `./mach-emu-install.sh /usr/local/lib`.
+7. Run the unit tests using the test programs: `bin/MachineTest bin/Programs/`.<br>
+
+Python:
+- `Tests\MachineTest\source\test_Machine.py -v`.
+
+Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+- `artifacts\Release\AMD64\bin\MachineTest.exe --gtest_filter=*Load*`: run the OnLoad unit tests.
+- `Tests\MachineTest\source\test_Machine.py -v -k Timed`: run the Timed unit tests.
+
+The location of the test programs directory can be overridden if required: `bin/MachineTest ${test/programs/directory/}`.
+
+**7.** Build a development distribution: `cmake --build --preset conan-release --target=Sdk`.<br>
+The distribution will be located in `build/Release/Sdk`.<br>
+Note: when cross compiling this command will generate a binary distribution.
 
 ### Configuration Options
 

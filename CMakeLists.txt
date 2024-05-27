@@ -18,16 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-cmake_minimum_required (VERSION 3.28)
-#set(CMAKE_C_COMPILER gcc)
-#set(CMAKE_CXX_COMPILER g++)
-#set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/Tools/arm-linux-gnueabihf.cmake)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin/$<CONFIG>)
+cmake_minimum_required (VERSION 3.25)
 set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
@@ -37,6 +28,18 @@ set(minor 5)
 set(bugfix 1)
 
 project(mach-emu VERSION ${major}.${minor}.${bugfix})
+
+if(MSVC)
+  set(buildType $<CONFIG>)
+else()
+  set(buildType ${CMAKE_BUILD_TYPE})
+endif()
+
+set(artifactsDir ${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${CMAKE_SYSTEM_PROCESSOR})
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/lib)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/bin)
 
 option(enableZlib "Enable zlib compression" ON)
 option(enablePythonModule "Enable Python module via Pybind" OFF)
@@ -50,6 +53,7 @@ if(enableZlib)
     find_package(ZLIB REQUIRED)
 endif()
 
+find_package(gtest REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})
