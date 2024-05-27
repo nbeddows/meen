@@ -270,6 +270,4 @@ Special thanks to the following sites:
 
 - [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
 - [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
-- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)<br>
-- [Base64 coding](https://github.com/tobiaslocker/base64)
-- [MD5 hashing](https://github.com/Zunawe/md5-c)
+- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)
