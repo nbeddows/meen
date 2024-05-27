@@ -54,6 +54,7 @@ if(enableZlib)
 endif()
 
 find_package(base64 REQUIRED)
+find_package(hash-library REQUIRED)
 find_package(gtest REQUIRED)
 find_package(nlohmann_json REQUIRED)
 

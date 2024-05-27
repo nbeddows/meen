@@ -22,20 +22,13 @@ SOFTWARE.
 
 #include <bit>
 #include <libbase64.h>
+#include <md5.h>
 #include <stdexcept>
 #ifdef ENABLE_ZLIB
 #include <zlib.h>
 #endif
 
 #include "Utils/Utils.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-#include "Utils/md5.h"
-#ifdef __cplusplus
-}
-#endif
 
 namespace MachEmu::Utils
 {
@@ -93,7 +86,7 @@ namespace MachEmu::Utils
 			throw std::invalid_argument("Invalid binary to text decoder parameter");
 		}
 
-		std::vector<uint8_t> bin(src.length(), '\0');
+		std::vector<uint8_t> bin(src.length());
 		auto binLen = bin.size();
 		base64_decode(src.data(), src.length(), std::bit_cast<char*>(bin.data()), &binLen, 0);
 		bin.resize(binLen);
@@ -102,7 +95,7 @@ namespace MachEmu::Utils
 		{
 			std::vector<uint8_t> dst;
 
-#ifdef ENABLE_ZLIB			
+#ifdef ENABLE_ZLIB
 			if (decompressor == "zlib")
 			{
 				dst.resize(dstSize);
@@ -132,12 +125,10 @@ namespace MachEmu::Utils
 
 	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len)
 	{
-		MD5Context ctx;
-		md5Init(&ctx);
-		md5Update(&ctx, input, len);
-		md5Finalize(&ctx);
-		auto d = ctx.digest;
-	
-		return std::array{ d[0], d[1], d[2], d[3], d[4], d[5], d[6], d[7], d[8], d[9], d[10], d[11], d[12], d[13], d[14], d[15] };
+		std::array<uint8_t, MD5::HashBytes> hash;
+		MD5 md5;
+		md5.add(input, len);
+		md5.getHash(hash.data());
+		return hash;
 	}
 } // namespace MachEmu::Utils

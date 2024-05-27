@@ -4,7 +4,8 @@
 * Added Clang support.
 * Added Arm Linux GCC support.
 * Added Conan 2.0 support.
-* Replace Utils/base64.hpp with Conan package libbase64.
+* Replace Utils/base64.hpp with Conan package base64.
+* Replace Utils/md5.c with Conan package hash-library.
 
 1.5.1 [22/04/16]
 * Fixed api compatibility break in 1.5.0.

@@ -150,7 +150,9 @@ NOTE: when performing a cross compile using a host profile you must install the 
 
 This will (compile if required and) install the following dependent packages:
 
+- `base64`: for base64 coding.
 - `gtest`: for running the machine and controller unit tests.
+- `hash-library`: for md5 hashing.
 - `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
 - `zlib`: for memory (de)compression when loading and saving files.<br>
