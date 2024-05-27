@@ -1288,7 +1288,7 @@ TEST_F(MachineTest, ISR_1)
 {
 	//Load the interrupt service routine at the correct address
 	//The ioController fires rst 1 every second.
-	memoryController_->Load(PROGRAMS_DIR"/isr.bin", 0x08);
+	memoryController_->Load((programsDir_ + "/isr.bin").c_str(), 0x08);
 
 	// Set to the resolution to 50Hz
 	auto err = machine_->SetOptions(R"({"clockResolution":25000000})");
