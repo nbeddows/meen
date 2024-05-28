@@ -150,7 +150,9 @@ NOTE: when performing a cross compile using a host profile you must install the 
 
 This will (compile if required and) install the following dependent packages:
 
+- `base64`: for base64 coding.
 - `gtest`: for running the machine and controller unit tests.
+- `hash-library`: for md5 hashing.
 - `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
 - `zlib`: for memory (de)compression when loading and saving files.<br>
@@ -268,6 +270,4 @@ Special thanks to the following sites:
 
 - [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
 - [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
-- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)<br>
-- [Base64 coding](https://github.com/tobiaslocker/base64)
-- [MD5 hashing](https://github.com/Zunawe/md5-c)
+- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)
