@@ -1014,49 +1014,49 @@ TEST_F(MachineTest, ADI_2)
 
 TEST_F(MachineTest, RST_0)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x00);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x00);
 	LoadAndRun("rst0.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":261,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_1)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x08);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x08);
 	LoadAndRun("rst1.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_2)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x10);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x10);
 	LoadAndRun("rst2.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_3)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x18);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x18);
 	LoadAndRun("rst3.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_4)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x20);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x20);
 	LoadAndRun("rst4.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_5)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x28);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x28);
 	LoadAndRun("rst5.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_6)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x30);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x30);
 	LoadAndRun("rst6.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
 TEST_F(MachineTest, RST_7)
 {
-	memoryController_->Load(PROGRAMS_DIR"/rst.bin", 0x38);
+	memoryController_->Load((programsDir_ + "/rst.bin").c_str(), 0x38);
 	LoadAndRun("rst7.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
 }
 
