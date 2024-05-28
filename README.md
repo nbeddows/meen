@@ -126,7 +126,9 @@ MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum v
 - `sudo apt install python3`.
 - `sudo apt install python3-dev` (if building the Python module, see step 4).
 - `pipx install conan`.
-- `sudo apt install gcc-arm-linux-gnueabihf`. (if cross compiling for Arm, see step 3).
+- `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
+- `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+- `sudo apt install g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
 
 ##### Windows
 
@@ -145,7 +147,8 @@ MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum v
 
 **3.** Run conan to install the dependent packages.
 - Using the default build and host profiles: `conan install . --build=missing`.
-- Using the default build profile targeting Raspberry Pi: `conan install . --build=missing -pr:h=profiles/raspberry`.<br>
+- Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
+- Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
 NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (See Pre-requisites).
 
 This will (compile if required and) install the following dependent packages:
@@ -196,12 +199,13 @@ C++ - Arm Linux:<br>
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: `cmake --build --preset conan-release --target=Sdk`. 
-2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-Arm-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
 4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
 5. Change directory to mach-emu: `cd mach-emu`.
-6. Install the mach-emu shared library at a specifed location (optional): `./mach-emu-install.sh /usr/local/lib`.
+6. Install the mach-emu shared library at a specifed location (optional): `sudo ./mach-emu-install.sh /usr/local/lib`.
 7. Run the unit tests using the test programs: `bin/MachineTest bin/Programs/`.<br>
+If the following error is encountered: `bin/MachineTest: error while loading shared libraries: libMachEmu.so.1.5.1: cannot open shared object file: No such file or directory`, you need to add the install directory to your LD_LIBRARY_PATH: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` (if you installed via step 6) or `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:bin` if you skipped step 6.
 
 Python:
 - `Tests\MachineTest\source\test_Machine.py -v`.
