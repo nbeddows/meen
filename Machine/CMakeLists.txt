@@ -27,8 +27,23 @@ set (${lib_name}_include_files
 )
 
 if(MSVC)
+    include(${resource_dir}/generate_product_version.cmake)
+
+    generate_product_version(
+		versionResource
+		BUNDLE "Machine Emulator"
+		COMPANY_NAME "Nicolas Beddows"
+		FILE_DESCRIPTION "MachEmu API"
+	    NAME "MachEmu"
+		ORIGINAL_FILE_NAME "MachEmu.dll"
+		PRODUCT_ICON ""
+		VERSION_MAJOR ${major}
+		VERSION_MINOR ${minor}
+		VERSION_PATCH ${bugfix}
+	)
+
 	set (${lib_name}_resource_files
-		${resource_dir}/Machine.rc
+		${versionResource}
 	)
 endif()
 
