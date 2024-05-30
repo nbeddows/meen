@@ -275,3 +275,4 @@ Special thanks to the following sites:
 - [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
 - [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
 - [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)
+- [Windows Version Resource](https://github.com/halex2005/CMakeHelpers)
