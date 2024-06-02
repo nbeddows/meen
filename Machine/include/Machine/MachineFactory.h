@@ -27,13 +27,13 @@ SOFTWARE.
 #include "IMachine.h"
 
 #ifdef _WINDOWS
-#ifdef MachEmu_EXPORTS
+#ifdef mach_emu_EXPORTS
 #define DLL_EXP_IMP __declspec(dllexport)
 #else
 #define DLL_EXP_IMP __declspec(dllimport)
 #endif
 #else
-#ifdef MachEmu_EXPORTS
+#ifdef mach_emu_EXPORTS
 #define DLL_EXP_IMP [[gnu::visibility("default")]]
 #else
 #define DLL_EXP_IMP
