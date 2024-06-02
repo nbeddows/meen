@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmu)
+set (lib_name mach_emu)
 
 set (${lib_name}_include_files
 	${include_dir}/Machine/Machine.h
@@ -35,7 +35,7 @@ if(MSVC)
 		COMPANY_NAME "Nicolas Beddows"
 		FILE_DESCRIPTION "MachEmu API"
 	    NAME "MachEmu"
-		ORIGINAL_FILE_NAME "MachEmu.dll"
+		ORIGINAL_FILE_NAME "${lib_name}.dll"
 		PRODUCT_ICON ""
 		VERSION_MAJOR ${major}
 		VERSION_MINOR ${minor}
@@ -81,7 +81,10 @@ set_target_properties(${lib_name} PROPERTIES VERSION ${machEmuVersion} SOVERSION
 target_link_libraries(${lib_name} PRIVATE
 	Cpu
 	CpuClock
-	Opt
 	nlohmann_json::nlohmann_json
+	Opt
 	Utils
 )
+
+target_sources(${lib_name} PUBLIC FILE_SET HEADERS BASE_DIRS ${include_dir} FILES "${include_dir}/Machine/IMachine.h;${include_dir}/Machine/MachineFactory.h")
+install(TARGETS ${lib_name} FILE_SET HEADERS)
