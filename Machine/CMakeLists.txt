@@ -58,10 +58,15 @@ if(MSVC)
 	SOURCE_GROUP("Resource Files" FILES ${${lib_name}_resource_files})
 endif()
 
-add_library(${lib_name} SHARED ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})
-
-if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
-	target_compile_options(${lib_name} PRIVATE -fvisibility=hidden -Wno-psabi)
+if(BUILD_SHARED_LIBS)
+    add_library(${lib_name} SHARED ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})
+    
+	if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+        target_compile_options(${lib_name} PRIVATE -fvisibility=hidden -Wno-psabi)
+    endif()
+else()
+    message(FATAL_ERROR "Building mach_emu static library not supported")
+    #add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_resource_files} ${${lib_name}_source_files})
 endif()
 
 target_compile_definitions(${lib_name} PRIVATE ${lib_name}_VERSION=\"${machEmuVersion}\")
