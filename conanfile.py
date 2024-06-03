@@ -17,7 +17,7 @@ class MachEmuRecipe(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False], "with_python": [True, False], "with_zlib": [True, False]}
-    default_options = {"shared": False, "fPIC": True, "with_python": False, "with_zlib": True}
+    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_python": False, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt",\
