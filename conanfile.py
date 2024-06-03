@@ -16,18 +16,57 @@ class MachEmuRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False]}
-    default_options = {"shared": False, "fPIC": True}
+    options = {"shared": [True, False], "fPIC": [True, False], "pythonModule": [True, False]}
+    default_options = {"shared": False, "fPIC": True, "pythonModule": False}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    exports_sources = "CMakeLists.txt", "Base/CMakeLists.txt", "Base/include/*", "Controller/CMakeLists.txt", "Controller/include/*", "Controller/source/*", "Cpu/CMakeLists.txt", "Cpu/include/*", "Cpu/source/*", "CpuClock/CMakeLists.txt", "CpuClock/include/*", "CpuClock/source/*", "Machine/CMakeLists.txt", "Machine/include/*", "Machine/resource/*", "Machine/source/*", "MachinePy/CMakeLists.txt", "MachinePy/include/*", "MachinePy/source/*", "Opt/CMakeLists.txt", "Opt/include*", "Opt/source/*", "Sdk/CMakeLists.txt", "SystemBus/CMakeLists.txt", "SystemBus/include/*", "Tests/CMakeLists.txt", "Tests/ControllerTest/CMakeLists.txt", "Tests/ControllerTest/source/*", "Tests/MachineTest/CMakeLists.txt", "Tests/MachineTest/source/*", "Tests/Programs/*", "Tests/TestControllers/CMakeLists.txt", "Tests/TestControllers/include/*", "Tests/TestControllersPy/CMakeLists.txt", "Tests/TestControllersPy/source/*", "Tests/TestControllers/source/*", "Utils/CMakeLists.txt", "Utils/include/*", "Utils/source/*"
+    exports_sources = "CMakeLists.txt",\
+        "Base/CMakeLists.txt",\
+        "Base/include/*",\
+        "Controller/CMakeLists.txt",\
+        "Controller/include/*",\
+        "Controller/source/*",\
+        "Cpu/CMakeLists.txt",\
+        "Cpu/include/*",\
+        "Cpu/source/*",\
+        "CpuClock/CMakeLists.txt",\
+        "CpuClock/include/*",\
+        "CpuClock/source/*",\
+        "Machine/CMakeLists.txt",\
+        "Machine/include/*",\
+        "Machine/resource/*",\
+        "Machine/source/*",\
+        "MachinePy/CMakeLists.txt",\
+        "MachinePy/include/*",\
+        "MachinePy/source/*",\
+        "Opt/CMakeLists.txt",\
+        "Opt/include*",\
+        "Opt/source/*",\
+        "Sdk/CMakeLists.txt",\
+        "SystemBus/CMakeLists.txt",\
+        "SystemBus/include/*",\
+        "Tests/CMakeLists.txt",\
+        "Tests/ControllerTest/CMakeLists.txt",\
+        "Tests/ControllerTest/source/*",\
+        "Tests/MachineTest/CMakeLists.txt",\
+        "Tests/MachineTest/source/*",\
+        "Tests/Programs/*",\
+        "Tests/TestControllers/CMakeLists.txt",\
+        "Tests/TestControllers/include/*",\
+        "Tests/TestControllersPy/CMakeLists.txt",\
+        "Tests/TestControllersPy/source/*",\
+        "Tests/TestControllers/source/*",\
+        "Utils/CMakeLists.txt",\
+        "Utils/include/*",\
+        "Utils/source/*"
 
     def requirements(self):
         self.requires("base64/0.5.2")
         self.requires("gtest/1.14.0")
         self.requires("hash-library/8.0")
         self.requires("nlohmann_json/3.11.3")
-        self.requires("pybind11/2.12.0")
+        if self.options.pythonModule:
+            self.requires("pybind11/2.12.0")
         self.requires("zlib/1.3.1")
 
     def config_options(self):
@@ -45,6 +84,7 @@ class MachEmuRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
+        tc.variables["enablePythonModule"] = self.options.pythonModule
         tc.generate()
 
     def build(self):
