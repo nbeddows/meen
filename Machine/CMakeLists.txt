@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name mach_emu)
+set (lib_name ${libMachEmu})
 
 set (${lib_name}_include_files
 	${include_dir}/Machine/Machine.h

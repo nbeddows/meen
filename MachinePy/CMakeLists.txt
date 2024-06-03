@@ -42,4 +42,4 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${inc
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/MachinePy/${include_dir})
 
 target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu)
+target_link_libraries(${lib_name} PRIVATE pybind11::headers ${libMachEmu})
