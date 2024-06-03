@@ -16,8 +16,8 @@ class MachEmuRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "pythonModule": [True, False]}
-    default_options = {"shared": False, "fPIC": True, "pythonModule": False}
+    options = {"shared": [True, False], "fPIC": [True, False], "with_python": [True, False], "with_zlib": [True, False]}
+    default_options = {"shared": False, "fPIC": True, "with_python": False, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt",\
@@ -65,9 +65,10 @@ class MachEmuRecipe(ConanFile):
         self.requires("gtest/1.14.0")
         self.requires("hash-library/8.0")
         self.requires("nlohmann_json/3.11.3")
-        if self.options.pythonModule:
+        if self.options.with_python:
             self.requires("pybind11/2.12.0")
-        self.requires("zlib/1.3.1")
+        if self.options.with_zlib:
+            self.requires("zlib/1.3.1")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -84,7 +85,8 @@ class MachEmuRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
-        tc.variables["enablePythonModule"] = self.options.pythonModule
+        tc.variables["enablePythonModule"] = self.options.with_python
+        tc.variables["enableZlib"] = self.options.with_zlib
         tc.generate()
 
     def build(self):
