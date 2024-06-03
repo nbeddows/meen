@@ -67,7 +67,7 @@ add_custom_command(
 )
 
 target_link_libraries(${exe_name} PRIVATE
-  gtest::gtest
+  GTest::GTest
   ${libMachEmu}
   nlohmann_json::nlohmann_json
   TestControllers

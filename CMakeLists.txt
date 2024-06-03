@@ -55,7 +55,7 @@ endif()
 
 find_package(base64 REQUIRED)
 find_package(hash-library REQUIRED)
-find_package(gtest REQUIRED)
+find_package(GTest REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})

@@ -113,7 +113,7 @@ else()
     "set(artifactsDir \${CMAKE_SOURCE_DIR})\n"
     "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \$<1:\${artifactsDir}/bin>)\n"
     "find_library(libMachEmu MachEmu PATHS \${artifactsDir}/bin)\n"
-    "find_package(gtest REQUIRED)\n"
+    "find_package(GTest REQUIRED)\n"
     "find_package(nlohmann_json REQUIRED)\n"
     ${findPythonPackage}
     ${findZlibPackage}
