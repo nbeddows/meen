@@ -19,14 +19,14 @@ class MachuEmuPackageTest(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
-        
+
         # Need to inform the python test app where the dependent shared libraries are located
         if self.dependencies["mach_emu"].options.with_python:
             if self.dependencies["mach_emu"].options.shared:
                 tc.variables["MACH_EMU_BIN_DIR"] = self.dependencies["mach_emu"].cpp_info.bindirs[0].replace("\\", "/")
             if self.settings.os == "Windows" and self.dependencies["zlib"].options.shared:
                 tc.variables["ZLIB_BIN_DIR"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
-        
+
         tc.generate()
 
     def layout(self):
@@ -39,5 +39,5 @@ class MachuEmuPackageTest(ConanFile):
 
             # don't test the python module if we didn't configure it
             if self.dependencies["mach_emu"].options.with_python:
-                cmd = os.path.join(self.source_folder, "source\MachEmuPackageTest.py")
-                self.run(cmd, env="conanrun")
+                cmd = os.path.join(self.source_folder, "source/MachEmuPackageTest.py")
+                self.run("python " + cmd, env="conanrun")
