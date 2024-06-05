@@ -58,7 +58,7 @@ import sys\n\
 # absolute path to Python controller test modules\n\
 sys.path.append(\"${CMAKE_SOURCE_DIR}/Tests/TestControllers/source\")\n\
 # absolute path to the C++ controller test module\n\
-sys.path.append(\"${artifactsDir}/bin\")\n\
+sys.path.append(\"${artifactsDir}/${runtimeDir}\")\n\
 programsDir = \"${CMAKE_SOURCE_DIR}/Tests/Programs/\"\n")
 
 add_custom_command(
