@@ -35,11 +35,23 @@ else()
   set(buildType ${CMAKE_BUILD_TYPE})
 endif()
 
-set(artifactsDir ${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${CMAKE_SYSTEM_PROCESSOR})
+if(NOT buildArch)
+  set(buildArch ${CMAKE_SYSTEM_PROCESSOR})
+endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/bin)
+if(NOT archiveDir)
+  set(archiveDir "lib")
+endif()
+
+if(NOT runtimeDir)
+  set(runtimeDir "bin")
+endif()
+
+set(artifactsDir $<1:${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${buildArch}>)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/${archiveDir})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/${runtimeDir})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/${runtimeDir})
 
 option(enableZlib "Enable zlib compression" ON)
 option(enablePythonModule "Enable Python module via Pybind" OFF)
