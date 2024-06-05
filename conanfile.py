@@ -1,5 +1,6 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
+import os
 
 class MachEmuRecipe(ConanFile):
     name = "mach_emu"
@@ -62,7 +63,8 @@ class MachEmuRecipe(ConanFile):
 
     def requirements(self):
         self.requires("base64/0.5.2")
-        self.requires("gtest/1.14.0")
+        if not self.conf.get("tools.build:skip_test", default=False):
+            self.test_requires("gtest/1.14.0")
         self.requires("hash-library/8.0")
         self.requires("nlohmann_json/3.11.3")
         if self.options.with_python:
@@ -96,6 +98,14 @@ class MachEmuRecipe(ConanFile):
         cmake = CMake(self)
         cmake.configure()
         cmake.build()
+
+        if not self.conf.get("tools.build:skip_test", default=False):
+            testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
+            self.run(os.path.join(testsDir, "ControllerTest"))
+            self.run(os.path.join(testsDir, "MachineTest"))
+            if self.options.with_python:
+                cmd = os.path.join(self.source_folder, "Tests/MachineTest/source/test_Machine.py -v")
+                self.run("python " + cmd)
 
     def package(self):
         cmake = CMake(self)
