@@ -17,8 +17,8 @@ class MachEmuRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "with_python": [True, False], "with_zlib": [True, False]}
-    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_python": False, "with_zlib": True}
+    options = {"shared": [True, False], "fPIC": [True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_zlib": [True, False]}
+    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": True, "with_python": False, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt",\
@@ -100,9 +100,12 @@ class MachEmuRecipe(ConanFile):
         cmake.build()
 
         if not self.conf.get("tools.build:skip_test", default=False):
+            gtestFilter = "--gtest_filter=*"
+            if self.options.with_i8080_test_suites:
+                gtestFilter += ":-*8080*:*CpuTest*"                
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             self.run(os.path.join(testsDir, "ControllerTest"))
-            self.run(os.path.join(testsDir, "MachineTest"))
+            self.run(os.path.join(testsDir, "MachineTest " + gtestFilter))
             if self.options.with_python:
                 cmd = os.path.join(self.source_folder, "Tests/MachineTest/source/test_Machine.py -v")
                 self.run("python " + cmd)
