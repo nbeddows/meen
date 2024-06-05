@@ -22,12 +22,12 @@ cmake_minimum_required (VERSION 3.25)
 set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
-set(libMachEmu MachEmu)
+set(libMachEmu mach_emu)
 set(major 1)
 set(minor 5)
 set(bugfix 1)
 
-project(mach-emu VERSION ${major}.${minor}.${bugfix})
+project(${libMachEmu} VERSION ${major}.${minor}.${bugfix})
 
 if(MSVC)
   set(buildType $<CONFIG>)
@@ -35,11 +35,23 @@ else()
   set(buildType ${CMAKE_BUILD_TYPE})
 endif()
 
-set(artifactsDir ${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${CMAKE_SYSTEM_PROCESSOR})
+if(NOT buildArch)
+  set(buildArch ${CMAKE_SYSTEM_PROCESSOR})
+endif()
 
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/bin)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/bin)
+if(NOT archiveDir)
+  set(archiveDir "lib")
+endif()
+
+if(NOT runtimeDir)
+  set(runtimeDir "bin")
+endif()
+
+set(artifactsDir $<1:${CMAKE_SOURCE_DIR}/artifacts/${buildType}/${buildArch}>)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifactsDir}/${archiveDir})
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifactsDir}/${runtimeDir})
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifactsDir}/${runtimeDir})
 
 option(enableZlib "Enable zlib compression" ON)
 option(enablePythonModule "Enable Python module via Pybind" OFF)
@@ -55,7 +67,7 @@ endif()
 
 find_package(base64 REQUIRED)
 find_package(hash-library REQUIRED)
-find_package(gtest REQUIRED)
+find_package(GTest REQUIRED)
 find_package(nlohmann_json REQUIRED)
 
 set(machEmuVersion ${CMAKE_PROJECT_VERSION})

@@ -171,11 +171,6 @@ You can also compile the dependent zlib library statically if required by overri
 - Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
 A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
 
-The following error has been encountered on Linux with conan 2.3.0 and cmake 3.25.1:<br>
-`Error in find_package: By not providing "Findgtest.cmake" in CMAKE_MODULE_PATH ...`.<br>
-The name of the include is case sensitive, make sure that it is the case:<br>
-`mv build/Release/generators/FindGTest.cmake build/Release/generators/Findgtest.cmake`.
-
 The following MachEmu cmake options are supported:
 - Disable zlib support: `cmake --preset conan-default -D enableZlib=False`.
 - Enable the Python module: `cmake --preset conan-default -D enablePythonModule=True`.

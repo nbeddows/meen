@@ -18,30 +18,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmuPy)
+import MachEmuPackageTestDeps
+import os
+import sys
 
-set (${lib_name}_include_files
-	${include_dir}/MachinePy/ControllerPy.h
-	${include_dir}/MachinePy/MachineHolder.h
-)
+from MachEmuPy import __version__
+print("mach_emu python module version:", __version__)
 
-set (${lib_name}_source_files
-	${source_dir}/ControllerPy.cpp
-	${source_dir}/MachineHolder.cpp
-	${source_dir}/MachineModule.cpp
-)
-
-SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
-SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
-
-pybind11_add_module(${lib_name} ${${lib_name}_include_files} ${${lib_name}_source_files})
-
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
-target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/MachinePy/${include_dir})
-
-target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers ${libMachEmu})
-
-install(TARGETS ${lib_name} DESTINATION ${runtimeDir})

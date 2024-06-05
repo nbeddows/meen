@@ -29,7 +29,7 @@ SOURCE_GROUP("Source Files" FILES ${${exe_name}_source_files})
 add_executable(${exe_name} ${${exe_name}_source_files})
 
 target_link_libraries(${exe_name} PRIVATE
-  gtest::gtest
+  GTest::GTest
   TestControllers
 )
 

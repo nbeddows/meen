@@ -4,4 +4,5 @@ build/
 CMakeFiles/
 CMakeUserPresets.json
 MachineTestDeps.py
+MachEmuPackageTestDeps.py
 Machine.aps

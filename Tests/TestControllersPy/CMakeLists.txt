@@ -33,4 +33,4 @@ target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})
 
 target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu TestControllers)
+target_link_libraries(${lib_name} PRIVATE pybind11::headers TestControllers)

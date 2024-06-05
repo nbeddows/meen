@@ -28,3 +28,5 @@ SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
 
 add_library(${lib_name} INTERFACE ${${lib_name}_include_files})
 
+target_sources(${lib_name} INTERFACE FILE_SET HEADERS BASE_DIRS ${include_dir} FILES "${include_dir}/${lib_name}/I${lib_name}.h")
+install(TARGETS ${lib_name} FILE_SET HEADERS)
