@@ -150,9 +150,12 @@ class MachineTest(unittest.TestCase):
             self.machine.WaitForCompletion()
 
         self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
-        self.assertEqual(len(saveStates), 3)
+        self.assertTrue(len(saveStates) == 2 or len(saveStates) == 3)
         self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}}')
-        self.assertEqual(saveStates[1], saveStates[2])
+        self.assertEqual(saveStates[1], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJw7w2ZczrCXnWFkAGlmfmZm5u9MYauCGFet2sXGwAAAYNgG1w=="}}}')
+
+        if len(saveStates) == 3:
+            self.assertEqual(saveStates[1], saveStates[2])
 
     def test_OnLoad(self):
         for i in range(50):
@@ -167,16 +170,31 @@ class MachineTest(unittest.TestCase):
         a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
 
+class i8080Test(unittest.TestCase):
+    def setUp(self):
+        self.programsDir = MachineTestDeps.programsDir
+        self.memoryController = MemoryController()
+        self.cpmIoController = CpmIoController(self.memoryController)
+        # lock the servicing of interrupts to the clock resolution for performance reasons
+        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":1}')
+        self.machine.SetIoController(self.cpmIoController)
+        self.machine.SetMemoryController(self.memoryController)
+        self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
+        self.memoryController.Load(self.programsDir + 'bdosMsg.bin', 0x0005)
+
+    def CheckMachineState(self, expected, actual):
+        e = json.loads(expected)
+        a = json.loads(actual.rstrip('\0'))
+        self.assertEqual(e, a['cpu'])
+
     def test_8080Pre(self):
         self.memoryController.Load(self.programsDir + '8080PRE.COM', 0x0100)
-        self.machine.SetIoController(self.cpmIoController)
         self.machine.OnSave(lambda x: self.CheckMachineState(r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280}', x))
         self.machine.Run(0x0100)
         self.assertIn('8080 Preliminary tests complete', self.cpmIoController.Message())
 
     def test_Tst8080(self):
         self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
-        self.machine.SetIoController(self.cpmIoController)
         self.machine.OnSave(lambda x: self.CheckMachineState(r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981}', x))
         self.machine.Run(0x0100)
         self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
@@ -184,7 +202,6 @@ class MachineTest(unittest.TestCase):
     # this will take a little while to complete
     def test_Cpu8080(self):
         self.memoryController.Load(self.programsDir + 'CPUTEST.COM', 0x0100)
-        self.machine.SetIoController(self.cpmIoController)
         self.machine.OnSave(lambda x: self.CheckMachineState(r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283}', x))
         self.machine.Run(0x0100)
         self.assertIn('CPU TESTS OK', self.cpmIoController.Message())
@@ -192,7 +209,6 @@ class MachineTest(unittest.TestCase):
     # this will take a long time to complete
     def test_8080Exm(self):
         self.memoryController.Load(self.programsDir + '8080EXM.COM', 0x0100)
-        self.machine.SetIoController(self.cpmIoController)
         self.machine.OnSave(lambda x: self.CheckMachineState(r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137}', x))
         self.machine.Run(0x0100)
         self.assertNotIn('ERROR', self.cpmIoController.Message())

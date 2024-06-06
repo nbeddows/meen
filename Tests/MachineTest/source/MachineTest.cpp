@@ -152,6 +152,12 @@ namespace MachEmu::Tests
 		memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
 		memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
 
+		// We aren't interested in saving, clear the onSave callback
+		EXPECT_NO_THROW
+		(
+			machine_->OnSave(nullptr);
+		);
+		
 		EXPECT_NO_THROW
 		(
 			machine_->Run(0x04);
@@ -210,11 +216,6 @@ namespace MachEmu::Tests
 		EXPECT_NO_THROW
 		(
 			machine_->OnLoad([]{ return ""; });
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->OnSave([](const char*){});
 		);
 	}
 

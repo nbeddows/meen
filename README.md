@@ -51,7 +51,130 @@ The following table displays the current defacto test suites that these unit tes
 `IMachine.h` specifies the MachEmu API.<br>
 `MachineFactory.h` specifies the MachEmu shared library entry point.
 
-##### Basic principles of operation
+### Compilation
+
+MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppchek for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
+
+#### Pre-requisites
+
+##### Linux
+
+- `sudo apt install cppcheck` (if building a distribution, see step 7).
+- `sudo apt install cmake`.
+- `sudo apt install doxygen` (if building a distribution, see step 7).
+- `sudo apt install python3`.
+- `sudo apt install python3-dev` (if building the Python module, see step 4).
+- `pipx install conan`.
+- `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
+- `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+- `sudo apt install g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+
+##### Windows
+
+- [CppCheck static analysis](http://cppcheck.net/) (if building a distribution, see step 7).<br>
+- [CMake build system](https://cmake.org/download/).<br>
+- [Doxygen](https://www.doxygen.nl/download.html) (if building a distribution, see step 7).<br>
+- [Python3](https://www.python.org/downloads/windows/).<br>
+- `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
+- `pip install conan`.
+
+#### Configuration
+
+**1.** Create a default profile: `conan profile detect`. This will detect the operating system, build architecture, compiler settings and set the build configuration as Release by default. The profile will be named `default` and will reside in $HOME/.conan2/profiles. 
+
+**2.** The created profile is an educated guess, open it and make sure that it is correct for your system, ensure that the compiler standard is set to 20: `compiler.cppstd=20`.
+
+**3.** Run conan to install the dependent packages.
+- Using the default build and host profiles: `conan install . --build=missing`.
+- Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
+- Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
+NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (See Pre-requisites).
+
+The following install options are supported:
+- build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
+- enable/disable python module support: `--options=with_python=[True|False(default)]`
+- enable/disable zlib support: `--options=with_zlib=[True(default)|False]`
+
+The following will enable python and disable zlib: `conan install . --build=missing --options=with_python=True --options=with_zlib=False`
+
+The following dependent packages will be (compiled if required and) installed based on the supplied options:
+
+- `base64`: for base64 coding.
+- `gtest`: for running the machine and controller unit tests.
+- `hash-library`: for md5 hashing.
+- `nlohmann_json`: for parsing machine configuration options.
+- `pybind`: for creating Python C++ bindings.
+- `zlib`: for memory (de)compression when loading and saving files.<br>
+
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --settings=build_type=Debug`.
+
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --options=zlib/*:shared=False`.
+
+**4.** Run cmake to configure and generate the build system.
+
+- Multi configuration generators (MSVC for example): `cmake --preset conan-default [-Wno-dev]`.
+- Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
+A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
+
+NOTE: the options supported during the install step can also be enabled/disabled here if required:
+- Disable zlib support: `cmake --preset conan-default -D enableZlib=OFF`.
+- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON`.
+
+**5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
+The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
+
+NOTE: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
+
+**6.** Run the unit tests:
+
+C++ - Linux/Windows:
+- `artifacts/Release/x86_64/bin/MachineTest`.
+- `artifacts/Release/x86_64/bin/ControllerTest`.
+
+C++ - Arm Linux:<br>
+
+When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
+1. Create an Arm Linux binary distribution: `cmake --build --preset conan-release --target=Sdk`. 
+2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
+4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
+5. Change directory to mach-emu: `cd mach-emu`.
+6. Install the mach-emu shared library at a specifed location (optional): `sudo ./mach-emu-install.sh /usr/local/lib`.
+7. Run the unit tests using the test programs: `bin/MachineTest bin/Programs/`.<br>
+If the following error is encountered: `bin/MachineTest: error while loading shared libraries: libMachEmu.so.1.5.1: cannot open shared object file: No such file or directory`, you need to add the install directory to your LD_LIBRARY_PATH: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` (if you installed via step 6) or `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:bin` if you skipped step 6.
+
+Python:
+- `Tests\MachineTest\source\test_Machine.py -v`.
+
+Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+- `artifacts\Release\x86_64\bin\MachineTest --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
+- `Tests\MachineTest\source\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
+
+The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/MachineTest ${test/programs/directory/}`.
+
+**7.** Build a development distribution: `cmake --build --preset conan-release --target=Sdk`.<br>
+The distribution will be located in `build/Release/Sdk`.<br>
+Note: when cross compiling this command will generate a binary distribution.
+
+#### Exporting a Conan package
+
+MachEmu can be exported as a package to the local Conan cache (and be uploaded to a Conan server) so it can be consumed by other Conan based projects. It supports the same options as discussed in step 3 of the Configuration section.
+
+The following additional options are supported:
+- disable running the exported package tests: `--test_folder=""`
+- enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True(default)|False]` 
+
+NOTE: a pre-requisite of the exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
+
+Example command lines:
+1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+2. `conan create . --build=missing --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
+3. `conan create . --build=missing --options=with_zlib=False`: same as 1 but will disable zlib support. 
+4. `conan create . --build=missing --test_folder=""`: same as 1 but will not run the basic package tests (not recommended).
+5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
+6. `conan create . --build=missing --options=with_i8080_test_suites=False`: same as 1 but will not run the i8080 test suites.
+
+### Basic principles of operation
 
 The following code snippet gives and example of how a machine can be instantiated, configured and executed:
 
@@ -111,109 +234,6 @@ machine->Run();
 // controller ServiceInterrupts override generates an ISR::Quit interrupt
 runTime = machine->WaitForCompletion();
 ```
-
-### Compilation
-
-MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppchek for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
-
-#### Pre-requisites
-
-##### Linux
-
-- `sudo apt install cppcheck` (if building a distribution, see step 7).
-- `sudo apt install cmake`.
-- `sudo apt install doxygen` (if building a distribution, see step 7).
-- `sudo apt install python3`.
-- `sudo apt install python3-dev` (if building the Python module, see step 4).
-- `pipx install conan`.
-- `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
-- `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
-- `sudo apt install g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
-
-##### Windows
-
-- [CppCheck static analysis](http://cppcheck.net/) (if building a distribution, see step 7).<br>
-- [CMake build system](https://cmake.org/download/).<br>
-- [Doxygen](https://www.doxygen.nl/download.html) (if building a distribution, see step 7).<br>
-- [Python3](https://www.python.org/downloads/windows/).<br>
-- `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
-- `pip install conan`.
-
-#### Configuration
-
-**1.** Create a default profile: `conan profile detect`. This will detect the operating system, build architecture, compiler settings and set the build configuration as Release by default. The profile will be named `default` and will reside in $HOME/.conan2/profiles. 
-
-**2.** The created profile is an educated guess, open it and make sure that it is correct for your system, ensure that the compiler standard is set to 20: `compiler.cppstd=20`.
-
-**3.** Run conan to install the dependent packages.
-- Using the default build and host profiles: `conan install . --build=missing`.
-- Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
-- Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
-NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (See Pre-requisites).
-
-This will (compile if required and) install the following dependent packages:
-
-- `base64`: for base64 coding.
-- `gtest`: for running the machine and controller unit tests.
-- `hash-library`: for md5 hashing.
-- `nlohmann_json`: for parsing machine configuration options.
-- `pybind`: for creating Python C++ bindings.
-- `zlib`: for memory (de)compression when loading and saving files.<br>
-If you are not interested in building the Python module or zlib support the pybind and zlib packages can be removed from the conanfile.txt `[requires]` section. Make sure to disable zlib support if you remove zlib (see step 4 below).
-
-You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --settings=build_type=Debug`.
-
-You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --options=zlib/*:shared=False`.
-
-**4.** Run cmake to configure and generate the build system.
-
-- Multi configuration generators (MSVC for example): `cmake --preset conan-default [-Wno-dev]`.
-- Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
-A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
-
-The following MachEmu cmake options are supported:
-- Disable zlib support: `cmake --preset conan-default -D enableZlib=False`.
-- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=True`.
-
-**5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
-The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
-
-NOTE: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
-
-**6.** Run the unit tests:
-
-C++ - Windows:
-- `artifacts\Release\AMD64\bin\MachineTest.exe`.
-- `artifacts\Release\AMD64\bin\ControllerTest.exe`.
-
-C++ - Linux:
-- `artifacts/Release/x86_64/bin/MachineTest.exe`.
-- `artifacts/Release/x86_64/bin/ControllerTest.exe`.
-
-C++ - Arm Linux:<br>
-
-When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
-1. Create an Arm Linux binary distribution: `cmake --build --preset conan-release --target=Sdk`. 
-2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
-3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
-5. Change directory to mach-emu: `cd mach-emu`.
-6. Install the mach-emu shared library at a specifed location (optional): `sudo ./mach-emu-install.sh /usr/local/lib`.
-7. Run the unit tests using the test programs: `bin/MachineTest bin/Programs/`.<br>
-If the following error is encountered: `bin/MachineTest: error while loading shared libraries: libMachEmu.so.1.5.1: cannot open shared object file: No such file or directory`, you need to add the install directory to your LD_LIBRARY_PATH: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` (if you installed via step 6) or `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:bin` if you skipped step 6.
-
-Python:
-- `Tests\MachineTest\source\test_Machine.py -v`.
-
-Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
-- `artifacts\Release\AMD64\bin\MachineTest.exe --gtest_filter=*Load*`: run the OnLoad unit tests.
-- `Tests\MachineTest\source\test_Machine.py -v -k Timed`: run the Timed unit tests.
-
-The location of the test programs directory can be overridden if required: `bin/MachineTest ${test/programs/directory/}`.
-
-**7.** Build a development distribution: `cmake --build --preset conan-release --target=Sdk`.<br>
-The distribution will be located in `build/Release/Sdk`.<br>
-Note: when cross compiling this command will generate a binary distribution.
 
 ### Configuration Options
 
