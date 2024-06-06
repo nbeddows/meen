@@ -101,7 +101,7 @@ class MachEmuRecipe(ConanFile):
 
         if not self.conf.get("tools.build:skip_test", default=False):
             gtestFilter = "--gtest_filter=*"
-            if self.options.with_i8080_test_suites:
+            if not self.options.with_i8080_test_suites:
                 gtestFilter += ":-*8080*:*CpuTest*"                
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             self.run(os.path.join(testsDir, "ControllerTest"))
