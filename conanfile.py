@@ -100,14 +100,19 @@ class MachEmuRecipe(ConanFile):
         cmake.build()
 
         if not self.conf.get("tools.build:skip_test", default=False):
-            gtestFilter = "--gtest_filter=*"
+            testFilter = "--gtest_filter=*"
             if not self.options.with_i8080_test_suites:
-                gtestFilter += ":-*8080*:*CpuTest*"                
+                testFilter += ":-*8080*:*CpuTest*"                
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             self.run(os.path.join(testsDir, "ControllerTest"))
-            self.run(os.path.join(testsDir, "MachineTest " + gtestFilter))
+            self.run(os.path.join(testsDir, "MachineTest " + testFilter))
             if self.options.with_python:
-                cmd = os.path.join(self.source_folder, "Tests/MachineTest/source/test_Machine.py -v")
+                testFilter = "-k "
+                if self.options.with_i8080_test_suites:
+                    testFilter += "*"
+                else:
+                    testFilter += "MachineTest"
+                cmd = os.path.join(self.source_folder, "Tests/MachineTest/source/test_Machine.py -v " + testFilter)
                 self.run("python " + cmd)
 
     def package(self):
