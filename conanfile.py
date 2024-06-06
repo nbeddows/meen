@@ -87,8 +87,8 @@ class MachEmuRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
-        tc.variables["enablePythonModule"] = self.options.with_python
-        tc.variables["enableZlib"] = self.options.with_zlib
+        tc.cache_variables["enablePythonModule"] = self.options.with_python
+        tc.cache_variables["enableZlib"] = self.options.with_zlib
         tc.variables["buildArch"] = self.settings.arch
         tc.variables["archiveDir"] = self.cpp_info.libdirs[0]
         tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]
