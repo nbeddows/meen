@@ -170,7 +170,7 @@ Example command lines:
 1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
 2. `conan create . --build=missing --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
 3. `conan create . --build=missing --options=with_zlib=False`: same as 1 but will disable zlib support. 
-4. `conan create . --build=missing --test_folder=""`: same as 1 but will not run the basic package tests (not recommended).
+4. `conan create . --build=missing --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
 5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
 6. `conan create . --build=missing --options=with_i8080_test_suites=False`: same as 1 but will not run the i8080 test suites.
 
