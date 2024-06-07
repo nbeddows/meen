@@ -50,6 +50,7 @@ class MachEmuRecipe(ConanFile):
         "Tests/ControllerTest/CMakeLists.txt",\
         "Tests/ControllerTest/source/*",\
         "Tests/MachineTest/CMakeLists.txt",\
+        "Tests/MachineTest/pythonTestDeps.cmake",\
         "Tests/MachineTest/source/*",\
         "Tests/Programs/*",\
         "Tests/TestControllers/CMakeLists.txt",\
@@ -91,7 +92,9 @@ class MachEmuRecipe(ConanFile):
         tc.cache_variables["enableZlib"] = self.options.with_zlib
         tc.variables["buildArch"] = self.settings.arch
         tc.variables["archiveDir"] = self.cpp_info.libdirs[0]
-        tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]
+        tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]            
+        if self.settings.os == "Windows" and self.options.with_python and self.options.with_zlib and self.dependencies["zlib"].options.shared:
+            tc.variables["zlibDllDir"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
         tc.generate()
 
     def build(self):
