@@ -1,5 +1,5 @@
-if(DEFINED zlibDllDir)
-    set(addZlibDllDir "import os\nos.add_dll_directory(\"${zlibDllDir}\")\n")
+if(DEFINED zlibBinDir)
+    set(addZlibBinDir "import os\nos.add_dll_directory(\"${zlibBinDir}\")\n")
 endif()
 
 if (NOT DEFINED MachEmuPackageTest)
@@ -24,7 +24,7 @@ file(GENERATE OUTPUT "MachineTestDeps${buildType}.py" CONTENT
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
 # SOFTWARE.\n\n\
-${addZlibDllDir}
+${addZlibBinDir}
 import sys\n\
 # absolute path to the C++ controller test module\n\
 sys.path.append(\"${artifactsDir}/${runtimeDir}\")\n\

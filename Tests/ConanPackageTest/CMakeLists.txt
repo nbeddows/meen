@@ -11,7 +11,7 @@ find_package(mach_emu CONFIG REQUIRED)
 
 add_executable(MachEmuPackageTest source/MachEmuPackageTest.cpp)
 
-if(DEFINED artifactsDir OR DEFINED zlibDllDir)
+if(DEFINED artifactsDir OR DEFINED zlibBinDir)
     include(${CMAKE_SOURCE_DIR}/../MachineTest/pythonTestDeps.cmake)
 
     add_custom_command(
