@@ -28,17 +28,16 @@ SOURCE_GROUP("Source Files" FILES ${${exe_name}_source_files})
 
 add_executable(${exe_name} ${${exe_name}_source_files})
 
+if(DEFINED MSVC)
+    set_target_properties(${exe_name} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/Tests/Programs/\"")
+endif()
+
 target_link_libraries(${exe_name} PRIVATE
   GTest::GTest
   TestControllers
 )
 
-if(${CMAKE_CROSSCOMPILING})
-  target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"Programs/\")
-else()
-  target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
-endif()
-
+target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"Programs/\")
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})

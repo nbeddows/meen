@@ -37,6 +37,10 @@ if(enablePythonModule STREQUAL ON)
         )
 endif()
 
+if(DEFINED MSVC)
+    set_target_properties(${exe_name} PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/Tests/Programs/\"")
+endif()
+
 target_link_libraries(${exe_name} PRIVATE
   GTest::GTest
   ${libMachEmu}
@@ -44,12 +48,7 @@ target_link_libraries(${exe_name} PRIVATE
   TestControllers
 )
 
-if(${CMAKE_CROSSCOMPILING})
-  target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"Programs/\")
-else()
-  target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"${CMAKE_SOURCE_DIR}/Tests/Programs/\")
-endif()
-
+target_compile_definitions(${exe_name} PRIVATE PROGRAMS_DIR=\"Programs/\")
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${exe_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
