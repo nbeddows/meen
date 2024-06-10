@@ -90,8 +90,8 @@ class MachEmuRecipe(ConanFile):
         tc.cache_variables["enableZlib"] = self.options.with_zlib
         tc.variables["buildArch"] = self.settings.arch
         tc.variables["archiveDir"] = self.cpp_info.libdirs[0]
-        tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]            
-        if self.options.with_zlib and self.dependencies["zlib"].options.shared:
+        tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]
+        if self.settings.os == "Windows" and self.options.with_zlib and self.dependencies["zlib"].options.shared:
             tc.variables["zlibBinDir"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
         tc.generate()
 
@@ -103,7 +103,7 @@ class MachEmuRecipe(ConanFile):
         if not self.conf.get("tools.build:skip_test", default=False):
             testFilter = "--gtest_filter=*"
             if not self.options.with_i8080_test_suites:
-                testFilter += ":-*8080*:*CpuTest*"                
+                testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             #self.run(os.path.join(testsDir, "ControllerTest"))
             self.run(os.path.join(testsDir, "MachineTest " + testFilter + " " + os.path.join(self.source_folder + "/Tests/Programs/")))
@@ -120,5 +120,5 @@ class MachEmuRecipe(ConanFile):
         cmake = CMake(self)
         cmake.install()
 
-    def package_info(self):        
+    def package_info(self):
         self.cpp_info.libs = [self.name]
