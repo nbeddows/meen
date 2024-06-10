@@ -81,15 +81,36 @@ else()
   if(NOT BUILD_TESTING STREQUAL OFF)
     if(enablePythonModule)
       set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+      set(pythonFilter "export python_filter=\"-k *\"")
+      set(pythonCmdLine
+        "--python_filter)\n\
+            export python_filter=\"-k $2\"\n\
+            shift\n\
+            ;;")
+      set(pythonExecute "tests/test_Machine.py -v \"\${python_filter}\"")
     endif()
 
     set(chmod COMMAND chmod 755 ${sdkDir}/run-${libMachEmu}-tests${scriptExt})
 
-    # probaby need to export LD_LIBRARY_PATH in the script
     file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/run-${libMachEmu}-tests${scriptExt}
-      "sudo mv bin/${prefix}${libMachEmu}.${postfix}${versionExt} \${1} && sudo ln -s \${1}/${prefix}${libMachEmu}.${postfix}${versionExt} \${1}/${prefix}${libMachEmu}.${postfix}"
-    )
-    endif()
+"#!bin/bash\n\
+export gtest_filter=\"--gtest_filter=*\"\n\
+${pythonFilter}\n\
+while [[ \$# -gt 0 ]]; do\n\
+    case \$1 in\n\
+        --gtest_filter)\n\
+            export gtest_filter=\"\$1=\$2\"\n\
+            shift\n\
+           ;;\n\
+        ${pythonCmdLine}\n\
+    esac\n\
+    shift\n\
+done\n\
+echo Adding `pwd`/${runtimeDir} to LD_LIBRARY_PATH\n\
+export LD_LIBRARY_PATH=`pwd`/${runtimeDir}:\${LD_LIBRARY_PATH}\n\
+echo Running unit tests\n\
+tests/MachineTest \"\${gtest_filter}\" tests/Programs/\n\
+${pythonExecute}")
 endif()
 
 if(enablePythonModule)
