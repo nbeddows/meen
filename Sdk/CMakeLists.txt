@@ -19,159 +19,137 @@
 # SOFTWARE.
 
 set(target_name Sdk)
-set(sdkDir ${CMAKE_BINARY_DIR}/${target_name}/mach-emu)
+set(sdkDir ${CMAKE_BINARY_DIR}/${target_name}/${libMachEmu})
 
 if(MSVC)
-  set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/lib/MachEmu.lib ${sdkDir}/bin/MachEmu.lib)
-  set(installLinkLib "install(FILES \${artifactsDir}/lib/MachEmu.lib DESTINATION lib)\n")
-  set(postfix dll)
+  set(scriptExt .bat)
+  set(postfix .dll)
+  set(exeExt .exe)
+  set(copyLib COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${archiveDir}/${libMachEmu}.lib ${sdkDir}/${archiveDir}/${libMachEmu}.lib)
 
   if(enablePythonModule)
-    if(enableZlib)
-	    set(findZlibPackage "set(enableZlib ON)\nfind_package(zlib REQUIRED)\n")
+    set(pythonModule ${libMachEmu}Py.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
+  endif()
+
+  # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguemnts
+  if(NOT BUILD_TESTING STREQUAL OFF)
+    if(enablePythonModule)
+      set(testControllersModule TestControllersPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
+      set(pythonFilter "set python-filter=-k *")
+      set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
+      set(pythonExecute "tests\\test_Machine.py -v %python-filter%")
     endif()
 
-    set(pythonModule MachEmuPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
-    set(testControllersModule TestControllersPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
+    # start run-mach_emu-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
+    file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/run-${libMachEmu}-tests${scriptExt}
+        "@echo off\n\
+set gtest-filter=--gtest_filter=*\n\
+${pythonFilter}
+:parse\n\
+IF \"%~1\"==\"\" GOTO endparse\n\
+IF \"%~1\"==\"--gtest_filter\" set gtest-filter=%~1=%~2\n\
+${pythonCmdLine}\n\
+SHIFT\n\
+GOTO parse\n\
+:endparse\n\
+echo Adding %cd%\\${runtimeDir} to PATH\n\
+PATH=%cd%\\${runtimeDir};%PATH%\n\
+echo Running unit tests\n\
+tests\\MachineTest %gtest-filter% tests\\Programs\\\n\
+${pythonExecute}
+pause\n\
+exit")
   endif()
 else()
-  set(postfix so)
+  set(scriptExt .sh)
+  set(postfix .so)
   set(prefix lib)
   set(versionExt .${machEmuVersion})
 
-  if(${CMAKE_CROSSCOMPILING})
-    if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL aarch64)
-      set(stripLib COMMAND aarch64-linux-gnu-strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
-    else()
-      set(stripLib COMMAND arm-linux-gnueabihf-strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
-    endif()
+  if(${CMAKE_SYSTEM_PROCESSOR} STREQUAL aarch64)
+    set(stripLib COMMAND aarch64-linux-gnu-strip -s ${sdkDir}/${runtimeDir}/${prefix}${libMachEmu}${postfix}${versionExt})
+  elseif(${CMAKE_SYSTEM_PROCESSOR} STREQUAL armv7hf)
+    set(stripLib COMMAND arm-linux-gnueabihf-strip -s ${sdkDir}/${runtimeDir}/${prefix}${libMachEmu}${postfix}${versionExt})
   else()
-    set(installSoLink "install(CODE \"execute_process(COMMAND \${CMAKE_COMMAND} -E create_symlink ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix}${versionExt} ${CMAKE_INSTALL_PREFIX}/lib/${prefix}MachEmu.${postfix})\")\n")
-    set(soLink COMMAND ${CMAKE_COMMAND} -E create_symlink ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix})
-    set(stripLib COMMAND strip -s ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt})
+    set(stripLib COMMAND strip -s ${sdkDir}/${runtimeDir}/${prefix}${libMachEmu}${postfix}${versionExt})
   endif()
 
   if(enablePythonModule)
-    set(pythonModule MachEmuPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
-    set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+    set(pythonModule ${libMachEmu}Py.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+  endif()
+
+  if(NOT BUILD_TESTING STREQUAL OFF)
+    if(enablePythonModule)
+      set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
+    endif()
+
+    set(chmod COMMAND chmod 755 ${sdkDir}/run-${libMachEmu}-tests${scriptExt})
+
+    # probaby need to export LD_LIBRARY_PATH in the script
+    file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/run-${libMachEmu}-tests${scriptExt}
+      "sudo mv bin/${prefix}${libMachEmu}.${postfix}${versionExt} \${1} && sudo ln -s \${1}/${prefix}${libMachEmu}.${postfix}${versionExt} \${1}/${prefix}${libMachEmu}.${postfix}"
+    )
+    endif()
+endif()
+
+if(enablePythonModule)
+  set(copyPythonModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${runtimeDir}/${pythonModule} ${sdkDir}/${runtimeDir}/${pythonModule})
+
+  if(NOT BUILD_TESTING STREQUAL OFF)
+    include(${CMAKE_SOURCE_DIR}/Tests/MachineTest/pythonTestDeps.cmake)
+
+    generatePythonUnitTestDeps(. ./tests ./tests/Programs/ ${runtimeDir})
+
+    set(copyPythonUnitTests
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${runtimeDir}/${testControllersModule} ${sdkDir}/${runtimeDir}/${testControllersModule}
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/MachineTest/${source_dir}/test_Machine.py ${sdkDir}/tests/test_Machine.py
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/BaseIoController.py ${sdkDir}/tests/BaseIoController.py
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/CpmIoController.py ${sdkDir}/tests/CpmIoController.py
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/MemoryController.py ${sdkDir}/tests/MemoryController.py
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/TestIoController.py ${sdkDir}/tests/TestIoController.py
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineTestDeps${buildType}.py ${sdkDir}/tests/MachineTestDeps.py
+
+  )
   endif()
 endif()
 
-if(enablePythonModule)
-  set(copyPythonModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${pythonModule} ${sdkDir}/bin/${pythonModule})
-  set(copyTestControllersModule COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${testControllersModule} ${sdkDir}/bin/${testControllersModule})
-  set(findPythonPackage "find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)\n")
-  set(installPythonModule "install(FILES \${artifactsDir}/bin/${pythonModule} DESTINATION lib)\n")
-endif()
-
-if(${CMAKE_CROSSCOMPILING})
-  file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/mach-emu-install.sh
-    "sudo mv bin/${prefix}MachEmu.${postfix}${versionExt} \${1} && sudo ln -s \${1}/${prefix}MachEmu.${postfix}${versionExt} \${1}/${prefix}MachEmu.${postfix}"
-  )
-
-  add_custom_target(
-    ${target_name}
-    COMMAND cppcheck -i build -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/mach-emu-install.sh ${sdkDir}/mach-emu-install.sh
-    COMMAND chmod 755 ${sdkDir}/mach-emu-install.sh
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/ControllerTest ${sdkDir}/bin/ControllerTest
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/MachineTest ${sdkDir}/bin/MachineTest
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Tests/Programs ${sdkDir}/bin/Programs
-    ${stripLib}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
-    COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-bin.tar.gz ${sdkDir}
-    COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
-  )
-else()
-  # write the top level sdk cmake make list
-  file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/RootCMakeLists.txt
-    "# Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>\n\n"
-    "# Permission is hereby granted, free of charge, to any person obtaining a copy\n"
-    "# of this software and associated documentation files (the \"Software\"), to deal\n"
-    "# in the Software without restriction, including without limitation the rights\n"
-    "# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
-    "# copies of the Software, and to permit persons to whom the Software is\n"
-    "# furnished to do so, subject to the following conditions:\n\n"
-    "# The above copyright notice and this permission notice shall be included in all\n"
-    "# copies or substantial portions of the Software.\n\n"
-    "# THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
-    "# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
-    "# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
-    "# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
-    "# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
-    "# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
-    "# SOFTWARE.\n\n"
-    "cmake_minimum_required (VERSION 3.25)\n"
-    "set(include_dir include)\n"
-    "set(module_dir module)\n"
-    "set(source_dir source)\n"
-    "project(mach-emu)\n"
-    "set(artifactsDir \${CMAKE_SOURCE_DIR})\n"
-    "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY \$<1:\${artifactsDir}/bin>)\n"
-    "find_library(libMachEmu MachEmu PATHS \${artifactsDir}/bin)\n"
-    "find_package(GTest REQUIRED)\n"
-    "find_package(nlohmann_json REQUIRED)\n"
-    ${findPythonPackage}
-    ${findZlibPackage}
-    "add_subdirectory(Tests)\n"
-    ${installPythonModule}
-    "install(FILES \${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} DESTINATION lib)\n"
-    ${installLinkLib}
-    "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Base/include/Base DESTINATION include)\n"
-    "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Controller/include/Controller DESTINATION include)\n"
-    "install(DIRECTORY \${CMAKE_SOURCE_DIR}/Machine/include/Machine DESTINATION include)\n"
-    ${installSoLink}
-  )
-
-  file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/conanfile.txt
-    "[requires]\n"
-    "gtest/1.14.0\n"
-    "nlohmann_json/3.11.3\n"
-    "zlib/1.3.1\n"
-    "[generators]\n"
-    "CMakeDeps\n"
-    "CMakeToolchain\n"
-    "[layout]\n"
-    "cmake_layout\n"
-    "[options]\n"
-    "zlib*:shared=True\n"
-    "gtest*:build_gmock=False\n"
-  )
-
-  # copy out the required modules/sources/libraries, perform static analysis
-  add_custom_target(
-    ${target_name}
-    COMMAND cppcheck -i build -i CMakeFiles -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Base/include ${sdkDir}/Base/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Controller/include ${sdkDir}/Controller/include
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Tests ${sdkDir}/Tests/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/IMachine.h ${sdkDir}/Machine/include/Machine/IMachine.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/MachineFactory.h ${sdkDir}/Machine/include/Machine/MachineFactory.h
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/RootCMakeLists.txt ${sdkDir}/CMakeLists.txt
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/conanfile.txt ${sdkDir}/conanfile.txt
+if(NOT BUILD_TESTING STREQUAL OFF)
+  set(copyTests
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${runtimeDir}/MachineTest${exeExt} ${sdkDir}/tests/MachineTest${exeExt}
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Tests/Programs ${sdkDir}/tests/Programs
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/run-${libMachEmu}-tests${scriptExt} ${sdkDir}/run-${libMachEmu}-tests${scriptExt}
+    ${chmod}
     ${copyPythonModule}
-    ${copyTestControllersModule}
-    ${copyLib}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/bin/${prefix}MachEmu.${postfix}${versionExt} ${sdkDir}/bin/${prefix}MachEmu.${postfix}${versionExt}
-    ${soLink}
-    ${stripLib}
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
-    COMMAND ${CMAKE_COMMAND} -E chdir ${sdkDir} doxygen ${CMAKE_SOURCE_DIR}/Docs/Doxyfile
-    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Docs/images ${sdkDir}/Docs/html/Docs/images
-    COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-dev.tar.gz ${sdkDir}
-    COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
-  )
+    ${copyPythonUnitTests}
+)
 endif()
 
+if(DEFINED zlibBinDir)
+  set(copyZlib COMMAND ${CMAKE_COMMAND} -E copy_directory ${zlibBinDir} ${sdkDir}/${runtimeDir})
+endif()
+
+add_custom_target(
+  ${target_name}
+  COMMAND cppcheck -i build -i CMakeFiles -i Tests -i Utils --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 "${CMAKE_SOURCE_DIR}"
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${sdkDir}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Base/include ${sdkDir}/${include_dir}
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/Controller/include ${sdkDir}/${include_dir}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/IMachine.h ${sdkDir}/${include_dir}/Machine/IMachine.h
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Machine/include/Machine/MachineFactory.h ${sdkDir}/${include_dir}/Machine/MachineFactory.h
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${runtimeDir}/${prefix}${libMachEmu}${postfix}${versionExt} ${sdkDir}/${runtimeDir}/${prefix}${libMachEmu}${postfix}${versionExt}
+  ${stripLib}
+  ${copyLib}
+  ${copyZlib}
+  ${copyTests}
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/CHANGELOG.md ${sdkDir}/CHANGELOG.md
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/LICENSE.md ${sdkDir}/LICENSE.md
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/README.md ${sdkDir}/README.md
+  COMMAND ${CMAKE_COMMAND} -E tar -czf ${sdkDir}-v${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM}-${CMAKE_SYSTEM_PROCESSOR}-${runtimeDir}.tar.gz ${sdkDir}
+  COMMAND ${CMAKE_COMMAND} -E rm -rf ${sdkDir}
+)
+
 if(enablePythonModule)
-  add_dependencies(${target_name} MachEmuPy)
+  add_dependencies(${target_name} ${libMachEmu}Py)
 else()
   add_dependencies(${target_name} ${libMachEmu})
 endif()
