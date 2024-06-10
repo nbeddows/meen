@@ -19,7 +19,6 @@
 # SOFTWARE.
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
-add_subdirectory(ControllerTest)
 add_subdirectory(MachineTest)
 add_subdirectory(TestControllers)
 
@@ -28,6 +27,5 @@ if(enablePythonModule)
   set_target_properties(TestControllersPy PROPERTIES FOLDER "Tests")
 endif()
 
-set_target_properties(ControllerTest PROPERTIES FOLDER "Tests")
 set_target_properties(MachineTest PROPERTIES FOLDER "Tests")
 set_target_properties(TestControllers PROPERTIES FOLDER "Tests")

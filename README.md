@@ -129,7 +129,6 @@ NOTE: when cross compiling the default build directory may need to be removed if
 
 C++ - Linux/Windows:
 - `artifacts/Release/x86_64/bin/MachineTest`.
-- `artifacts/Release/x86_64/bin/ControllerTest`.
 
 C++ - Arm Linux:<br>
 

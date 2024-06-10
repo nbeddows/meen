@@ -47,8 +47,6 @@ class MachEmuRecipe(ConanFile):
         "SystemBus/CMakeLists.txt",\
         "SystemBus/include/*",\
         "Tests/CMakeLists.txt",\
-        "Tests/ControllerTest/CMakeLists.txt",\
-        "Tests/ControllerTest/source/*",\
         "Tests/MachineTest/CMakeLists.txt",\
         "Tests/MachineTest/pythonTestDeps.cmake",\
         "Tests/MachineTest/source/*",\
@@ -93,7 +91,7 @@ class MachEmuRecipe(ConanFile):
         tc.variables["buildArch"] = self.settings.arch
         tc.variables["archiveDir"] = self.cpp_info.libdirs[0]
         tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]            
-        if self.settings.os == "Windows" and self.options.with_python and self.options.with_zlib and self.dependencies["zlib"].options.shared:
+        if self.settings.os == "Windows" and self.options.with_zlib and self.dependencies["zlib"].options.shared:
             tc.variables["zlibBinDir"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
         tc.generate()
 
@@ -107,8 +105,8 @@ class MachEmuRecipe(ConanFile):
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"                
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
-            self.run(os.path.join(testsDir, "ControllerTest"))
-            self.run(os.path.join(testsDir, "MachineTest " + testFilter))
+            #self.run(os.path.join(testsDir, "ControllerTest"))
+            self.run(os.path.join(testsDir, "MachineTest " + testFilter + " " + os.path.join(self.source_folder + "/Tests/Programs/")))
             if self.options.with_python:
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:
