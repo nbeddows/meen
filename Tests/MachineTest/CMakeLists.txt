@@ -31,6 +31,8 @@ add_executable(${exe_name} ${${exe_name}_source_files})
 if(enablePythonModule STREQUAL ON)
     include(pythonTestDeps.cmake)
 
+    generatePythonUnitTestDeps(${artifactsDir} ${CMAKE_SOURCE_DIR}/Tests/TestControllers/source ${CMAKE_SOURCE_DIR}/Tests/Programs/ ${zlibBinDir})
+
     add_custom_command(
         TARGET ${exe_name} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${buildType}.py ${CMAKE_CURRENT_SOURCE_DIR}/source/MachineTestDeps.py

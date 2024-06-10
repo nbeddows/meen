@@ -1,9 +1,10 @@
+function (generatePythonUnitTestDeps rootPath testControllersPath testProgramsPath zlibPath)
 if(DEFINED zlibBinDir)
-    set(addZlibBinDir "import os\nos.add_dll_directory(\"${zlibBinDir}\")\n")
+    set(addZlibBinDir "import os\nos.add_dll_directory(os.path.abspath(\"${zlibPath}\"))\n")
 endif()
 
 if (NOT DEFINED MachEmuPackageTest)
-   set(unitTestDeps "# absolute path to Python controller test modules\nsys.path.append(\"${CMAKE_SOURCE_DIR}/Tests/TestControllers/source\")\nprogramsDir = \"${CMAKE_SOURCE_DIR}/Tests/Programs/\"\n")
+   set(unitTestDeps "# absolute path to Python controller test modules\nsys.path.append(\"${testControllersPath}\")\nprogramsDir = \"${testProgramsPath}\"\n")
 endif()
 
 # command to prepend dll search path to machine test script
@@ -27,5 +28,6 @@ file(GENERATE OUTPUT "MachineTestDeps${buildType}.py" CONTENT
 ${addZlibBinDir}
 import sys\n\
 # absolute path to the C++ controller test module\n\
-sys.path.append(\"${artifactsDir}/${runtimeDir}\")\n\
+sys.path.append(\"${rootPath}/${runtimeDir}\")\n\
 ${unitTestDeps}")
+endfunction()

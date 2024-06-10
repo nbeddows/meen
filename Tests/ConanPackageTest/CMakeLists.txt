@@ -14,6 +14,8 @@ add_executable(MachEmuPackageTest source/MachEmuPackageTest.cpp)
 if(DEFINED artifactsDir OR DEFINED zlibBinDir)
     include(${CMAKE_SOURCE_DIR}/../MachineTest/pythonTestDeps.cmake)
 
+    generatePythonUnitTestDeps(${artifactsDir} testControllersPathNotUsed testProgramsPathNoUsed ${zlibBinDir})
+
     add_custom_command(
         TARGET MachEmuPackageTest POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${buildType}.py ${CMAKE_CURRENT_SOURCE_DIR}/source/MachineTestDeps.py
