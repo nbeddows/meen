@@ -91,7 +91,7 @@ class MachEmuRecipe(ConanFile):
         tc.variables["buildArch"] = self.settings.arch
         tc.variables["archiveDir"] = self.cpp_info.libdirs[0]
         tc.variables["runtimeDir"] = self.cpp_info.bindirs[0]            
-        if self.settings.os == "Windows" and self.options.with_zlib and self.dependencies["zlib"].options.shared:
+        if self.options.with_zlib and self.dependencies["zlib"].options.shared:
             tc.variables["zlibBinDir"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
         tc.generate()
 

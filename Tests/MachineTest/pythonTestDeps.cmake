@@ -1,6 +1,7 @@
-function (generatePythonUnitTestDeps rootPath testControllersPath testProgramsPath zlibPath)
-if(DEFINED zlibBinDir)
-    set(addZlibBinDir "import os\nos.add_dll_directory(os.path.abspath(\"${zlibPath}\"))\n")
+# ARGV3 - path to the zlib shared library
+function (generatePythonUnitTestDeps rootPath testControllersPath testProgramsPath)
+if(DEFINED ARGV3)
+    set(addZlibBinDir "import os\nos.add_dll_directory(os.path.abspath(\"${ARGV3}\"))\n")
 endif()
 
 if (NOT DEFINED MachEmuPackageTest)
