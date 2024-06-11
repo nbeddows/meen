@@ -37,7 +37,10 @@ if(MSVC)
       set(testControllersModule TestControllersPy.cp${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-win_amd64.pyd)
       set(pythonFilter "set python-filter=-k *")
       set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
-      set(pythonExecute "tests\\test_Machine.py -v %python-filter%")
+      set(pythonExecute 
+        "echo Running Python unit tests\n\
+        python tests\\test_Machine.py -v %python-filter%"
+      )
     endif()
 
     # start run-mach_emu-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
@@ -54,11 +57,12 @@ GOTO parse\n\
 :endparse\n\
 echo Adding %cd%\\${runtimeDir} to PATH\n\
 PATH=%cd%\\${runtimeDir};%PATH%\n\
-echo Running unit tests\n\
+echo Running C++ unit tests\n\
 tests\\MachineTest %gtest-filter% tests\\Programs\\\n\
 ${pythonExecute}
 pause\n\
-exit")
+exit"
+    )
   endif()
 else()
   set(scriptExt .sh)
@@ -81,19 +85,23 @@ else()
   if(NOT BUILD_TESTING STREQUAL OFF)
     if(enablePythonModule)
       set(testControllersModule TestControllersPy.cpython-${Python_VERSION_MAJOR}${Python_VERSION_MINOR}-x86_64-linux-gnu.so)
-      set(pythonFilter "export python_filter=\"-k *\"")
+      set(pythonFilter "export python_filter=\"-k*\"")
       set(pythonCmdLine
         "--python_filter)\n\
-            export python_filter=\"-k $2\"\n\
+            export python_filter=\"-k$2\"\n\
             shift\n\
-            ;;")
-      set(pythonExecute "tests/test_Machine.py -v \"\${python_filter}\"")
+            ;;"
+      )
+      set(pythonExecute
+        "echo Running Python unit tests\n\
+        python tests/test_Machine.py -v \"\${python_filter}\""
+      )
     endif()
 
     set(chmod COMMAND chmod 755 ${sdkDir}/run-${libMachEmu}-tests${scriptExt})
 
     file(WRITE ${CMAKE_BINARY_DIR}/${target_name}/run-${libMachEmu}-tests${scriptExt}
-"#!bin/bash\n\
+"#!/bin/bash\n\
 export gtest_filter=\"--gtest_filter=*\"\n\
 ${pythonFilter}\n\
 while [[ \$# -gt 0 ]]; do\n\
@@ -101,16 +109,23 @@ while [[ \$# -gt 0 ]]; do\n\
         --gtest_filter)\n\
             export gtest_filter=\"\$1=\$2\"\n\
             shift\n\
-           ;;\n\
+            ;;\n\
         ${pythonCmdLine}\n\
+        *)\n\
+            echo Invalid option: \$1\n\
+            echo ./run-machine-tests [--gtest_filter \\\$gtest_filter][--python_filter \\\${python_filter}
+            exit\n\
+            ;;\n\
     esac\n\
     shift\n\
 done\n\
 echo Adding `pwd`/${runtimeDir} to LD_LIBRARY_PATH\n\
 export LD_LIBRARY_PATH=`pwd`/${runtimeDir}:\${LD_LIBRARY_PATH}\n\
-echo Running unit tests\n\
+echo Running C++ unit tests\n\
 tests/MachineTest \"\${gtest_filter}\" tests/Programs/\n\
-${pythonExecute}")
+${pythonExecute}"
+    )
+  endif()
 endif()
 
 if(enablePythonModule)
@@ -119,7 +134,11 @@ if(enablePythonModule)
   if(NOT BUILD_TESTING STREQUAL OFF)
     include(${CMAKE_SOURCE_DIR}/Tests/MachineTest/pythonTestDeps.cmake)
 
-    generatePythonUnitTestDeps(. ./tests ./tests/Programs/ ${runtimeDir})
+    if(DEFINED zlibBinDir)
+      set(zlibPath ${runtimeDir})
+    endif()
+    
+    generatePythonUnitTestDeps(. ./tests ./tests/Programs/ ${zlibPath})
 
     set(copyPythonUnitTests
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${artifactsDir}/${runtimeDir}/${testControllersModule} ${sdkDir}/${runtimeDir}/${testControllersModule}
@@ -129,8 +148,7 @@ if(enablePythonModule)
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/MemoryController.py ${sdkDir}/tests/MemoryController.py
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${source_dir}/TestIoController.py ${sdkDir}/tests/TestIoController.py
       COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_BINARY_DIR}/Sdk/MachineTestDeps${buildType}.py ${sdkDir}/tests/MachineTestDeps.py
-
-  )
+    )
   endif()
 endif()
 
@@ -142,7 +160,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     ${chmod}
     ${copyPythonModule}
     ${copyPythonUnitTests}
-)
+  )
 endif()
 
 if(DEFINED zlibBinDir)
