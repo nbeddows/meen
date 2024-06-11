@@ -53,17 +53,17 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppchek for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
+MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppcheck for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
 
 #### Pre-requisites
 
 ##### Linux
 
-- `sudo apt install cppcheck` (if building a distribution, see step 7).
+- `sudo apt install cppcheck` ([if building a binary development package](#building-a-binary-development-package)).
 - `sudo apt install cmake`.
-- `sudo apt install doxygen` (if building a distribution, see step 7).
+- `sudo apt install doxygen` ([if building a binary development package](#building-a-binary-development-package)).
 - `sudo apt install python3`.
-- `sudo apt install python3-dev` (if building the Python module, see step 4).
+- `sudo apt install python3-dev` (if building the Python module, see steps 3 and 4).
 - `pipx install conan`.
 - `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
 - `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
@@ -71,9 +71,9 @@ MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum v
 
 ##### Windows
 
-- [CppCheck static analysis](http://cppcheck.net/) (if building a distribution, see step 7).<br>
+- [CppCheck static analysis](http://cppcheck.net/) ([if building a binary development package](#building-a-binary-development-package)).<br>
 - [CMake build system](https://cmake.org/download/).<br>
-- [Doxygen](https://www.doxygen.nl/download.html) (if building a distribution, see step 7).<br>
+- [Doxygen](https://www.doxygen.nl/download.html) ([if building a binary development package](#building-a-binary-development-package)).<br>
 - [Python3](https://www.python.org/downloads/windows/).<br>
 - `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
 - `pip install conan`.
@@ -88,7 +88,8 @@ MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum v
 - Using the default build and host profiles: `conan install . --build=missing`.
 - Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
 - Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
-NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (See Pre-requisites).
+
+NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
 
 The following install options are supported:
 - build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
@@ -128,22 +129,20 @@ NOTE: when cross compiling the default build directory may need to be removed if
 **6.** Run the unit tests:
 
 C++ - Linux/Windows:
-- `artifacts/Release/x86_64/bin/MachineTest`.
+- `artifacts/Release/x86_64/bin/MachineTest Tests/Programs/ [--gtest_filter=${gtest_filter}]`.
 
 C++ - Arm Linux:<br>
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
-1. Create an Arm Linux binary distribution: `cmake --build --preset conan-release --target=Sdk`. 
+1. Create an Arm Linux binary distribution: See building a binary development package. 
 2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
 4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
 5. Change directory to mach-emu: `cd mach-emu`.
-6. Install the mach-emu shared library at a specifed location (optional): `sudo ./mach-emu-install.sh /usr/local/lib`.
-7. Run the unit tests using the test programs: `bin/MachineTest bin/Programs/`.<br>
-If the following error is encountered: `bin/MachineTest: error while loading shared libraries: libMachEmu.so.1.5.1: cannot open shared object file: No such file or directory`, you need to add the install directory to your LD_LIBRARY_PATH: `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib` (if you installed via step 6) or `export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:bin` if you skipped step 6.
+6. Run the unit tests: `./run-mach_emu-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
 Python:
-- `Tests\MachineTest\source\test_Machine.py -v`.
+- `Tests\MachineTest\source\test_Machine.py -v [-k ${python_filter}]`.
 
 Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
 - `artifacts\Release\x86_64\bin\MachineTest --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
@@ -151,13 +150,24 @@ Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especiall
 
 The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/MachineTest ${test/programs/directory/}`.
 
-**7.** Build a development distribution: `cmake --build --preset conan-release --target=Sdk`.<br>
-The distribution will be located in `build/Release/Sdk`.<br>
-Note: when cross compiling this command will generate a binary distribution.
+#### Building a binary development package
+
+MachEmu support the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
+
+Once the [configuration](#configuration) step is complete a binary development package can be built with the following command:
+- `cmake --build --preset conan-release --target=Sdk`.
+
+The package will be located in `build/Release/Sdk/` with a name similar to the following depending on the platform it was built on:
+- `mach_emu-v1.5.1-Windows-10.0.19042-AMD64-bin.tar.gz`.
+
+When the package has been built with unit tests enabled it will contain a script called `run-machine-unit-tests` which can be used to test the development package:
+- `./run-machine-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+
+NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
 
 #### Exporting a Conan package
 
-MachEmu can be exported as a package to the local Conan cache (and be uploaded to a Conan server) so it can be consumed by other Conan based projects. It supports the same options as discussed in step 3 of the Configuration section.
+MachEmu can be exported as a package to the local Conan cache (and be uploaded to a Conan server) so it can be consumed by other Conan based projects. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
 
 The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
