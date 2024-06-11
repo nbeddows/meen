@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmuPy)
+set (lib_name ${libMachEmu}Py)
 
 set (${lib_name}_include_files
 	${include_dir}/MachinePy/ControllerPy.h

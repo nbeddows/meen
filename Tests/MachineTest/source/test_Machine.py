@@ -4,9 +4,9 @@ import re
 import sys
 import unittest
 
-from MachEmuPy import __version__
-from MachEmuPy import ErrorCode
-from MachEmuPy import MakeMachine
+from mach_emuPy import __version__
+from mach_emuPy import ErrorCode
+from mach_emuPy import MakeMachine
 
 # import Python controller modules (a port of the c++ modules below)
 # always use the c++ memory controller module for performance reasons, the python module is available strictly for demonstration purposes

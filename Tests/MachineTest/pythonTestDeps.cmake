@@ -1,9 +1,11 @@
-if(DEFINED zlibDllDir)
-    set(addZlibDllDir "import os\nos.add_dll_directory(\"${zlibDllDir}\")\n")
+# ARGV3 - path to the zlib shared library
+function (generatePythonUnitTestDeps rootPath testControllersPath testProgramsPath)
+if(DEFINED ARGV3)
+    set(addZlibBinDir "import os\nos.add_dll_directory(os.path.abspath(\"${ARGV3}\"))\n")
 endif()
 
 if (NOT DEFINED MachEmuPackageTest)
-   set(unitTestDeps "# absolute path to Python controller test modules\nsys.path.append(\"${CMAKE_SOURCE_DIR}/Tests/TestControllers/source\")\nprogramsDir = \"${CMAKE_SOURCE_DIR}/Tests/Programs/\"\n")
+   set(unitTestDeps "# absolute path to Python controller test modules\nsys.path.append(\"${testControllersPath}\")\nprogramsDir = \"${testProgramsPath}\"\n")
 endif()
 
 # command to prepend dll search path to machine test script
@@ -24,8 +26,9 @@ file(GENERATE OUTPUT "MachineTestDeps${buildType}.py" CONTENT
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n\
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n\
 # SOFTWARE.\n\n\
-${addZlibDllDir}
+${addZlibBinDir}
 import sys\n\
 # absolute path to the C++ controller test module\n\
-sys.path.append(\"${artifactsDir}/${runtimeDir}\")\n\
+sys.path.append(\"${rootPath}/${runtimeDir}\")\n\
 ${unitTestDeps}")
+endfunction()
