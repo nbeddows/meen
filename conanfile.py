@@ -105,7 +105,6 @@ class MachEmuRecipe(ConanFile):
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
-            #self.run(os.path.join(testsDir, "ControllerTest"))
             self.run(os.path.join(testsDir, "MachineTest " + testFilter + " " + os.path.join(self.source_folder + "/Tests/Programs/")))
             if self.options.with_python:
                 testFilter = "-k "
