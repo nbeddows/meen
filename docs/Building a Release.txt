@@ -1,0 +1,36 @@
+Before building the Release configuration of the SDK the following must be performed:
+
+1. Make sure Doxygen is installed and is in your environment path.
+
+2. Make sure Cppcheck is installed and is in your environment path.
+
+3. Make sure you are on the development branch and everything required for the release is committed to it.
+
+4. Increment the major/minor/bugfix version numbers in the Sdk CMakeLists.txt and the Docs Doxyfile and the Windows version resource according to the scope of the release.
+
+5. Commit and push the Sdk and Doxyfile changes.
+
+	git commit -m "Updated the Sdk version number" Sdk/CMakeLists.txt Docs/Doxyfile
+	git push
+
+6. Make sure the Changelog is up to date (including the version number!).
+
+7. Commit and push the Changelog.
+
+	git commit -m "Updated for version v<major>.<minor>.<patch>" Changelog.txt
+	git push
+
+Build the SDK.
+
+8. Fix and commit any static analysis issues that have been detected. 
+
+9. Change to the main branch
+
+10. Merge the development branch into the main branch.
+
+11. Build the release version of the SDK.
+
+12. Tag the release (ONLY if the SDK built successfully).
+
+	git tag -a "v<major>.<minor>.<patch>" -m "Short message describing the release"
+	git push --tags	
