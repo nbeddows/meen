@@ -22,13 +22,10 @@ set (lib_name Utils)
 
 set (${lib_name}_include_files
 	${include_dir}/${lib_name}/${lib_name}.h
-	${include_dir}/${lib_name}/base64.hpp
-	${include_dir}/${lib_name}/md5.h
 )
 
 set (${lib_name}_source_files
 	${source_dir}/${lib_name}.cpp
-	${source_dir}/md5.c
 )
 
 SOURCE_GROUP("Include Files" FILES ${${lib_name}_include_files})
@@ -36,11 +33,12 @@ SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
 add_library(${lib_name} STATIC ${${lib_name}_include_files} ${${lib_name}_source_files})
 
-if(CMAKE_COMPILER_IS_GNUCXX)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
 	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
 endif()
 
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/${lib_name}/${include_dir})
+target_link_libraries(${lib_name} PRIVATE aklomp::base64 hash-library::hash-library)
 
 if(enableZlib)
 	target_compile_definitions(${lib_name} PRIVATE ENABLE_ZLIB)

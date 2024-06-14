@@ -30,7 +30,7 @@ This list will expand as certain milestones are achieved.
 
 Conceptually speaking, MachEmu can be represented by the following diagram:
 
-![](Docs/images/MachineDiagram.png)
+![](docs/images/MachineDiagram.png)
 
 As can be seen from the diagram above MachEmu is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
 
@@ -48,66 +48,215 @@ The following table displays the current defacto test suites that these unit tes
 |       | CPUTEST          | PASS   |
 |       | TST8080          | PASS   |
 
-IMachine.h specifies the MachEmu API and outlines the basic principles of operation.<br>
-MachineFactory.h specifies the MachEmu shared library entry point.
+`IMachine.h` specifies the MachEmu API.<br>
+`MachineFactory.h` specifies the MachEmu shared library entry point.
 
 ### Compilation
 
-The compilation steps below are geard towards installing MachEmu and building the tests from the development package, however, these steps closely align when building the develoment package from source. When you are building from source and want to create a development package you need to run the Sdk project.
+MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, [cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
 
-##### Pre-requisites
-
-The following development packages require installation:
-
-- [cmake](https://cmake.org/download/)<br>
-- [nlohmann_json](https://github.com/nlohmann/json/releases)<br>
-- [zlib](https://github.com/madler/zlib/releases) (when the development package has been built with the enableZlib cmake config option enabled)<br>
-
-When the MachEmu development package has been built with the enablePythonModule cmake config option enabled, the following development packages require installtion:
-
-- [Python3](https://www.python.org/downloads/windows/)<br>
-- Python3 development (when building from source)<br>
-    - **Linux:** `sudo apt install python3-dev`<br>
-    - **Windows:** available via the advanced options in the installer.<br>
-- [pybind11](https://github.com/pybind/pybind11) (when building the development package)<br>
-- [numpy](https://github.com/numpy/numpy) (when using the Python example memory controller)<br>
-
-##### Configuration
-
-Untar the mach-emu archive.
-
-MachEmu uses CMake (3.28 is the minimum version required) for its build system and has been tested on both Window 10 and Ubuntu 23.10.
-
-Open cmake-gui (feel free to use command line cmake, but the remainder of this readme will use cmake-gui). Set the source code text field to the mach-emu directory and binary directory for the build files.
-
-Click configure and choose Visual Studio 16 or 17 for Windows or Unix Makefiles for Linux (if prompted to create the build directory, accept), then click generate.
-
-##### Windows
-
-The following image give a possible Windows CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Make sure that your install location is in your PATH environment variable otherwise MachEmu.dll will fail to load when the unit tests are run.
-
-![Example Windows configuration](Docs/images/CMake(Windows).png)
-
-MachEmu has been tested using Microsoft Visual Studio and requires at least version 16 (2019). Open the mach-emu visual studio solution, (depending on your install location you may need to open visual studio with admin privileges) set the configuration to Release and project to INSTALL, then build. Once this builds successfully you will be able to change your project to the machine and controller unit tests and they should run successfully.
+#### Pre-requisites
 
 ##### Linux
 
-The following image gives a possible Linux CMake configuration (note that we don't use gmock and we don't require gtest installation so those options are turned off). Also note that the required CXX compiler needs to be g++ (Clang is currently not supported). If the gui output displays a different compiler you can open the root CMakeLists.txt and uncomment the following line `set(CMAKE_CXX_COMPILER g++-13)`
+- `sudo apt install cppcheck` ([if building a binary development package](#building-a-binary-development-package)).
+- `sudo apt install cmake`.
+- `sudo apt install doxygen` ([if building a binary development package](#building-a-binary-development-package)).
+- `sudo apt install python3`.
+- `sudo apt install python3-dev` (if building the Python module, see steps 3 and 4).
+- `pipx install conan`.
+- `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
+- `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+- `sudo apt install g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
 
-![Example Linux configuration](Docs/images/CMake(Linux).png)
+##### Windows
 
-MachEmu has been tested with g++ version 13.2 with GNU Make 4.3. Earlier versions of g++ may work though they are untested. Once CMake has finished change into the build directory and run make install. Depending on your install location you may need to run sudo make install. Once it completes the Machine unit tests can be found in Tests/MachineTest and the controller tests in Tests/ControllerTest.
+- [CppCheck static analysis](http://cppcheck.net/) ([if building a binary development package](#building-a-binary-development-package)).<br>
+- [CMake build system](https://cmake.org/download/).<br>
+- [Doxygen](https://www.doxygen.nl/download.html) ([if building a binary development package](#building-a-binary-development-package)).<br>
+- [Python3](https://www.python.org/downloads/windows/).<br>
+- `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
+- `pip install conan`.
 
-##### Python
+#### Configuration
 
-When the enablePythonModule option is checked a MachEmu Python module will be built (when building the development package) and installed in the same directory as the MachEmu shared library.
+**1.** Create a default profile: `conan profile detect`. This will detect the operating system, build architecture, compiler settings and set the build configuration as Release by default. The profile will be named `default` and will reside in $HOME/.conan2/profiles. 
 
-The MachEmu module needs to be in the Python interpreter search path, this can be done via one of the following (amoungst others) methods:
+**2.** The created profile is an educated guess, open it and make sure that it is correct for your system, ensure that the compiler standard is set to 20: `compiler.cppstd=20`.
 
-1. Add the MachEmu lib install path to your PYTHONPATH environment variable:<br>
-    `export PYTHONPATH=${mach-emu-install-dir}/lib`
-2. At run time via the Python sys module:<br>
-    `sys.path.append(${mach-emu-install-dir}/lib)`
+**3.** Run conan to install the dependent packages.
+- Using the default build and host profiles: `conan install . --build=missing`.
+- Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
+- Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
+
+NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
+
+The following install options are supported:
+- build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
+- enable/disable python module support: `--options=with_python=[True|False(default)]` (Unsupported on arm, step 4 will fail)
+- enable/disable zlib support: `--options=with_zlib=[True(default)|False]`
+
+The following will enable python and disable zlib: `conan install . --build=missing --options=with_python=True --options=with_zlib=False`
+
+The following dependent packages will be (compiled if required and) installed based on the supplied options:
+
+- `base64`: for base64 coding.
+- `gtest`: for running the machine and controller unit tests.
+- `hash-library`: for md5 hashing.
+- `nlohmann_json`: for parsing machine configuration options.
+- `pybind`: for creating Python C++ bindings.
+- `zlib`: for memory (de)compression when loading and saving files.<br>
+
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --settings=build_type=Debug`.
+
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --options=zlib/*:shared=False`.
+
+**4.** Run cmake to configure and generate the build system.
+
+- Multi configuration generators (MSVC for example): `cmake --preset conan-default [-Wno-dev]`.
+- Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
+A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
+
+NOTE: the options supported during the install step can also be enabled/disabled here if required:
+- Disable zlib support: `cmake --preset conan-default -D enableZlib=OFF`.
+- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON` (Unsupported on arm, CMake will fail).
+
+**5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
+The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
+
+NOTE: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
+
+**6.** Run the unit tests:
+
+C++ - Linux/Windows:
+- `artifacts/Release/x86_64/bin/MachineTest Tests/Programs/ [--gtest_filter=${gtest_filter}]`.
+
+C++ - Arm Linux:<br>
+
+When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
+1. Create an Arm Linux binary distribution: See building a binary development package. 
+2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
+4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
+5. Change directory to mach-emu: `cd mach-emu`.
+6. Run the unit tests: `./run-mach_emu-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
+
+Python:
+- `Tests\MachineTest\source\test_Machine.py -v [-k ${python_filter}]`.
+
+Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+- `artifacts\Release\x86_64\bin\MachineTest --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
+- `Tests\MachineTest\source\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
+
+The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/MachineTest ${test/programs/directory/}`.
+
+#### Building a binary development package
+
+MachEmu support the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
+
+Once the [configuration](#configuration) step is complete a binary development package can be built with the following command:
+- `cmake --build --preset conan-release --target=Sdk`.
+
+The package will be located in `build/Release/Sdk/` with a name similar to the following depending on the platform it was built on:
+- `mach_emu-v1.5.1-Windows-10.0.19042-AMD64-bin.tar.gz`.
+
+When the package has been built with unit tests enabled it will contain a script called `run-machine-unit-tests` which can be used to test the development package:
+- `./run-machine-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `start run-machine-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+
+NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
+
+#### Export a Conan package
+
+MachEmu can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
+
+The following additional options are supported:
+- disable running the exported package tests: `--test_folder=""`
+- enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True|False(default)]` 
+
+NOTE: a pre-requisite of the exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
+
+Example command lines:
+1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+2. `conan create . --build=missing --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
+3. `conan create . --build=missing --options=with_zlib=False`: same as 1 but will disable zlib support. 
+4. `conan create . --build=missing --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
+5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
+6. `conan create . --build=missing --options=with_i8080_test_suites=False`: same as 1 but will not run the i8080 test suites.
+
+#### Upload a Conan package
+
+The package created in [the previous section](#export-a-conan-package) can be [uploaded to a Conan server](https://docs.conan.io/2/tutorial/conan_repositories/setting_up_conan_remotes/artifactory/artifactory_ce_cpp.html) so it can be consumed by other Conan based projects on other machines.
+
+Example command lines (once the artifactory server has been installed and is running):
+1. `conan remote add artifactory http://<server-ip>:8081/artifactory/api/conan/conan-local`: add the package server to the list of Conan remotes.
+2. `conan remote login artifactory <user> -p <password>`: login to the artifactory server so commands can be issued.
+3. `conan remote list`: list the remotes to ensure that it has been added.
+4. `conan upload mach_emu -r=artifactory`: upload the mach_emu package to the remote.
+5. `conan search mach_emu -r=artifactory`: search the remote to ensure that it was uploaded.
+6. `conan remove mach_emu -r=artifactory`: remove the mach_emu package from the remote.
+7. `conan remote remove artfactory`: remove the artifactory remote from the list of remotes.
+
+### Basic principles of operation
+
+The following code snippet gives and example of how a machine can be instantiated, configured and executed:
+
+```cpp
+// Create a synchronous i8080 machine running as fast as possible 
+auto machine = MakeMachine();
+
+// Create a custom memory controller (See tests for examples)
+auto customMemoryController = std::make_unique<CustomMemoryController>();
+
+// Load memory with program via custom controller method
+customMemoryController->LoadProgram("myProgram.com");
+
+// Create custom IO Controller (See tests for examples)
+auto customIOController = std::make_unique<CustomIOController>();
+
+// Set the memory and IO controllers with the machine
+machine->SetIOController(customIOController);
+machine->SetMemoryController(customMemoryController);
+
+// Can be called from a different thread if the runAsync/loadAsync options are specifed
+machine_->OnLoad([]
+{
+	// Return the json state to load, could be read from disk for example
+	return "json state as passed to OnSave";
+});
+
+// Can be called from a different thread if the runAsync/saveAsync options are specifed
+machine->OnSave([](const char* json)
+{
+	// Handle the machines current state, for example, writing it to disk
+	std::cout << json << std::endl;
+});		
+
+// Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
+// These values are used for load and save requests
+machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":16384})");
+
+// Set the clock resolution - not setting this will run the
+// machine as fast as possible (default)
+machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
+
+// Run the machine sychronously, it won't return until the custom IO
+// controller ServiceInterrupts override generates an ISR::Quit interrupt
+auto runTime = machine->Run();
+
+// Run the machine asychronously - this can be done by setting the following json config
+// option either in the MakeMachine factory method or via IMachine::SetOptions
+machine->SetOptions(R"({"runAsync":true})");
+machine->Run();
+
+// ...
+// Do additional work here while the machine is running
+// ...
+
+// Will not return until the custom IO
+// controller ServiceInterrupts override generates an ISR::Quit interrupt
+runTime = machine->WaitForCompletion();
+```
 
 ### Configuration Options
 
@@ -163,6 +312,5 @@ Special thanks to the following sites:
 
 - [i8080 Manual](https://altairclone.com/downloads/manuals/8080%20Programmers%20Manual.pdf)<br>
 - [CPU Tests](https://altairclone.com/downloads/cpu_tests/)<br>
-- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)<br>
-- [Base64 coding](https://github.com/tobiaslocker/base64)
-- [MD5 hashing](https://github.com/Zunawe/md5-c)
+- [Pretty Assmebler](https://caglrc.cc/~svo/i8080/)
+- [Windows Version Resource](https://github.com/halex2005/CMakeHelpers)

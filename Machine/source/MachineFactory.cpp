@@ -27,7 +27,7 @@ namespace MachEmu
 {
 	const char* Version()
 	{
-		return MachEmu_VERSION;
+		return mach_emu_VERSION;
 	}
 
 	//cppcheck-suppress unusedFunction

@@ -47,9 +47,7 @@ namespace MachEmu
 			SetOptions(R"({"cpu":"i8080"})");
 		}
 
-		auto cpuType = opt_.CpuType().c_str();
-
-		if (strncmp(cpuType, "i8080", strlen(cpuType)) == 0)
+		if(opt_.CpuType() == "i8080")
 		{
 			clock_ = MakeCpuClock(2000000);
 			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
@@ -193,7 +191,6 @@ namespace MachEmu
 							throw std::runtime_error("Incompatible memory controller");
 						}
 
-						cpu_->Load(json["cpu"].dump());
 						std::vector<uint8_t> rom(opt_.RomSize());
 
 						for (auto addr = opt_.RomOffset(); addr < opt_.RomSize(); addr++)
@@ -223,7 +220,9 @@ namespace MachEmu
 							throw std::runtime_error("Incompatible ram");
 						}
 
-						// write it back to memory
+						// Once all checks are complete, restore the cpu and the memory
+						cpu_->Load(json["cpu"].dump());
+
 						auto addr = opt_.RamOffset();
 
 						for (const auto& r : ram)

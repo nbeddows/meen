@@ -28,13 +28,9 @@ SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
 pybind11_add_module(${lib_name} ${${lib_name}_source_files})
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -fPIC -Wno-attributes)
-endif()
-
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Tests/TestControllers/${include_dir})
 
 target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu TestControllers)
+target_link_libraries(${lib_name} PRIVATE pybind11::headers TestControllers)

@@ -1,4 +1,14 @@
-1.5.1 [22/04/16]
+1.6.0 [14/06/24]
+* Perform all compatibility checks before
+  attempting to restore the machine state.
+* Added Clang support.
+* Added Arm Linux (aarch64, armv7hf) GCC support.
+* Added Conan 2.0 support (See README).
+* Replace Utils/base64.hpp with Conan package base64.
+* Replace Utils/md5.c with Conan package hash-library.
+* Sdk target generates binary packages only.
+
+1.5.1 [22/04/24]
 * Fixed api compatibility break in 1.5.0.
 * Drop load/save requests while a load/save
   is in progress.
@@ -39,7 +49,7 @@
 1.3.0 [29/01/24]
 * Added CMake support.
   Tested with Visual Studio 22 (Windows 10) and
-  g++ 13.2 (Ubuntu 23.10).
+  gcc 13.2 (Ubuntu 23.10).
 * Moved Space Invaders to it's own repository.
 * Removed the Windows specific sdk batch script
   (now building via CMake).

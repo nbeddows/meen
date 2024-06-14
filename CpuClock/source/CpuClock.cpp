@@ -55,18 +55,18 @@ namespace MachEmu
 
 #elif _WINDOWS
 		auto ntdll = LoadLibrary("ntdll.dll");
-		
+
 		if (ntdll == nullptr)
 		{
 			throw std::runtime_error("Failed to query clock resolution");
 		}
-		
+
 		typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
 		typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
 
 		pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
 		pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
-		
+
 		if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
 		{
 			FreeLibrary(ntdll);
@@ -125,18 +125,25 @@ namespace MachEmu
 			{
 				auto sleepFor = [this](nanoseconds spinTime)
 				{
-					// don't attempt to sleep for anything less than a millisecond 
+					// don't attempt to sleep for anything less than a millisecond
 					if (spinTime >= nanoseconds(1000000))
 					{
-						auto sleepTime = static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_);
 						auto now = steady_clock::now();
 #ifdef __GNUC__
-						struct timespec req{ 0, sleepTime };
+						struct timespec req
+						{
+							0,
+#ifdef __arm__
+							static_cast<int32_t>(spinTime.count()* spinPercantageToSleep_)
+#else
+							static_cast<int64_t>(spinTime.count()* spinPercantageToSleep_)
+#endif
+						};
 						nanosleep(&req, nullptr);
 #elif defined _WINDOWS
 						LARGE_INTEGER sleepPeriod;
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
-						sleepPeriod.QuadPart = -(sleepTime / 100);
+						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_) / 100);
 
 						// Create the timer, sleep until time has passed, and clean up - available since the 1803 version of Windows 10.
 						// Sleep down to 0.5 ms intervals without raising the system level interrupt frequency, which is much friendlier.
@@ -145,7 +152,7 @@ namespace MachEmu
 						WaitForSingleObject(timer, INFINITE);
 						CloseHandle(timer);
 #else
-						std::this_thread::sleep_for(nanoseconds(sleepTime));
+						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_)));
 #endif
 						spinTime -= duration_cast<nanoseconds>(steady_clock::now() - now);
 					}

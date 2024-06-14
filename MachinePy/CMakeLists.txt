@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-set (lib_name MachEmuPy)
+set (lib_name ${libMachEmu}Py)
 
 set (${lib_name}_include_files
 	${include_dir}/MachinePy/ControllerPy.h
@@ -36,14 +36,12 @@ SOURCE_GROUP("Source Files" FILES ${${lib_name}_source_files})
 
 pybind11_add_module(${lib_name} ${${lib_name}_include_files} ${${lib_name}_source_files})
 
-if(CMAKE_COMPILER_IS_GNUCXX)
-	target_compile_options(${lib_name} PRIVATE -lto=auto -fPIC -Wno-attributes)
-endif()
-
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Base/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Controller/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/Machine/${include_dir})
 target_include_directories(${lib_name} PRIVATE ${CMAKE_SOURCE_DIR}/MachinePy/${include_dir})
 
 target_link_directories(${lib_name} PRIVATE ${Python_LIBRARY_DIRS})
-target_link_libraries(${lib_name} PRIVATE pybind11::headers MachEmu)
+target_link_libraries(${lib_name} PRIVATE pybind11::headers ${libMachEmu})
+
+install(TARGETS ${lib_name} DESTINATION ${runtimeDir})
