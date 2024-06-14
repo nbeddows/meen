@@ -4,7 +4,7 @@ import os
 
 class MachEmuRecipe(ConanFile):
     name = "mach_emu"
-    version = "1.5.1"
+    version = "1.6.0"
     package_type = "library"
     test_package_folder = "Tests/ConanPackageTest"
 
@@ -18,10 +18,11 @@ class MachEmuRecipe(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_zlib": [True, False]}
-    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": True, "with_python": False, "with_zlib": True}
+    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": False, "with_python": False, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     exports_sources = "CMakeLists.txt",\
+        "LICENSE.md",\
         "Base/CMakeLists.txt",\
         "Base/include/*",\
         "Controller/CMakeLists.txt",\
@@ -62,14 +63,16 @@ class MachEmuRecipe(ConanFile):
 
     def requirements(self):
         self.requires("base64/0.5.2")
-        if not self.conf.get("tools.build:skip_test", default=False):
-            self.test_requires("gtest/1.14.0")
         self.requires("hash-library/8.0")
         self.requires("nlohmann_json/3.11.3")
         if self.options.with_python:
             self.requires("pybind11/2.12.0")
         if self.options.with_zlib:
             self.requires("zlib/1.3.1")
+
+    def build_requirements(self):
+        if not self.conf.get("tools.build:skip_test", default=False):
+            self.test_requires("gtest/1.14.0")
 
     def config_options(self):
         if self.settings.os == "Windows":

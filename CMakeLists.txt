@@ -24,8 +24,8 @@ set(resource_dir resource)
 set(source_dir source)
 set(libMachEmu mach_emu)
 set(major 1)
-set(minor 5)
-set(bugfix 1)
+set(minor 6)
+set(bugfix 0)
 
 project(${libMachEmu} VERSION ${major}.${minor}.${bugfix})
 
@@ -87,3 +87,5 @@ if (NOT BUILD_TESTING STREQUAL OFF)
   add_subdirectory(Tests)
 endif()
 add_subdirectory(Utils)
+
+install(FILES LICENSE.md DESTINATION licenses RENAME LICENSE)
