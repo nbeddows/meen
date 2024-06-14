@@ -53,7 +53,7 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MachEmu uses CMake (minimum version 3.23) for its build system, Conan (minimum version 2.0) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, cppcheck for static analysis and Doxygen for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
+MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, [cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
 
 #### Pre-requisites
 
@@ -93,7 +93,7 @@ NOTE: when performing a cross compile using a host profile you must install the 
 
 The following install options are supported:
 - build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
-- enable/disable python module support: `--options=with_python=[True|False(default)]`
+- enable/disable python module support: `--options=with_python=[True|False(default)]` (Unsupported on arm, step 4 will fail)
 - enable/disable zlib support: `--options=with_zlib=[True(default)|False]`
 
 The following will enable python and disable zlib: `conan install . --build=missing --options=with_python=True --options=with_zlib=False`
@@ -119,7 +119,7 @@ A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build
 
 NOTE: the options supported during the install step can also be enabled/disabled here if required:
 - Disable zlib support: `cmake --preset conan-default -D enableZlib=OFF`.
-- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON`.
+- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON` (Unsupported on arm, CMake will fail).
 
 **5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
 The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
@@ -165,13 +165,13 @@ When the package has been built with unit tests enabled it will contain a script
 
 NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
 
-#### Exporting a Conan package
+#### Export a Conan package
 
-MachEmu can be exported as a package to the local Conan cache (and be uploaded to a Conan server) so it can be consumed by other Conan based projects. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
+MachEmu can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
 
 The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
-- enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True(default)|False]` 
+- enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True|False(default)]` 
 
 NOTE: a pre-requisite of the exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
@@ -182,6 +182,19 @@ Example command lines:
 4. `conan create . --build=missing --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
 5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
 6. `conan create . --build=missing --options=with_i8080_test_suites=False`: same as 1 but will not run the i8080 test suites.
+
+#### Upload a Conan package
+
+The package created in [the previous section](#export-a-conan-package) can be [uploaded to a Conan server](https://docs.conan.io/2/tutorial/conan_repositories/setting_up_conan_remotes/artifactory/artifactory_ce_cpp.html) so it can be consumed by other Conan based projects on other machines.
+
+Example command lines (once the artifactory server has been installed and is running):
+1. `conan remote add artifactory http://<server-ip>:8081/artifactory/api/conan/conan-local`: add the package server to the list of Conan remotes.
+2. `conan remote login artifactory <user> -p <password>`: login to the artifactory server so commands can be issued.
+3. `conan remote list`: list the remotes to ensure that it has been added.
+4. `conan upload mach_emu -r=artifactory`: upload the mach_emu package to the remote.
+5. `conan search mach_emu -r=artifactory`: search the remote to ensure that it was uploaded.
+6. `conan remove mach_emu -r=artifactory`: remove the mach_emu package from the remote.
+7. `conan remote remove artfactory`: remove the artifactory remote from the list of remotes.
 
 ### Basic principles of operation
 
