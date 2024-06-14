@@ -162,6 +162,7 @@ The package will be located in `build/Release/Sdk/` with a name similar to the f
 
 When the package has been built with unit tests enabled it will contain a script called `run-machine-unit-tests` which can be used to test the development package:
 - `./run-machine-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `start run-machine-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 
 NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
 
