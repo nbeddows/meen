@@ -182,7 +182,7 @@ Example command lines:
 3. `conan create . --build=missing --options=with_zlib=False`: same as 1 but will disable zlib support. 
 4. `conan create . --build=missing --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
 5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
-6. `conan create . --build=missing --options=with_i8080_test_suites=False`: same as 1 but will not run the i8080 test suites.
+6. `conan create . --build=missing --options=with_i8080_test_suites=True`: same as 1 but will run the i8080 test suites.
 
 #### Upload a Conan package
 
