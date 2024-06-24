@@ -1,10 +1,11 @@
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
+from conan.tools.build import can_run
 import os
 
 class MachEmuRecipe(ConanFile):
     name = "mach_emu"
-    version = "1.6.0"
+    version = "1.6.1"
     package_type = "library"
     test_package_folder = "Tests/ConanPackageTest"
 
@@ -103,7 +104,7 @@ class MachEmuRecipe(ConanFile):
         cmake.configure()
         cmake.build()
 
-        if not self.conf.get("tools.build:skip_test", default=False):
+        if can_run(self) and not self.conf.get("tools.build:skip_test", default=False):
             testFilter = "--gtest_filter=*"
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"

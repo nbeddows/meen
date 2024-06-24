@@ -1,3 +1,7 @@
+1.6.1 [24/06/24]
+* Disable running the unit tests in conanfile.py
+  for foreign architectures.
+
 1.6.0 [14/06/24]
 * Perform all compatibility checks before
   attempting to restore the machine state.
