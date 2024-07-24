@@ -305,7 +305,15 @@ namespace MachEmu::Tests
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
 			// never writes beyond this.
-			err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
+			// We will test the deprecated options romOffset, romSize, ramOffset, ramSize when we are async (remove this in 2.0.0)
+			if(runAsync == true)
+			{
+				err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
+			}
+			else
+			{
+		    	err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
+			}
 			EXPECT_EQ(ErrorCode::NoError, err);
 			machine_->SetIoController(cpmIoController_);
 			machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });

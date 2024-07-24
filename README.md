@@ -174,7 +174,7 @@ The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
 - enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True|False(default)]` 
 
-NOTE: a pre-requisite of the exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
+NOTE: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
 1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
@@ -234,7 +234,7 @@ machine->OnSave([](const char* json)
 
 // Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
 // These values are used for load and save requests
-machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":16384})");
+machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":8192}]},"ram":{"block":[{"offset":8192,"size":16384}]}})");
 
 // Set the clock resolution - not setting this will run the
 // machine as fast as possible (default)
@@ -270,29 +270,33 @@ Supported protocols:
 
 The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
 
-| Option          | Type   | Value	            | Remarks                                                                            |
-|:----------------|:-------|:-------------------|:-----------------------------------------------------------------------------------|
-| clockResolution | int64  | -1 (default)       | Run the machine as fast as possible with the highest possible resolution           |
-|                 |        | 0                  | Run the machine at realtime (or as close to) with the highest possible resolution  |
-|                 |        | 0 - 1000000        | Will always spin the cpu to maintain the clock speed and is not recommended        |
-|                 |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick          |
-| compressor      | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
-|                 |        | "none"             | No compression will be used when saving the state of the ram                       |
-| encoder         | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-| cpu             | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)    |
-| isrFreq         | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
-|                 |        | 1                  | Service interrupts after each clock tick                                           |
-|                 |        | n                  | Service interrupts frequency, example: 0.5 - twice per clock tick                  |
-| loadAsync       | bool   | true               | Run the load initiation handler on a separate thread                               |
-|                 |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
-| ramOffset       | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram           |
-| ramSize         | uint16 | n (default: 0)     | The size of the ram in bytes                                                       |
-| romOffset		  | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the rom           |
-| romSize         | uint16 | n (default: 0)     | The size of the rom in bytes                                                       |
-| runAsync        | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                |
-|                 |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                  |
-| saveAsync       | bool   | true               | Run the save completion handler on a separate thread                               |
-|                 |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option  |
+| Option                | Type   | Value	          | Remarks                                                                            |
+|:----------------------|:-------|:-------------------|:-----------------------------------------------------------------------------------|
+| clockResolution       | int64  | -1 (default)       | Run the machine as fast as possible with the highest possible resolution           |
+|                       |        | 0                  | Run the machine at realtime (or as close to) with the highest possible resolution  |
+|                       |        | 0 - 1000000        | Will always spin the cpu to maintain the clock speed and is not recommended        |
+|                       |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick          |
+| compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
+|                       |        | "none"             | No compression will be used when saving the state of the ram                       |
+| encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
+| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)    |
+| isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
+|                       |        | 1                  | Service interrupts after each clock tick                                           |
+|                       |        | n                  | Service interrupts frequency, example: 0.5 - twice per clock tick                  |
+| loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                               |
+|                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
+| ramOffset (deprecated)| uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram           |
+| ramSize (deprecated)  | uint16 | n (default: 0)     | The size of the ram in bytes                                                       |
+| romOffset	(deprecated)| uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the rom           |
+| romSize (deprecated)  | uint16 | n (default: 0)     | The size of the rom in bytes                                                       |
+| ram:block:offset      | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram block     |
+| ram:block:size        | uint16 | n (default: 0)     | The size of the ram block in bytes                                                 |
+| rom:file:offset       | uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the rom block     |
+| rom:file:size         | uint16 | n (default: 0)     | The size of the rom block in bytes                                                 |
+| runAsync              | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                |
+|                       |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                  |
+| saveAsync             | bool   | true               | Run the save completion handler on a separate thread                               |
+|                       |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option  |
 
 There are two methods of supplying configuration options:
 

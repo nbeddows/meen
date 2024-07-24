@@ -191,11 +191,15 @@ namespace MachEmu
 							throw std::runtime_error("Incompatible memory controller");
 						}
 
-						std::vector<uint8_t> rom(opt_.RomSize());
+						auto romMetadata = opt_.Rom();
+						std::vector<uint8_t> rom;
 
-						for (auto addr = opt_.RomOffset(); addr < opt_.RomSize(); addr++)
+						for (const auto& rm : romMetadata)
 						{
-							rom[addr] = memoryController_->Read(addr);
+							for (int addr = rm.first; addr < rm.first + rm.second; addr++)
+							{
+								rom.push_back(memoryController_->Read(addr));
+							}
 						}
 
 						// The rom must be the same
@@ -213,21 +217,31 @@ namespace MachEmu
 							jsonRam["compressor"].get<std::string>(),
 							jsonRam["size"].get<uint32_t>(),
 							jsonRam["bytes"].get<std::string>());
-							
+						
+						auto ramMetadata = opt_.Ram();
+						int ramSize = 0;
+						int ramIndex = 0;
+
+						for (const auto& rm : ramMetadata)
+						{
+							ramSize += rm.second;
+						}
+
 						// Make sure the ram size matches the layout
-						if (ram.size() != opt_.RamSize())
+						if (ram.size() != ramSize)
 						{
 							throw std::runtime_error("Incompatible ram");
 						}
 
 						// Once all checks are complete, restore the cpu and the memory
 						cpu_->Load(json["cpu"].dump());
-
-						auto addr = opt_.RamOffset();
-
-						for (const auto& r : ram)
+	
+						for (const auto& rm : ramMetadata)
 						{
-							memoryController_->Write(addr++, r);
+							for (int addr = rm.first; addr < rm.first + rm.second; addr++)
+							{
+								memoryController_->Write(addr, ram[ramIndex++]);
+							}
 						}
 					}
 					catch (const std::exception& e)
@@ -333,20 +347,23 @@ namespace MachEmu
 										throw std::runtime_error("Invalid memory controller uuid for save interrupt");
 									}
 
-									auto rm = [this](uint16_t offset, uint16_t size)
+									auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
 									{
-										std::vector<uint8_t> mem(size);
+										std::vector<uint8_t> mem;
 
-										for (auto& byte : mem)
+										for (const auto& m : metadata)
 										{
-											byte = memoryController_->Read(offset++);
+											for (auto addr = m.first; addr < m.first + m.second; addr++)
+											{
+												mem.push_back(memoryController_->Read(addr));
+											}
 										}
 
 										return mem;
 									};
 
-									auto rom = rm(opt_.RomOffset(), opt_.RomSize());
-									auto ram = rm(opt_.RamOffset(), opt_.RamSize());
+									auto ram = rm(opt_.Ram());
+									auto rom = rm(opt_.Rom());
 									auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 									auto romMd5 = Utils::Md5(rom.data(), rom.size());
 
@@ -530,20 +547,23 @@ namespace MachEmu
 			throw std::runtime_error("memory controller not set!");
 		}
 
-		auto rm = [this](uint16_t offset, uint16_t size)
+		auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
 		{
-			std::vector<uint8_t> mem(size);
+			std::vector<uint8_t> mem;
 
-			for (auto& byte : mem)
+			for (const auto& m : metadata)
 			{
-				byte = memoryController_->Read(offset++);
+				for (auto addr = m.first; addr < m.first + m.second; addr++)
+				{
+					mem.push_back(memoryController_->Read(addr));
+				}
 			}
 
 			return mem;
 		};
 
-		auto rom = rm(opt_.RomOffset(), opt_.RomSize());
-		auto ram = rm(opt_.RamOffset(), opt_.RamSize());
+		auto rom = rm(opt_.Rom());
+		auto ram = rm(opt_.Ram());
 		auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
 		auto memUuid = memoryController_->Uuid();
 		auto romMd5 = Utils::Md5(rom.data(), rom.size());

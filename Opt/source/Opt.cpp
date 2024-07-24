@@ -56,7 +56,7 @@ namespace MachEmu
 #else
 								"none"
 #endif
-								R"(","encoder":"base64","isrFreq":0,"loadAsync":false,"ramOffset":0,"ramSize":0,"romOffset":0,"romSize":0,"runAsync":false,"saveAsync":false})";
+								R"(","encoder":"base64","isrFreq":0,"loadAsync":false,"rom":{"file":[{"offset":0,"size":0}]},"ram":{"block":[{"offset":0,"size":0}]},"runAsync":false,"saveAsync":false})";
 		return defaults;
 	}
 
@@ -101,6 +101,45 @@ namespace MachEmu
 				throw std::runtime_error("mach-emu has been compiled with no zlib support");
 			}
 #endif
+
+			// Handle deprecated properties, remove in 2.0.0			
+			// Only convert if we don't have ram/rom properties, if we do, then any deprecated property
+			// usage will be dropped
+			if (json.contains("ram") == false && json.contains("rom") == false)
+			{
+				auto j = nlohmann::json::parse(R"({"rom":{"file":[{"offset":0,"size":0}]},"ram":{"block":[{"offset":0,"size":0}]}})");
+				bool update = false;
+
+				if(json.contains("ramOffset"))
+				{
+					j["ram"]["block"][0]["offset"] = json["ramOffset"].get<uint16_t>();
+					update = true;
+				}
+
+				if(json.contains("ramSize") && !json.contains("ram"))
+				{
+					j["ram"]["block"][0]["size"] = json["ramSize"].get<uint16_t>();
+					update = true;
+				}
+
+				if(json.contains("romOffset") && !json.contains("ram"))
+				{
+					j["rom"]["file"][0]["offset"] = json["romOffset"].get<uint16_t>();
+					update = true;
+				}
+
+				if(json.contains("ramSize"))
+				{
+					j["rom"]["file"][0]["size"] = json["romSize"].get<uint16_t>();
+					update = true;
+				}
+
+				if (update == true)
+				{
+					json.update(j);
+				}
+			}
+			// End remove
 		}
 
 		json_->update(json);
@@ -145,24 +184,30 @@ namespace MachEmu
 		return (*json_)["loadAsync"].get<bool>();
 	}
 
-	uint16_t Opt::RamOffset() const
+	std::vector<std::pair<uint16_t, uint16_t>> Opt::Ram() const
 	{
-		return (*json_)["ramOffset"].get<uint16_t>();
+		std::vector<std::pair<uint16_t, uint16_t>> ram;
+		auto blocks = (*json_)["ram"]["block"];
+
+		for (const auto& block : blocks)
+		{
+			ram.emplace_back(std::pair(block["offset"].get<uint16_t>(), block["size"].get<uint16_t>()));
+		}
+
+		return ram;
 	}
 
-	uint16_t Opt::RamSize() const
+	std::vector<std::pair<uint16_t, uint16_t>> Opt::Rom() const
 	{
-		return (*json_)["ramSize"].get<uint16_t>();
-	}
+		std::vector<std::pair<uint16_t, uint16_t>> rom;
+		auto files = (*json_)["rom"]["file"];
 
-	uint16_t Opt::RomOffset() const
-	{
-		return (*json_)["romOffset"].get<uint16_t>();
-	}
+		for(const auto& file : files)
+		{
+			rom.emplace_back(std::pair(file["offset"].get<uint16_t>(), file["size"].get<uint16_t>()));
+		}
 
-	uint16_t Opt::RomSize() const
-	{
-		return (*json_)["romSize"].get<uint16_t>();
+		return rom;
 	}
 
 	bool Opt::RunAsync() const
