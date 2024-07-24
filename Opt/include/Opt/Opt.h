@@ -113,29 +113,23 @@ namespace MachEmu
 			*/
 			bool LoadAsync() const;
 
-			/**	The ram offset
+			/** Ram metadata
+			
+				This vector defines blocks of ram.
 
-				@return The offset in bytes from the start of memory to the ram.
+				The first pair entry is the offset from the start of memory to the start of the ram block.
+				The second pair entry is the size of the ram block.
 			*/
-			uint16_t RamOffset() const;
+			std::vector<std::pair<uint16_t, uint16_t>> Ram() const;
 
-			/**	The ram size
+			/** Rom metadata
+			
+				This vector defines blocks of rom.
 
-				@return The size in bytes of the ram.
+				The first pair entry is the offset from the start of memory to the start of the rom block.
+				The second pair entry is the size of the rom block.
 			*/
-			uint16_t RamSize() const;
-
-			/**	The rom offset
-
-				@return The offset in bytes from the start of memory to the rom.
-			*/
-			uint16_t RomOffset() const;
-
-			/**	The rom offset
-
-				@return The size in bytes of the ram.
-			*/
-			uint16_t RomSize() const;
+			std::vector<std::pair<uint16_t, uint16_t>> Rom() const;
 
 			/** Machine run mode
 
