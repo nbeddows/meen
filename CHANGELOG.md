@@ -1,3 +1,11 @@
+1.6.2
+* Deprecated config options `ramOffset`, `ramSize`,
+  `romOffset` and `romSize`.
+* Added support for fragmented ram/rom for load/save
+  files via the following config options:
+  `ram:file:offset`, `ram:file:size`, `rom:block:offset`
+  and `rom:block:size`.
+
 1.6.1 [24/06/24]
 * Disable running the unit tests in conanfile.py
   for foreign architectures.
