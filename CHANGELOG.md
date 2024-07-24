@@ -1,4 +1,4 @@
-1.6.2
+1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
   `romOffset` and `romSize`.
 * Added support for fragmented ram/rom for load/save
