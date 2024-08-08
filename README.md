@@ -118,8 +118,8 @@ You can also compile the dependent zlib library statically if required by overri
 A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
 
 NOTE: the options supported during the install step can also be enabled/disabled here if required:
-- Disable zlib support: `cmake --preset conan-default -D enableZlib=OFF`.
-- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON` (Unsupported on arm, CMake will fail).
+- Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`.
+- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail).
 
 **5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
 The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
@@ -129,40 +129,40 @@ NOTE: when cross compiling the default build directory may need to be removed if
 **6.** Run the unit tests:
 
 C++ - Linux/Windows:
-- `artifacts/Release/x86_64/bin/MachineTest Tests/Programs/ [--gtest_filter=${gtest_filter}]`.
+- `artifacts/Release/x86_64/bin/mach_emu_test tests/Programs/ [--gtest_filter=${gtest_filter}]`.
 
 C++ - Arm Linux:<br>
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
 4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
 5. Change directory to mach-emu: `cd mach-emu`.
-6. Run the unit tests: `./run-mach_emu-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
+6. Run the unit tests: `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
 Python:
-- `Tests\MachineTest\source\test_Machine.py -v [-k ${python_filter}]`.
+- `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`.
 
 Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
-- `artifacts\Release\x86_64\bin\MachineTest --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
-- `Tests\MachineTest\source\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
+- `artifacts\Release\x86_64\bin\mach_emu_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
+- `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
-The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/MachineTest ${test/programs/directory/}`.
+The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/mach_emu_test ${test/programs/directory/}`.
 
 #### Building a binary development package
 
 MachEmu support the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
 
 Once the [configuration](#configuration) step is complete a binary development package can be built with the following command:
-- `cmake --build --preset conan-release --target=Sdk`.
+- `cmake --build --preset conan-release --target=mach_emu_pkg`.
 
-The package will be located in `build/Release/Sdk/` with a name similar to the following depending on the platform it was built on:
-- `mach_emu-v1.5.1-Windows-10.0.19042-AMD64-bin.tar.gz`.
+The package will be located in `build/Release/` with a name similar to the following depending on the platform it was built on:
+- `mach_emu-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`.
 
 When the package has been built with unit tests enabled it will contain a script called `run-machine-unit-tests` which can be used to test the development package:
-- `./run-machine-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
-- `start run-machine-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `start run-mach_emu-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 
 NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
 
