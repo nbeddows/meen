@@ -960,12 +960,12 @@ RECURSIVE              = YES
 # Note that relative paths are relative to the directory from which doxygen is
 # run.
 
-EXCLUDE                = Tests/ControllerTest/source
-EXCLUDE                += Tests/MachineTest/source
-EXCLUDE                += Tests/TestControllers/source/BaseIoController.py
-EXCLUDE                += Tests/TestControllers/source/CpmIoController.py
-EXCLUDE                += Tests/TestControllers/source/MemoryController.py
-EXCLUDE                += Tests/TestControllers/source/TestIoController.py
+EXCLUDE                = build/
+EXCLUDE                += tests/source/meen_test/
+EXCLUDE                += tests/source/test_controllers/BaseIoController.py
+EXCLUDE                += tests/source/test_controllers/CpmIoController.py
+EXCLUDE                += tests/source/test_controllers/MemoryController.py
+EXCLUDE                += tests/source/test_controllers/TestIoController.py
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

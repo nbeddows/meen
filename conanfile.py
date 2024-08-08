@@ -22,7 +22,7 @@ class MachEmuRecipe(ConanFile):
     default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": False, "with_python": False, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
-    # "Tests/CMakeLists.txt",\
+    # "tests/CMakeLists.txt",\
     exports_sources = "CMakeLists.txt",\
         "CHANGELOG.md",\
         "LICENSE.md",\
@@ -32,7 +32,7 @@ class MachEmuRecipe(ConanFile):
         "resource/*",\
         "source/*",\
         "tests/pythonTestDeps.cmake",\
-        "tests/Programs/*",\
+        "tests/programs/*",\
         "tests/include/*",\
         "tests/source/*",
 
@@ -83,7 +83,7 @@ class MachEmuRecipe(ConanFile):
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
-            self.run(os.path.join(testsDir, "mach_emu_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/Programs/")))
+            self.run(os.path.join(testsDir, "mach_emu_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/programs/")))
             if self.options.with_python:
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:

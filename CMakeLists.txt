@@ -310,7 +310,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   if(enable_python_module STREQUAL ON)
     include(tests/pythonTestDeps.cmake)
 
-    generatePythonUnitTestDeps(${artifacts_dir} ${CMAKE_SOURCE_DIR}/tests/source/test_controllers ${CMAKE_SOURCE_DIR}/tests/Programs/ ${zlib_bin_dir})
+    generatePythonUnitTestDeps(${artifacts_dir} ${CMAKE_SOURCE_DIR}/tests/source/test_controllers ${CMAKE_SOURCE_DIR}/tests/programs/ ${zlib_bin_dir})
 
     add_custom_command(
         TARGET ${libMachEmu}_test POST_BUILD
@@ -322,11 +322,11 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   endif()
 
   if(DEFINED MSVC)
-    set_target_properties(${libMachEmu}_test PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/tests/Programs/\"")
+    set_target_properties(${libMachEmu}_test PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/tests/programs/\"")
   endif()
 
   set_target_properties(${libMachEmu}_test PROPERTIES FOLDER tests)
-  target_compile_definitions(${libMachEmu}_test PRIVATE PROGRAMS_DIR=\"Programs/\")
+  target_compile_definitions(${libMachEmu}_test PRIVATE PROGRAMS_DIR=\"programs/\")
   
   target_link_libraries(${libMachEmu}_test PRIVATE
     GTest::GTest
@@ -335,7 +335,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   )
 
   install(TARGETS ${libMachEmu}_test RUNTIME DESTINATION tests)
-  install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/Programs DESTINATION tests)
+  install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/programs DESTINATION tests)
 
 ##### Generate unit test run script
 
@@ -362,7 +362,7 @@ GOTO parse\n\
 echo Adding %cd%\\${runtime_dir} to PATH\n\
 PATH=%cd%\\${runtime_dir};%PATH%\n\
 echo Running C++ unit tests\n\
-tests\\${libMachEmu}_test %gtest-filter% tests\\Programs\\\n\
+tests\\${libMachEmu}_test %gtest-filter% tests\\programs\\\n\
 ${pythonExecute}\n\
 pause\n\
 exit"
@@ -398,7 +398,7 @@ done\n\
 echo Adding `pwd`/${runtime_dir} to LD_LIBRARY_PATH\n\
 export LD_LIBRARY_PATH=`pwd`/${runtime_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
-tests/${libMachEmu}_test \"\${gtest_filter}\" tests/Programs/\n\
+tests/${libMachEmu}_test \"\${gtest_filter}\" tests/programs/\n\
 ${pythonExecute}"
     )
 
