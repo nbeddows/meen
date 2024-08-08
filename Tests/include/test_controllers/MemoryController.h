@@ -26,7 +26,7 @@ SOFTWARE.
 #include <array>
 #include <vector>
 
-#include "Controller/IController.h"
+#include "meen/IController.h"
 
 namespace MachEmu
 {

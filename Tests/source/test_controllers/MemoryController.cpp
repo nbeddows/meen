@@ -22,8 +22,8 @@ SOFTWARE.
 
 #include <fstream>
 
-#include "Base/Base.h"
-#include "TestControllers/MemoryController.h"
+#include "meen/Base.h"
+#include "test_controllers/MemoryController.h"
 
 namespace MachEmu
 {

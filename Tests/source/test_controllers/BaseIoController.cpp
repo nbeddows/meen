@@ -21,8 +21,8 @@ SOFTWARE.
 */
 
 
-#include "Base/Base.h"
-#include "TestControllers/BaseIoController.h"
+#include "meen/Base.h"
+#include "test_controllers/BaseIoController.h"
 
 namespace MachEmu
 {

@@ -24,12 +24,12 @@ SOFTWARE.
 #include <memory>
 #include <nlohmann/json.hpp>
 
-#include "Controller/IController.h"
-#include "Machine/IMachine.h"
-#include "Machine/MachineFactory.h"
-#include "TestControllers/MemoryController.h"
-#include "TestControllers/TestIoController.h"
-#include "TestControllers/CpmIoController.h"
+#include "meen/IController.h"
+#include "meen/IMachine.h"
+#include "meen/MachineFactory.h"
+#include "test_controllers/MemoryController.h"
+#include "test_controllers/TestIoController.h"
+#include "test_controllers/CpmIoController.h"
 
 namespace MachEmu::Tests
 {

@@ -27,7 +27,7 @@ SOFTWARE.
 #include <memory>
 #include <string>
 
-#include "TestControllers/BaseIoController.h"
+#include "test_controllers/BaseIoController.h"
 
 namespace MachEmu
 {

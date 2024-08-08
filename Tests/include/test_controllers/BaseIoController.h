@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <cstdint>
 
-#include "Controller/IController.h"
+#include "meen/IController.h"
 
 namespace MachEmu
 {
