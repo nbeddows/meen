@@ -167,6 +167,9 @@ CPack can be used directly rather than the package target if finer control is re
 
 Run `cpack --help` for a list available generators.
 
+The final package can be stripped by running the mach_emu_strip_pkg target:
+- `cmake --build --preset conan-release --target=mach_emu_strip_pkg`.
+
 When the package has been built with unit tests enabled it will contain a script called `run-mach_emu-unit-tests` which can be used to test the development package:
 - `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 - `start run-mach_emu-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
