@@ -49,7 +49,7 @@ The following table displays the current defacto test suites that these unit tes
 |       | TST8080          | PASS   |
 
 `IMachine.h` specifies the MachEmu API.<br>
-`MachineFactory.h` specifies the MachEmu shared library entry point.
+`MachineFactory.h` specifies the MachEmu library entry point.
 
 ### Compilation
 
@@ -89,11 +89,11 @@ MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build sy
 - Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
 - Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
 
-NOTE: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
+**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
 
 The following install options are supported:
 - build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
-- enable/disable python module support: `--options=with_python=[True|False(default)]` (Unsupported on arm, step 4 will fail)
+- enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on arm platforms)
 - enable/disable zlib support: `--options=with_zlib=[True(default)|False]`
 
 The following will enable python and disable zlib: `conan install . --build=missing --options=with_python=True --options=with_zlib=False`
@@ -101,7 +101,7 @@ The following will enable python and disable zlib: `conan install . --build=miss
 The following dependent packages will be (compiled if required and) installed based on the supplied options:
 
 - `base64`: for base64 coding.
-- `gtest`: for running the machine and controller unit tests.
+- `gtest`: for running the meen unit tests.
 - `hash-library`: for md5 hashing.
 - `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
@@ -117,54 +117,64 @@ You can also compile the dependent zlib library statically if required by overri
 - Single configuration generators (make for example): `cmake --preset conan-release [-Wno-dev]`.<br>
 A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build_type was used during the previous step: `cmake --preset conan-debug`.
 
-NOTE: the options supported during the install step can also be enabled/disabled here if required:
-- Disable zlib support: `cmake --preset conan-default -D enableZlib=OFF`.
-- Enable the Python module: `cmake --preset conan-default -D enablePythonModule=ON` (Unsupported on arm, CMake will fail).
+**NOTE**: the options supported during the install step can also be enabled/disabled here if required:
+- Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`.
+- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail).
 
 **5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
 The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
 
-NOTE: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
+**NOTE**: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
 
 **6.** Run the unit tests:
 
 C++ - Linux/Windows:
-- `artifacts/Release/x86_64/bin/MachineTest Tests/Programs/ [--gtest_filter=${gtest_filter}]`.
+- `artifacts/Release/x86_64/bin/mach_emu_test tests/programs/ [--gtest_filter=${gtest_filter}]`.
 
 C++ - Arm Linux:<br>
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/Sdk/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
 4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
 5. Change directory to mach-emu: `cd mach-emu`.
-6. Run the unit tests: `./run-mach_emu-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
+6. Run the unit tests: `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
 Python:
-- `Tests\MachineTest\source\test_Machine.py -v [-k ${python_filter}]`.
+- `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`.
 
-Note: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
-- `artifacts\Release\x86_64\bin\MachineTest --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
-- `Tests\MachineTest\source\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
+**Note**: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+- `artifacts\Release\x86_64\bin\mach_emu_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
+- `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
-The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/MachineTest ${test/programs/directory/}`.
+The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/mach_emu_test ${test/programs/directory/}`.
 
 #### Building a binary development package
 
 MachEmu support the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
 
-Once the [configuration](#configuration) step is complete a binary development package can be built with the following command:
-- `cmake --build --preset conan-release --target=Sdk`.
+Once the [configuration](#configuration) step is complete a binary development tgz package can be built with the following command:
+- `cmake --build --preset conan-release --target=package`.
 
-The package will be located in `build/Release/Sdk/` with a name similar to the following depending on the platform it was built on:
-- `mach_emu-v1.5.1-Windows-10.0.19042-AMD64-bin.tar.gz`.
+The package will be located in `build/Release/` with a name similar to the following depending on the platform it was built on:
+- `mach_emu-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`.
 
-When the package has been built with unit tests enabled it will contain a script called `run-machine-unit-tests` which can be used to test the development package:
-- `./run-machine-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
-- `start run-machine-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+CPack can be used directly rather than the package target if finer control is required:
+- `cpack --config build\CPackConfig.cmake -C ${build_type} -G 7Z`
 
-NOTE: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
+**NOTE** The underlying package generator used to build the package (in this case `7zip`) must be installed otherwise the preceeding command will fail.
+
+Run `cpack --help` for a list available generators.
+
+The final package can be stripped by running the mach_emu_strip_pkg target:
+- `cmake --build --preset conan-release --target=mach_emu_strip_pkg`.
+
+When the package has been built with unit tests enabled it will contain a script called `run-mach_emu-unit-tests` which can be used to test the development package:
+- `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `start run-mach_emu-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+
+**NOTE**: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
 
 #### Export a Conan package
 
@@ -174,7 +184,7 @@ The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
 - enable/disable the unit tests for the i8080 suites: `--options=with_i8080_test_suites=[True|False(default)]` 
 
-NOTE: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
+**NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
 1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
