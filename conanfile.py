@@ -40,7 +40,7 @@ class MachEmuRecipe(ConanFile):
         self.requires("base64/0.5.2")
         self.requires("hash-library/8.0")
         self.requires("nlohmann_json/3.11.3")
-        if self.options.with_python:
+        if self.options.get_safe("with_python", False):
             self.requires("pybind11/2.12.0")
         if self.options.with_zlib:
             self.requires("zlib/1.3.1")
@@ -53,6 +53,9 @@ class MachEmuRecipe(ConanFile):
         if self.settings.os == "Windows":
             self.options.rm_safe("fPIC")
 
+        if "arm" in self.settings.arch:
+            self.options.rm_safe("with_python")
+
     def configure(self):
         if self.options.shared:
             self.options.rm_safe("fPIC")
@@ -64,7 +67,7 @@ class MachEmuRecipe(ConanFile):
         deps = CMakeDeps(self)
         deps.generate()
         tc = CMakeToolchain(self)
-        tc.cache_variables["enable_python_module"] = self.options.with_python
+        tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.with_zlib
         tc.variables["build_arch"] = self.settings.arch
         tc.variables["archive_dir"] = self.cpp_info.libdirs[0]
@@ -84,7 +87,7 @@ class MachEmuRecipe(ConanFile):
                 testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             self.run(os.path.join(testsDir, "mach_emu_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/programs/")))
-            if self.options.with_python:
+            if self.options.get_safe("with_python", False):
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:
                     testFilter += "*"
