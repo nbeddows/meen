@@ -27,7 +27,7 @@ class MachEmuRecipe(ConanFile):
         "CHANGELOG.md",\
         "LICENSE.md",\
         "README.md",\
-        "build/docs/*",\
+        "docs/*",\
         "include/*",\
         "resource/*",\
         "source/*",\

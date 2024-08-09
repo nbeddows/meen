@@ -7,6 +7,12 @@ else()
   set(build_type ${CMAKE_BUILD_TYPE})
 endif()
 
+if(NOT BUILD_SHARED_LIBS STREQUAL ON)
+  if(DEFINED WIN32)
+    set(static_lib mach_emu_STATIC)
+  endif()
+endif()
+
 find_package(mach_emu CONFIG REQUIRED)
 
 add_executable(MachEmuPackageTest source/MachEmuPackageTest.cpp)
@@ -22,4 +28,5 @@ if(DEFINED artifacts_dir OR DEFINED zlib_bin_dir)
     )
 endif()
 
+target_compile_definitions(MachEmuPackageTest PRIVATE ${static_lib})
 target_link_libraries(MachEmuPackageTest mach_emu::mach_emu)

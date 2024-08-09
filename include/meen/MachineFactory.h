@@ -27,7 +27,9 @@ SOFTWARE.
 #include "meen/IMachine.h"
 
 #ifdef _WINDOWS
-#ifdef mach_emu_EXPORTS
+#if mach_emu_STATIC
+#define DLL_EXP_IMP
+#elif defined mach_emu_EXPORTS
 #define DLL_EXP_IMP __declspec(dllexport)
 #else
 #define DLL_EXP_IMP __declspec(dllimport)
@@ -43,7 +45,7 @@ SOFTWARE.
 namespace MachEmu
 {
 	/**
-		The shared library version
+		The meen library version
 
 		@return A string containing the current version, in a format
 				described by [semantic versioning](https://semver.org/)
