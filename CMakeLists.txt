@@ -111,6 +111,7 @@ set(clock_include_files
 )
 
 set(cpu_include_files
+  ${include_dir}/meen/MEEN_Error.h
   ${include_dir}/meen/cpu/8080.h
   ${include_dir}/meen/cpu/CpuFactory.h
   ${include_dir}/meen/cpu/ICpu.h
@@ -171,6 +172,7 @@ set(opt_source_files ${source_dir}/opt/Opt.cpp)
 set(utils_source_files ${source_dir}/utils/Utils.cpp)
 
 set(${libMachEmu}_source_files
+  ${source_dir}/MEEN_Error.cpp
   ${clock_source_files}
   ${cpu_source_files}
   ${machine_source_files}
