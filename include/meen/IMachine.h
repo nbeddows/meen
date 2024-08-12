@@ -26,6 +26,7 @@ SOFTWARE.
 #include <functional>
 #include <memory>
 #include <string>
+#include <system_error>
 #include "meen/IController.h"
 
 namespace MachEmu
@@ -170,8 +171,8 @@ namespace MachEmu
 			@param		options		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
 									to their defaults.
 
-			@return					ErrorCode::NoError: all options were set successfully.<br>
-									ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
+			@return					no_error: all options were set successfully.<br>
+									unknown_option: all recognised options were set successfully though unrecognised options were found.
 
 			@throws					std::runtime_error or any other exception that the underlying json parser throws (nlohmann json)
 
@@ -183,7 +184,8 @@ namespace MachEmu
 
 			@see					MakeMachine for supported configuration options.
 		*/
-		virtual ErrorCode SetOptions(const char* options) = 0;
+		// NOTE: returning std::error_code here rather than ErrorCode is a breaking API change .... SetOptions2??
+		virtual std::error_code SetOptions(const char* options) = 0;
 
 		/** Machine save state completion handler
 		

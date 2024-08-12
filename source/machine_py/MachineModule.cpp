@@ -19,11 +19,11 @@ PYBIND11_MODULE(mach_emuPy, MachEmu)
 {        
     MachEmu.attr("__version__") = MachEmu::Version();
 
-    py::enum_<MachEmu::ErrorCode>(MachEmu, "ErrorCode")
-        .value("NoError", MachEmu::ErrorCode::NoError)
-        .value("ClockResolution", MachEmu::ErrorCode::ClockResolution)
-        .value("NotImplemented", MachEmu::ErrorCode::NotImplemented)
-        .value("UnknownOption", MachEmu::ErrorCode::UnknownOption);
+    py::enum_<MachEmu::errc>(MachEmu, "ErrorCode")
+        .value("NoError", MachEmu::errc::no_error)
+        .value("ClockResolution", MachEmu::errc::clock_resolution)
+        .value("NotImplemented", MachEmu::errc::not_implemented)
+        .value("UnknownOption", MachEmu::errc::unknown_option);
     
     py::enum_<MachEmu::ISR>(MachEmu, "ISR")
         .value("Zero", MachEmu::ISR::Zero)

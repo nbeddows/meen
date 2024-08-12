@@ -15,12 +15,13 @@ namespace MachEmu
 		machine_ = MachEmu::MakeMachine(json);
 	}
 
-	ErrorCode MachineHolder::SetClockResolution(int64_t clockResolution)
+	errc MachineHolder::SetClockResolution(int64_t clockResolution)
 	{
 		auto count = snprintf(nullptr, 0, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
 		auto str = std::string(count + 1, '\0');
 		snprintf(str.data(), count + 1, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
-		return machine_->SetOptions(str.c_str());
+		auto err = machine_->SetOptions(str.c_str());
+		return static_cast<MachEmu::errc>(err.value());
 		//return machine_->SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 	}
 
@@ -62,9 +63,10 @@ namespace MachEmu
 		machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
 	}
 
-	ErrorCode MachineHolder::SetOptions(const char* options)
+	errc MachineHolder::SetOptions(const char* options)
 	{
-		return machine_->SetOptions(options);
+		auto err = machine_->SetOptions(options);
+		return static_cast<MachEmu::errc>(err.value());
 	}
 
 	uint64_t MachineHolder::WaitForCompletion()
