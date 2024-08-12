@@ -54,9 +54,7 @@ class MachineTest(unittest.TestCase):
 
     def test_MethodsThrowAfterRunCalled(self):
         err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
-
-        if err == ErrorCode.NotImplemented:
-            return
+        self.assertEqual(err, ErrorCode.NoError)
 
         self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0004)
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC353)
@@ -91,9 +89,7 @@ class MachineTest(unittest.TestCase):
     def RunTimed(self, runAsync):
         if runAsync == True:
             err = self.machine.SetOptions(r'{"runAsync":true}')
-
-            if err == ErrorCode.NotImplemented:
-                return
+            self.assertEqual(err, ErrorCode.NoError)
 
         self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0004)
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC353)
@@ -124,9 +120,7 @@ class MachineTest(unittest.TestCase):
     def Load(self, runAsync):
         if runAsync == True:
             err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":false,"saveAsync":true}')
-
-            if err == ErrorCode.NotImplemented:
-                return
+            self.assertEqual(err, ErrorCode.NoError)
 
         saveStates = []
         self.cpmIoController.SaveStateOn(3000)

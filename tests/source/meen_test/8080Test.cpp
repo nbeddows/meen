@@ -1292,7 +1292,7 @@ TEST_F(MachineTest, ISR_1)
 
 	// Set to the resolution to 50Hz
 	auto err = machine_->SetOptions(R"({"clockResolution":25000000})");
-	EXPECT_EQ(ErrorCode::NoError, err);
+	EXPECT_FALSE(err);
 
 	// There is a chance for an infinite spin if the test fails.
 	// TODO: since we fire every second we need to test that the Run
