@@ -25,8 +25,8 @@ SOFTWARE.
 
 #include <string>
 
-#include "meen/Base.h"
-#include "nlohmann/json_fwd.hpp"
+#include <nlohmann/json.hpp>
+#include <system_error>
 
 namespace MachEmu
 {
@@ -65,8 +65,8 @@ namespace MachEmu
 				@param		opts	A json string specifying the desired options to update. Passing in a json string of nullptr will set all options
 									to their defaults.
 
-				@return		ErrorCode::NoError: all options were set successfully.<br>
-							ErrorCode::UnknownOption: all recognised options were set successfully though unrecognised options were found.
+				@return		no_error: all options were set successfully.<br>
+							unknown_option: all recognised options were set successfully though unrecognised options were found.
 
 				@throws		std::runtime_error or any exception that the underlying json parser can throw, in this case nlohmann_json
 
@@ -74,7 +74,7 @@ namespace MachEmu
 
 				@throws		std::invalid_argument if the interrupt service routine frequency is negative.
 			*/
-			ErrorCode SetOptions(const char* json);
+			std::error_code SetOptions(const char* json);
 
 			/**	Clock resolution
 

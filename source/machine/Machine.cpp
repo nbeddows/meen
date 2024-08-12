@@ -36,7 +36,7 @@ namespace MachEmu
 	{
 		auto err = SetOptions(options);
 
-		if (err != ErrorCode::NoError)
+		if (err)
 		{
 			throw std::invalid_argument("All options must be valid, check your configuration!");
 		}
@@ -58,7 +58,7 @@ namespace MachEmu
 		}
 	}
 
-	ErrorCode Machine::SetOptions(const char* options)
+	std::error_code Machine::SetOptions(const char* options)
 	{
 		if (running_ == true)
 		{
@@ -70,6 +70,8 @@ namespace MachEmu
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
 	{
+		auto err = ErrorCode::NoError;
+	
 		if (running_ == true)
 		{
 			throw std::runtime_error("The machine is running");
@@ -87,9 +89,13 @@ namespace MachEmu
 
 		int64_t resInTicks = 0;
 
-		auto err = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
+		auto errc = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
 
-		if (err == ErrorCode::NoError)
+		if (errc)
+		{
+			err = ErrorCode::ClockResolution;
+		}
+		else
 		{
 			ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 		}

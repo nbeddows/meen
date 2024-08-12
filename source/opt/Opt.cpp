@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include <fstream>
 
-#include "nlohmann/json.hpp"
+#include "meen/MEEN_Error.h"
 #include "meen/opt/Opt.h"
 
 namespace MachEmu
@@ -60,10 +60,10 @@ namespace MachEmu
 		return defaults;
 	}
 
-	ErrorCode Opt::SetOptions(const char* opts)
+	std::error_code Opt::SetOptions(const char* opts)
 	{
 		nlohmann::json json;
-		auto err = ErrorCode::NoError;
+		auto err = make_error_code(errc::no_error);
 
 		if(opts == nullptr)
 		{

@@ -26,7 +26,7 @@ SOFTWARE.
 #include <chrono>
 #include <cstdint>
 
-#include "meen/Base.h"
+#include <system_error>
 
 namespace MachEmu
 {
@@ -77,13 +77,13 @@ namespace MachEmu
 			@param	resolutionInTicks	A optional parameter that will be set to the number of ticks that the input parameter
 										`resolution` represents. 
 
-			@return		ErrorCode	NoError			The resolution was set successfully.
-									ClockResolution	The resolution was set, however, the host does not support
-													a high enough resolution timer for this resolution.
+			@return						no_error			The resolution was set successfully.
+										clock_resolution	The resolution was set, however, the host does not support
+															a high enough resolution timer for this resolution.
 
 			@see	IMachine::SetClockResolution
 		*/
-		virtual ErrorCode SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks = nullptr) = 0;
+		virtual std::error_code SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks = nullptr) = 0;
 
 		/** Reset.
 

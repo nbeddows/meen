@@ -86,7 +86,7 @@ namespace MachEmu::Tests
 		machine_->SetIoController(testIoController_);
 		// Set default options
 		auto err = machine_->SetOptions(nullptr);
-		EXPECT_EQ(ErrorCode::NoError, err);
+		EXPECT_FALSE(err);
 	}
 
 	void MachineTest::LoadAndRun(const char* name, const char* expected)
@@ -147,7 +147,7 @@ namespace MachEmu::Tests
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
-		EXPECT_EQ(ErrorCode::NoError, err);
+		EXPECT_FALSE(err);
 
 		memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
 		memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
@@ -223,12 +223,12 @@ namespace MachEmu::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			ErrorCode err;
+			std::error_code err;
 
 			if (runAsync == true)
 			{
 				err = machine_->SetOptions(R"({"runAsync":true})");
-				EXPECT_EQ(ErrorCode::NoError, err);
+				EXPECT_FALSE(err);
 			}
 
 			// Run a program that should take a second to complete
@@ -242,7 +242,7 @@ namespace MachEmu::Tests
 
 			// 25 millisecond resolution
 			err = machine_->SetOptions(R"({"clockResolution":25000000})");
-			EXPECT_EQ(ErrorCode::NoError, err);
+			EXPECT_FALSE(err);
 
 			int64_t nanos = 0;
 
@@ -285,12 +285,12 @@ namespace MachEmu::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			ErrorCode err;
+			std::error_code err;
 
 			if (runAsync == true)
 			{
 				err = machine_->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
-				EXPECT_EQ(ErrorCode::NoError, err);
+				EXPECT_FALSE(err);
 			}
 
 			std::vector<std::string> saveStates;
@@ -314,7 +314,7 @@ namespace MachEmu::Tests
 			{
 		    	err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
 			}
-			EXPECT_EQ(ErrorCode::NoError, err);
+			EXPECT_FALSE(err);
 			machine_->SetIoController(cpmIoController_);
 			machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
 			// 0 - mid program save state, 1 and 2 - end of program save states

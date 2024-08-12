@@ -31,6 +31,7 @@ SOFTWARE.
 #include <thread>
 #endif
 
+#include "meen/MEEN_Error.h"
 #include "meen/clock/CpuClock.h"
 
 using namespace std::chrono;
@@ -89,15 +90,15 @@ namespace MachEmu
 #endif
 	}
 
-	ErrorCode CpuClock::SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks)
+	std::error_code CpuClock::SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks)
 	{
-		auto err = ErrorCode::NoError;
+		auto err = make_error_code(errc::no_error);
 
 		if (resolution >= nanoseconds::zero() && timePeriod_ >= nanoseconds::zero())
 		{
 			if (resolution < maxResolution_)
 			{
-				err = ErrorCode::ClockResolution;
+				err = make_error_code(errc::clock_resolution);
 			}
 
 			totalTicks_ = resolution / timePeriod_;

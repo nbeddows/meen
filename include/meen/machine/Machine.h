@@ -88,7 +88,7 @@ namespace MachEmu
 
 			@see IMachine::SetOpts
 		*/
-		ErrorCode SetOptions(const char* options) final;
+		std::error_code SetOptions(const char* options) final;
 
 		/** OnLoad
 

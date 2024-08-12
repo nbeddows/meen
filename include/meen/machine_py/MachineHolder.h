@@ -2,6 +2,7 @@
 #define MACHINEHOLDER_H
 
 #include "meen/MachineFactory.h"
+#include "meen/MEEN_Error.h"
 
 namespace MachEmu
 {
@@ -19,10 +20,10 @@ namespace MachEmu
         void OnSave(std::function<void(std::string&&)>&& onSave);
         uint64_t Run(uint16_t offset);
         std::string Save() const;
-        ErrorCode SetClockResolution(int64_t clockResolution);
+        errc SetClockResolution(int64_t clockResolution);
         void SetIoController(MachEmu::IController* controller);
         void SetMemoryController(MachEmu::IController* controller);
-        ErrorCode SetOptions(const char* options);
+        errc SetOptions(const char* options);
         uint64_t WaitForCompletion();
     };
 } // namespace MachEmu
