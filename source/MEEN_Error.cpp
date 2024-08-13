@@ -30,32 +30,36 @@ namespace MachEmu
 		{
 		public:
 			//cppcheck-suppress unusedFunction
-			virtual const char* name() const noexcept override
+			virtual const char* name() const noexcept final
 			{
 				return "meen::category";
 			}
 
 			//cppcheck-suppress unusedFunction
-			virtual std::string message(int ec) const override
+			virtual std::string message(int ec) const final
 			{
 				switch(ec)
 				{
 					case errc::no_error:
 						return "Success";
+					case errc::busy:
+						return "The engine is running";
 					case errc::clock_resolution:
 						return "The clock resolution can't be set, either it's too high/low or the host clock can't be queried";
 					case errc::incompatible_ram:
-						return "The save file ram is incompatible with this component";
+						return "The ram to load is incompatible with this component";
 					case errc::incompatible_rom:
-						return "The save file rom is incompatible with this component";
+						return "The rom to load is incompatible with this component";
 					case errc::incompatible_uuid:
-						return "The configuration uuid does not match the component uuid";
+						return "The uuid to load does not match this component";
 					case errc::invalid_argument:
 						return "An argument supplied to the method is invalid";
+					case errc::json_config:
+						return "A JSON configuration parameter is invalid";
 					case errc::json_parse:
 						return "A JSON parse error occurred while processing the configuration file/string";
-					case errc::busy:
-						return "The engine is running";
+					case errc::no_zlib:
+						return "MEEN compiled without zlib support";
 					case errc::not_implemented:
 						return "The method is not implemented";
 					case errc::unknown_option:

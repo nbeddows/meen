@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <assert.h>
 #include <fstream>
 
 #include "meen/MEEN_Error.h"
@@ -51,7 +52,13 @@ namespace MachEmu
 
 		if(opts == nullptr)
 		{
-			json = nlohmann::json::parse(Opt::DefaultOpts());
+			json = nlohmann::json::parse(Opt::DefaultOpts(), nullptr, false);
+			assert(json.is_discarded() == false);
+
+			if(json.is_discarded() == true)
+			{
+				return make_error_code(errc::json_parse);
+			}
 		}
 		else
 		{
@@ -61,28 +68,33 @@ namespace MachEmu
 			{
 				jsonStr.remove_prefix(strlen("file://"));
 				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
-				json = nlohmann::json::parse(fin);
+				json = nlohmann::json::parse(fin, nullptr, false);
 			}
 			else
 			{
 				// parse as if raw json
-				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
+				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()), nullptr, false);
+			}
+
+			if(json.is_discarded() == true)
+			{
+				return make_error_code(errc::json_parse);
 			}
 
 			if (json_.contains("cpu") == true && json.contains("cpu") == true)
 			{
-				throw std::runtime_error("cpu type has already been set");
+				return make_error_code(errc::json_config);
 			}
 
 			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
 			{
-				throw std::invalid_argument("isrFreq must be >= 0");
+				return make_error_code(errc::json_config);
 			}
 
 #ifndef ENABLE_ZLIB
 			if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
 			{
-				throw std::runtime_error("mach-emu has been compiled with no zlib support");
+				return make_error_code(errc::no_zlib);
 			}
 #endif
 

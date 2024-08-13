@@ -24,6 +24,8 @@ PYBIND11_MODULE(mach_emuPy, MachEmu)
         .value("Busy", MachEmu::errc::busy)
         .value("ClockResolution", MachEmu::errc::clock_resolution)
         .value("InvalidArgument", MachEmu::errc::invalid_argument)
+        .value("JsonConfig", MachEmu::errc::json_config)
+        .value("JsonParse", MachEmu::errc::json_parse)
         .value("NotImplemented", MachEmu::errc::not_implemented)
         .value("UnknownOption", MachEmu::errc::unknown_option);
     
