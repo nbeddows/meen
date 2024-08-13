@@ -149,7 +149,7 @@ namespace MachEmu
 
 			@remark					See Tests/TestControllers/MemoryController.cpp
 		*/
-		virtual void SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
+		virtual std::error_code SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
 
 		/** Set a custom io controller
 
@@ -164,7 +164,7 @@ namespace MachEmu
 
 			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
-		virtual void SetIoController (const std::shared_ptr<IController>& controller) = 0;
+		virtual std::error_code SetIoController (const std::shared_ptr<IController>& controller) = 0;
 
 		/** Set machine options
 
@@ -184,7 +184,6 @@ namespace MachEmu
 
 			@see					MakeMachine for supported configuration options.
 		*/
-		// NOTE: returning std::error_code here rather than ErrorCode is a breaking API change .... SetOptions2??
 		virtual std::error_code SetOptions(const char* options) = 0;
 
 		/** Machine save state completion handler
@@ -243,7 +242,7 @@ namespace MachEmu
 										will be ignored.
 			@since	version 1.5.0
 		*/
-		virtual void OnSave(std::function<void(const char* json)>&& onSave) = 0;
+		virtual std::error_code OnSave(std::function<void(const char* json)>&& onSave) = 0;
 
 		/** Machine load state initiation handler
 		
@@ -274,7 +273,7 @@ namespace MachEmu
 
 			@since	version 1.5.0
 		*/
-		virtual void OnLoad(std::function<const char*()>&& onLoad) = 0;
+		virtual std::error_code OnLoad(std::function<const char*()>&& onLoad) = 0;
 
 		/** Save the state of the machine.
 

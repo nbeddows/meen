@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <assert.h>
 #include <cinttypes>
 #include <nlohmann/json.hpp>
 
@@ -35,17 +36,18 @@ namespace MachEmu
 {
 	Machine::Machine(const char* options)
 	{
-		auto err = SetOptions(options);
+		auto errc = SetOptions(options);
 
-		if (err)
+		if (errc)
 		{
-			throw std::invalid_argument("All options must be valid, check your configuration!");
+			printf("Failed to parse meen options, reverting back to default options\n");
 		}
 
 		// if no cpu type specified, set the default
 		if(opt_.CpuType().empty() == true)
 		{
-			SetOptions(R"({"cpu":"i8080"})");
+			errc = SetOptions(R"({"cpu":"i8080"})");
+			assert(!errc);
 		}
 
 		if(opt_.CpuType() == "i8080")
@@ -53,34 +55,35 @@ namespace MachEmu
 			clock_ = MakeCpuClock(2000000);
 			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
 		}
-		else
-		{
-			throw std::invalid_argument("Unsupported cpu type");
-		}
 	}
 
 	std::error_code Machine::SetOptions(const char* options)
 	{
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return make_error_code(errc::busy);
 		}
 
 		return opt_.SetOptions(options);
 	}
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
-	{
-		auto err = ErrorCode::NoError;
-	
+	{	
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			//return make_error_code(errc::busy);
+			return ErrorCode::ClockResolution;
 		}
 
 		if (clockResolution < -1 || clockResolution > 10000000000)
 		{
-			throw std::runtime_error("Clock resolution out of range");
+			//return make_error_code(errc::clock_resolution);
+			return ErrorCode::ClockResolution;
+		}
+
+		if(clock_ == nullptr)
+		{
+			return ErrorCode::NoClock;
 		}
 
 		char str[32]{};
@@ -94,14 +97,14 @@ namespace MachEmu
 
 		if (errc)
 		{
-			err = ErrorCode::ClockResolution;
+			return ErrorCode::ClockResolution;
 		}
 		else
 		{
 			ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 		}
 
-		return err;
+		return ErrorCode::NoError;
 	}
 
 	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
@@ -138,21 +141,37 @@ namespace MachEmu
 		}
 	}
 
+	// The probably needs to return std/tl::expected
 	uint64_t Machine::Run(uint16_t pc)
 	{
 		if (memoryController_ == nullptr)
 		{
-			throw std::runtime_error ("No memory controller has been set");
+			printf("Machine::Run: no memory controller has been set");
+			return 0;
 		}
 
 		if (ioController_ == nullptr)
 		{
-			throw std::runtime_error("No io controller has been set");
+			printf("Machine::Run: no io controller has been set");
+			return 0;
 		}
 
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			printf("Machine::Run: the machine is running");
+			return 0;
+		}
+
+		if(clock_ == nullptr)
+		{
+			printf("Machine::Run: the clock is invalid\n");
+			return 0;
+		}
+
+		if(cpu_ == nullptr)
+		{
+			printf("Machine::Run: the cpu is invalid\n");
+			return 0;
 		}
 
 		cpu_->Reset(pc);
@@ -178,88 +197,109 @@ namespace MachEmu
 			{
 				if (str.empty() == false)
 				{
-					try
+					// perform checks to make sure that this machine load state is compatible with this machine
+
+					auto memUuid = memoryController_->Uuid();
+
+					if (memUuid == std::array<uint8_t, 16>{})
 					{
-						// perform checks to make sure that this machine load state is compatible with this machine
+						return make_error_code(errc::incompatible_uuid);
+					}
+					
+					auto json = nlohmann::json::parse(str, nullptr, false);
 
-						auto memUuid = memoryController_->Uuid();
+					if(json.is_discarded() == true)
+					{
+						return make_error_code(errc::json_parse);
+					}
+					
+					if(!json.contains("memory"))
+					{
+						return make_error_code(errc::json_parse);
+					}
+					
+					auto memory = json["memory"];
 
-						if (memUuid == std::array<uint8_t, 16>{})
+					if(!memory.contains("uuid") || !memory.contains("rom") || !memory.contains("ram"))
+					{
+						return make_error_code(errc::json_parse);
+					}
+
+					// The memory controllers must be the same
+					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, memory["uuid"].get<std::string>());
+
+					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
+					{
+						return make_error_code(errc::incompatible_uuid);
+					}
+
+					auto romMetadata = opt_.Rom();
+					std::vector<uint8_t> rom;
+
+					for (const auto& rm : romMetadata)
+					{
+						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 						{
-							throw std::runtime_error("Invalid memory controller uuid for load interrupt");
-						}
-
-						auto json = nlohmann::json::parse(str);
-						// The memory controllers must be the same
-						auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["memory"]["uuid"].get<std::string>());
-
-						if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
-						{
-							throw std::runtime_error("Incompatible memory controller");
-						}
-
-						auto romMetadata = opt_.Rom();
-						std::vector<uint8_t> rom;
-
-						for (const auto& rm : romMetadata)
-						{
-							for (int addr = rm.first; addr < rm.first + rm.second; addr++)
-							{
-								rom.push_back(memoryController_->Read(addr));
-							}
-						}
-
-						// The rom must be the same
-						auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, json["memory"]["rom"].get<std::string>());
-						auto romMd5 = Utils::Md5(rom.data(), rom.size());
-
-						if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
-						{
-							throw std::runtime_error("Incompatible rom");
-						}
-
-						// decode and decompress the ram
-						auto jsonRam = json["memory"]["ram"];
-						auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
-							jsonRam["compressor"].get<std::string>(),
-							jsonRam["size"].get<uint32_t>(),
-							jsonRam["bytes"].get<std::string>());
-						
-						auto ramMetadata = opt_.Ram();
-						int ramSize = 0;
-						int ramIndex = 0;
-
-						for (const auto& rm : ramMetadata)
-						{
-							ramSize += rm.second;
-						}
-
-						// Make sure the ram size matches the layout
-						if (ram.size() != ramSize)
-						{
-							throw std::runtime_error("Incompatible ram");
-						}
-
-						// Once all checks are complete, restore the cpu and the memory
-						auto errc = cpu_->Load(json["cpu"].dump());
-	
-						if(errc)
-						{
-							return errc;
-						}
-						
-						for (const auto& rm : ramMetadata)
-						{
-							for (int addr = rm.first; addr < rm.first + rm.second; addr++)
-							{
-								memoryController_->Write(addr, ram[ramIndex++]);
-							}
+							rom.push_back(memoryController_->Read(addr));
 						}
 					}
-					catch (const std::exception& e)
+
+					// The rom must be the same
+					auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, memory["rom"].get<std::string>());
+					auto romMd5 = Utils::Md5(rom.data(), rom.size());
+
+					if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
 					{
-						// log the exception - e.what()
-						printf("%s\n", e.what());
+						return make_error_code(errc::incompatible_rom);
+					}
+
+					// decode and decompress the ram
+					auto jsonRam = memory["ram"];
+
+					if(!jsonRam.contains("encoder") || !jsonRam.contains("compressor") || !jsonRam.contains("size") || !jsonRam.contains("bytes"))
+					{
+						return make_error_code(errc::json_parse);
+					}
+
+					auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
+						jsonRam["compressor"].get<std::string>(),
+						jsonRam["size"].get<uint32_t>(),
+						jsonRam["bytes"].get<std::string>());
+					
+					auto ramMetadata = opt_.Ram();
+					int ramSize = 0;
+					int ramIndex = 0;
+
+					for (const auto& rm : ramMetadata)
+					{
+						ramSize += rm.second;
+					}
+
+					// Make sure the ram size matches the layout
+					if (ram.size() != ramSize)
+					{
+						return make_error_code(errc::incompatible_ram);
+					}
+
+					if(!json.contains("cpu"))
+					{
+						return make_error_code(errc::json_parse);
+					}
+
+					// Once all checks are complete, restore the cpu and the memory
+					auto errc = cpu_->Load(json["cpu"].dump());
+
+					if(errc)
+					{
+						return errc;
+					}
+					
+					for (const auto& rm : ramMetadata)
+					{
+						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
+						{
+							memoryController_->Write(addr, ram[ramIndex++]);
+						}
 					}
 				}
 
@@ -319,25 +359,17 @@ namespace MachEmu
 								{
 									std::string str;
 										
-									// Calling out into user land, make sure we don't leak any exceptions
-									try
-									{
-										auto json = onLoad_();
+									// TODO: this user defined method needs to be marked as nothrow
+									auto json = onLoad_();
 
-										if (json != nullptr)
-										{
-											// return a copy of the json c string as a std::string
-											str = json;
-										}
-										else
-										{
-											throw std::runtime_error("empty json load state");
-										}
-									}
-									catch (const std::exception& e)
+									if (json != nullptr)
 									{
-										// todo: log the exception to a log file
-										printf("%s\n", e.what());
+										// return a copy of the json c string as a std::string
+										str = json;
+									}
+									else
+									{
+										printf("The JSON string state to load is empty\n");
 									}
 
 									return str;
@@ -357,15 +389,14 @@ namespace MachEmu
 							// If a user defined callback is set and we are not processing a save or load request
 							if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 							{
-								try
+								auto memUuid = memoryController_->Uuid();
+
+								if (memUuid == std::array<uint8_t, 16>{})
 								{
-									auto memUuid = memoryController_->Uuid();
-
-									if (memUuid == std::array<uint8_t, 16>{})
-									{
-										throw std::runtime_error("Invalid memory controller uuid for save interrupt");
-									}
-
+									printf("ISR::Save failed to save the machine state: the configuration uuid does not match the component uuid\n");
+								}
+								else
+								{
 									auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
 									{
 										std::vector<uint8_t> mem;
@@ -414,26 +445,12 @@ namespace MachEmu
 
 									onSave = std::async(saveLaunchPolicy, [this, state = writeState(count)]
 									{
-										// Calling out into user land, make sure we don't leak any exceptions
-										try
-										{
-											onSave_(state.c_str());
-										}
-										catch (const std::exception& e)
-										{
-											// todo: log the exception to a log file
-											printf("%s\n", e.what());
-										}
-
+										// TODO: this method needs to be marked as nothrow
+										onSave_(state.c_str());
 										return std::string("");
 									});
 
 									checkHandler(onSave);
-								}
-								catch (const std::exception& e)
-								{
-									// log the exception - e.what()
-									printf("%s\n", e.what());
 								}
 							}
 							break;
@@ -515,66 +532,70 @@ namespace MachEmu
 		return totalTime;
 	}
 
-	void Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
+	std::error_code Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
 	{
 		if (controller == nullptr)
 		{
-			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+			return make_error_code(errc::invalid_argument);
 		}
 
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return make_error_code(errc::busy);
 		}
 
 		memoryController_ = controller;
+		return make_error_code(errc::no_error);
 	}
 
-	void Machine::SetIoController(const std::shared_ptr<IController>& controller)
+	std::error_code Machine::SetIoController(const std::shared_ptr<IController>& controller)
 	{
 		if (controller == nullptr)
 		{
-			throw std::invalid_argument("Argument 'controller' can not be nullptr");
+			return make_error_code(errc::invalid_argument);
 		}
 
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return make_error_code(errc::busy);
 		}
 
 		ioController_ = controller;
+		return make_error_code(errc::no_error);
 	}
 
-	void Machine::OnSave(std::function<void(const char* json)>&& onSave)
+	std::error_code Machine::OnSave(std::function<void(const char* json)>&& onSave)
 	{
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return make_error_code(errc::busy);
 		}
 
 		onSave_ = std::move(onSave);
+		return make_error_code(errc::no_error);
 	}
 
-	void Machine::OnLoad(std::function<const char*()>&& onLoad)
+	std::error_code Machine::OnLoad(std::function<const char*()>&& onLoad)
 	{
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return make_error_code(errc::busy);
 		}
 
 		onLoad_ = std::move(onLoad);
+		return make_error_code(errc::no_error);
 	}
 
 	std::string Machine::Save() const
 	{
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return "";
 		}
 
 		if (memoryController_ == nullptr)
 		{
-			throw std::runtime_error("memory controller not set!");
+			return "";
 		}
 
 		auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
@@ -618,7 +639,12 @@ namespace MachEmu
 	{
 		if (running_ == true)
 		{
-			throw std::runtime_error("The machine is running");
+			return nullptr;
+		}
+
+		if(cpu_ == nullptr)
+		{
+			return nullptr;
 		}
 
 		return cpu_->GetState(size);
