@@ -29,23 +29,7 @@ namespace MachEmu
 {
 	Opt::Opt()
 	{
-		json_ = new nlohmann::json();
-
-		if(json_ == nullptr)
-		{
-			throw std::bad_alloc();
-		}
-
-		*json_ = nlohmann::json::parse(Opt::DefaultOpts());
-	}
-
-	Opt::~Opt()
-	{
-		if (json_ != nullptr)
-		{
-			delete json_;
-			json_ = nullptr;
-		}
+		json_ = nlohmann::json::parse(Opt::DefaultOpts());
 	}
 
 	constexpr std::string Opt::DefaultOpts()
@@ -85,7 +69,7 @@ namespace MachEmu
 				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
 			}
 
-			if (json_->contains("cpu") == true && json.contains("cpu") == true)
+			if (json_.contains("cpu") == true && json.contains("cpu") == true)
 			{
 				throw std::runtime_error("cpu type has already been set");
 			}
@@ -142,26 +126,26 @@ namespace MachEmu
 			// End remove
 		}
 
-		json_->update(json);
+		json_.update(json);
 
 		return err;
 	}
 
 	int64_t Opt::ClockResolution() const
 	{
-		return (*json_)["clockResolution"].get<int64_t>();
+		return json_["clockResolution"].get<int64_t>();
 	}
 
 	std::string Opt::Compressor() const
 	{
-		return (*json_)["compressor"].get<std::string>();
+		return json_["compressor"].get<std::string>();
 	}
 
 	std::string Opt::CpuType() const
 	{
-		if (json_->contains("cpu") == true)
+		if (json_.contains("cpu") == true)
 		{
-			return (*json_)["cpu"].get<std::string>();
+			return json_["cpu"].get<std::string>();
 		}
 		else
 		{
@@ -171,23 +155,23 @@ namespace MachEmu
 
 	std::string Opt::Encoder() const
 	{
-		return (*json_)["encoder"].get<std::string>();
+		return json_["encoder"].get<std::string>();
 	}
 
 	double Opt::ISRFreq() const
 	{
-		return (*json_)["isrFreq"].get<double>();
+		return json_["isrFreq"].get<double>();
 	}
 
 	bool Opt::LoadAsync() const
 	{
-		return (*json_)["loadAsync"].get<bool>();
+		return json_["loadAsync"].get<bool>();
 	}
 
 	std::vector<std::pair<uint16_t, uint16_t>> Opt::Ram() const
 	{
 		std::vector<std::pair<uint16_t, uint16_t>> ram;
-		auto blocks = (*json_)["ram"]["block"];
+		auto blocks = json_["ram"]["block"];
 
 		for (const auto& block : blocks)
 		{
@@ -200,7 +184,7 @@ namespace MachEmu
 	std::vector<std::pair<uint16_t, uint16_t>> Opt::Rom() const
 	{
 		std::vector<std::pair<uint16_t, uint16_t>> rom;
-		auto files = (*json_)["rom"]["file"];
+		auto files = json_["rom"]["file"];
 
 		for(const auto& file : files)
 		{
@@ -212,11 +196,11 @@ namespace MachEmu
 
 	bool Opt::RunAsync() const
 	{
-		return (*json_)["runAsync"].get<bool>();
+		return json_["runAsync"].get<bool>();
 	}
 
 	bool Opt::SaveAsync() const
 	{
-		return (*json_)["saveAsync"].get<bool>();
+		return json_["saveAsync"].get<bool>();
 	}
 } // namespace MachEmu

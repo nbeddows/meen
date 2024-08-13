@@ -42,11 +42,11 @@ namespace MachEmu
 	{
 		private:
 			/**
-				json parser
+				JSON parser
 
-				an implementation by nlohmann
+				An implementation by nlohmann.
 			*/
-			nlohmann::json* json_{};
+			nlohmann::json json_{};
 
 			/**
 				Default options
@@ -57,7 +57,7 @@ namespace MachEmu
 
 		public:
 			Opt();
-			~Opt();
+			~Opt() = default;
 			/** Update machine options
 
 				Process a json string view for supported options.
