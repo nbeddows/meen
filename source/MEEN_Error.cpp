@@ -43,9 +43,15 @@ namespace MachEmu
 					case errc::no_error:
 						return "Success";
 					case errc::clock_resolution:
-						return "Warning, the clock resolution may be inaccurate";
+						return "The clock resolution can't be set";
+					case errc::incompatible_uuid:
+						return "The configuration uuid does not match the component uuid";
 					case errc::json_parse:
 						return "A json parse error occurred while processing the configuration file/string";
+					case errc::not_implemented:
+						return "The method is not implemented";
+					case errc::unknown_option:
+						return "An unknown JSON option was encountered nad ignored";
 					default:
 						return "Unknown error code";
 				}

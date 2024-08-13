@@ -206,7 +206,7 @@ namespace MachEmu
 		/* I8080 overrides */
 		uint8_t Execute() final;
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
-		void Load(const std::string&& json) final;
+		std::error_code Load(const std::string&& json) final;
 		std::string Save() const final;
 		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */

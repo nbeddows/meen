@@ -34,7 +34,8 @@ namespace MachEmu
 	enum errc
 	{
 		no_error,			/**< No error has occurred. */
-		clock_resolution,	/**< Warning, clock resolution may be inaccurate. */
+		clock_resolution,	/**< The resolution can' be set, either it is too high or the host clock can't be queried. */
+		incompatible_uuid,	/**< The configuration uuid does not match the component uuid. */
 		json_parse,			/**< The JSON configuration file/string is malformed. */
 		not_implemented,	/**< The method is not implemented. */
 		unknown_option		/**< An unknown JSON option was encountered nad ignored */
