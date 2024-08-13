@@ -27,6 +27,7 @@ SOFTWARE.
 #include <chrono>
 #include <memory>
 
+#include "meen/MEEN_Error.h"
 #include "meen/clock/ICpuClock.h"
 
 namespace MachEmu
@@ -57,16 +58,18 @@ namespace MachEmu
 		//value within the range .... or not ....
 		//just leaving it constant.
 		std::chrono::nanoseconds timePeriod_{};
-		// the total amount of oversleep
+		// The total amount of oversleep
 		std::chrono::nanoseconds error_{};
-		//The time at which this clock begun.
+		// The time at which this clock begun.
 		std::chrono::steady_clock::time_point epoch_{};
-		//The time at which this clock was sampled.
+		// The time at which this clock was sampled.
 		std::chrono::steady_clock::time_point lastTime_{};
-		// the current time of the clock expressed at a frequency as specified by correlateFreq
+		// The current time of the clock expressed at a frequency as specified by correlateFreq
 		std::chrono::nanoseconds time_{};
-		// the maximum resolution of the host clock
+		// The maximum resolution of the host clock
 		std::chrono::nanoseconds maxResolution_{};
+		// The state of the clock upon construction.
+		std::error_code errc_{ make_error_code(errc::no_error) };
 
 	public:
 		//correlateFreq
