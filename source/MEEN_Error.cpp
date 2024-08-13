@@ -43,15 +43,23 @@ namespace MachEmu
 					case errc::no_error:
 						return "Success";
 					case errc::clock_resolution:
-						return "The clock resolution can't be set";
+						return "The clock resolution can't be set, either it's too high/low or the host clock can't be queried";
+					case errc::incompatible_ram:
+						return "The save file ram is incompatible with this component";
+					case errc::incompatible_rom:
+						return "The save file rom is incompatible with this component";
 					case errc::incompatible_uuid:
 						return "The configuration uuid does not match the component uuid";
+					case errc::invalid_argument:
+						return "An argument supplied to the method is invalid";
 					case errc::json_parse:
-						return "A json parse error occurred while processing the configuration file/string";
+						return "A JSON parse error occurred while processing the configuration file/string";
+					case errc::busy:
+						return "The engine is running";
 					case errc::not_implemented:
 						return "The method is not implemented";
 					case errc::unknown_option:
-						return "An unknown JSON option was encountered nad ignored";
+						return "An unknown JSON option was encountered and ignored";
 					default:
 						return "Unknown error code";
 				}

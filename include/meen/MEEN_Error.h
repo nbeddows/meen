@@ -34,11 +34,15 @@ namespace MachEmu
 	enum errc
 	{
 		no_error,			/**< No error has occurred. */
-		clock_resolution,	/**< The resolution can' be set, either it is too high or the host clock can't be queried. */
-		incompatible_uuid,	/**< The configuration uuid does not match the component uuid. */
+		clock_resolution,	/**< The resolution can' be set, either it is too high/low or the host clock can't be queried. */
+		incompatible_ram,	/**< The save file ram is not compatible with this component. */
+		incompatible_rom,	/**< The save file rom is not compatible with this component. */
+		incompatible_uuid,	/**< The save file uuid does not match the component uuid. */
+		invalid_argument,	/**< An argument passed to this method is invalid. */
 		json_parse,			/**< The JSON configuration file/string is malformed. */
+		busy,				/**< The engine is currently running. */
 		not_implemented,	/**< The method is not implemented. */
-		unknown_option		/**< An unknown JSON option was encountered nad ignored */
+		unknown_option		/**< An unknown JSON option was encountered and ignored. */
 	};
 
 	/** The custom meen error category
