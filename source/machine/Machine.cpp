@@ -23,6 +23,7 @@ SOFTWARE.
 #include <cinttypes>
 #include <nlohmann/json.hpp>
 
+#include "meen/MEEN_Error.h"
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
 #include "meen/machine/Machine.h"
@@ -240,8 +241,13 @@ namespace MachEmu
 						}
 
 						// Once all checks are complete, restore the cpu and the memory
-						cpu_->Load(json["cpu"].dump());
+						auto errc = cpu_->Load(json["cpu"].dump());
 	
+						if(errc)
+						{
+							return errc;
+						}
+						
 						for (const auto& rm : ramMetadata)
 						{
 							for (int addr = rm.first; addr < rm.first + rm.second; addr++)
@@ -256,6 +262,8 @@ namespace MachEmu
 						printf("%s\n", e.what());
 					}
 				}
+
+				return make_error_code(errc::no_error);
 			};
 
 			auto checkHandler = [](std::future<std::string>& fut)
@@ -335,7 +343,12 @@ namespace MachEmu
 									return str;
 								});
 
-								loadMachineState(checkHandler(onLoad));
+								auto errc = loadMachineState(checkHandler(onLoad));
+
+								if(errc)
+								{
+									printf("ISR::Load failed to load the machine state: %s\n", errc.message().c_str());
+								}
 							}
 							break;
 						}
@@ -432,7 +445,12 @@ namespace MachEmu
 							if (onLoad.valid() == true)
 							{
 								// we are quitting, wait for the onLoad handler to complete
-								loadMachineState(onLoad.get());
+								auto errc = loadMachineState(onLoad.get());
+
+								if(errc)
+								{
+									printf("ISR::Quit failed to load the machine state: %s\n", errc.message().c_str());
+								}
 							}
 
 							if (onSave.valid() == true)
@@ -446,7 +464,13 @@ namespace MachEmu
 						case ISR::NoInterrupt:
 						{
 							// no interrupts pending, do any work that is outstanding
-							loadMachineState(checkHandler(onLoad));							
+							auto errc = loadMachineState(checkHandler(onLoad));
+							
+							if(errc)
+							{
+								printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
+							}
+							
 							checkHandler(onSave);
 							break;
 						}
