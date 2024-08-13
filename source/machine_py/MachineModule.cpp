@@ -21,7 +21,9 @@ PYBIND11_MODULE(mach_emuPy, MachEmu)
 
     py::enum_<MachEmu::errc>(MachEmu, "ErrorCode")
         .value("NoError", MachEmu::errc::no_error)
+        .value("Busy", MachEmu::errc::busy)
         .value("ClockResolution", MachEmu::errc::clock_resolution)
+        .value("InvalidArgument", MachEmu::errc::invalid_argument)
         .value("NotImplemented", MachEmu::errc::not_implemented)
         .value("UnknownOption", MachEmu::errc::unknown_option);
     

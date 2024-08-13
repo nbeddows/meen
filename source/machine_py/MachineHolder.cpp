@@ -21,25 +21,28 @@ namespace MachEmu
 		auto str = std::string(count + 1, '\0');
 		snprintf(str.data(), count + 1, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
 		auto err = machine_->SetOptions(str.c_str());
-		return static_cast<MachEmu::errc>(err.value());
-		//return machine_->SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
+		return static_cast<errc>(err.value());
 	}
 
-	void MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
+	errc MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
 	{
-		machine_->OnLoad([this, ol = std::move(onLoad)]
+		auto err = machine_->OnLoad([this, ol = std::move(onLoad)]
 		{
 			json_ = ol();
 			return json_.c_str();
 		});
+
+		return static_cast<errc>(err.value());
 	}
 
-	void MachineHolder::OnSave(std::function<void(std::string&&)>&& onSave)
+	errc MachineHolder::OnSave(std::function<void(std::string&&)>&& onSave)
 	{
-		machine_->OnSave([os = std::move(onSave)](const char* json)
+		auto err = machine_->OnSave([os = std::move(onSave)](const char* json)
 		{
 			os(json);
 		});
+
+		return static_cast<errc>(err.value());
 	}
 
 	std::string MachineHolder::Save() const
@@ -52,21 +55,23 @@ namespace MachEmu
 		return machine_->Run(offset);
 	}
 
-	void MachineHolder::SetIoController(MachEmu::IController* controller)
+	errc MachineHolder::SetIoController(MachEmu::IController* controller)
 	{
 		// custom deleter, don't delete this pointer from c++, python owns it
-		machine_->SetIoController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		auto err = machine_->SetIoController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		return static_cast<errc>(err.value());
 	}
 
-	void MachineHolder::SetMemoryController(MachEmu::IController* controller)
+	errc MachineHolder::SetMemoryController(MachEmu::IController* controller)
 	{
-		machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		auto err = machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		return static_cast<errc>(err.value());
 	}
 
 	errc MachineHolder::SetOptions(const char* options)
 	{
 		auto err = machine_->SetOptions(options);
-		return static_cast<MachEmu::errc>(err.value());
+		return static_cast<errc>(err.value());
 	}
 
 	uint64_t MachineHolder::WaitForCompletion()
