@@ -108,33 +108,42 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
-		auto errc = machine_->SetMemoryController(nullptr);
-		EXPECT_TRUE(errc);
-		EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
+		EXPECT_NO_THROW
+		(
+			auto errc = machine_->SetMemoryController(nullptr);
+			EXPECT_TRUE(errc);
+			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
+		);
 	}
 
 	TEST_F(MachineTest, SetNullptrIoController)
 	{
-		auto errc = machine_->SetIoController(nullptr);
-		EXPECT_TRUE(errc);
-		EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
+		EXPECT_NO_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			auto errc = machine_->SetIoController(nullptr);
+			EXPECT_TRUE(errc);
+			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
+		);
 	}
 
 	TEST_F(MachineTest, SetCpuAfterConstruction)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->SetOptions(R"({"cpu":"i8080"})");
+			auto errc = machine_->SetOptions(R"({"cpu":"i8080"})");
+			EXPECT_TRUE(errc)
 		);
 	}
 
 	TEST_F(MachineTest, NegativeISRFrequency)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->SetOptions(R"({"isrFreq":-1.0})");
+			auto errc = machine_->SetOptions(R"({"isrFreq":-1.0})");
+			EXPECT_TRUE(errc)
 		);
 	}
 

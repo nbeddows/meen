@@ -45,12 +45,12 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.InvalidArgument)
 
     def test_SetCpuAfterConstruction(self):
-        with self.assertRaises(RuntimeError):
-            self.machine.SetOptions(r'{"cpu":"i8080"}')
+        err = self.machine.SetOptions(r'{"cpu":"i8080"}')
+        self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_NegativeISRFrequency(self):
-        with self.assertRaises(ValueError):
-            self.machine.SetOptions(r'{"isrFreq":-1.0}')
+        err = self.machine.SetOptions(r'{"isrFreq":-1.0}')
+        self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_MethodsErrorAfterRunCalled(self):
         err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
