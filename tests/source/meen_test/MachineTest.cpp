@@ -108,20 +108,16 @@ namespace MachEmu::Tests
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
-		EXPECT_ANY_THROW
-		(
-			//cppcheck-suppress unknownMacro
-			machine_->SetMemoryController(nullptr);
-		);
+		auto errc = machine_->SetMemoryController(nullptr);
+		EXPECT_TRUE(errc);
+		EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 	}
 
 	TEST_F(MachineTest, SetNullptrIoController)
 	{
-		EXPECT_ANY_THROW
-		(
-			//cppcheck-suppress unknownMacro
-			machine_->SetIoController(nullptr);
-		);
+		auto errc = machine_->SetIoController(nullptr);
+		EXPECT_TRUE(errc);
+		EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 	}
 
 	TEST_F(MachineTest, SetCpuAfterConstruction)
@@ -142,7 +138,7 @@ namespace MachEmu::Tests
 		);
 	}
 
-	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
+	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
@@ -152,70 +148,38 @@ namespace MachEmu::Tests
 		memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
 		memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
 
-		// We aren't interested in saving, clear the onSave callback
 		EXPECT_NO_THROW
 		(
-			machine_->OnSave(nullptr);
-		);
-		
-		EXPECT_NO_THROW
-		(
+			// We aren't interested in saving, clear the onSave callback
+			auto errc = machine_->OnSave(nullptr);
+			EXPECT_FALSE(errc);
 			machine_->Run(0x04);
-		);
 
-		EXPECT_ANY_THROW
-		(
-			machine_->Run(0x100);
-		);
+			// All these methods should return errors
+			//machine_->Run(0x100);
+			errc = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_TRUE(errc);
+			errc = machine_->SetMemoryController(memoryController_);
+			EXPECT_TRUE(errc);
+			errc = machine_->SetIoController(testIoController_);
+			EXPECT_TRUE(errc);
+			errc = machine_->OnLoad([]{ return ""; });
+			EXPECT_TRUE(errc);
+			errc = machine_->OnSave([](const char*){});
+			EXPECT_TRUE(errc);
 
-		EXPECT_ANY_THROW
-		(
-			machine_->SetOptions(R"({"isrFreq":1})");
-		);
+			// Since we are running async we need to wait for completion
+			machine_->WaitForCompletion();
 
-		EXPECT_ANY_THROW
-		(
-			machine_->SetMemoryController(memoryController_);
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->SetIoController(testIoController_);
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->OnLoad([]{ return ""; });
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->OnSave([](const char*){});
-		);
-
-		// Since we are running async we need to wait for completion
-		machine_->WaitForCompletion();
-
-		// We are now no longer running, all these methods shouldn't throw
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetOptions(R"({"isrFreq":1})");
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetMemoryController(memoryController_);
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetIoController(testIoController_);
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->OnLoad([]{ return ""; });
+			// We are now no longer running, all these methods should not return errors
+			errc = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_FALSE(errc);
+			errc = machine_->SetMemoryController(memoryController_);
+			EXPECT_FALSE(errc);
+			errc = machine_->SetIoController(testIoController_);
+			EXPECT_FALSE(errc);
+			errc = machine_->OnLoad([]{ return ""; });
+			EXPECT_FALSE(errc);
 		);
 	}
 

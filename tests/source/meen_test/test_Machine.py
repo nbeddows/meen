@@ -37,12 +37,12 @@ class MachineTest(unittest.TestCase):
         self.assertTrue(re.match(r'^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$', __version__))
 
     def test_SetNoIoController(self):
-        with self.assertRaises(ValueError):
-            self.machine.SetIoController(None)
+        err = self.machine.SetIoController(None)
+        self.assertEqual(err, ErrorCode.InvalidArgument)
 
     def test_SetNoMemoryController(self):
-        with self.assertRaises(ValueError):
-            self.machine.SetMemoryController(None)
+        err = self.machine.SetMemoryController(None)
+        self.assertEqual(err, ErrorCode.InvalidArgument)
 
     def test_SetCpuAfterConstruction(self):
         with self.assertRaises(RuntimeError):
@@ -52,7 +52,7 @@ class MachineTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.machine.SetOptions(r'{"isrFreq":-1.0}')
 
-    def test_MethodsThrowAfterRunCalled(self):
+    def test_MethodsErrorAfterRunCalled(self):
         err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
         self.assertEqual(err, ErrorCode.NoError)
 
@@ -60,31 +60,32 @@ class MachineTest(unittest.TestCase):
         self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC353)
         self.machine.Run(0)
 
-        with self.assertRaises(RuntimeError):
-        	self.machine.Run(0x100)
+        # self.machine.Run(0x100)
 
-        with self.assertRaises(RuntimeError):
-            self.machine.SetOptions(r'{"isrFreq":1}')
+        err = self.machine.SetOptions(r'{"isrFreq":1}')
+        self.assertEqual(err, ErrorCode.Busy)
+        
+        err = self.machine.SetMemoryController(self.memoryController)
+        self.assertEqual(err, ErrorCode.Busy)
 
-        with self.assertRaises(RuntimeError):
-            self.machine.SetMemoryController(self.memoryController)
+        err = self.machine.SetIoController(self.testIoController)
+        self.assertEqual(err, ErrorCode.Busy)
 
-        with self.assertRaises(RuntimeError):
-            self.machine.SetIoController(self.testIoController)
-
-        with self.assertRaises(RuntimeError):
-            self.machine.OnSave(lambda x: print(x))
+        err = self.machine.OnSave(lambda x: print(x))
+        self.assertEqual(err, ErrorCode.Busy)
 
         self.machine.WaitForCompletion()
 
-        # The machine has now stopped, all the following calls shouldn't throw
+        # The machine has now stopped, all the following calls shouldn't return errors
 
         err = self.machine.SetOptions(r'{"isrFreq":1}')
         self.assertEqual(err, ErrorCode.NoError)
-
-        self.machine.SetMemoryController(self.memoryController)
-        self.machine.SetIoController(self.testIoController)
-        self.machine.OnSave(lambda x: print(x))
+        err = self.machine.SetMemoryController(self.memoryController)
+        self.assertEqual(err, ErrorCode.NoError)
+        err = self.machine.SetIoController(self.testIoController)
+        self.assertEqual(err, ErrorCode.NoError)
+        err = self.machine.OnSave(lambda x: print(x))
+        self.assertEqual(err, ErrorCode.NoError)
 
     def RunTimed(self, runAsync):
         if runAsync == True:
