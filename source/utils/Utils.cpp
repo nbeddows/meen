@@ -21,22 +21,26 @@ SOFTWARE.
 */
 
 #include <bit>
+#ifdef ENABLE_BASE64
 #include <libbase64.h>
+#endif // ENABLE_BASE64
+#ifdef ENABLE_HASH_LIBRARY
 #include <md5.h>
-#include <stdexcept>
+#endif // ENABLE_HASH_LIBRARY
 #ifdef ENABLE_ZLIB
 #include <zlib.h>
-#endif
+#endif // ENABLE_ZLIB
 
 #include "meen/utils/Utils.h"
 
 namespace MachEmu::Utils
 {
+#ifdef ENABLE_BASE64
 	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, uint32_t binLen)
 	{
 		auto encode = [](const char* src, size_t srcLen)
 		{
-			// dst string needs to be at least 4/3 times the size of the input 
+			// dst string needs to be at least 4/3 times the size of the input
 			std::string binToTxt(srcLen * 1.5, '\0');
 			base64_encode(src, srcLen, binToTxt.data(), &srcLen, 0);
 			binToTxt.resize(srcLen);
@@ -119,7 +123,9 @@ namespace MachEmu::Utils
 			return bin;
 		}
 	}
+#endif // ENABLE_BASE64
 
+#ifdef ENABLE_HASH_LIBRARY
 	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len)
 	{
 		std::array<uint8_t, MD5::HashBytes> hash;
@@ -128,4 +134,5 @@ namespace MachEmu::Utils
 		md5.getHash(hash.data());
 		return hash;
 	}
+#endif // ENABLE_HASH_LIBRARY
 } // namespace MachEmu::Utils

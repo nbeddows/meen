@@ -28,6 +28,10 @@ SOFTWARE.
 #include <string>
 #include <system_error>
 
+#if defined ENABLE_BASE64 && defined ENABLE_HASH_LIBRARY
+#define ENABLE_MEEN_SAVE
+#endif // ENABLE_BASE64 &&& ENABLE_HASH_LIBRARY
+
 namespace MachEmu
 {
 	struct ICpu
@@ -39,10 +43,11 @@ namespace MachEmu
 
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
 
+#ifdef ENABLE_MEEN_SAVE
 		virtual std::error_code Load(const std::string&& json) = 0;
-		
-		virtual std::string Save() const = 0;
 
+		virtual std::string Save() const = 0;
+#endif // ENABLE_MEEN_SAVE
 		virtual ~ICpu() = default;
 	};
 } // namespace MachEmu

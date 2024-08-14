@@ -206,8 +206,10 @@ namespace MachEmu
 		/* I8080 overrides */
 		uint8_t Execute() final;
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
+#ifdef ENABLE_MEEN_SAVE
 		std::error_code Load(const std::string&& json) final;
 		std::string Save() const final;
+#endif // ENABLE_MEEN_SAVE
 		void Reset(uint16_t programCounter) final;
 		/* End I8080 overrides */
 

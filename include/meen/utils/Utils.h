@@ -34,6 +34,7 @@ SOFTWARE.
 */
 namespace MachEmu::Utils
 {
+#ifdef ENABLE_BASE64	
 	/** Binary to text encoding with optional compression
 
 		@param	encoder					The name of the encoder to use as a string, currently, the only supported encoder is "base64".
@@ -67,7 +68,9 @@ namespace MachEmu::Utils
 		@throws	std::runtime_error		The binary data failed to decompress.
 	*/
 	std::vector<uint8_t> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& txt);
+#endif // ENABLE_BASE64
 
+#ifdef ENABLE_HASH_LIBRARY
 	/** MD5 hash
 	
 		Currently used for ROM hashing, but may have other uses moving forward.
@@ -79,6 +82,7 @@ namespace MachEmu::Utils
 		@return							The 128 bit hash as a std::array of 16 bytes.
 	*/
 	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len);
+#endif // ENABLE_HASH_LIBRARY
 } // namespace MachEmu::Utils
 
 #endif // UTILS_H

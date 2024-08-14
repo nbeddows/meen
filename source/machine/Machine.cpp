@@ -188,6 +188,7 @@ namespace MachEmu
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
+#ifdef ENABLE_MEEN_SAVE
 			auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 			auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 			std::future<std::string> onLoad;
@@ -327,7 +328,7 @@ namespace MachEmu
 
 				return str;
 			};
-
+#endif // ENABLE_MEEN_SAVE
 			while (controlBus->Receive(Signal::PowerOff) == false)
 			{
 				//Execute the next instruction
@@ -357,6 +358,7 @@ namespace MachEmu
 						}
 						case ISR::Load:
 						{
+#ifdef ENABLE_MEEN_SAVE
 							// If a user defined callback is set and we are not processing a load or save request
 							if (onLoad_ != nullptr && onLoad.valid() == false && onSave.valid() == false)
 							{
@@ -387,10 +389,12 @@ namespace MachEmu
 									printf("ISR::Load failed to load the machine state: %s\n", errc.message().c_str());
 								}
 							}
+#endif // ENABLE_MEEN_SAVE
 							break;
 						}
 						case ISR::Save:
 						{
+#ifdef ENABLE_MEEN_SAVE
 							// If a user defined callback is set and we are not processing a save or load request
 							if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 							{
@@ -469,10 +473,12 @@ namespace MachEmu
 									printf("ISR::Save failed: %s\n", err.message().c_str());
 								}
 							}
+#endif // ENABLE_MEEN_SAVE
 							break;
 						}
 						case ISR::Quit:
 						{
+#ifdef ENABLE_MEEN_SAVE
 							// Wait for any outstanding load/save requests to complete
 
 							if (onLoad.valid() == true)
@@ -491,11 +497,13 @@ namespace MachEmu
 								// we are quitting, wait for the onSave handler to complete
 								onSave.get();
 							}
+#endif // ENABLE_MEEN_SAVE
 							controlBus->Send(Signal::PowerOff);
 							break;
 						}
 						case ISR::NoInterrupt:
 						{
+#ifdef ENABLE_MEEN_SAVE
 							// no interrupts pending, do any work that is outstanding
 							auto errc = loadMachineState(checkHandler(onLoad));
 							
@@ -505,6 +513,7 @@ namespace MachEmu
 							}
 							
 							checkHandler(onSave);
+#endif // ENABLE_MEEN_SAVE
 							break;
 						}
 						default:
@@ -582,6 +591,7 @@ namespace MachEmu
 
 	std::error_code Machine::OnSave(std::function<void(const char* json)>&& onSave)
 	{
+#ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
 		{
 			return make_error_code(errc::busy);
@@ -589,10 +599,14 @@ namespace MachEmu
 
 		onSave_ = std::move(onSave);
 		return make_error_code(errc::no_error);
+#else
+		return make_error_code(errc::not_implemented);
+#endif // ENABLE_MEEN_SAVE
 	}
 
 	std::error_code Machine::OnLoad(std::function<const char*()>&& onLoad)
 	{
+#ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
 		{
 			return make_error_code(errc::busy);
@@ -600,18 +614,22 @@ namespace MachEmu
 
 		onLoad_ = std::move(onLoad);
 		return make_error_code(errc::no_error);
+#else
+		return make_error_code(errc::not_implemented);
+#endif // ENABLE_MEEN_SAVE
 	}
 
 	std::string Machine::Save() const
 	{
+#ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
 		{
-			return "";
+			return "Machine::Save: the machine is running, save failed";
 		}
 
 		if (memoryController_ == nullptr)
 		{
-			return "";
+			return "Machine::Save: no memory controller set, save failed";
 		}
 
 		auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
@@ -649,6 +667,9 @@ namespace MachEmu
 		std::string state(count, '\0');
 		writeState(state.data(), count);
 		return state;
+#else
+		return "Machine::Save: save support disabled, save failed";
+#endif // ENABLE_MEEN_SAVE
 	}
 
 	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
