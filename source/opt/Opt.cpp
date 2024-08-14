@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <assert.h>
 #include <fstream>
 
 #include "meen/MEEN_Error.h"
@@ -29,23 +30,7 @@ namespace MachEmu
 {
 	Opt::Opt()
 	{
-		json_ = new nlohmann::json();
-
-		if(json_ == nullptr)
-		{
-			throw std::bad_alloc();
-		}
-
-		*json_ = nlohmann::json::parse(Opt::DefaultOpts());
-	}
-
-	Opt::~Opt()
-	{
-		if (json_ != nullptr)
-		{
-			delete json_;
-			json_ = nullptr;
-		}
+		json_ = nlohmann::json::parse(Opt::DefaultOpts());
 	}
 
 	constexpr std::string Opt::DefaultOpts()
@@ -67,7 +52,13 @@ namespace MachEmu
 
 		if(opts == nullptr)
 		{
-			json = nlohmann::json::parse(Opt::DefaultOpts());
+			json = nlohmann::json::parse(Opt::DefaultOpts(), nullptr, false);
+			assert(json.is_discarded() == false);
+
+			if(json.is_discarded() == true)
+			{
+				return make_error_code(errc::json_parse);
+			}
 		}
 		else
 		{
@@ -77,28 +68,33 @@ namespace MachEmu
 			{
 				jsonStr.remove_prefix(strlen("file://"));
 				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
-				json = nlohmann::json::parse(fin);
+				json = nlohmann::json::parse(fin, nullptr, false);
 			}
 			else
 			{
 				// parse as if raw json
-				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()));
+				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()), nullptr, false);
 			}
 
-			if (json_->contains("cpu") == true && json.contains("cpu") == true)
+			if(json.is_discarded() == true)
 			{
-				throw std::runtime_error("cpu type has already been set");
+				return make_error_code(errc::json_parse);
+			}
+
+			if (json_.contains("cpu") == true && json.contains("cpu") == true)
+			{
+				return make_error_code(errc::json_config);
 			}
 
 			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
 			{
-				throw std::invalid_argument("isrFreq must be >= 0");
+				return make_error_code(errc::json_config);
 			}
 
 #ifndef ENABLE_ZLIB
 			if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
 			{
-				throw std::runtime_error("mach-emu has been compiled with no zlib support");
+				return make_error_code(errc::no_zlib);
 			}
 #endif
 
@@ -142,26 +138,26 @@ namespace MachEmu
 			// End remove
 		}
 
-		json_->update(json);
+		json_.update(json);
 
 		return err;
 	}
 
 	int64_t Opt::ClockResolution() const
 	{
-		return (*json_)["clockResolution"].get<int64_t>();
+		return json_["clockResolution"].get<int64_t>();
 	}
 
 	std::string Opt::Compressor() const
 	{
-		return (*json_)["compressor"].get<std::string>();
+		return json_["compressor"].get<std::string>();
 	}
 
 	std::string Opt::CpuType() const
 	{
-		if (json_->contains("cpu") == true)
+		if (json_.contains("cpu") == true)
 		{
-			return (*json_)["cpu"].get<std::string>();
+			return json_["cpu"].get<std::string>();
 		}
 		else
 		{
@@ -171,23 +167,23 @@ namespace MachEmu
 
 	std::string Opt::Encoder() const
 	{
-		return (*json_)["encoder"].get<std::string>();
+		return json_["encoder"].get<std::string>();
 	}
 
 	double Opt::ISRFreq() const
 	{
-		return (*json_)["isrFreq"].get<double>();
+		return json_["isrFreq"].get<double>();
 	}
 
 	bool Opt::LoadAsync() const
 	{
-		return (*json_)["loadAsync"].get<bool>();
+		return json_["loadAsync"].get<bool>();
 	}
 
 	std::vector<std::pair<uint16_t, uint16_t>> Opt::Ram() const
 	{
 		std::vector<std::pair<uint16_t, uint16_t>> ram;
-		auto blocks = (*json_)["ram"]["block"];
+		auto blocks = json_["ram"]["block"];
 
 		for (const auto& block : blocks)
 		{
@@ -200,7 +196,7 @@ namespace MachEmu
 	std::vector<std::pair<uint16_t, uint16_t>> Opt::Rom() const
 	{
 		std::vector<std::pair<uint16_t, uint16_t>> rom;
-		auto files = (*json_)["rom"]["file"];
+		auto files = json_["rom"]["file"];
 
 		for(const auto& file : files)
 		{
@@ -212,11 +208,11 @@ namespace MachEmu
 
 	bool Opt::RunAsync() const
 	{
-		return (*json_)["runAsync"].get<bool>();
+		return json_["runAsync"].get<bool>();
 	}
 
 	bool Opt::SaveAsync() const
 	{
-		return (*json_)["saveAsync"].get<bool>();
+		return json_["saveAsync"].get<bool>();
 	}
 } // namespace MachEmu

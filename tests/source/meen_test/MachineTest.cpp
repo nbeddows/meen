@@ -78,10 +78,10 @@ namespace MachEmu::Tests
 		memoryController_->Clear();
 		//CP/M Warm Boot is at memory address 0x00, this will be
 		//emulated with the exitTest subroutine.
-		memoryController_->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00);
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00));
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
-		memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05);
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05));
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
 		// Set default options
@@ -101,121 +101,94 @@ namespace MachEmu::Tests
 			});
 
 			auto dir = programsDir_ + name;
-			memoryController_->Load(dir.c_str(), 0x100);
+			ASSERT_EQ(0, memoryController_->Load(dir.c_str(), 0x100));
 			machine_->Run(0x100);
 		);
 	}
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
-			//cppcheck-suppress unknownMacro
-			machine_->SetMemoryController(nullptr);
+			auto errc = machine_->SetMemoryController(nullptr);
+			EXPECT_TRUE(errc);
+			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 		);
 	}
 
 	TEST_F(MachineTest, SetNullptrIoController)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->SetIoController(nullptr);
+			auto errc = machine_->SetIoController(nullptr);
+			EXPECT_TRUE(errc);
+			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 		);
 	}
 
 	TEST_F(MachineTest, SetCpuAfterConstruction)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->SetOptions(R"({"cpu":"i8080"})");
+			auto errc = machine_->SetOptions(R"({"cpu":"i8080"})");
+			EXPECT_TRUE(errc)
 		);
 	}
 
 	TEST_F(MachineTest, NegativeISRFrequency)
 	{
-		EXPECT_ANY_THROW
+		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			machine_->SetOptions(R"({"isrFreq":-1.0})");
+			auto errc = machine_->SetOptions(R"({"isrFreq":-1.0})");
+			EXPECT_TRUE(errc)
 		);
 	}
 
-	TEST_F(MachineTest, MethodsThrowAfterRunCalled)
+	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
 		//cppcheck-suppress unknownMacro
-		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
+		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
 		EXPECT_FALSE(err);
 
-		memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
-		memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
 
-		// We aren't interested in saving, clear the onSave callback
 		EXPECT_NO_THROW
 		(
-			machine_->OnSave(nullptr);
-		);
-		
-		EXPECT_NO_THROW
-		(
+			// We aren't interested in saving, clear the onSave callback
+			auto errc = machine_->OnSave(nullptr);
+			EXPECT_FALSE(errc);
 			machine_->Run(0x04);
-		);
 
-		EXPECT_ANY_THROW
-		(
-			machine_->Run(0x100);
-		);
+			// All these methods should return errors
+			//machine_->Run(0x100);
+			errc = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_TRUE(errc);
+			errc = machine_->SetMemoryController(memoryController_);
+			EXPECT_TRUE(errc);
+			errc = machine_->SetIoController(testIoController_);
+			EXPECT_TRUE(errc);
+			errc = machine_->OnLoad([]{ return ""; });
+			EXPECT_TRUE(errc);
+			errc = machine_->OnSave([](const char*){});
+			EXPECT_TRUE(errc);
 
-		EXPECT_ANY_THROW
-		(
-			machine_->SetOptions(R"({"isrFreq":1})");
-		);
+			// Since we are running async we need to wait for completion
+			machine_->WaitForCompletion();
 
-		EXPECT_ANY_THROW
-		(
-			machine_->SetMemoryController(memoryController_);
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->SetIoController(testIoController_);
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->OnLoad([]{ return ""; });
-		);
-
-		EXPECT_ANY_THROW
-		(
-			machine_->OnSave([](const char*){});
-		);
-
-		// Since we are running async we need to wait for completion
-		machine_->WaitForCompletion();
-
-		// We are now no longer running, all these methods shouldn't throw
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetOptions(R"({"isrFreq":1})");
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetMemoryController(memoryController_);
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->SetIoController(testIoController_);
-		);
-
-		EXPECT_NO_THROW
-		(
-			machine_->OnLoad([]{ return ""; });
+			// We are now no longer running, all these methods should not return errors
+			errc = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_FALSE(errc);
+			errc = machine_->SetMemoryController(memoryController_);
+			EXPECT_FALSE(errc);
+			errc = machine_->SetIoController(testIoController_);
+			EXPECT_FALSE(errc);
+			errc = machine_->OnLoad([]{ return ""; });
+			EXPECT_FALSE(errc);
 		);
 	}
 
@@ -237,8 +210,8 @@ namespace MachEmu::Tests
 			// going under so the cpu sleeps at the end
 			// of the program so it maintains sync. It's never going to
 			// be perfect, but its close enough for testing purposes).
-			memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
-			memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
+			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
+			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
 
 			// 25 millisecond resolution
 			err = machine_->SetOptions(R"({"clockResolution":25000000})");
@@ -301,7 +274,7 @@ namespace MachEmu::Tests
 			memoryController_->Write(0x00FE, 0xD3);
 			// The data to write to the controller that will trigger the ISR::Load interrupt
 			memoryController_->Write(0x00FF, 0xFD);
-			memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100);
+			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100));
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
 			// never writes beyond this.

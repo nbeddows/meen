@@ -76,13 +76,13 @@ namespace MachEmu
 
 			@see IMachine::SetMemoryController
 		*/
-		void SetMemoryController(const std::shared_ptr<IController>& controller) final;
+		std::error_code SetMemoryController(const std::shared_ptr<IController>& controller) final;
 
 		/** SetIoController
 
 			@see IMachine::SetIoController
 		*/
-		void SetIoController(const std::shared_ptr<IController>& controller) final;
+		std::error_code SetIoController(const std::shared_ptr<IController>& controller) final;
 
 		/** SetOptions
 
@@ -94,13 +94,13 @@ namespace MachEmu
 
 			@see IMachine::OnLoad
 		*/
-		void OnLoad(std::function<const char*()>&& onLoad) final;
+		std::error_code OnLoad(std::function<const char*()>&& onLoad) final;
 
 		/** OnSave
 
 			@see IMachine::OnSave
 		*/
-		void OnSave(std::function<void(const char* json)>&& onSave) final;
+		std::error_code OnSave(std::function<void(const char* json)>&& onSave) final;
 
 		/** Get the machine state
 

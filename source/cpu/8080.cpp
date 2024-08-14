@@ -23,6 +23,7 @@ SOFTWARE.
 #include <assert.h>
 #include <nlohmann/json.hpp>
 
+#include "meen/MEEN_Error.h"
 #include "meen/cpu/8080.h"
 #include "meen/utils/Utils.h"
 
@@ -323,41 +324,56 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 	return state;
 }
 
-void Intel8080::Load(const std::string&& str)
+std::error_code Intel8080::Load(const std::string&& str)
 {
-	auto json = nlohmann::json::parse(str);
+	auto json = nlohmann::json::parse(str, nullptr, false);
+
+	if(json.is_discarded() == true)
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	if(!json.contains("uuid"))
+	{
+		return make_error_code(errc::json_parse);
+	}
 
 	// The cpus must be the same
 	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].get<std::string>());
 
 	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
 	{
-		throw std::runtime_error("Incompatible cpu");
+		return make_error_code(errc::incompatible_uuid);
 	}
 
-	// Make sure everything exists and is copied out
-	auto a = json["registers"]["a"].get<uint8_t>();
-	auto b = json["registers"]["b"].get<uint8_t>();
-	auto c = json["registers"]["c"].get<uint8_t>();
-	auto d = json["registers"]["d"].get<uint8_t>();
-	auto e = json["registers"]["e"].get<uint8_t>();
-	auto h = json["registers"]["h"].get<uint8_t>();
-	auto l = json["registers"]["l"].get<uint8_t>();
-	auto s = json["registers"]["s"].get<uint8_t>();
-	auto pc = json["pc"].get<uint16_t>();
-	auto sp = json["sp"].get<uint16_t>();
+	// Make sure everything exists and is copied out	
+	if(!json.contains("registers") || !json.contains("pc") || !json.contains("sp"))
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	auto registers = json["registers"];
+
+	if(!registers.contains("a") || !registers.contains("b") || !registers.contains("c") ||
+	   !registers.contains("d") || !registers.contains("e") || !registers.contains("h") ||
+	   !registers.contains("l") || !registers.contains("s"))
+	{
+		return make_error_code(errc::json_parse);
+	}
 
 	// Restore the state of the cpu
-	a_ = a;
-	b_ = b;
-	c_ = c;
-	d_ = d;
-	e_ = e;
-	h_ = h;
-	l_ = l;
-	status_ = s;
-	pc_ = pc;
-	sp_ = sp;
+	a_ = registers["a"].get<uint8_t>();
+	b_ = registers["b"].get<uint8_t>();
+	c_ = registers["c"].get<uint8_t>();
+	d_ = registers["d"].get<uint8_t>();
+	e_ = registers["e"].get<uint8_t>();
+	h_ = registers["h"].get<uint8_t>();
+	l_ = registers["l"].get<uint8_t>();
+	status_ = registers["s"].get<uint8_t>();
+	pc_ = json["pc"].get<uint16_t>();
+	sp_ = json["sp"].get<uint16_t>();
+
+	return make_error_code(errc::no_error);
 }
 
 std::string Intel8080::Save() const

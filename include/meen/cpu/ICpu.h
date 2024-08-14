@@ -26,6 +26,7 @@ SOFTWARE.
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <system_error>
 
 namespace MachEmu
 {
@@ -38,7 +39,7 @@ namespace MachEmu
 
 		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
 
-		virtual void Load(const std::string&& json) = 0;
+		virtual std::error_code Load(const std::string&& json) = 0;
 		
 		virtual std::string Save() const = 0;
 

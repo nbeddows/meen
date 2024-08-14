@@ -74,7 +74,7 @@ namespace MachEmu
 			@throw	std::length_error		The rom file is too large for the given offset.
 			@throw	std::invalid_argument	Failed to read the rom file into memory.
 		*/
-		void Load(const char* romFilePath, uint16_t offset);
+		int Load(const char* romFilePath, uint16_t offset);
 		
 		/** Memory clear
 		

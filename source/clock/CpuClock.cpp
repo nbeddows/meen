@@ -31,7 +31,6 @@ SOFTWARE.
 #include <thread>
 #endif
 
-#include "meen/MEEN_Error.h"
 #include "meen/clock/CpuClock.h"
 
 using namespace std::chrono;
@@ -49,42 +48,48 @@ namespace MachEmu
 
 		if (err < 0)
 		{
-			throw std::runtime_error("Failed to query clock resolution");
+			errc_ = make_error_code(errc::clock_resolution);
+		}
+		else
+		{
+			maxResolution_ = nanoseconds(res.tv_nsec);
 		}
 
-		maxResolution_ = nanoseconds(res.tv_nsec);
 
 #elif _WINDOWS
 		auto ntdll = LoadLibrary("ntdll.dll");
 
 		if (ntdll == nullptr)
 		{
-			throw std::runtime_error("Failed to query clock resolution");
+			errc_ = make_error_code(errc::clock_resolution);
 		}
-
-		typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
-		typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
-
-		pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
-		pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
-
-		if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
+		else
 		{
+			typedef long(NTAPI* pNtQueryTimerResolution)(unsigned long* MinimumResolution, unsigned long* MaximumResolution, unsigned long* CurrentResolution);
+			typedef long(NTAPI* pNtSetTimerResolution)(unsigned long RequestedResolution, char SetResolution, unsigned long* ActualResolution);
+
+			pNtQueryTimerResolution NtQueryTimerResolution = (pNtQueryTimerResolution)GetProcAddress(ntdll, "NtQueryTimerResolution");
+			pNtSetTimerResolution   NtSetTimerResolution = (pNtSetTimerResolution)GetProcAddress(ntdll, "NtSetTimerResolution");
+
+			if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
+			{
+				errc_ = make_error_code(errc::clock_resolution);
+			}
+			else
+			{
+				// Query for the highest accuracy timer resolution.
+				unsigned long minimum, maximum, current;
+				NtQueryTimerResolution(&minimum, &maximum, &current);
+				// Set the timer resolution to the highest - if we do set it we MUST call it again with FALSE
+				// when we exit to restore the system default.
+				//NtSetTimerResolution(maximum, TRUE, &current);
+				// This is the resolution that the high resolution timer should run at
+				maxResolution_ = nanoseconds(maximum * 100);
+			}
+
+			// We are done
 			FreeLibrary(ntdll);
-			throw std::runtime_error("Failed to query clock resolution");
 		}
-
-		// Query for the highest accuracy timer resolution.
-		unsigned long minimum, maximum, current;
-		NtQueryTimerResolution(&minimum, &maximum, &current);
-		// Set the timer resolution to the highest - if we do set it we MUST call it again with FALSE
-		// when we exit to restore the system default.
-		//NtSetTimerResolution(maximum, TRUE, &current);
-		// This is the resolution that the high resolution timer should run at
-		maxResolution_ = nanoseconds(maximum * 100);
-		// We are done
-		FreeLibrary(ntdll);
-
 #else
 		maxResolution_ = nanoseconds(40000000);
 #endif
@@ -92,28 +97,31 @@ namespace MachEmu
 
 	std::error_code CpuClock::SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks)
 	{
-		auto err = make_error_code(errc::no_error);
+		auto errc = errc_;
 
-		if (resolution >= nanoseconds::zero() && timePeriod_ >= nanoseconds::zero())
+		if(!errc)
 		{
-			if (resolution < maxResolution_)
+			if (resolution >= nanoseconds::zero() && timePeriod_ >= nanoseconds::zero())
 			{
-				err = make_error_code(errc::clock_resolution);
+				if (resolution < maxResolution_)
+				{
+					errc = make_error_code(errc::clock_resolution);
+				}
+
+				totalTicks_ = resolution / timePeriod_;
+			}
+			else
+			{
+				totalTicks_ = -1;
 			}
 
-			totalTicks_ = resolution / timePeriod_;
-		}
-		else
-		{
-			totalTicks_ = -1;
-		}
-
-		if (resolutionInTicks != nullptr)
-		{
-			*resolutionInTicks = totalTicks_;
+			if (resolutionInTicks != nullptr)
+			{
+				*resolutionInTicks = totalTicks_;
+			}
 		}
 
-		return err;
+		return errc;
 	}
 
 	nanoseconds CpuClock::Tick(uint64_t ticks)
