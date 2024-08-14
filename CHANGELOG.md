@@ -1,3 +1,10 @@
+* Updated the project layout for improved workflow.
+* Added std::error_code support.
+* Removed the use of exceptions (methods return std::error_code).
+* Binary package now built with cpack.
+* Added Conan option `with_save` to enable/disable 
+  load/save support. 
+
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
   `romOffset` and `romSize`.
