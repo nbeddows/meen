@@ -37,33 +37,35 @@ namespace MachEmu
 		return memorySize_;
 	}
 
-	void MemoryController::Load(const char* romFile, uint16_t offset)
+	int MemoryController::Load(const char* romFile, uint16_t offset)
 	{
 		std::ifstream fin(romFile, std::ios::binary | std::ios::ate);
 
 		if (!fin)
 		{
-			throw std::runtime_error("The program file failed to open");
+			return -1;
 		}
 
 		if (static_cast<size_t>(fin.tellg()) > memorySize_)
 		{
-			throw std::length_error("The length of the program is too big");
+			return -1;
 		}
 
 		uint16_t size = static_cast<uint16_t>(fin.tellg());
 
 		if (size > memorySize_ - offset)
 		{
-			throw std::length_error("The length of the program is too big to fit at the specified offset");
+			return -1;
 		}
 
 		fin.seekg(0, std::ios::beg);
 
 		if (!(fin.read(reinterpret_cast<char*>(&memory_[offset]), size)))
 		{
-			throw std::invalid_argument("The program specified failed to load");
+			return -1;
 		}
+
+		return 0;
 	}
 
 	std::array<uint8_t, 16> MemoryController::Uuid() const

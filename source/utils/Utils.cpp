@@ -34,11 +34,6 @@ namespace MachEmu::Utils
 {
 	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, uint32_t binLen)
 	{
-		if (encoder != "base64")
-		{
-			throw std::invalid_argument("Invalid binary to text encoder parameter");
-		}
-
 		auto encode = [](const char* src, size_t srcLen)
 		{
 			// dst string needs to be at least 4/3 times the size of the input 
@@ -59,17 +54,21 @@ namespace MachEmu::Utils
 				// do the compression - zlib
 				auto err = compress(dst.data(), &len, bin, binLen);
 
-				if (err != Z_OK)
+				if (err == Z_OK)
 				{
-					throw std::runtime_error("Failed to compress binary data");
+					return encode(std::bit_cast<const char*>(dst.data()), len);
 				}
-
-				return encode(std::bit_cast<const char*>(dst.data()), len);
+				else
+				{
+					printf("BinToTxt: failed to compress the binary data");
+					return "";
+				}
 			}
 			else
 #endif
 			{
-				throw std::invalid_argument("Invalid compressor parameter");
+				printf("BinToTxt: invalid compressor parameter");
+				return "";
 			}
 		}
 		else
@@ -81,11 +80,6 @@ namespace MachEmu::Utils
 	// dst needs to be of a size equal to the uncompressed input - this needs to be determined by external means
 	std::vector<uint8_t> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& src)
 	{
-		if (decoder != "base64")
-		{
-			throw std::invalid_argument("Invalid binary to text decoder parameter");
-		}
-
 		std::vector<uint8_t> bin(src.length());
 		auto binLen = bin.size();
 		base64_decode(src.data(), src.length(), std::bit_cast<char*>(bin.data()), &binLen, 0);
@@ -102,17 +96,20 @@ namespace MachEmu::Utils
 				uLongf size = dstSize;
 				auto err = uncompress(dst.data(), &size, bin.data(), bin.size());
 
-				if (err != Z_OK)
+				if (err == Z_OK)
 				{
-					throw std::runtime_error("Failed to decompress binary data");
+					dst.resize(size);
 				}
-
-				dst.resize(size);
+				else
+				{
+					printf("TxtToBin: failed to decompress binary data");
+					dst.clear();
+				}
 			}
 			else
 #endif
 			{
-				throw std::invalid_argument("Invalid compressor parameter");
+				printf("TxtToBin: invalid compressor parameter");
 			}
 
 			return dst;

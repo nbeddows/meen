@@ -150,7 +150,7 @@ namespace MachEmu::Tests
 	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
 		//cppcheck-suppress unknownMacro
-		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to throw
+		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
 		EXPECT_FALSE(err);
 

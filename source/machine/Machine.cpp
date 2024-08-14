@@ -40,7 +40,7 @@ namespace MachEmu
 
 		if (errc)
 		{
-			printf("Failed to parse meen options, reverting back to default options\n");
+			printf("Machine::Machine SetOptions failed (using defaults): %s\n", errc.message().c_str());
 		}
 
 		// if no cpu type specified, set the default
@@ -261,6 +261,11 @@ namespace MachEmu
 						return make_error_code(errc::json_parse);
 					}
 
+					if(jsonRam["encoder"].get<std::string>() != "base64")
+					{
+						return make_error_code(errc::json_config);
+					}
+
 					auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
 						jsonRam["compressor"].get<std::string>(),
 						jsonRam["size"].get<uint32_t>(),
@@ -369,7 +374,7 @@ namespace MachEmu
 									}
 									else
 									{
-										printf("The JSON string state to load is empty\n");
+										printf("ISR::Load: the JSON string state to load is empty\n");
 									}
 
 									return str;
@@ -389,13 +394,20 @@ namespace MachEmu
 							// If a user defined callback is set and we are not processing a save or load request
 							if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 							{
+								auto err = make_error_code(errc::no_error);
 								auto memUuid = memoryController_->Uuid();
+
+								if (opt_.Encoder() != "base64")
+								{
+									err = make_error_code(errc::json_config);
+								}
 
 								if (memUuid == std::array<uint8_t, 16>{})
 								{
-									printf("ISR::Save failed to save the machine state: the configuration uuid does not match the component uuid\n");
+									err = make_error_code(errc::incompatible_uuid);
 								}
-								else
+								
+								if(!err)
 								{
 									auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
 									{
@@ -451,6 +463,10 @@ namespace MachEmu
 									});
 
 									checkHandler(onSave);
+								}
+								else
+								{
+									printf("ISR::Save failed: %s\n", err.message().c_str());
 								}
 							}
 							break;
