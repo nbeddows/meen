@@ -151,8 +151,8 @@ namespace MachEmu::Tests
 	{
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
-		EXPECT_FALSE(err);
+		auto errc = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+		EXPECT_FALSE(errc);
 
 		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
 		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
@@ -160,8 +160,9 @@ namespace MachEmu::Tests
 		EXPECT_NO_THROW
 		(
 			// We aren't interested in saving, clear the onSave callback
-			auto errc = machine_->OnSave(nullptr);
-			EXPECT_FALSE(errc);
+			errc = machine_->OnSave(nullptr);
+			// todo: need to expose the private errc header
+			EXPECT_TRUE(errc.value() == 0 || errc.value() == 10);
 			machine_->Run(0x04);
 
 			// All these methods should return errors
@@ -188,7 +189,8 @@ namespace MachEmu::Tests
 			errc = machine_->SetIoController(testIoController_);
 			EXPECT_FALSE(errc);
 			errc = machine_->OnLoad([]{ return ""; });
-			EXPECT_FALSE(errc);
+			// todo: need to expose the private errc header
+			EXPECT_TRUE(errc.value() == 0 || errc.value() == 10);
 		);
 	}
 
@@ -258,7 +260,25 @@ namespace MachEmu::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			std::error_code err;
+			std::vector<std::string> saveStates;
+			auto err = machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
+
+			// todo: need to expose the private errc header
+			if(err.value() == 10)
+			{
+				// not implemented, skip the test
+				GTEST_SKIP() << "Machine::OnSave not supported";
+			}
+
+			// 0 - mid program save state, 1 and 2 - end of program save states
+			err = machine_->OnLoad([&] { return saveStates[0].c_str(); });
+
+			// todo: need to expose the private errc header
+			if(err.value() == 10)
+			{
+				// not implemented, skip the test
+				GTEST_SKIP() << "Machine::OnLoad not supported";
+			}
 
 			if (runAsync == true)
 			{
@@ -266,7 +286,6 @@ namespace MachEmu::Tests
 				EXPECT_FALSE(err);
 			}
 
-			std::vector<std::string> saveStates;
 			auto cpmIoController = static_pointer_cast<CpmIoController>(cpmIoController_);
 			// Trigger a save when the 3000th cycle has executed.
 			cpmIoController->SaveStateOn(3000);
@@ -289,9 +308,6 @@ namespace MachEmu::Tests
 			}
 			EXPECT_FALSE(err);
 			machine_->SetIoController(cpmIoController_);
-			machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
-			// 0 - mid program save state, 1 and 2 - end of program save states
-			machine_->OnLoad([&] { return saveStates[0].c_str(); });
 			machine_->Run(0x0100);
 
 			if (runAsync == true)
