@@ -82,23 +82,11 @@ namespace MachEmu
 			*/
 			int64_t ClockResolution() const;
 
-			/** Compressor
-
-				Supported compressors, currently only zlib is supported.
-			*/
-			std::string Compressor() const;
-
 			/** Cpu type
 
 				Supported cpus, currently only i8080 is supported.
 			*/
 			std::string CpuType() const;
-
-			/** Text to binary encoder
-
-				Supported encoders, currently only base64 is supported.
-			*/
-			std::string Encoder() const;
 
 			/** Interrupt service routine frequency
 
@@ -106,6 +94,25 @@ namespace MachEmu
 				at which interrupts are serviced.
 			*/
 			double ISRFreq() const;
+
+			/** Machine run mode
+
+				True for asynchronous, false for synchronous.
+			*/
+			bool RunAsync() const;
+
+#ifdef ENABLE_MEEN_SAVE
+			/** Compressor
+
+				Supported compressors, currently only zlib is supported.
+			*/
+			std::string Compressor() const;
+
+			/** Text to binary encoder
+
+				Supported encoders, currently only base64 is supported.
+			*/
+			std::string Encoder() const;
 
 			/** Machine state load mode
 
@@ -131,17 +138,12 @@ namespace MachEmu
 			*/
 			std::vector<std::pair<uint16_t, uint16_t>> Rom() const;
 
-			/** Machine run mode
-
-				True for asynchronous, false for synchronous.
-			*/
-			bool RunAsync() const;
-
 			/** Machine state save mode
 
 				True for asynchronous, false for synchronous.
 			*/
 			bool SaveAsync() const;
+#endif
 	};
 } // namespace MachEmu
 

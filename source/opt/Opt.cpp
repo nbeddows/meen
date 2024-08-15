@@ -30,18 +30,30 @@ namespace MachEmu
 {
 	Opt::Opt()
 	{
-		json_ = nlohmann::json::parse(Opt::DefaultOpts());
+		json_ = nlohmann::json::parse(Opt::DefaultOpts(), nullptr, false);
+		assert(json_.is_discarded() == false);
+
 	}
 
 	constexpr std::string Opt::DefaultOpts()
 	{
-		std::string defaults =	R"({"clockResolution":-1,"compressor":")"
+		std::string defaults =	R"({"clockResolution":-1)"
+#ifdef ENABLE_MEEN_SAVE
+								R"(,"compressor":")"
 #ifdef ENABLE_ZLIB
 								"zlib"
 #else
 								"none"
-#endif
-								R"(","encoder":"base64","isrFreq":0,"loadAsync":false,"rom":{"file":[{"offset":0,"size":0}]},"ram":{"block":[{"offset":0,"size":0}]},"runAsync":false,"saveAsync":false})";
+#endif // ENABLE_ZLIB
+								R"(","encoder":")"
+#ifdef ENABLE_BASE64
+								"base64"
+#else
+								"none"
+#endif // ENABLE_BASE64
+								R"(","loadAsync":false,"rom":{"file":[{"offset":0,"size":0}]},"ram":{"block":[{"offset":0,"size":0}]},"saveAsync":false)"
+#endif // ENABLE_MEEN_SAVE
+								R"(,"isrFreq":0,"runAsync":false})";
 		return defaults;
 	}
 
@@ -67,6 +79,7 @@ namespace MachEmu
 			if (jsonStr.starts_with("file://") == true)
 			{
 				jsonStr.remove_prefix(strlen("file://"));
+				//todo: use FILE* here, test wih nullptr, amke sure it doesn't throw
 				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
 				json = nlohmann::json::parse(fin, nullptr, false);
 			}
@@ -91,6 +104,7 @@ namespace MachEmu
 				return make_error_code(errc::json_config);
 			}
 
+#ifdef ENABLE_MEEN_SAVE
 #ifndef ENABLE_ZLIB
 			if (json.contains("compressor") == true && json["compressor"].get<std::string>() == "zlib")
 			{
@@ -136,6 +150,7 @@ namespace MachEmu
 				}
 			}
 			// End remove
+#endif // ENABLE_MEEN_SAVE
 		}
 
 		json_.update(json);
@@ -146,11 +161,6 @@ namespace MachEmu
 	int64_t Opt::ClockResolution() const
 	{
 		return json_["clockResolution"].get<int64_t>();
-	}
-
-	std::string Opt::Compressor() const
-	{
-		return json_["compressor"].get<std::string>();
 	}
 
 	std::string Opt::CpuType() const
@@ -165,14 +175,25 @@ namespace MachEmu
 		}
 	}
 
-	std::string Opt::Encoder() const
-	{
-		return json_["encoder"].get<std::string>();
-	}
-
 	double Opt::ISRFreq() const
 	{
 		return json_["isrFreq"].get<double>();
+	}
+
+	bool Opt::RunAsync() const
+	{
+		return json_["runAsync"].get<bool>();
+	}
+
+#ifdef ENABLE_MEEN_SAVE
+	std::string Opt::Compressor() const
+	{
+		return json_["compressor"].get<std::string>();
+	}
+
+	std::string Opt::Encoder() const
+	{
+		return json_["encoder"].get<std::string>();
 	}
 
 	bool Opt::LoadAsync() const
@@ -206,13 +227,9 @@ namespace MachEmu
 		return rom;
 	}
 
-	bool Opt::RunAsync() const
-	{
-		return json_["runAsync"].get<bool>();
-	}
-
 	bool Opt::SaveAsync() const
 	{
 		return json_["saveAsync"].get<bool>();
 	}
+#endif // ENABLE_MEEN_SAVE
 } // namespace MachEmu
