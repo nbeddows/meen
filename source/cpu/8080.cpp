@@ -25,7 +25,9 @@ SOFTWARE.
 
 #include "meen/MEEN_Error.h"
 #include "meen/cpu/8080.h"
+#ifdef ENABLE_MEEN_SAVE
 #include "meen/utils/Utils.h"
+#endif // ENABLE_MEEN_SAVE
 
 namespace MachEmu
 {
@@ -324,6 +326,7 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 	return state;
 }
 
+#ifdef ENABLE_MEEN_SAVE
 std::error_code Intel8080::Load(const std::string&& str)
 {
 	auto json = nlohmann::json::parse(str, nullptr, false);
@@ -385,6 +388,7 @@ std::string Intel8080::Save() const
 	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	return str;
 }
+#endif // ENABLE_MEEN_SAVE
 
 uint8_t Intel8080::Fetch()
 {

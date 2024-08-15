@@ -68,15 +68,12 @@ class MachineTest(unittest.TestCase):
 
         err = self.machine.SetOptions(r'{"isrFreq":1}')
         self.assertEqual(err, ErrorCode.Busy)
-        
         err = self.machine.SetMemoryController(self.memoryController)
         self.assertEqual(err, ErrorCode.Busy)
-
         err = self.machine.SetIoController(self.testIoController)
         self.assertEqual(err, ErrorCode.Busy)
-
         err = self.machine.OnSave(lambda x: print(x))
-        self.assertEqual(err, ErrorCode.Busy)
+        self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
 
         self.machine.WaitForCompletion()
 
@@ -89,7 +86,7 @@ class MachineTest(unittest.TestCase):
         err = self.machine.SetIoController(self.testIoController)
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.OnSave(lambda x: print(x))
-        self.assertEqual(err, ErrorCode.NoError)
+        self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
 
     def RunTimed(self, runAsync):
         if runAsync == True:
@@ -125,11 +122,22 @@ class MachineTest(unittest.TestCase):
         self.RunTimed(True)
 
     def Load(self, runAsync):
+        saveStates = []
+
+        err = self.machine.OnSave(lambda x: saveStates.append(x.rstrip('\0')))
+        
+        if err == ErrorCode.NotImplemented:
+            self.skipTest("Machine.OnSave is not supported")
+
+        err = self.machine.OnLoad(lambda: saveStates[0])
+
+        if err == ErrorCode.NotImplemented:
+            self.skipTest("Machine.OnLoad is not supported")
+
         if runAsync == True:
             err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":false,"saveAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
-        saveStates = []
         self.cpmIoController.SaveStateOn(3000)
         self.memoryController.Write(0x00FE, 0xD3)
         self.memoryController.Write(0x00FF, 0xFD)
@@ -138,8 +146,6 @@ class MachineTest(unittest.TestCase):
         err = self.machine.SetOptions(r'{"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256}')
         self.assertEqual(err, ErrorCode.NoError)
         self.machine.SetIoController(self.cpmIoController)
-        self.machine.OnSave(lambda x: saveStates.append(x.rstrip('\0')))
-        self.machine.OnLoad(lambda: saveStates[0])
         self.machine.Run(0x0100)
 
         if runAsync == True:

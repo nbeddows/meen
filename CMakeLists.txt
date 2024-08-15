@@ -89,8 +89,14 @@ if (NOT BUILD_TESTING STREQUAL OFF)
   find_package(GTest REQUIRED)
 endif()
 
-find_package(base64 REQUIRED)
-find_package(hash-library REQUIRED)
+if(${enable_base64} STREQUAL ON)
+  find_package(base64 REQUIRED)
+endif()
+
+if(${enable_hash_library} STREQUAL ON)
+  find_package(hash-library REQUIRED)
+endif()
+
 find_package(nlohmann_json REQUIRED)
 
 # Stage 3: assign our include, source and resource files and assign to approriate groups
@@ -225,7 +231,16 @@ target_compile_definitions(${libMachEmu} PRIVATE ${libMachEmu}_VERSION=\"${CMAKE
 target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MH_RP2040 ${${libMachEmu}_${lib_type}})
 target_include_directories(${libMachEmu} PRIVATE ${include_dir})
 target_link_libraries(${libMachEmu} PUBLIC nlohmann_json::nlohmann_json)
-target_link_libraries(${libMachEmu} PRIVATE aklomp::base64 hash-library::hash-library)
+
+if(${enable_base64} STREQUAL ON)
+  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_BASE64)
+  target_link_libraries(${libMachEmu} PRIVATE aklomp::base64)
+endif()
+
+if(${enable_hash_library} STREQUAL ON)
+  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_HASH_LIBRARY)
+  target_link_libraries(${libMachEmu} PRIVATE hash-library::hash-library)
+endif()
 
 if(${enable_zlib} STREQUAL ON)
 	target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)

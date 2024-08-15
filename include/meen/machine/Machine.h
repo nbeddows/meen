@@ -52,9 +52,10 @@ namespace MachEmu
 		std::future<int64_t> fut_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
+#ifdef ENABLE_MEEN_SAVE
 		std::function<const char*()> onLoad_{};
 		std::function<void(const char* json)> onSave_{};
-
+#endif // ENABLE_MEEN_SAVE
 		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
 		Machine(const char* json);
