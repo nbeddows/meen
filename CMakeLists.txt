@@ -242,6 +242,11 @@ if(${enable_hash_library} STREQUAL ON)
   target_link_libraries(${libMachEmu} PRIVATE hash-library::hash-library)
 endif()
 
+# check all the features required for save support, if the are enabled, then enable save support
+if(${enable_base64} STREQUAL ON AND ${enable_hash_library} STREQUAL ON)
+  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_MEEN_SAVE)
+endif()
+
 if(${enable_zlib} STREQUAL ON)
 	target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
 	target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)

@@ -28,10 +28,6 @@ SOFTWARE.
 #include <string>
 #include <system_error>
 
-#if defined ENABLE_BASE64 && defined ENABLE_HASH_LIBRARY
-#define ENABLE_MEEN_SAVE
-#endif // ENABLE_BASE64 &&& ENABLE_HASH_LIBRARY
-
 namespace MachEmu
 {
 	struct ICpu
