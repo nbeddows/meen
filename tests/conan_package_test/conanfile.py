@@ -21,10 +21,10 @@ class MachuEmuPackageTest(ConanFile):
         tc = CMakeToolchain(self)
 
         # Need to inform the python test app where the dependent shared libraries are located
-        if self.dependencies["mach_emu"].options.with_python:
+        if self.dependencies["mach_emu"].options.get_safe("with_python", False):
             tc.variables["artifacts_dir"] = self.dependencies["mach_emu"].cpp_info.bindirs[0].replace("\\", "/")
-            
-            if self.settings.os == "Windows" and self.dependencies["mach_emu"].options.with_zlib and self.dependencies["zlib"].options.shared:
+
+            if self.settings.os == "Windows" and self.dependencies["mach_emu"].options.get_safe("with_zlib", False) and self.dependencies["zlib"].options.shared:
                 tc.variables["zlib_bin_dir"] = self.dependencies["zlib"].cpp_info.bindirs[0].replace("\\", "/")
             tc.variables["MachEmuPackageTest"] = True
 
