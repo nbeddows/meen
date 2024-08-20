@@ -26,6 +26,8 @@ This list will expand as certain milestones are achieved.
 
 6. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **COMPLETE**
 
+7. Add support for the RP2040 microcontroller. **IN PROGRESS**
+
 ### Overview
 
 Conceptually speaking, MachEmu can be represented by the following diagram:
@@ -57,37 +59,38 @@ MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build sy
 
 #### Pre-requisites
 
-##### Linux
+##### Linux (Ubuntu (24.04 at time of writing))
 
-- `sudo apt install cppcheck` ([if building a binary development package](#building-a-binary-development-package)).
+- [Install Conan](https://conan.io/downloads/).
 - `sudo apt install cmake`.
+- `sudo apt install cppcheck` ([if building a binary development package](#building-a-binary-development-package)).
 - `sudo apt install doxygen` ([if building a binary development package](#building-a-binary-development-package)).
-- `sudo apt install python3`.
-- `sudo apt install python3-dev` (if building the Python module, see steps 3 and 4).
-- `pipx install conan`.
-- `sudo apt install gcc-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
-- `sudo apt install gcc-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
-- `sudo apt install g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+- `sudo apt install python3 python-is-python3 python3-dev` (if building the Python module, see steps 3 and 4).
+- `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
+- `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
 
-##### Windows
+##### Windows (10)
 
-- [CppCheck static analysis](http://cppcheck.net/) ([if building a binary development package](#building-a-binary-development-package)).<br>
-- [CMake build system](https://cmake.org/download/).<br>
-- [Doxygen](https://www.doxygen.nl/download.html) ([if building a binary development package](#building-a-binary-development-package)).<br>
-- [Python3](https://www.python.org/downloads/windows/).<br>
-- `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see step 4).
-- `pip install conan`.
+- [Install Conan](https://conan.io/downloads/).
+- [Install CMake build system](https://cmake.org/download/).<br>
+- [Install CppCheck static analysis](http://cppcheck.net/) ([if building a binary development package](#building-a-binary-development-package)).<br>
+- [Install Doxygen](https://www.doxygen.nl/download.html) ([if building a binary development package](#building-a-binary-development-package)).<br>
+- [Install Python3](https://www.python.org/downloads/windows/) (if building the Python module, see steps 3 and 4).<br>
+- Install `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module, see steps 3 and 4).
 
 #### Configuration
 
-**1.** Create a default profile: `conan profile detect`. This will detect the operating system, build architecture, compiler settings and set the build configuration as Release by default. The profile will be named `default` and will reside in $HOME/.conan2/profiles. 
+**1.** Install the supported meen conan configurations (v0.1.0) (if not done so already):
+- `conan config install -sf profiles -tf profiles https://${token}@github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
 
-**2.** The created profile is an educated guess, open it and make sure that it is correct for your system, ensure that the compiler standard is set to 20: `compiler.cppstd=20`.
+**2.** The installed profiles may need to be tweaked depending on your environment.
 
 **3.** Run conan to install the dependent packages.
-- Using the default build and host profiles: `conan install . --build=missing`.
-- Using the default build profile targeting 32 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-32`.<br>
-- Using the default build profile targeting 64 bit Raspberry Pi OS: `conan install . --build=missing -pr:h=profiles/raspberry-64`.<br>
+- Windows x86_64 build and host: `conan install . --build=missing --profile:build=windows-msvc-x86_64 --profile:host=windows-msvc-x86_64`.
+- Linux x86_64 build and host: `conan install . --build=missing --profile:build=linux-gcc-x86_64 --profile:host=linux-gcc-x86_64`.
+- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=linux-gcc-armv7hf`.<br>
+- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=linux-gcc-aarch64`.<br>
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=baremetal-gcc-rp2040`.<br>
 
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
 

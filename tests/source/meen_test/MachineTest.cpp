@@ -22,8 +22,11 @@ SOFTWARE.
 
 #include <gtest/gtest.h>
 #include <memory>
+#ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
-
+#else
+#include <ArduinoJson.h>
+#endif
 #include "meen/IController.h"
 #include "meen/IMachine.h"
 #include "meen/MachineFactory.h"
@@ -91,19 +94,33 @@ namespace MachEmu::Tests
 
 	void MachineTest::LoadAndRun(const char* name, const char* expected)
 	{
-		EXPECT_NO_THROW
-		(
-			machine_->OnSave([expected](const char* actual)
-			{
-				auto actualJson = nlohmann::json::parse(actual);
-				auto expectedJson = nlohmann::json::parse(expected);
-				EXPECT_STREQ(expectedJson.dump().c_str(), actualJson["cpu"].dump().c_str());
-			});
+		machine_->OnSave([expected](const char* actual)
+		{
+			std::string actualStr;
+			std::string expectedStr;
+#ifdef ENABLE_NLOHMANN_JSON
+			auto actualJson = nlohmann::json::parse(actual, nullptr, false);
+			EXPECT_FALSE(actualJson.is_discarded());
+			auto expectedJson = nlohmann::json::parse(expected, nullptr, false);
+			EXPECT_FALSE(expectedJson.is_discarded());
+			expectedStr = expectedJson.dump();
+			actualStr = actualJson["cpu"].dump();
+#else
+			JsonDocument actualJson;
+			JsonDocument expectedJson;
+			auto err = deserializeJson(actualJson, actual);
+			EXPECT_FALSE(err);
+			err = deserializeJson(expectedJson, expected);
+			EXPECT_FALSE(err);
+			serializeJson(actualJson["cpu"], actualStr);			
+			serializeJson(expectedJson, expectedStr);
+#endif
+			EXPECT_STREQ(expectedStr.c_str(), actualStr.c_str());
+		});
 
-			auto dir = programsDir_ + name;
-			ASSERT_EQ(0, memoryController_->Load(dir.c_str(), 0x100));
-			machine_->Run(0x100);
-		);
+		auto dir = programsDir_ + name;
+		ASSERT_EQ(0, memoryController_->Load(dir.c_str(), 0x100));
+		machine_->Run(0x100);
 	}
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
@@ -297,15 +314,7 @@ namespace MachEmu::Tests
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
 			// never writes beyond this.
-			// We will test the deprecated options romOffset, romSize, ramOffset, ramSize when we are async (remove this in 2.0.0)
-			if(runAsync == true)
-			{
-				err = machine_->SetOptions(R"({"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256})");
-			}
-			else
-			{
-		    	err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
-			}
+			err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
 			EXPECT_FALSE(err);
 			machine_->SetIoController(cpmIoController_);
 			machine_->Run(0x0100);

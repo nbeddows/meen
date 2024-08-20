@@ -143,7 +143,7 @@ class MachineTest(unittest.TestCase):
         self.memoryController.Write(0x00FF, 0xFD)
         err = self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.SetOptions(r'{"romOffset":0,"romSize":1727,"ramOffset":1727,"ramSize":256}')
+        err = self.machine.SetOptions(r'{"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}}')
         self.assertEqual(err, ErrorCode.NoError)
         self.machine.SetIoController(self.cpmIoController)
         self.machine.Run(0x0100)

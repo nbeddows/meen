@@ -1,12 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(MachEmuPackageTest CXX)
 
-if(MSVC)
-  set(build_type $<CONFIG>)
-else()
-  set(build_type ${CMAKE_BUILD_TYPE})
-endif()
-
 if(NOT BUILD_SHARED_LIBS STREQUAL ON)
   if(DEFINED WIN32)
     set(static_lib mach_emu_STATIC)
@@ -18,14 +12,19 @@ find_package(mach_emu CONFIG REQUIRED)
 add_executable(MachEmuPackageTest source/MachEmuPackageTest.cpp)
 
 if(DEFINED artifacts_dir OR DEFINED zlib_bin_dir)
-    include(../pythonTestDeps.cmake)
+  if(MSVC)
+    set(build_type $<CONFIG>)
+  else()
+    set(build_type ${CMAKE_BUILD_TYPE})
+  endif()
+    
+  include(../pythonTestDeps.cmake)
+  generatePythonUnitTestDeps(${artifacts_dir} testControllersPathNotUsed testProgramsPathNoUsed ${zlib_bin_dir})
 
-    generatePythonUnitTestDeps(${artifacts_dir} testControllersPathNotUsed testProgramsPathNoUsed ${zlib_bin_dir})
-
-    add_custom_command(
-        TARGET MachEmuPackageTest POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/source/MachineTestDeps.py
-    )
+  add_custom_command(
+    TARGET MachEmuPackageTest POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/source/MachineTestDeps.py
+  )
 endif()
 
 target_compile_definitions(MachEmuPackageTest PRIVATE ${static_lib})
