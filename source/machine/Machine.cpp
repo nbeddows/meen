@@ -22,13 +22,18 @@ SOFTWARE.
 
 #include <assert.h>
 #include <cinttypes>
+#ifdef ENABLE_MEEN_SAVE
+#ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
-
+#else
+#include <ArduinoJson.h>
+#endif // ENABLE_NLOHMANN_JSON
+#include "meen/utils/Utils.h"
+#endif // ENABLE_MEEN_SAVE
 #include "meen/MEEN_Error.h"
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
 #include "meen/machine/Machine.h"
-#include "meen/utils/Utils.h"
 
 using namespace std::chrono;
 
@@ -68,7 +73,7 @@ namespace MachEmu
 	}
 
 	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
-	{	
+	{
 		if (running_ == true)
 		{
 			//return make_error_code(errc::busy);
@@ -206,29 +211,44 @@ namespace MachEmu
 					{
 						return make_error_code(errc::incompatible_uuid);
 					}
-					
+#ifdef ENABLE_NLOHMANN_JSON
 					auto json = nlohmann::json::parse(str, nullptr, false);
 
 					if(json.is_discarded() == true)
+#else
+					JsonDocument json;
+					auto err = deserializeJson(json, str);
+					if(err)
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
-					
+#ifdef ENABLE_NLOHMANN_JSON
 					if(!json.contains("memory"))
+#else
+					if(json["memory"] == nullptr)
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
-					
+
 					auto memory = json["memory"];
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if(!memory.contains("uuid") || !memory.contains("rom") || !memory.contains("ram"))
+#else
+					if(memory["uuid"] == nullptr || memory["rom"] == nullptr || memory["ram"] == nullptr)
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
 
 					// The memory controllers must be the same
+#ifdef ENABLE_NLOHMANN_JSON
 					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, memory["uuid"].get<std::string>());
-
+#else
+					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, memory["uuid"].as<std::string>());
+#endif // ENABLE_NLOHMANN_JSON
 					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
 					{
 						return make_error_code(errc::incompatible_uuid);
@@ -246,7 +266,11 @@ namespace MachEmu
 					}
 
 					// The rom must be the same
+#ifdef ENABLE_NLOHMANN_JSON
 					auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, memory["rom"].get<std::string>());
+#else
+					auto jsonMd5 = Utils::TxtToBin("base64", "none", 16, memory["rom"].as<std::string>());
+#endif // ENABLE_NLOHMANN_JSON
 					auto romMd5 = Utils::Md5(rom.data(), rom.size());
 
 					if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
@@ -257,21 +281,35 @@ namespace MachEmu
 					// decode and decompress the ram
 					auto jsonRam = memory["ram"];
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if(!jsonRam.contains("encoder") || !jsonRam.contains("compressor") || !jsonRam.contains("size") || !jsonRam.contains("bytes"))
+#else
+					if(jsonRam["encoder"] == nullptr || jsonRam["compressor"] == nullptr || jsonRam["size"] == nullptr || jsonRam["bytes"] == nullptr)
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if(jsonRam["encoder"].get<std::string>() != "base64")
+#else
+					if(jsonRam["encoder"].as<std::string>() != "base64")
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_config);
 					}
 
+#ifdef ENABLE_NLOHMANN_JSON
 					auto ram = Utils::TxtToBin(jsonRam["encoder"].get<std::string>(),
 						jsonRam["compressor"].get<std::string>(),
 						jsonRam["size"].get<uint32_t>(),
 						jsonRam["bytes"].get<std::string>());
-					
+#else
+					auto ram = Utils::TxtToBin(jsonRam["encoder"].as<std::string>(),
+						jsonRam["compressor"].as<std::string>(),
+						jsonRam["size"].as<uint32_t>(),
+						jsonRam["bytes"].as<std::string>());
+#endif // ENABLE_NLOHMANN_JSON
 					auto ramMetadata = opt_.Ram();
 					int ramSize = 0;
 					int ramIndex = 0;
@@ -287,19 +325,34 @@ namespace MachEmu
 						return make_error_code(errc::incompatible_ram);
 					}
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if(!json.contains("cpu"))
+#else
+					if(json["cpu"] == nullptr)
+#endif // ENABLE_NLOHMANN_JSON
+					{
+						return make_error_code(errc::json_config);
+					}
+
+					// Once all checks are complete, restore the cpu and the memory
+#ifdef ENABLE_NLOHMANN_JSON
+					auto errc = cpu_->Load(json["cpu"].dump());
+#else
+					std::string cpuStr;
+					serializeJson(json["cpu"], cpuStr);
+
+					if(cpuStr.empty() == true)
 					{
 						return make_error_code(errc::json_parse);
 					}
 
-					// Once all checks are complete, restore the cpu and the memory
-					auto errc = cpu_->Load(json["cpu"].dump());
-
+					auto errc = cpu_->Load(std::move(cpuStr));
+#endif // ENABLE_NLOHMANN_JSON
 					if(errc)
 					{
 						return errc;
 					}
-					
+
 					for (const auto& rm : ramMetadata)
 					{
 						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
@@ -365,7 +418,7 @@ namespace MachEmu
 								onLoad = std::async(loadLaunchPolicy, [this]
 								{
 									std::string str;
-										
+
 									// TODO: this user defined method needs to be marked as nothrow
 									auto json = onLoad_();
 
@@ -410,7 +463,7 @@ namespace MachEmu
 								{
 									err = make_error_code(errc::incompatible_uuid);
 								}
-								
+
 								if(!err)
 								{
 									auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
@@ -506,12 +559,12 @@ namespace MachEmu
 #ifdef ENABLE_MEEN_SAVE
 							// no interrupts pending, do any work that is outstanding
 							auto errc = loadMachineState(checkHandler(onLoad));
-							
+
 							if(errc)
 							{
 								printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
 							}
-							
+
 							checkHandler(onSave);
 #endif // ENABLE_MEEN_SAVE
 							break;

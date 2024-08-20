@@ -42,6 +42,10 @@ if(NOT DEFINED build_arch)
   set(build_arch ${CMAKE_SYSTEM_PROCESSOR})
 endif()
 
+if(NOT DEFINED build_os)
+  set(build_os ${CMAKE_SYSTEM_NAME})
+endif()
+
 if(NOT DEFINED archive_dir)
   set(archive_dir "lib")
 endif()
@@ -97,7 +101,11 @@ if(${enable_hash_library} STREQUAL ON)
   find_package(hash-library REQUIRED)
 endif()
 
-find_package(nlohmann_json REQUIRED)
+if(${build_os} STREQUAL "baremetal")
+  find_package(ArduinoJson REQUIRED)
+else()
+  find_package(nlohmann_json REQUIRED)
+endif()
 
 # Stage 3: assign our include, source and resource files and assign to approriate groups
 
@@ -226,11 +234,22 @@ add_library(${libMachEmu} ${lib_type}
 )
 
 set_target_properties(${libMachEmu} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${CMAKE_PROJECT_VERSION})
-#target_compile_definitions(${libMachEmu} PRIVATE ${libMachEmu}_VERSION=\"${CMAKE_PROJECT_VERSION}\" ${${libMachEmu}_${lib_type}})
 target_compile_definitions(${libMachEmu} PRIVATE ${libMachEmu}_VERSION=\"${CMAKE_PROJECT_VERSION}\")
-target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MH_RP2040 ${${libMachEmu}_${lib_type}})
+target_compile_definitions(${libMachEmu} PUBLIC ${libMachEmu}_${lib_type})
 target_include_directories(${libMachEmu} PRIVATE ${include_dir})
-target_link_libraries(${libMachEmu} PUBLIC nlohmann_json::nlohmann_json)
+
+if(${build_os} STREQUAL "baremetal")
+  target_link_libraries(${libMachEmu} PUBLIC ArduinoJson)
+
+  if(DEFINED MSVC)
+    message("todo: disable exceptions and rtti for msvc")
+  else()
+    target_compile_options(${lib_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
+  endif()
+else()
+  target_compile_definitions(${libMachEmu} PUBLIC ENABLE_NLOHMANN_JSON)
+  target_link_libraries(${libMachEmu} PUBLIC nlohmann_json::nlohmann_json)
+endif()
 
 if(${enable_base64} STREQUAL ON)
   target_compile_definitions(${libMachEmu} PRIVATE ENABLE_BASE64)
@@ -302,7 +321,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   if(${enable_python_module} STREQUAL ON)
     # todo: look into this relocation requirement, only required with python and shared enabled
     if(${lib_type} STREQUAL SHARED AND (CMAKE_CXX_COMPILER_ID STREQUAL "Clang" OR CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
-	    target_compile_options(${test_controllers} PRIVATE -fPIC -Wno-attributes)
+      target_compile_options(${test_controllers} PRIVATE -fPIC -Wno-attributes)
     endif()
 
     set (test_controllers_py test_controllers_py)

@@ -21,13 +21,16 @@ SOFTWARE.
 */
 
 #include <assert.h>
-#include <nlohmann/json.hpp>
-
-#include "meen/MEEN_Error.h"
-#include "meen/cpu/8080.h"
 #ifdef ENABLE_MEEN_SAVE
+#ifdef ENABLE_NLOHMANN_JSON
+#include <nlohmann/json.hpp>
+#else
+#include <ArduinoJson.h>
+#endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
 #endif // ENABLE_MEEN_SAVE
+#include "meen/MEEN_Error.h"
+#include "meen/cpu/8080.h"
 
 namespace MachEmu
 {
@@ -329,6 +332,7 @@ std::unique_ptr<uint8_t[]> Intel8080::GetState(int* size) const
 #ifdef ENABLE_MEEN_SAVE
 std::error_code Intel8080::Load(const std::string&& str)
 {
+#ifdef ENABLE_NLOHMANN_JSON
 	auto json = nlohmann::json::parse(str, nullptr, false);
 
 	if(json.is_discarded() == true)
@@ -349,7 +353,7 @@ std::error_code Intel8080::Load(const std::string&& str)
 		return make_error_code(errc::incompatible_uuid);
 	}
 
-	// Make sure everything exists and is copied out	
+	// Make sure everything exists and is copied out
 	if(!json.contains("registers") || !json.contains("pc") || !json.contains("sp"))
 	{
 		return make_error_code(errc::json_parse);
@@ -375,7 +379,55 @@ std::error_code Intel8080::Load(const std::string&& str)
 	status_ = registers["s"].get<uint8_t>();
 	pc_ = json["pc"].get<uint16_t>();
 	sp_ = json["sp"].get<uint16_t>();
+#else
+	JsonDocument json;
+	auto e = deserializeJson(json, str);
 
+	if(e)
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	if(json["uuid"] == nullptr)
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	// The cpus must be the same
+	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].as<std::string>());
+
+	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+	{
+		return make_error_code(errc::incompatible_uuid);
+	}
+
+	// Make sure everything exists and is copied out
+	if(json["registers"] == nullptr || json["pc"] == nullptr || json["sp"] == nullptr)
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	auto registers = json["registers"];
+
+	if(registers["a"] == nullptr || registers["b"] == nullptr || registers["c"] == nullptr ||
+	   registers["d"] == nullptr || registers["e"] == nullptr || registers["h"] == nullptr ||
+	   registers["l"] == nullptr || registers["s"] == nullptr)
+	{
+		return make_error_code(errc::json_parse);
+	}
+
+	// Restore the state of the cpu
+	a_ = registers["a"].as<uint8_t>();
+	b_ = registers["b"].as<uint8_t>();
+	c_ = registers["c"].as<uint8_t>();
+	d_ = registers["d"].as<uint8_t>();
+	e_ = registers["e"].as<uint8_t>();
+	h_ = registers["h"].as<uint8_t>();
+	l_ = registers["l"].as<uint8_t>();
+	status_ = registers["s"].as<uint8_t>();
+	pc_ = json["pc"].as<uint16_t>();
+	sp_ = json["sp"].as<uint16_t>();
+#endif
 	return make_error_code(errc::no_error);
 }
 

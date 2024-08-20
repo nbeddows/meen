@@ -23,10 +23,14 @@ SOFTWARE.
 #ifndef OPT_H
 #define OPT_H
 
+#ifdef ENABLE_NLOHMANN_JSON
+	#include <nlohmann/json.hpp>
+#else
+	#include <ArduinoJson.h>
+#endif
 #include <string>
-
-#include <nlohmann/json.hpp>
 #include <system_error>
+#include <vector>
 
 namespace MachEmu
 {
@@ -41,13 +45,18 @@ namespace MachEmu
 	class Opt
 	{
 		private:
+#ifdef ENABLE_NLOHMANN_JSON
 			/**
 				JSON parser
 
 				An implementation by nlohmann.
 			*/
 			nlohmann::json json_{};
+#else
+			JsonDocument json_{};
 
+			static void Merge(JsonVariant dst, JsonVariantConst src);
+#endif
 			/**
 				Default options
 
@@ -121,7 +130,7 @@ namespace MachEmu
 			bool LoadAsync() const;
 
 			/** Ram metadata
-			
+
 				This vector defines blocks of ram.
 
 				The first pair entry is the offset from the start of memory to the start of the ram block.
@@ -130,7 +139,7 @@ namespace MachEmu
 			std::vector<std::pair<uint16_t, uint16_t>> Ram() const;
 
 			/** Rom metadata
-			
+
 				This vector defines blocks of rom.
 
 				The first pair entry is the offset from the start of memory to the start of the rom block.

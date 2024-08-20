@@ -40,8 +40,12 @@ class MachEmuRecipe(ConanFile):
         if self.options.with_save:
             self.requires("base64/0.5.2")
             self.requires("hash-library/8.0")
-        
-        self.requires("nlohmann_json/3.11.3")
+
+        if(self.settings.os == "baremetal"):
+            self.requires("arduinojson/7.0.1")
+        else:
+            self.requires("nlohmann_json/3.11.3")
+
         if self.options.get_safe("with_python", False):
             self.requires("pybind11/2.12.0")
         if self.options.get_safe("with_zlib", False):
@@ -76,6 +80,7 @@ class MachEmuRecipe(ConanFile):
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
         tc.cache_variables["enable_base64"] = self.options.with_save
         tc.cache_variables["enable_hash_library"] = self.options.with_save
+        tc.variables["build_os"] = self.settings.os
         tc.variables["build_arch"] = self.settings.arch
         tc.variables["archive_dir"] = self.cpp_info.libdirs[0]
         tc.variables["runtime_dir"] = self.cpp_info.bindirs[0]
