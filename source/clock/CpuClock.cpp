@@ -143,16 +143,16 @@ namespace MachEmu
 						{
 							0,
 #ifdef __arm__
-							static_cast<int32_t>(spinTime.count()* spinPercantageToSleep_)
+							static_cast<int32_t>(spinTime.count()* spinPercentageToSleep_)
 #else
-							static_cast<int64_t>(spinTime.count()* spinPercantageToSleep_)
+							static_cast<int64_t>(spinTime.count()* spinPercentageToSleep_)
 #endif
 						};
 						nanosleep(&req, nullptr);
 #elif defined _WINDOWS
 						LARGE_INTEGER sleepPeriod;
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
-						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_) / 100);
+						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_) / 100);
 
 						// Create the timer, sleep until time has passed, and clean up - available since the 1803 version of Windows 10.
 						// Sleep down to 0.5 ms intervals without raising the system level interrupt frequency, which is much friendlier.
@@ -161,7 +161,7 @@ namespace MachEmu
 						WaitForSingleObject(timer, INFINITE);
 						CloseHandle(timer);
 #else
-						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_)));
+						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_)));
 #endif
 						spinTime -= duration_cast<nanoseconds>(steady_clock::now() - now);
 					}
