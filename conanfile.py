@@ -37,7 +37,7 @@ class MachEmuRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
-        if self.options.with_save:
+        if self.options.get_safe("with_save", False):
             self.requires("base64/0.5.2")
             self.requires("hash-library/8.0")
 
@@ -87,7 +87,7 @@ class MachEmuRecipe(ConanFile):
             self.options.rm_safe("fPIC")
             self.options.rm_safe("with_rp2040")
 
-        if not self.options.with_save:
+        if not self.options.get_safe("with_save", False):
             self.options.rm_safe("with_zlib")
 
     def layout(self):
@@ -99,8 +99,8 @@ class MachEmuRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
-        tc.cache_variables["enable_base64"] = self.options.with_save
-        tc.cache_variables["enable_hash_library"] = self.options.with_save
+        tc.cache_variables["enable_base64"] = self.options.get_safe("with_save", False)
+        tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
         tc.variables["build_os"] = self.settings.os
         tc.variables["build_arch"] = self.settings.arch
