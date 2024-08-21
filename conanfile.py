@@ -53,7 +53,10 @@ class MachEmuRecipe(ConanFile):
 
     def build_requirements(self):
         if not self.conf.get("tools.build:skip_test", default=False):
-            self.test_requires("gtest/1.14.0")
+            if self.settings.os == "baremetal":
+                self.test_requires("unity/2.6.0")
+            else:
+                self.test_requires("gtest/1.14.0")
 
     def config_options(self):
         if self.settings.os == "Windows":

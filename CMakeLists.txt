@@ -89,10 +89,6 @@ if(${enable_zlib} STREQUAL ON)
   find_package(ZLIB REQUIRED)
 endif()
 
-if (NOT BUILD_TESTING STREQUAL OFF)
-  find_package(GTest REQUIRED)
-endif()
-
 if(${enable_base64} STREQUAL ON)
   find_package(base64 REQUIRED)
 endif()
@@ -103,8 +99,10 @@ endif()
 
 if(${build_os} STREQUAL "baremetal")
   find_package(ArduinoJson REQUIRED)
+  find_package(Unity REQUIRED)
 else()
   find_package(nlohmann_json REQUIRED)
+  find_package(GTest REQUIRED)
 endif()
 
 # Stage 3: assign our include, source and resource files and assign to approriate groups
@@ -244,7 +242,7 @@ if(${build_os} STREQUAL "baremetal")
   if(DEFINED MSVC)
     message("todo: disable exceptions and rtti for msvc")
   else()
-    target_compile_options(${lib_name} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
+    target_compile_options(${libMachEmu} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
   endif()
 else()
   target_compile_definitions(${libMachEmu} PUBLIC ENABLE_NLOHMANN_JSON)
@@ -345,7 +343,15 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 ##### MEEN TEST
 
   set(meen_test meen_test)
-  set(${meen_test}_source_files tests/${source_dir}/${meen_test}/MachineTest.cpp)
+
+  if(${build_os} STREQUAL "baremetal")
+    set(${meen_test}_source_files tests/${source_dir}/${meen_test}/MeenUnityTest.cpp)
+    set(${meen_test}_deps unity::unity)
+  else()
+    set(${meen_test}_source_files tests/${source_dir}/${meen_test}/MeenGTest.cpp)
+    set(${meen_test}_deps GTest::GTest)
+  endif()
+
   SOURCE_GROUP(${source_dir} FILES ${${meen_test}_source_files})
 
   # todo change ${libMachEmu}_test to ${meen_test} for 2.0
@@ -373,7 +379,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   target_compile_definitions(${libMachEmu}_test PRIVATE PROGRAMS_DIR=\"programs/\")
 
   target_link_libraries(${libMachEmu}_test PRIVATE
-    GTest::GTest
+    ${${meen_test}_deps}
     ${libMachEmu}
     ${test_controllers}
   )
