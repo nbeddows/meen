@@ -257,6 +257,11 @@ target_compile_definitions(${libMachEmu} PUBLIC ${libMachEmu}_${lib_type})
 target_include_directories(${libMachEmu} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
+  if(${enable_rp2040} STREQUAL ON)
+    target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MEEN_RP2040)
+    target_link_libraries(${libMachEmu} PUBLIC pico_stdlib)
+  endif()
+  
   target_link_libraries(${libMachEmu} PUBLIC ArduinoJson)
 
   if(DEFINED MSVC)
@@ -285,8 +290,8 @@ if(${enable_base64} STREQUAL ON AND ${enable_hash_library} STREQUAL ON)
 endif()
 
 if(${enable_zlib} STREQUAL ON)
-	target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
-	target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)
+  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
+  target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)
 endif()
 
 if(${enable_python_module} STREQUAL ON)
@@ -376,6 +381,20 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
   # todo change ${libMachEmu}_test to ${meen_test} for 2.0
   add_executable(${libMachEmu}_test ${${meen_test}_source_files})
+
+  if(${build_os} STREQUAL "baremetal")
+    if(${enable_rp2040} STREQUAL ON)
+      pico_enable_stdio_usb(${libMachEmu}_test 1)
+      pico_enable_stdio_uart(${libMachEmu}_test 0)
+      pico_set_program_url(${libMachEmu}_test "https://github.com/neddows/mach-emu")
+      pico_add_extra_outputs(${libMachEmu}_test)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/tests/${meen_test}/${libMachEmu}_test.bin DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/tests/${meen_test}/${libMachEmu}_test.uf2 DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/tests/${meen_test}/${libMachEmu}_test.dis DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/tests/${meen_test}/${libMachEmu}_test.elf.map DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/tests/${meen_test}/${libMachEmu}_test.hex DESTINATION ./lib)
+    endif()
+  endif()
 
   if(${enable_python_module} STREQUAL ON)
     include(tests/pythonTestDeps.cmake)
