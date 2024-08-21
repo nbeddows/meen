@@ -67,6 +67,9 @@ class MachEmuRecipe(ConanFile):
     
             if self.settings_build.os == "Linux" or self.settings_build == "baremetal":
                 self.output.error("Cross compiling from Linux or baremetal to Windows is not supported")                
+        elif self.settings.os == "baremetal":
+            self.output.info("Load/Save not supported, removing option with_save")
+            self.options.rm_safe("with_save")
 
         if "arm" in self.settings.arch:
             self.output.info("Python ARM module not supported, removing option with_python.")
