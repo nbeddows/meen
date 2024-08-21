@@ -29,8 +29,25 @@ set(major 1)
 set(minor 6)
 set(bugfix 2)
 
+if(${enable_rp2040} STREQUAL ON)
+  include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+endif()
+
 project(${libMachEmu} VERSION ${major}.${minor}.${bugfix})
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+if(${enable_rp2040} STREQUAL ON)
+  add_executable(Pioasm IMPORTED)
+  set_property(TARGET Pioasm PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/pioasm/pioasm)
+  set(Pioasm_FOUND 1)
+
+  # In the 2.x SDK this is handled by picotool, need to account for this with version numbers
+  add_executable(ELF2UF2 IMPORTED)
+  set_property(TARGET ELF2UF2 PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/elf2uf2/elf2uf2)
+  set(ELF2UF2_FOUND 1)
+
+  pico_sdk_init()
+endif()
 
 if(DEFINED MSVC)
   set(build_type $<CONFIG>)
@@ -73,10 +90,13 @@ else()
   endif()
 endif()
 
-set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+# TODO: rp2040 does not output all artifacts correctly when setting this - investigate me
+if(NOT ${enable_rp2040} STREQUAL ON)
+  set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+endif()
 
 # Stage 2: locate our required packages
 
