@@ -33,7 +33,7 @@ if(${enable_rp2040} STREQUAL ON)
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
-project(${libMachEmu} VERSION ${major}.${minor}.${bugfix})
+project(${libMachEmu} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(${enable_rp2040} STREQUAL ON)
