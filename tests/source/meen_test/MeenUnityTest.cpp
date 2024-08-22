@@ -26,10 +26,11 @@ SOFTWARE.
 #else
 #include <ArduinoJson.h>
 #endif
+#ifdef ENABLE_MEEN_RP2040
+#include <pico/stdlib.h>
+#endif
 #include <unity/unity.h>
 
-#include "meen/IController.h"
-#include "meen/IMachine.h"
 #include "meen/MachineFactory.h"
 #include "test_controllers/MemoryController.h"
 #include "test_controllers/TestIoController.h"
@@ -38,12 +39,12 @@ SOFTWARE.
 namespace MachEmu::tests
 {
     static std::shared_ptr<IController> cpmIoController;
-	static std::shared_ptr<MemoryController> memoryController;
-	static std::shared_ptr<IController> testIoController;
-	static std::unique_ptr<IMachine> machine;
+    static std::shared_ptr<MemoryController> memoryController;
+    static std::shared_ptr<IController> testIoController;
+    static std::unique_ptr<IMachine> machine;
     static std::string programsDir;
 
-	static void Run(bool runAsync)
+    static void Run(bool runAsync)
     {
         std::error_code err;
 
@@ -92,7 +93,7 @@ namespace MachEmu::tests
         TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
     }
 
-	static void Load(bool runAsync)
+    static void Load(bool runAsync)
     {
         std::vector<std::string> saveStates;
         auto err = machine->OnSave([&](const char* json) { saveStates.emplace_back(json); });
@@ -187,95 +188,95 @@ namespace MachEmu::tests
     }
 
     static void LoadAndRun(const char* name, const char* expected)
-	{
-		machine->OnSave([expected](const char* actual)
-		{
-			std::string actualStr;
-			std::string expectedStr;
-#ifdef ENABLE_NLOHMANN_JSON
-			auto actualJson = nlohmann::json::parse(actual, nullptr, false);
-			TEST_ASSERT_FALSE(actualJson.is_discarded());
-			auto expectedJson = nlohmann::json::parse(expected, nullptr, false);
-			TEST_ASSERT_FALSE(expectedJson.is_discarded());
-			expectedStr = expectedJson.dump();
-			actualStr = actualJson["cpu"].dump();
-#else
-			JsonDocument actualJson;
-			JsonDocument expectedJson;
-			auto err = deserializeJson(actualJson, actual);
-			TEST_ASSERT_FALSE(err);
-			err = deserializeJson(expectedJson, expected);
-			TEST_ASSERT_FALSE(err);
-			serializeJson(actualJson["cpu"], actualStr);			
-			serializeJson(expectedJson, expectedStr);
-#endif
-			TEST_ASSERT_EQUAL_STRING(expectedStr.c_str(), actualStr.c_str());
-		});
-
-		auto dir = programsDir + name;
-		TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load(dir.c_str(), 0x100));
-		machine->Run(0x100);
-	}
-
-	static void suiteSetUp()
     {
-		// Note that the tests don't require a json string to be set as it just uses the default values,
-		// it is used here for demonstation purposes only
-		machine = MakeMachine(R"({"cpu":"i8080"})");
-		memoryController = std::make_shared<MemoryController>();
-		cpmIoController = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController));
-		testIoController = std::make_shared<TestIoController>();
+        machine->OnSave([expected](const char* actual)
+        {
+            std::string actualStr;
+            std::string expectedStr;
+#ifdef ENABLE_NLOHMANN_JSON
+            auto actualJson = nlohmann::json::parse(actual, nullptr, false);
+            TEST_ASSERT_FALSE(actualJson.is_discarded());
+            auto expectedJson = nlohmann::json::parse(expected, nullptr, false);
+            TEST_ASSERT_FALSE(expectedJson.is_discarded());
+            expectedStr = expectedJson.dump();
+            actualStr = actualJson["cpu"].dump();
+#else
+            JsonDocument actualJson;
+            JsonDocument expectedJson;
+            auto err = deserializeJson(actualJson, actual);
+            TEST_ASSERT_FALSE(err);
+            err = deserializeJson(expectedJson, expected);
+            TEST_ASSERT_FALSE(err);
+            serializeJson(actualJson["cpu"], actualStr);
+            serializeJson(expectedJson, expectedStr);
+#endif
+            TEST_ASSERT_EQUAL_STRING(expectedStr.c_str(), actualStr.c_str());
+        });
 
-		// Use the default directory if it has not been set by the user
-		if(programsDir.empty() == true)
-		{
-			programsDir = PROGRAMS_DIR;
-		}
-	}
+        auto dir = programsDir + name;
+        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load(dir.c_str(), 0x100));
+        machine->Run(0x100);
+    }
 
-	static int suiteTearDown(int numFailures)
-	{
-		return numFailures;
-	}
+    static void suiteSetUp()
+    {
+        // Note that the tests don't require a json string to be set as it just uses the default values,
+        // it is used here for demonstation purposes only
+        machine = MakeMachine(R"({"cpu":"i8080"})");
+        memoryController = std::make_shared<MemoryController>();
+        cpmIoController = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController));
+        testIoController = std::make_shared<TestIoController>();
 
-   	static void test_SetNullptrMemoryController()
-	{
-		auto errc = machine->SetMemoryController(nullptr);
-		TEST_ASSERT_TRUE(errc);
-		TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
-	}
+        // Use the default directory if it has not been set by the user
+        if(programsDir.empty() == true)
+        {
+             programsDir = PROGRAMS_DIR;
+        }
+    }
 
-	static void test_SetNullptrIoController()
-	{
-		//cppcheck-suppress unknownMacro
-		auto errc = machine->SetIoController(nullptr);
-		TEST_ASSERT_TRUE(errc);
-		TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
-	}
+    static int suiteTearDown(int numFailures)
+    {
+        return numFailures;
+    }
 
-	static void test_SetCpuAfterConstruction()
-	{
-		//cppcheck-suppress unknownMacro
-		auto errc = machine->SetOptions(R"({"cpu":"i8080"})");
-		TEST_ASSERT_TRUE(errc);
-	}
+    static void test_SetNullptrMemoryController()
+    {
+        auto errc = machine->SetMemoryController(nullptr);
+	TEST_ASSERT_TRUE(errc);
+        TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
+    }
 
-	static void test_NegativeISRFrequency()
-	{
-		//cppcheck-suppress unknownMacro
-		auto errc = machine->SetOptions(R"({"isrFreq":-1.0})");
-		TEST_ASSERT_TRUE(errc);
-	}
+    static void test_SetNullptrIoController()
+    {
+        //cppcheck-suppress unknownMacro
+        auto errc = machine->SetIoController(nullptr);
+        TEST_ASSERT_TRUE(errc);
+        TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
+    }
 
-	static void test_MethodsErrorAfterRunCalled()
-	{
-		//cppcheck-suppress unknownMacro
-		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-		auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
-		TEST_ASSERT_FALSE(errc);
+    static void test_SetCpuAfterConstruction()
+    {
+        //cppcheck-suppress unknownMacro
+        auto errc = machine->SetOptions(R"({"cpu":"i8080"})");
+        TEST_ASSERT_TRUE(errc);
+    }
 
-		TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
-		TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
+    static void test_NegativeISRFrequency()
+    {
+        //cppcheck-suppress unknownMacro
+        auto errc = machine->SetOptions(R"({"isrFreq":-1.0})");
+        TEST_ASSERT_TRUE(errc);
+    }
+
+    static void test_MethodsErrorAfterRunCalled()
+    {
+        //cppcheck-suppress unknownMacro
+        // Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
+        auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+        TEST_ASSERT_FALSE(errc);
+
+        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
+        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
 
         // We aren't interested in saving, clear the onSave callback
         errc = machine->OnSave(nullptr);
@@ -309,40 +310,40 @@ namespace MachEmu::tests
         errc = machine->OnLoad([]{ return ""; });
         // todo: need to expose the private errc header
         TEST_ASSERT_TRUE(errc.value() == 0 || errc.value() == 10);
-	}
+    }
 
     static void test_RunTimed()
-	{
-		Run(false);
-	}
+    {
+        Run(false);
+    }
 
-	static void test_RunTimedAsync()
-	{
-		Run(true);
-	}
+    static void test_RunTimedAsync()
+    {
+        Run(true);
+    }
 
     static void test_OnLoad()
-	{
-		for (int i = 0; i < 50; i++)
-		{
-			Load(false);
-		}
-	}
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            Load(false);
+        }
+    }
 
-	static void test_OnLoadAsync()
-	{
-		for (int i = 0; i < 50; i++)
-		{
-			Load(true);
-		}
-	}
+    static void test_OnLoadAsync()
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            Load(true);
+        }
+    }
 
     static void test_Tst8080()
     {
-	    // use the cpm io controller for cpm based tests
-	    machine->SetIoController(cpmIoController);
-	    LoadAndRun("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})");
-	    TEST_ASSERT_EQUAL_INT(74, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU IS OPERATIONAL"));
+        // use the cpm io controller for cpm based tests
+        machine->SetIoController(cpmIoController);
+        LoadAndRun("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})");
+        TEST_ASSERT_EQUAL_INT(74, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU IS OPERATIONAL"));
     }
 
     static void test_8080Pre()
@@ -368,23 +369,22 @@ namespace MachEmu::tests
         LoadAndRun("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})");
         TEST_ASSERT_EQUAL_INT(static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("ERROR"), std::string::npos);
     }
-
 } // namespace MachEmu::tests
 
 void setUp()
 {
-		MachEmu::tests::memoryController->Clear();
-		//CP/M Warm Boot is at memory address 0x00, this will be
-		//emulated with the exitTest subroutine.
-		TEST_ASSERT_EQUAL_UINT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/exitTest.bin").c_str(), 0x00));
-		//CP/M BDOS print message system call is at memory address 0x05,
-		//this will be emulated with the bdosMsg subroutine.
-		TEST_ASSERT_EQUAL_UINT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05));
-		MachEmu::tests::machine->SetMemoryController(MachEmu::tests::memoryController);
-		MachEmu::tests::machine->SetIoController(MachEmu::tests::testIoController);
-		// Set default options
-		auto err = MachEmu::tests::machine->SetOptions(nullptr);
-	    TEST_ASSERT_FALSE(err);
+    MachEmu::tests::memoryController->Clear();
+    //CP/M Warm Boot is at memory address 0x00, this will be
+    //emulated with the exitTest subroutine.
+    TEST_ASSERT_EQUAL_INT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/exitTest.bin").c_str(), 0x00));
+    //CP/M BDOS print message system call is at memory address 0x05,
+    //this will be emulated with the bdosMsg subroutine.
+    TEST_ASSERT_EQUAL_INT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05));
+    MachEmu::tests::machine->SetMemoryController(MachEmu::tests::memoryController);
+    MachEmu::tests::machine->SetIoController(MachEmu::tests::testIoController);
+    // Set default options
+    auto err = MachEmu::tests::machine->SetOptions(nullptr);
+    TEST_ASSERT_FALSE(err);
 }
 
 void tearDown()
@@ -392,30 +392,54 @@ void tearDown()
 
 }
 
+/*
+#include <malloc.h>
+
+uint32_t GetTotalHeap()
+{
+    extern char __StackLimit, __bss_end__;
+    return &__StackLimit - &__bss_end__;
+}
+*/
+
 int main(int argc, char** argv)
 {
-	int err = 0;
-	
-  	if (argc > 1)
-	{
-		MachEmu::tests::programsDir = argv[1];
-	}
-    
-    MachEmu::tests::suiteSetUp();
-	UNITY_BEGIN();
-	RUN_TEST(MachEmu::tests::test_SetNullptrIoController);
-	RUN_TEST(MachEmu::tests::test_SetNullptrMemoryController);
-	RUN_TEST(MachEmu::tests::test_SetCpuAfterConstruction);
-	RUN_TEST(MachEmu::tests::test_NegativeISRFrequency);
-	RUN_TEST(MachEmu::tests::test_MethodsErrorAfterRunCalled);
-	RUN_TEST(MachEmu::tests::test_RunTimed);
-	RUN_TEST(MachEmu::tests::test_RunTimedAsync);
-	RUN_TEST(MachEmu::tests::test_OnLoad);
-	RUN_TEST(MachEmu::tests::test_Tst8080);
-	RUN_TEST(MachEmu::tests::test_8080Pre);
-	RUN_TEST(MachEmu::tests::test_CpuTest);
-	RUN_TEST(MachEmu::tests::test_8080Exm);
-	RUN_TEST(MachEmu::tests::test_OnLoadAsync);
-	err = MachEmu::tests::suiteTearDown(UNITY_END());
-	return err;
+    int err = 0;
+
+    if (argc > 1)
+    {
+        MachEmu::tests::programsDir = argv[1];
+    }
+
+#ifdef ENABLE_MEEN_RP2040
+    stdio_init_all();
+
+    while(true)
+#endif
+    {
+        MachEmu::tests::suiteSetUp();
+        UNITY_BEGIN();
+        RUN_TEST(MachEmu::tests::test_SetNullptrIoController);
+        RUN_TEST(MachEmu::tests::test_SetNullptrMemoryController);
+        RUN_TEST(MachEmu::tests::test_SetCpuAfterConstruction);
+        RUN_TEST(MachEmu::tests::test_NegativeISRFrequency);
+        RUN_TEST(MachEmu::tests::test_MethodsErrorAfterRunCalled);
+        RUN_TEST(MachEmu::tests::test_RunTimed);
+        RUN_TEST(MachEmu::tests::test_RunTimedAsync);
+        RUN_TEST(MachEmu::tests::test_OnLoad);
+        RUN_TEST(MachEmu::tests::test_Tst8080);
+        RUN_TEST(MachEmu::tests::test_8080Pre);
+        RUN_TEST(MachEmu::tests::test_CpuTest);
+        RUN_TEST(MachEmu::tests::test_8080Exm);
+        RUN_TEST(MachEmu::tests::test_OnLoadAsync);
+        err = MachEmu::tests::suiteTearDown(UNITY_END());
+
+        //struct mallinfo m = mallinfo();
+        //printf("FREE HEAP: %d\n", GetTotalHeap() - m.uordblks);
+#ifdef ENABLE_MEEN_RP2040
+    sleep_ms(1000);
+#endif
+    }
+
+    return err;
 }
