@@ -21,8 +21,12 @@ SOFTWARE.
 */
 
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+#include <pico/stdlib.h>
+#else
 // use nanosleep
 #include <time.h>
+#endif
 #elif defined _WINDOWS
 // use hi-res window sleep
 #include <Windows.h>
@@ -43,6 +47,9 @@ namespace MachEmu
 		// tick the clock after at least this many ticks
 		//totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+		maxResolution_ = nanoseconds(1000);
+#else
 		struct timespec res;
 		auto err = clock_getres(CLOCK_REALTIME, &res);
 
@@ -54,8 +61,7 @@ namespace MachEmu
 		{
 			maxResolution_ = nanoseconds(res.tv_nsec);
 		}
-
-
+#endif
 #elif _WINDOWS
 		auto ntdll = LoadLibrary("ntdll.dll");
 
@@ -139,6 +145,10 @@ namespace MachEmu
 					{
 						auto now = steady_clock::now();
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+						auto t = static_cast<uint64_t>((spinTime.count() * spinPercantageToSleep_) / 1000);
+						sleep_us(t);
+#else
 						struct timespec req
 						{
 							0,
@@ -149,6 +159,7 @@ namespace MachEmu
 #endif
 						};
 						nanosleep(&req, nullptr);
+#endif
 #elif defined _WINDOWS
 						LARGE_INTEGER sleepPeriod;
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
