@@ -146,7 +146,7 @@ namespace MachEmu
 						auto now = steady_clock::now();
 #ifdef __GNUC__
 #ifdef ENABLE_MEEN_RP2040
-						auto t = static_cast<uint64_t>((spinTime.count() * spinPercantageToSleep_) / 1000);
+						auto t = static_cast<uint64_t>((spinTime.count() * spinPercentageToSleep_) / 1000);
 						sleep_us(t);
 #else
 						struct timespec req
