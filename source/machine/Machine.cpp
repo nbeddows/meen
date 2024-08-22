@@ -92,7 +92,11 @@ namespace MachEmu
 		}
 
 		char str[32]{};
+#ifdef ENABLE_MEEN_RP2040
+		snprintf(str, 32, "{\"clockResolution\":%" PRIi32 "}", clockResolution);
+#else
 		snprintf(str, 32, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
+#endif
 		opt_.SetOptions(str);
 		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
 
@@ -184,8 +188,11 @@ namespace MachEmu
 		SetClockResolution(opt_.ClockResolution());
 		running_ = true;
 		uint64_t totalTime = 0;
-		auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
+#ifdef ENABLE_MEEN_RP2040
 
+#else
+		auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
+#endif
 		auto machineLoop = [this]
 		{
 			auto dataBus = systemBus_.dataBus;
@@ -583,6 +590,12 @@ namespace MachEmu
 			return currTime.count();
 		};
 
+
+#ifdef ENABLE_MEEN_RP2040
+		// Need to lunch ml on the second core if runAsync is true
+		totalTime = machineLoop();
+		running_ = false;
+#else
 		fut_ = std::async(launchPolicy, [this, ml = std::move(machineLoop)]
 		{
 			return ml();
@@ -593,7 +606,7 @@ namespace MachEmu
 			totalTime = fut_.get();
 			running_ = false;
 		}
-
+#endif
 		return totalTime;
 	}
 
@@ -601,12 +614,15 @@ namespace MachEmu
 	{
 		uint64_t totalTime = 0;
 
+#ifdef ENABLE_MEEN_RP2040
+		// Wait on the second thread to complete if runAsync is true
+#else
 		if (fut_.valid() == true)
 		{
 			totalTime = fut_.get();
 			running_ = false;
 		}
-
+#endif
 		return totalTime;
 	}
 

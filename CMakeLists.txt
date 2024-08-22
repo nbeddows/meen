@@ -29,8 +29,25 @@ set(major 1)
 set(minor 6)
 set(bugfix 2)
 
-project(${libMachEmu} VERSION ${major}.${minor}.${bugfix})
+if(${enable_rp2040} STREQUAL ON)
+  include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
+endif()
+
+project(${libMachEmu} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+
+if(${enable_rp2040} STREQUAL ON)
+  add_executable(Pioasm IMPORTED)
+  set_property(TARGET Pioasm PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/pioasm/pioasm)
+  set(Pioasm_FOUND 1)
+
+  # In the 2.x SDK this is handled by picotool, need to account for this with version numbers
+  add_executable(ELF2UF2 IMPORTED)
+  set_property(TARGET ELF2UF2 PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/elf2uf2/elf2uf2)
+  set(ELF2UF2_FOUND 1)
+
+  pico_sdk_init()
+endif()
 
 if(DEFINED MSVC)
   set(build_type $<CONFIG>)
@@ -73,10 +90,13 @@ else()
   endif()
 endif()
 
-set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+# TODO: rp2040 does not output all artifacts correctly when setting this - investigate me
+if(NOT ${enable_rp2040} STREQUAL ON)
+  set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
+  set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
+endif()
 
 # Stage 2: locate our required packages
 
@@ -237,6 +257,11 @@ target_compile_definitions(${libMachEmu} PUBLIC ${libMachEmu}_${lib_type})
 target_include_directories(${libMachEmu} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
+  if(${enable_rp2040} STREQUAL ON)
+    target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MEEN_RP2040)
+    target_link_libraries(${libMachEmu} PUBLIC pico_stdlib)
+  endif()
+
   target_link_libraries(${libMachEmu} PUBLIC ArduinoJson)
 
   if(DEFINED MSVC)
@@ -265,8 +290,8 @@ if(${enable_base64} STREQUAL ON AND ${enable_hash_library} STREQUAL ON)
 endif()
 
 if(${enable_zlib} STREQUAL ON)
-	target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
-	target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)
+  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
+  target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)
 endif()
 
 if(${enable_python_module} STREQUAL ON)
@@ -357,6 +382,20 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   # todo change ${libMachEmu}_test to ${meen_test} for 2.0
   add_executable(${libMachEmu}_test ${${meen_test}_source_files})
 
+  if(${build_os} STREQUAL "baremetal")
+    if(${enable_rp2040} STREQUAL ON)
+      pico_enable_stdio_usb(${libMachEmu}_test 1)
+      pico_enable_stdio_uart(${libMachEmu}_test 0)
+      pico_set_program_url(${libMachEmu}_test "https://github.com/neddows/mach-emu")
+      pico_add_extra_outputs(${libMachEmu}_test)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/${libMachEmu}_test.bin DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.uf2 DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.dis DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.elf.map DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.hex DESTINATION ./lib)
+    endif()
+  endif()
+
   if(${enable_python_module} STREQUAL ON)
     include(tests/pythonTestDeps.cmake)
 
@@ -385,21 +424,30 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   )
 
   install(TARGETS ${libMachEmu}_test RUNTIME DESTINATION ${runtime_dir})
-  install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/programs DESTINATION tests)
 
+  if(${build_os} STREQUAL "baremetal")
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/bdosMsg.bin DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/exitTest.bin DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/nopStart.bin DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/nopEnd.bin DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080EXM.COM DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080PRE.COM DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/CPUTEST.COM DESTINATION tests/programs)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/TST8080.COM DESTINATION tests/programs)
+  else()
+    install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/programs DESTINATION tests)
 ##### Generate unit test run script
+    if(DEFINED MSVC)
+      # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguemnts
+      if(${enable_python_module} STREQUAL ON)
+        set(pythonFilter "set python-filter=-k *")
+        set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
+        set(pythonExecute "echo Running Python unit tests\npython tests\\test_Machine.py -v %python-filter%")
+      endif()
 
-  if(DEFINED MSVC)
-    # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguemnts
-    if(${enable_python_module} STREQUAL ON)
-      set(pythonFilter "set python-filter=-k *")
-      set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
-      set(pythonExecute "echo Running Python unit tests\npython tests\\test_Machine.py -v %python-filter%")
-    endif()
-
-    # start run-mach_emu-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
-    file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat
-        "@echo off\n\
+      # start run-mach_emu-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
+      file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat
+          "@echo off\n\
 set gtest-filter=--gtest_filter=*\n\
 ${pythonFilter}
 :parse\n\
@@ -416,17 +464,17 @@ ${runtime_dir}\\${libMachEmu}_test %gtest-filter% tests\\programs\\\n\
 ${pythonExecute}\n\
 pause\n\
 exit"
-    )
+      )
 
-    install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat DESTINATION .)
-  else()
-    if(enable_python_module STREQUAL ON)
-      set(pythonFilter "export python_filter=\"-k*\"")
-      set(pythonCmdLine "--python_filter)\nexport python_filter=\"-k$2\"\nshift\n;;")
-      set(pythonExecute "echo Running Python unit tests\npython tests/test_Machine.py -v \${python_filter}")
-    endif()
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat DESTINATION .)
+    else()
+      if(enable_python_module STREQUAL ON)
+        set(pythonFilter "export python_filter=\"-k*\"")
+        set(pythonCmdLine "--python_filter)\nexport python_filter=\"-k$2\"\nshift\n;;")
+        set(pythonExecute "echo Running Python unit tests\npython tests/test_Machine.py -v \${python_filter}")
+      endif()
 
-    file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh
+      file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh
 "#!/bin/bash\n\
 export gtest_filter=\"--gtest_filter=*\"\n\
 ${pythonFilter}\n\
@@ -450,16 +498,17 @@ export LD_LIBRARY_PATH=`pwd`/${runtime_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
 ${runtime_dir}/${libMachEmu}_test \"\${gtest_filter}\" tests/programs/\n\
 ${pythonExecute}"
-    )
+      )
 
-    install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh DESTINATION .)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh DESTINATION .)
+    endif()
   endif()
 endif()
 
 # Stage 6: Set CPack install parameters
 
 set(CMAKE_INSTALL_PREFIX ./)
-set(CPACK_PACKAGE_FILE_NAME ${libMachEmu}-v${CMAKE_PROJECT_VERSION}-${CMAKE_SYSTEM}-${build_arch}-${runtime_dir})
+set(CPACK_PACKAGE_FILE_NAME ${libMachEmu}-v${CMAKE_PROJECT_VERSION}-${build_os}-${build_arch}-${runtime_dir})
 set(CPACK_GENERATOR TGZ)
 
 if(DEFINED CMAKE_STRIP)

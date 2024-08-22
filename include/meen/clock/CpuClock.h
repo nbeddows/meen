@@ -43,7 +43,7 @@ namespace MachEmu
 		//(this can be reduced if we continually oversleep) then spin
 		//for the remainder.
 		//cppcheck-suppress unusedStructMember
-		static constexpr double spinPercantageToSleep_{ 0.7 };
+		static constexpr double spinPercentageToSleep_{ 0.7 };
 		// The number of ticks to accumulate before a correlation occurs.
 		// Set the default to -1 (don't sync the clock, run as fast as possible)
 		//cppcheck-suppress unusedStructMember

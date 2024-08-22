@@ -21,8 +21,12 @@ SOFTWARE.
 */
 
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+#include <pico/stdlib.h>
+#else
 // use nanosleep
 #include <time.h>
+#endif
 #elif defined _WINDOWS
 // use hi-res window sleep
 #include <Windows.h>
@@ -43,6 +47,9 @@ namespace MachEmu
 		// tick the clock after at least this many ticks
 		//totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+		maxResolution_ = nanoseconds(1000);
+#else
 		struct timespec res;
 		auto err = clock_getres(CLOCK_REALTIME, &res);
 
@@ -54,8 +61,7 @@ namespace MachEmu
 		{
 			maxResolution_ = nanoseconds(res.tv_nsec);
 		}
-
-
+#endif
 #elif _WINDOWS
 		auto ntdll = LoadLibrary("ntdll.dll");
 
@@ -139,20 +145,25 @@ namespace MachEmu
 					{
 						auto now = steady_clock::now();
 #ifdef __GNUC__
+#ifdef ENABLE_MEEN_RP2040
+						auto t = static_cast<uint64_t>((spinTime.count() * spinPercentageToSleep_) / 1000);
+						sleep_us(t);
+#else
 						struct timespec req
 						{
 							0,
 #ifdef __arm__
-							static_cast<int32_t>(spinTime.count()* spinPercantageToSleep_)
+							static_cast<int32_t>(spinTime.count()* spinPercentageToSleep_)
 #else
-							static_cast<int64_t>(spinTime.count()* spinPercantageToSleep_)
+							static_cast<int64_t>(spinTime.count()* spinPercentageToSleep_)
 #endif
 						};
 						nanosleep(&req, nullptr);
+#endif
 #elif defined _WINDOWS
 						LARGE_INTEGER sleepPeriod;
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
-						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_) / 100);
+						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_) / 100);
 
 						// Create the timer, sleep until time has passed, and clean up - available since the 1803 version of Windows 10.
 						// Sleep down to 0.5 ms intervals without raising the system level interrupt frequency, which is much friendlier.
@@ -161,7 +172,7 @@ namespace MachEmu
 						WaitForSingleObject(timer, INFINITE);
 						CloseHandle(timer);
 #else
-						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercantageToSleep_)));
+						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_)));
 #endif
 						spinTime -= duration_cast<nanoseconds>(steady_clock::now() - now);
 					}

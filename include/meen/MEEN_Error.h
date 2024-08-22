@@ -33,31 +33,31 @@ namespace MachEmu
 	*/
 	enum errc
 	{
-		no_error,			/**< No error has occurred. */
-		busy,				/**< The engine is currently running. */
-		clock_resolution,	/**< The resolution can' be set, either it is too high/low or the host clock can't be queried. */
-		incompatible_ram,	/**< The ram to load is not compatible with this component. */
-		incompatible_rom,	/**< The rom to load is not compatible with this component. */
-		incompatible_uuid,	/**< The uuid to load does not match this component. */
-		invalid_argument,	/**< An argument passed to this method is invalid. */
-		json_config,		/**< A JSON configuration parameter is invalid. */
-		json_parse,			/**< The JSON configuration file/string is malformed. */
-		no_zlib,				/**< MEEN compiled without ZLIB support */
-		not_implemented,	/**< The method is not implemented. */
-		unknown_option		/**< An unknown JSON option was encountered and ignored. */
+		no_error,           /**< No error has occurred. */
+		busy,               /**< The engine is currently running. */
+		clock_resolution,   /**< The resolution can' be set, either it is too high/low or the host clock can't be queried. */
+		incompatible_ram,   /**< The ram to load is not compatible with this component. */
+		incompatible_rom,   /**< The rom to load is not compatible with this component. */
+		incompatible_uuid,  /**< The uuid to load does not match this component. */
+		invalid_argument,   /**< An argument passed to this method is invalid. */
+		json_config,        /**< A JSON configuration parameter is invalid. */
+		json_parse,	        /**< The JSON configuration file/string is malformed. */
+		no_zlib,            /**< MEEN compiled without ZLIB support */
+		not_implemented,    /**< The method is not implemented. */
+		unknown_option      /**< An unknown JSON option was encountered and ignored. */
 	};
 
 	/** The custom meen error category
-	
+
 		Defines the name of the error category and the messages that each meen::errc returns.
 	*/
 	const std::error_category& category();
 
 	/** std::error_code wrapper
-	
+
 		A simple convenience wrapper
 
-		@param	ec	The meen::errc to use to create a meen std::error_code	
+		@param	ec	The meen::errc to use to create a meen std::error_code
 	*/
 	inline std::error_code make_error_code(errc ec) { return {ec, MachEmu::category()}; }
 } // namespace MachEmu
@@ -65,7 +65,7 @@ namespace MachEmu
 namespace std
 {
 	/** Boilerplate
-	
+
 		Inform std that our meen::errc enum is a std::error_code enum.
 	*/
 	template<>

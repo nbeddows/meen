@@ -23,7 +23,11 @@ SOFTWARE.
 #ifndef MACHINE_H
 #define MACHINE_H
 
+#ifdef EMABLE_MEEN_RP2040
+
+#else
 #include <future>
+#endif
 
 #include "meen/IController.h"
 #include "meen/cpu/ICpu.h"
@@ -49,7 +53,11 @@ namespace MachEmu
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
+#ifdef ENABLE_MEEN_RP2040
+
+#else
 		std::future<int64_t> fut_;
+#endif
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
 #ifdef ENABLE_MEEN_SAVE
