@@ -34,7 +34,7 @@ SOFTWARE.
 #include "meen/cpu/ICpu.h"
 #include "meen/system_bus/SystemBus.h"
 
-//#define ENABLE_OPCODE_TABLE
+#define ENABLE_OPCODE_TABLE
 
 namespace MachEmu
 {

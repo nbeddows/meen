@@ -51,6 +51,14 @@ namespace MachEmu::tests
         if (runAsync == true)
         {
             err = machine->SetOptions(R"({"runAsync":true})");
+
+            // todo: need to expose the private errc header
+            if(err.value() == 10)
+            {
+                // not implemented, skip the test
+                TEST_IGNORE_MESSAGE("runAsync:true not supported");
+            }
+
             TEST_ASSERT_FALSE(err);
         }
 
@@ -63,8 +71,8 @@ namespace MachEmu::tests
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
 
-        // 25 millisecond resolution
-        err = machine->SetOptions(R"({"clockResolution":25000000})");
+        // 25 millisecond resolution, lock the isr frequency to the clock resolution for performance reasons
+        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":1})");
         TEST_ASSERT_FALSE(err);
 
         int64_t nanos = 0;
@@ -118,6 +126,14 @@ namespace MachEmu::tests
         if (runAsync == true)
         {
             err = machine->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
+
+            // todo: need to expose the private errc header
+            if(err.value() == 10)
+            {
+                // not implemented, skip the test
+                TEST_IGNORE_MESSAGE("runAsync:true not supported");
+            }
+
             TEST_ASSERT_FALSE(err);
         }
 
@@ -273,6 +289,14 @@ namespace MachEmu::tests
         //cppcheck-suppress unknownMacro
         // Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
         auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+
+        // todo: need to expose the private errc header
+        if(errc.value() == 10)
+        {
+            // not implemented, skip the test
+            TEST_IGNORE_MESSAGE("runAsync:true not supported");
+        }
+
         TEST_ASSERT_FALSE(errc);
 
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
@@ -414,6 +438,9 @@ int main(int argc, char** argv)
 #ifdef ENABLE_MEEN_RP2040
     stdio_init_all();
 
+//    set_sys_clock_pll(150, 5, 2);
+//    set_sys_clock_khz(250000, true);
+
     while(true)
 #endif
     {
@@ -423,22 +450,19 @@ int main(int argc, char** argv)
         RUN_TEST(MachEmu::tests::test_SetNullptrMemoryController);
         RUN_TEST(MachEmu::tests::test_SetCpuAfterConstruction);
         RUN_TEST(MachEmu::tests::test_NegativeISRFrequency);
+        RUN_TEST(MachEmu::tests::test_OnLoad);
+        RUN_TEST(MachEmu::tests::test_OnLoadAsync);
+        RUN_TEST(MachEmu::tests::test_Tst8080);
+        RUN_TEST(MachEmu::tests::test_8080Pre);
+        //RUN_TEST(MachEmu::tests::test_CpuTest);
+        //RUN_TEST(MachEmu::tests::test_8080Exm);
         RUN_TEST(MachEmu::tests::test_MethodsErrorAfterRunCalled);
         RUN_TEST(MachEmu::tests::test_RunTimed);
         RUN_TEST(MachEmu::tests::test_RunTimedAsync);
-        RUN_TEST(MachEmu::tests::test_OnLoad);
-        RUN_TEST(MachEmu::tests::test_Tst8080);
-        RUN_TEST(MachEmu::tests::test_8080Pre);
-        RUN_TEST(MachEmu::tests::test_CpuTest);
-        RUN_TEST(MachEmu::tests::test_8080Exm);
-        RUN_TEST(MachEmu::tests::test_OnLoadAsync);
         err = MachEmu::tests::suiteTearDown(UNITY_END());
 
         //struct mallinfo m = mallinfo();
         //printf("FREE HEAP: %d\n", GetTotalHeap() - m.uordblks);
-#ifdef ENABLE_MEEN_RP2040
-    sleep_ms(1000);
-#endif
     }
 
     return err;

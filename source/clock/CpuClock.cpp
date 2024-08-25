@@ -20,20 +20,18 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifndef ENABLE_MEEN_RP2040
 #ifdef __GNUC__
-#ifdef ENABLE_MEEN_RP2040
-#include <pico/stdlib.h>
-#else
 // use nanosleep
 #include <time.h>
-#endif
 #elif defined _WINDOWS
 // use hi-res window sleep
 #include <Windows.h>
 #else
 // use std::thread::sleep_for
 #include <thread>
-#endif
+#endif // __GNUC__
+#endif // ENABLE_MEEN_RP2040
 
 #include "meen/clock/CpuClock.h"
 
@@ -44,12 +42,9 @@ namespace MachEmu
 	CpuClock::CpuClock(uint64_t speed) :
 		timePeriod_(1000000000 / speed)
 	{
-		// tick the clock after at least this many ticks
-		//totalTicks_ = speed / 1000.0 /* millis: 1000 ticks per second*/ * correlateFreq.count();
-#ifdef __GNUC__
 #ifdef ENABLE_MEEN_RP2040
-		maxResolution_ = nanoseconds(1000);
-#else
+		maxResolution_ = 1000ns;
+#elif defined __GNUC__
 		struct timespec res;
 		auto err = clock_getres(CLOCK_REALTIME, &res);
 
@@ -61,7 +56,6 @@ namespace MachEmu
 		{
 			maxResolution_ = nanoseconds(res.tv_nsec);
 		}
-#endif
 #elif _WINDOWS
 		auto ntdll = LoadLibrary("ntdll.dll");
 
@@ -97,17 +91,17 @@ namespace MachEmu
 			FreeLibrary(ntdll);
 		}
 #else
-		maxResolution_ = nanoseconds(40000000);
+		maxResolution_ = 40000000ns;
 #endif
 	}
 
-	std::error_code CpuClock::SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks)
+	std::error_code CpuClock::SetTickResolution(nanoseconds resolution, int64_t* resolutionInTicks)
 	{
 		auto errc = errc_;
 
 		if(!errc)
 		{
-			if (resolution >= nanoseconds::zero() && timePeriod_ >= nanoseconds::zero())
+			if (resolution >= 0ns && timePeriod_ >= 0ns)
 			{
 				if (resolution < maxResolution_)
 				{
@@ -141,29 +135,33 @@ namespace MachEmu
 				auto sleepFor = [this](nanoseconds spinTime)
 				{
 					// don't attempt to sleep for anything less than a millisecond
-					if (spinTime >= nanoseconds(1000000))
+					if (spinTime >= 1000000ns)
 					{
+						auto n = nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_));
+#ifdef ENABLE_MEEN_RP2040
+						auto now = get_absolute_time();
+						sleep_us(duration_cast<microseconds>(n).count());
+						spinTime -= duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(now, get_absolute_time())));
+#else
 						auto now = steady_clock::now();
 #ifdef __GNUC__
-#ifdef ENABLE_MEEN_RP2040
-						auto t = static_cast<uint64_t>((spinTime.count() * spinPercentageToSleep_) / 1000);
-						sleep_us(t);
-#else
 						struct timespec req
 						{
 							0,
 #ifdef __arm__
-							static_cast<int32_t>(spinTime.count()* spinPercentageToSleep_)
-#else
-							static_cast<int64_t>(spinTime.count()* spinPercentageToSleep_)
+							static_cast<int32_t>(
+#endif
+							n.count()
+#ifdef __arm__
+							)
 #endif
 						};
+
 						nanosleep(&req, nullptr);
-#endif
 #elif defined _WINDOWS
 						LARGE_INTEGER sleepPeriod;
 						// Convert from nanoseconds to 100 nanosescond units, and negative for relative time.
-						sleepPeriod.QuadPart = -(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_) / 100);
+						sleepPeriod.QuadPart = -(static_cast<int64_t>(n.count() / 100));
 
 						// Create the timer, sleep until time has passed, and clean up - available since the 1803 version of Windows 10.
 						// Sleep down to 0.5 ms intervals without raising the system level interrupt frequency, which is much friendlier.
@@ -172,9 +170,10 @@ namespace MachEmu
 						WaitForSingleObject(timer, INFINITE);
 						CloseHandle(timer);
 #else
-						std::this_thread::sleep_for(nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_)));
+						std::this_thread::sleep_for(n);
 #endif
 						spinTime -= duration_cast<nanoseconds>(steady_clock::now() - now);
+#endif
 					}
 
 					return spinTime;
@@ -182,36 +181,55 @@ namespace MachEmu
 
 				auto spinFor = [this](nanoseconds spinTime)
 				{
-					auto now = steady_clock::now();
-
-					if (spinTime > nanoseconds::zero())
+					if(spinTime > 0ns)
 					{
-						auto start = now;
-						auto end = (now + spinTime);
+#ifdef ENABLE_MEEN_RP2040
+						auto now = get_absolute_time();
+						busy_wait_us(duration_cast<microseconds>(spinTime).count());
+						spinTime = spinTime - duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(now, get_absolute_time())));
+#else
+						auto start = steady_clock::now();
+						auto end = (start + spinTime);
 
-						while (now < end)
+						while (start < end)
 						{
-							now = steady_clock::now();
+							start = steady_clock::now();
 						}
 
 						// record any over spin
-						spinTime = duration_cast<nanoseconds>(end - now);
+						spinTime = duration_cast<nanoseconds>(end - start);
+#endif
 					}
 
 					return spinTime;
 				};
 
+#ifdef ENABLE_MEEN_RP2040
+				auto timeTaken = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(lastTime_, get_absolute_time())));
+				auto nanos = nanoseconds(tickCount_* timePeriod_) - timeTaken + error_;
+#else
 				auto nanos = nanoseconds(tickCount_ * timePeriod_) - duration_cast<nanoseconds>(steady_clock::now() - lastTime_) + error_;
+#endif
 				error_ = spinFor(sleepFor(nanos));
 				tickCount_ = 0;
+#ifdef ENABLE_MEEN_RP2040
+				lastTime_ = get_absolute_time();
+				time_ = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(epoch_, lastTime_)));
+#else
 				lastTime_ = steady_clock::now();
 				time_ = duration_cast<nanoseconds>(lastTime_ - epoch_);
+#endif
 			}
 		}
 		else
 		{
+#ifdef ENABLE_MEEN_RP2040
+			lastTime_ = get_absolute_time();
+			time_ = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(epoch_, lastTime_)));
+#else
 			lastTime_ = steady_clock::now();
 			time_ = duration_cast<nanoseconds>(lastTime_ - epoch_);
+#endif
 		}
 
 		return time_;
@@ -219,7 +237,11 @@ namespace MachEmu
 
 	void CpuClock::Reset()
 	{
+#ifdef ENABLE_MEEN_RP2040
+		epoch_ = get_absolute_time();
+#else
 		epoch_ = steady_clock::now();
+#endif
 		lastTime_ = epoch_;
 	}
 } // namespace MachEmu
