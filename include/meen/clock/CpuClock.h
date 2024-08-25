@@ -27,6 +27,10 @@ SOFTWARE.
 #include <chrono>
 #include <memory>
 
+#ifdef ENABLE_MEEN_RP2040
+#include <pico/stdlib.h>
+#endif // ENABLE_MEEN_RP2040
+
 #include "meen/MEEN_Error.h"
 #include "meen/clock/ICpuClock.h"
 
@@ -60,10 +64,15 @@ namespace MachEmu
 		std::chrono::nanoseconds timePeriod_{};
 		// The total amount of oversleep
 		std::chrono::nanoseconds error_{};
+#ifdef ENABLE_MEEN_RP2040
+		absolute_time_t epoch_{};
+		absolute_time_t lastTime_{};
+#else
 		// The time at which this clock begun.
 		std::chrono::steady_clock::time_point epoch_{};
 		// The time at which this clock was sampled.
 		std::chrono::steady_clock::time_point lastTime_{};
+#endif
 		// The current time of the clock expressed at a frequency as specified by correlateFreq
 		std::chrono::nanoseconds time_{};
 		// The maximum resolution of the host clock
