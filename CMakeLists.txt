@@ -327,9 +327,24 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   set(${test_controllers}_source_files
     tests/${source_dir}/${test_controllers}/BaseIoController.cpp
     tests/${source_dir}/${test_controllers}/CpmIoController.cpp
-    tests/${source_dir}/${test_controllers}/MemoryController.cpp
     tests/${source_dir}/${test_controllers}/TestIoController.cpp
   )
+
+  if(${build_os} STREQUAL "baremetal")
+    if(${enable_rp2040} STREQUAL ON)
+      set(${test_controllers}_source_files
+        ${${test_controllers}_source_files}
+        tests/${source_dir}/${test_controllers}/RP2040MemoryController.cpp
+        tests/${source_dir}/${test_controllers}/TestPrograms.S
+      )
+    endif()
+  else()
+    set(${test_controllers}_source_files
+      ${${test_controllers}_source_files}
+      tests/${source_dir}/${test_controllers}/MemoryController.cpp
+    )
+  endif()
+
   SOURCE_GROUP(${include_dir} FILES ${${test_controllers}_include_files})
   SOURCE_GROUP(${source_dir} FILES ${${test_controllers}_source_files})
 
@@ -337,6 +352,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
   set_target_properties(${test_controllers} PROPERTIES FOLDER tests)
   target_include_directories(${test_controllers} PRIVATE ${include_dir})
+  target_include_directories(${test_controllers} PRIVATE tests/programs)
   target_include_directories(${test_controllers} PUBLIC tests/${include_dir})
 
 ##### TEST CONTROLLERS PYTHON
