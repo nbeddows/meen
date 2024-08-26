@@ -108,10 +108,8 @@ namespace MachEmu
 		{
 			return ErrorCode::ClockResolution;
 		}
-		else
-		{
-			ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
-		}
+
+		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 
 		return ErrorCode::NoError;
 	}

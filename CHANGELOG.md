@@ -7,6 +7,8 @@
 * Added support for ArduinoJson for baremetal.
 * Added RP2040 support.
 * Code refactor for a 2x performace boost.
+* The ISR frequency is now honoured when no clock resolution
+  is set.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
@@ -97,7 +99,6 @@
 * Added MIT license.
 
 1.0.0 [24/11/23]
-
 * Added gtests for all official 8080 test suites.
 * Fixed carry and auxillary carry flags for the add
   and Daa instructions which were causing the test
@@ -108,7 +109,6 @@
 * Removed co-routines for performance reasons.
 
 0.3.2 [07/10/21]
-
 * Added a co-routine helper module for easier co-routine
   handling.
 * Fixed large memory leak caused by co routine handles
@@ -117,11 +117,9 @@
   example for video rendering.
 
 0.2.2 [21/09/21]
-
 * Added Doxygen generated html documentation to the sdk.
 
 0.2.1 [18/09/21]
-
 * The static library machemu.lib has been changed to a dll.
 * MachineFactory::MakeMachine is now exported from machemu.dll.
 * Added a SpaceInvaders solution file to the Windows directory of
@@ -131,13 +129,11 @@
   and machuemu dependencies.
 
 0.2.0 [17/09/21]
-
 * Added machemu sdk with SpaceInvaders test app.
 * Now outputting all dependant machemu libraries as machemu.lib so
   only one library needs to be linked to.
 
 0.1.0 [10/09/21]
-
 * Added IMachine and IController interfaces.
 * Added Intel 8080 emulator complete with unit tests for each instruction.
 * Added TestIoController, CpmIoController and DefaultMemoryController to

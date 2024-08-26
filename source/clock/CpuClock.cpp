@@ -101,7 +101,7 @@ namespace MachEmu
 
 		if(!errc)
 		{
-			if (resolution >= 0ns && timePeriod_ >= 0ns)
+			if (resolution > 0ns && timePeriod_ > 0ns)
 			{
 				if (resolution < maxResolution_)
 				{
@@ -109,15 +109,20 @@ namespace MachEmu
 				}
 
 				totalTicks_ = resolution / timePeriod_;
+
+				if (resolutionInTicks != nullptr)
+				{
+					*resolutionInTicks = totalTicks_;
+				}
 			}
 			else
 			{
 				totalTicks_ = -1;
-			}
 
-			if (resolutionInTicks != nullptr)
-			{
-				*resolutionInTicks = totalTicks_;
+				if (resolutionInTicks != nullptr)
+				{
+					*resolutionInTicks = 1000000000 / timePeriod_.count();
+				}
 			}
 		}
 
