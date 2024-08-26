@@ -233,7 +233,7 @@ namespace MachEmu::Tests
 			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
 
 			// 25 millisecond resolution
-			err = machine_->SetOptions(R"({"clockResolution":25000000})");
+			err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.5})");
 			EXPECT_FALSE(err);
 
 			int64_t nanos = 0;

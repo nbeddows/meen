@@ -72,7 +72,7 @@ namespace MachEmu::tests
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
 
         // 25 millisecond resolution, lock the isr frequency to the clock resolution for performance reasons
-        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":1})");
+        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":0.5})");
         TEST_ASSERT_FALSE(err);
 
         int64_t nanos = 0;
