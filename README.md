@@ -290,10 +290,13 @@ The following table describes the supported options (note, when no option is spe
 | compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
 |                       |        | "none"             | No compression will be used when saving the state of the ram                       |
 | encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)    |
+| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via `MachEmu::MakeMachine`)  |
 | isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
-|                       |        | 1                  | Service interrupts after each clock tick                                           |
-|                       |        | n                  | Service interrupts frequency, example: 0.5 - twice per clock tick                  |
+|                       |        | 1                  | Service interrupts after each clock tick when the `clockResolution` is >= 0 or each|
+|                       |        |                    | second when the `clockResolution` is -1                                            |
+|                       |        | n                  | Service interrupts frequency: as a ratio of the clockResolution when it is >=0, or |
+|                       |        |                    | the cpu ticks per second when the `clockResolution` is -1, for example: 0.5 - twice|
+|                       |        |                    | per clock tick (clockResolution >= 0) or twice per second (`clockResolution` == -1)|                    
 | loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                               |
 |                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
 | ramOffset (deprecated)| uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram           |
