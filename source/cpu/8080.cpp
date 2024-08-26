@@ -35,11 +35,7 @@ SOFTWARE.
 namespace MachEmu
 {
 
-Intel8080::Intel8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process)
-	: addressBus_(systemBus.addressBus),
-	dataBus_(systemBus.dataBus),
-	controlBus_(systemBus.controlBus),
-	process_(process)
+Intel8080::Intel8080()
 {
 #ifdef ENABLE_OPCODE_TABLE
 	opcodeTable_ = std::unique_ptr<std::function <uint8_t()>[]>(new std::function <uint8_t()>[256]
@@ -442,317 +438,317 @@ std::string Intel8080::Save() const
 }
 #endif // ENABLE_MEEN_SAVE
 
-uint8_t Intel8080::Fetch()
+uint8_t Intel8080::Interrupt(ISR isr)
 {
-	//Fetch the next instruction
-	ReadFromAddress(Signal::MemoryRead, pc_);
-	opcode_ = dataBus_->Receive();
-	return -1;
+	uint8_t timePeriods = 0;
+
+	if (iff_ == true)
+	{
+		timePeriods = Rst(0xC7 | (static_cast<uint8_t>(isr) << 3));
+		//the interrupt enable system is automatically
+		//disabled whenever an interrupt is acknowledged
+		iff_ = false;
+	}
+
+	return timePeriods;
 }
 
 uint8_t Intel8080::Execute()
 {
-	static int nb_instructions = 0;
-
-	auto isr = ISR::NoInterrupt;
-	uint8_t timePeriods = 0;
-
-	//Acknowledge the interrupt
-	if (controlBus_->Receive(Signal::Interrupt) == true)
-	{
-		//Fetch the interrupt service routine
-		auto interrupt = dataBus_->Receive();
-
-		if (iff_ == true)
-		{
-			isr = static_cast<ISR>(interrupt);
-
-			//the interrupt enable system is automatically
-			//disabled whenever an interrupt is acknowledged
-			iff_ = false;
-		}
-	}
-
-	if (isr == ISR::NoInterrupt)
-	{
-		/* opcode = */Fetch();
+	opcode_ = memoryController_->Read(pc_);
 
 #ifdef ENABLE_OPCODE_TABLE
-		timePeriods = opcodeTable_[opcode_]();
+	return opcodeTable_[opcode_]();
 #else
-		switch(opcode_)
-		{
-			case 0x00: timePeriods = Nop(); break;
-			case 0x01: timePeriods = Lxi(b_, c_); break;
-			case 0x02: timePeriods = Stax(b_, c_); break;
-			case 0x03: timePeriods = Inx(b_, c_); break;
-			case 0x04: timePeriods = Inr(b_); break;
-			case 0x05: timePeriods = Dcr(b_); break;
-			case 0x06: timePeriods = Mvi(b_); break;
-			case 0x07: timePeriods = Rlc(); break;
-			case 0x08: timePeriods = NotImplemented(); break;
-			case 0x09: timePeriods = Dad(b_, c_); break;
-			case 0x0A: timePeriods = Ldax(b_, c_); break;
-			case 0x0B: timePeriods = Dcx(b_, c_); break;
-			case 0x0C: timePeriods = Inr(c_); break;
-			case 0x0D: timePeriods = Dcr(c_); break;
-			case 0x0E: timePeriods = Mvi(c_); break;
-			case 0x0F: timePeriods = Rrc(); break;
-			case 0x10: timePeriods = NotImplemented(); break;
-			case 0x11: timePeriods = Lxi(d_, e_); break;
-			case 0x12: timePeriods = Stax(d_, e_); break;
-			case 0x13: timePeriods = Inx(d_, e_); break;
-			case 0x14: timePeriods = Inr(d_); break;
-			case 0x15: timePeriods = Dcr(d_); break;
-			case 0x16: timePeriods = Mvi(d_); break;
-			case 0x17: timePeriods = Ral(); break;
-			case 0x18: timePeriods = NotImplemented(); break;
-			case 0x19: timePeriods = Dad(d_, e_); break;
-			case 0x1A: timePeriods = Ldax(d_, e_); break;
-			case 0x1B: timePeriods = Dcx(d_, e_); break;
-			case 0x1C: timePeriods = Inr(e_); break;
-			case 0x1D: timePeriods = Dcr(e_); break;
-			case 0x1E: timePeriods = Mvi(e_); break;
-			case 0x1F: timePeriods = Rar(); break;
-			case 0x20: timePeriods = NotImplemented(); break;
-			case 0x21: timePeriods = Lxi(h_, l_); break;
-			case 0x22: timePeriods = Shld(); break;
-			case 0x23: timePeriods = Inx(h_, l_); break;
-			case 0x24: timePeriods = Inr(h_); break;
-			case 0x25: timePeriods = Dcr(h_); break;
-			case 0x26: timePeriods = Mvi(h_); break;
-			case 0x27: timePeriods = Daa(); break;
-			case 0x28: timePeriods = NotImplemented(); break;
-			case 0x29: timePeriods = Dad(h_, l_); break;
-			case 0x2A: timePeriods = Lhld(); break;
-			case 0x2B: timePeriods = Dcx(h_, l_); break;
-			case 0x2C: timePeriods = Inr(l_); break;
-			case 0x2D: timePeriods = Dcr(l_); break;
-			case 0x2E: timePeriods = Mvi(l_); break;
-			case 0x2F: timePeriods = Cma(); break;
-			case 0x30: timePeriods = NotImplemented(); break;
-			case 0x31: timePeriods = Lxi(); break;
-			case 0x32: timePeriods = Sta(); break;
-			case 0x33: timePeriods = Inx(); break;
-			case 0x34: timePeriods = Inr(); break;
-			case 0x35: timePeriods = Dcr(Uint16(h_, l_)); break;
-			case 0x36: timePeriods = Mvi(); break;
-			case 0x37: timePeriods = Stc(); break;
-			case 0x38: timePeriods = NotImplemented(); break;
-			case 0x39: timePeriods = Dad(); break;
-			case 0x3A: timePeriods = Lda(); break;
-			case 0x3B: timePeriods = Dcx(); break;
-			case 0x3C: timePeriods = Inr(a_); break;
-			case 0x3D: timePeriods = Dcr(a_); break;
-			case 0x3E: timePeriods = Mvi(a_); break;
-			case 0x3F: timePeriods = Cmc(); break;
-			case 0x40: timePeriods = Nop(); break;
-			case 0x41: timePeriods = Mov(b_, c_); break;
-			case 0x42: timePeriods = Mov(b_, d_); break;
-			case 0x43: timePeriods = Mov(b_, e_); break;
-			case 0x44: timePeriods = Mov(b_, h_); break;
-			case 0x45: timePeriods = Mov(b_, l_); break;
-			case 0x46: timePeriods = Mov(b_); break;
-			case 0x47: timePeriods = Mov(b_, a_); break;
-			case 0x48: timePeriods = Mov(c_, b_); break;
-			case 0x49: timePeriods = Nop(); break;
-			case 0x4A: timePeriods = Mov(c_, d_); break;
-			case 0x4B: timePeriods = Mov(c_, e_); break;
-			case 0x4C: timePeriods = Mov(c_, h_); break;
-			case 0x4D: timePeriods = Mov(c_, l_); break;
-			case 0x4E: timePeriods = Mov(c_); break;
-			case 0x4F: timePeriods = Mov(c_, a_); break;
-			case 0x50: timePeriods = Mov(d_, b_); break;
-			case 0x51: timePeriods = Mov(d_, c_); break;
-			case 0x52: timePeriods = Nop(); break;
-			case 0x53: timePeriods = Mov(d_, e_); break;
-			case 0x54: timePeriods = Mov(d_, h_); break;
-			case 0x55: timePeriods = Mov(d_, l_); break;
-			case 0x56: timePeriods = Mov(d_); break;
-			case 0x57: timePeriods = Mov(d_, a_); break;
-			case 0x58: timePeriods = Mov(e_, b_); break;
-			case 0x59: timePeriods = Mov(e_, c_); break;
-			case 0x5A: timePeriods = Mov(e_, d_); break;
-			case 0x5B: timePeriods = Nop(); break;
-			case 0x5C: timePeriods = Mov(e_, h_); break;
-			case 0x5D: timePeriods = Mov(e_, l_); break;
-			case 0x5E: timePeriods = Mov(e_); break;
-			case 0x5F: timePeriods = Mov(e_, a_); break;
-			case 0x60: timePeriods = Mov(h_, b_); break;
-			case 0x61: timePeriods = Mov(h_, c_); break;
-			case 0x62: timePeriods = Mov(h_, d_); break;
-			case 0x63: timePeriods = Mov(h_, e_); break;
-			case 0x64: timePeriods = Nop(); break;
-			case 0x65: timePeriods = Mov(h_, l_); break;
-			case 0x66: timePeriods = Mov(h_); break;
-			case 0x67: timePeriods = Mov(h_, a_); break;
-			case 0x68: timePeriods = Mov(l_, b_); break;
-			case 0x69: timePeriods = Mov(l_, c_); break;
-			case 0x6A: timePeriods = Mov(l_, d_); break;
-			case 0x6B: timePeriods = Mov(l_, e_); break;
-			case 0x6C: timePeriods = Mov(l_, h_); break;
-			case 0x6D: timePeriods = Nop(); break;
-			case 0x6E: timePeriods = Mov(l_); break;
-			case 0x6F: timePeriods = Mov(l_, a_); break;
-			case 0x70: timePeriods = Mov(Value(b_)); break;
-			case 0x71: timePeriods = Mov(Value(c_)); break;
-			case 0x72: timePeriods = Mov(Value(d_)); break;
-			case 0x73: timePeriods = Mov(Value(e_)); break;
-			case 0x74: timePeriods = Mov(Value(h_)); break;
-			case 0x75: timePeriods = Mov(Value(l_)); break;
-			case 0x76: timePeriods = Hlt(); break;
-			case 0x77: timePeriods = Mov(Value(a_)); break;
-			case 0x78: timePeriods = Mov(a_, b_); break;
-			case 0x79: timePeriods = Mov(a_, c_); break;
-			case 0x7A: timePeriods = Mov(a_, d_); break;
-			case 0x7B: timePeriods = Mov(a_, e_); break;
-			case 0x7C: timePeriods = Mov(a_, h_); break;
-			case 0x7D: timePeriods = Mov(a_, l_); break;
-			case 0x7E: timePeriods = Mov(a_); break;
-			case 0x7F: timePeriods = Nop(); break;
-			case 0x80: timePeriods = Add(b_, "ADD"); break;
-			case 0x81: timePeriods = Add(c_, "ADD"); break;
-			case 0x82: timePeriods = Add(d_, "ADD"); break;
-			case 0x83: timePeriods = Add(e_, "ADD"); break;
-			case 0x84: timePeriods = Add(h_, "ADD"); break;
-			case 0x85: timePeriods = Add(l_, "ADD"); break;
-			case 0x86: timePeriods = Add(Uint16(h_, l_), "ADD"); break;
-			case 0x87: timePeriods = Add(a_, "ADD"); break;
-			case 0x88: timePeriods = Adc(b_, "ADC"); break;
-			case 0x89: timePeriods = Adc(c_, "ADC"); break;
-			case 0x8A: timePeriods = Adc(d_, "ADC"); break;
-			case 0x8B: timePeriods = Adc(e_, "ADC"); break;
-			case 0x8C: timePeriods = Adc(h_, "ADC"); break;
-			case 0x8D: timePeriods = Adc(l_, "ADC"); break;
-			case 0x8E: timePeriods = Adc(Uint16(h_, l_), "ADC"); break;
-			case 0x8F: timePeriods = Adc(a_, "ADC"); break;
-			case 0x90: timePeriods = Sub(b_, "SUB"); break;
-			case 0x91: timePeriods = Sub(c_, "SUB"); break;
-			case 0x92: timePeriods = Sub(d_, "SUB"); break;
-			case 0x93: timePeriods = Sub(e_, "SUB"); break;
-			case 0x94: timePeriods = Sub(h_, "SUB"); break;
-			case 0x95: timePeriods = Sub(l_, "SUB"); break;
-			case 0x96: timePeriods = Sub(Uint16(h_, l_), "SUB"); break;
-			case 0x97: timePeriods = Sub(a_, "SUB"); break;
-			case 0x98: timePeriods = Sbb(b_, "SBB"); break;
-			case 0x99: timePeriods = Sbb(c_, "SBB"); break;
-			case 0x9A: timePeriods = Sbb(d_, "SBB"); break;
-			case 0x9B: timePeriods = Sbb(e_, "SBB"); break;
-			case 0x9C: timePeriods = Sbb(h_, "SBB"); break;
-			case 0x9D: timePeriods = Sbb(l_, "SBB"); break;
-			case 0x9E: timePeriods = Sbb(Uint16(h_, l_), "SBB"); break;
-			case 0x9F: timePeriods = Sbb(a_, "SBB"); break;
-			case 0xA0: timePeriods = Ana(b_, "ANA"); break;
-			case 0xA1: timePeriods = Ana(c_, "ANA"); break;
-			case 0xA2: timePeriods = Ana(d_, "ANA"); break;
-			case 0xA3: timePeriods = Ana(e_, "ANA"); break;
-			case 0xA4: timePeriods = Ana(h_, "ANA"); break;
-			case 0xA5: timePeriods = Ana(l_, "ANA"); break;
-			case 0xA6: timePeriods = Ana(Uint16(h_, l_), "ANA"); break;
-			case 0xA7: timePeriods = Ana(a_, "ANA"); break;
-			case 0xA8: timePeriods = Xra(b_, "XRA"); break;
-			case 0xA9: timePeriods = Xra(c_, "XRA"); break;
-			case 0xAA: timePeriods = Xra(d_, "XRA"); break;
-			case 0xAB: timePeriods = Xra(e_, "XRA"); break;
-			case 0xAC: timePeriods = Xra(h_, "XRA"); break;
-			case 0xAD: timePeriods = Xra(l_, "XRA"); break;
-			case 0xAE: timePeriods = Xra(Uint16(h_, l_), "XRA"); break;
-			case 0xAF: timePeriods = Xra(a_, "XRA"); break;
-			case 0xB0: timePeriods = Ora(b_, "ORA"); break;
-			case 0xB1: timePeriods = Ora(c_, "ORA"); break;
-			case 0xB2: timePeriods = Ora(d_, "ORA"); break;
-			case 0xB3: timePeriods = Ora(e_, "ORA"); break;
-			case 0xB4: timePeriods = Ora(h_, "ORA"); break;
-			case 0xB5: timePeriods = Ora(l_, "ORA"); break;
-			case 0xB6: timePeriods = Ora(Uint16(h_, l_), "ORA"); break;
-			case 0xB7: timePeriods = Ora(a_, "ORA"); break;
-			case 0xB8: timePeriods = Cmp(b_, "CMP"); break;
-			case 0xB9: timePeriods = Cmp(c_, "CMP"); break;
-			case 0xBA: timePeriods = Cmp(d_, "CMP"); break;
-			case 0xBB: timePeriods = Cmp(e_, "CMP"); break;
-			case 0xBC: timePeriods = Cmp(h_, "CMP"); break;
-			case 0xBD: timePeriods = Cmp(l_, "CMP"); break;
-			case 0xBE: timePeriods = Cmp(Uint16(h_, l_), "CMP"); break;
-			case 0xBF: timePeriods = Cmp(a_, "CMP"); break;
-			case 0xC0: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == false, "RNZ"); break;
-			case 0xC1: timePeriods = Pop(b_, c_); break;
-			case 0xC2: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == false, "JNZ"); break;
-			case 0xC3: timePeriods = JmpOnFlag(true, "JMP"); break;
-			case 0xC4: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == false, "CNZ"); break;
-			case 0xC5: timePeriods = Push(b_, c_); break;
-			case 0xC6: timePeriods = Add(++pc_, "ADI"); break;
-			case 0xC7: timePeriods = Rst(); break;
-			case 0xC8: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == true, "RZ"); break;
-			case 0xC9: timePeriods = RetOnFlag(true, "RET"); break;
-			case 0xCA: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == true, "JZ"); break;
-			case 0xCB: timePeriods = NotImplemented(); break;
-			case 0xCC: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == true, "CZ"); break;
-			case 0xCD: timePeriods = CallOnFlag(true, "CALL"); break;
-			case 0xCE: timePeriods = Adc(++pc_, "ACI"); break;
-			case 0xCF: timePeriods = Rst(); break;
-			case 0xD0: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == false, "RNC"); break;
-			case 0xD1: timePeriods = Pop(d_, e_); break;
-			case 0xD2: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == false, "JNC"); break;
-			case 0xD3: timePeriods = Out(); break;
-			case 0xD4: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == false, "CNC"); break;
-			case 0xD5: timePeriods = Push(d_, e_); break;
-			case 0xD6: timePeriods = Sub(++pc_, "SUI"); break;
-			case 0xD7: timePeriods = Rst(); break;
-			case 0xD8: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == true, "RC"); break;
-			case 0xD9: timePeriods = NotImplemented(); break;
-			case 0xDA: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == true, "JC"); break;
-			case 0xDB: timePeriods = In(); break;
-			case 0xDC: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == true, "CC"); break;
-			case 0xDD: timePeriods = NotImplemented(); break;
-			case 0xDE: timePeriods = Sbb(++pc_, "SBI"); break;
-			case 0xDF: timePeriods = Rst(); break;
-			case 0xE0: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == false, "RPO"); break;
-			case 0xE1: timePeriods = Pop(h_, l_); break;
-			case 0xE2: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == false, "JPO"); break;
-			case 0xE3: timePeriods = Xthl(); break;
-			case 0xE4: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == false, "CPO"); break;
-			case 0xE5: timePeriods = Push(h_, l_); break;
-			case 0xE6: timePeriods = Ana(++pc_, "ANI"); break;
-			case 0xE7: timePeriods = Rst(); break;
-			case 0xE8: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == true, "RPE"); break;
-			case 0xE9: timePeriods = Pchl(); break;
-			case 0xEA: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == true, "JPE"); break;
-			case 0xEB: timePeriods = Xchg(); break;
-			case 0xEC: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == true, "CPE"); break;
-			case 0xED: timePeriods = NotImplemented(); break;
-			case 0xEE: timePeriods = Xra(++pc_, "XRI"); break;
-			case 0xEF: timePeriods = Rst(); break;
-			case 0xF0: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == false, "RP"); break;
-			case 0xF1: timePeriods = Pop(a_, status_); status_ = (status_ & Register(0xD7)) | Register(0x02); break;
-			case 0xF2: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == false, "JP"); break;
-			case 0xF3: timePeriods = Di(); break;
-			case 0xF4: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == false, "CP"); break;
-			case 0xF5: timePeriods = Push(a_, status_); break;
-			case 0xF6: timePeriods = Ora(++pc_, "ORI"); break;
-			case 0xF7: timePeriods = Rst(); break;
-			case 0xF8: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == true, "RM"); break;
-			case 0xF9: timePeriods = Sphl(); break;
-			case 0xFA: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == true, "JM"); break;
-			case 0xFB: timePeriods = Ei(); break;
-			case 0xFC: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == true, "CM"); break;
-			case 0xFD: timePeriods = NotImplemented(); break;
-			case 0xFE: timePeriods = Cmp(++pc_, "CPI"); break;
-			case 0xFF: timePeriods = Rst(); break;
-			default: assert(0); break;
-		}
-#endif
-	}
-	else
+	uint8_t timePeriods = 0;
+
+	switch(opcode_)
 	{
-		opcode_ = 0xC7 | (static_cast<uint8_t>(isr) << 3);
-		timePeriods = Rst(opcode_);
-
-		//Interrupt is being serviced, clear it.
-		isr = ISR::NoInterrupt;
+		case 0x00: timePeriods = Nop(); break;
+		case 0x01: timePeriods = Lxi(b_, c_); break;
+		case 0x02: timePeriods = Stax(b_, c_); break;
+		case 0x03: timePeriods = Inx(b_, c_); break;
+		case 0x04: timePeriods = Inr(b_); break;
+		case 0x05: timePeriods = Dcr(b_); break;
+		case 0x06: timePeriods = Mvi(b_); break;
+		case 0x07: timePeriods = Rlc(); break;
+		case 0x08: timePeriods = NotImplemented(); break;
+		case 0x09: timePeriods = Dad(b_, c_); break;
+		case 0x0A: timePeriods = Ldax(b_, c_); break;
+		case 0x0B: timePeriods = Dcx(b_, c_); break;
+		case 0x0C: timePeriods = Inr(c_); break;
+		case 0x0D: timePeriods = Dcr(c_); break;
+		case 0x0E: timePeriods = Mvi(c_); break;
+		case 0x0F: timePeriods = Rrc(); break;
+		case 0x10: timePeriods = NotImplemented(); break;
+		case 0x11: timePeriods = Lxi(d_, e_); break;
+		case 0x12: timePeriods = Stax(d_, e_); break;
+		case 0x13: timePeriods = Inx(d_, e_); break;
+		case 0x14: timePeriods = Inr(d_); break;
+		case 0x15: timePeriods = Dcr(d_); break;
+		case 0x16: timePeriods = Mvi(d_); break;
+		case 0x17: timePeriods = Ral(); break;
+		case 0x18: timePeriods = NotImplemented(); break;
+		case 0x19: timePeriods = Dad(d_, e_); break;
+		case 0x1A: timePeriods = Ldax(d_, e_); break;
+		case 0x1B: timePeriods = Dcx(d_, e_); break;
+		case 0x1C: timePeriods = Inr(e_); break;
+		case 0x1D: timePeriods = Dcr(e_); break;
+		case 0x1E: timePeriods = Mvi(e_); break;
+		case 0x1F: timePeriods = Rar(); break;
+		case 0x20: timePeriods = NotImplemented(); break;
+		case 0x21: timePeriods = Lxi(h_, l_); break;
+		case 0x22: timePeriods = Shld(); break;
+		case 0x23: timePeriods = Inx(h_, l_); break;
+		case 0x24: timePeriods = Inr(h_); break;
+		case 0x25: timePeriods = Dcr(h_); break;
+		case 0x26: timePeriods = Mvi(h_); break;
+		case 0x27: timePeriods = Daa(); break;
+		case 0x28: timePeriods = NotImplemented(); break;
+		case 0x29: timePeriods = Dad(h_, l_); break;
+		case 0x2A: timePeriods = Lhld(); break;
+		case 0x2B: timePeriods = Dcx(h_, l_); break;
+		case 0x2C: timePeriods = Inr(l_); break;
+		case 0x2D: timePeriods = Dcr(l_); break;
+		case 0x2E: timePeriods = Mvi(l_); break;
+		case 0x2F: timePeriods = Cma(); break;
+		case 0x30: timePeriods = NotImplemented(); break;
+		case 0x31: timePeriods = Lxi(); break;
+		case 0x32: timePeriods = Sta(); break;
+		case 0x33: timePeriods = Inx(); break;
+		case 0x34: timePeriods = Inr(); break;
+		case 0x35: timePeriods = Dcr(Uint16(h_, l_)); break;
+		case 0x36: timePeriods = Mvi(); break;
+		case 0x37: timePeriods = Stc(); break;
+		case 0x38: timePeriods = NotImplemented(); break;
+		case 0x39: timePeriods = Dad(); break;
+		case 0x3A: timePeriods = Lda(); break;
+		case 0x3B: timePeriods = Dcx(); break;
+		case 0x3C: timePeriods = Inr(a_); break;
+		case 0x3D: timePeriods = Dcr(a_); break;
+		case 0x3E: timePeriods = Mvi(a_); break;
+		case 0x3F: timePeriods = Cmc(); break;
+		case 0x40: timePeriods = Nop(); break;
+		case 0x41: timePeriods = Mov(b_, c_); break;
+		case 0x42: timePeriods = Mov(b_, d_); break;
+		case 0x43: timePeriods = Mov(b_, e_); break;
+		case 0x44: timePeriods = Mov(b_, h_); break;
+		case 0x45: timePeriods = Mov(b_, l_); break;
+		case 0x46: timePeriods = Mov(b_); break;
+		case 0x47: timePeriods = Mov(b_, a_); break;
+		case 0x48: timePeriods = Mov(c_, b_); break;
+		case 0x49: timePeriods = Nop(); break;
+		case 0x4A: timePeriods = Mov(c_, d_); break;
+		case 0x4B: timePeriods = Mov(c_, e_); break;
+		case 0x4C: timePeriods = Mov(c_, h_); break;
+		case 0x4D: timePeriods = Mov(c_, l_); break;
+		case 0x4E: timePeriods = Mov(c_); break;
+		case 0x4F: timePeriods = Mov(c_, a_); break;
+		case 0x50: timePeriods = Mov(d_, b_); break;
+		case 0x51: timePeriods = Mov(d_, c_); break;
+		case 0x52: timePeriods = Nop(); break;
+		case 0x53: timePeriods = Mov(d_, e_); break;
+		case 0x54: timePeriods = Mov(d_, h_); break;
+		case 0x55: timePeriods = Mov(d_, l_); break;
+		case 0x56: timePeriods = Mov(d_); break;
+		case 0x57: timePeriods = Mov(d_, a_); break;
+		case 0x58: timePeriods = Mov(e_, b_); break;
+		case 0x59: timePeriods = Mov(e_, c_); break;
+		case 0x5A: timePeriods = Mov(e_, d_); break;
+		case 0x5B: timePeriods = Nop(); break;
+		case 0x5C: timePeriods = Mov(e_, h_); break;
+		case 0x5D: timePeriods = Mov(e_, l_); break;
+		case 0x5E: timePeriods = Mov(e_); break;
+		case 0x5F: timePeriods = Mov(e_, a_); break;
+		case 0x60: timePeriods = Mov(h_, b_); break;
+		case 0x61: timePeriods = Mov(h_, c_); break;
+		case 0x62: timePeriods = Mov(h_, d_); break;
+		case 0x63: timePeriods = Mov(h_, e_); break;
+		case 0x64: timePeriods = Nop(); break;
+		case 0x65: timePeriods = Mov(h_, l_); break;
+		case 0x66: timePeriods = Mov(h_); break;
+		case 0x67: timePeriods = Mov(h_, a_); break;
+		case 0x68: timePeriods = Mov(l_, b_); break;
+		case 0x69: timePeriods = Mov(l_, c_); break;
+		case 0x6A: timePeriods = Mov(l_, d_); break;
+		case 0x6B: timePeriods = Mov(l_, e_); break;
+		case 0x6C: timePeriods = Mov(l_, h_); break;
+		case 0x6D: timePeriods = Nop(); break;
+		case 0x6E: timePeriods = Mov(l_); break;
+		case 0x6F: timePeriods = Mov(l_, a_); break;
+		case 0x70: timePeriods = Mov(Value(b_)); break;
+		case 0x71: timePeriods = Mov(Value(c_)); break;
+		case 0x72: timePeriods = Mov(Value(d_)); break;
+		case 0x73: timePeriods = Mov(Value(e_)); break;
+		case 0x74: timePeriods = Mov(Value(h_)); break;
+		case 0x75: timePeriods = Mov(Value(l_)); break;
+		case 0x76: timePeriods = Hlt(); break;
+		case 0x77: timePeriods = Mov(Value(a_)); break;
+		case 0x78: timePeriods = Mov(a_, b_); break;
+		case 0x79: timePeriods = Mov(a_, c_); break;
+		case 0x7A: timePeriods = Mov(a_, d_); break;
+		case 0x7B: timePeriods = Mov(a_, e_); break;
+		case 0x7C: timePeriods = Mov(a_, h_); break;
+		case 0x7D: timePeriods = Mov(a_, l_); break;
+		case 0x7E: timePeriods = Mov(a_); break;
+		case 0x7F: timePeriods = Nop(); break;
+		case 0x80: timePeriods = Add(b_, "ADD"); break;
+		case 0x81: timePeriods = Add(c_, "ADD"); break;
+		case 0x82: timePeriods = Add(d_, "ADD"); break;
+		case 0x83: timePeriods = Add(e_, "ADD"); break;
+		case 0x84: timePeriods = Add(h_, "ADD"); break;
+		case 0x85: timePeriods = Add(l_, "ADD"); break;
+		case 0x86: timePeriods = Add(Uint16(h_, l_), "ADD"); break;
+		case 0x87: timePeriods = Add(a_, "ADD"); break;
+		case 0x88: timePeriods = Adc(b_, "ADC"); break;
+		case 0x89: timePeriods = Adc(c_, "ADC"); break;
+		case 0x8A: timePeriods = Adc(d_, "ADC"); break;
+		case 0x8B: timePeriods = Adc(e_, "ADC"); break;
+		case 0x8C: timePeriods = Adc(h_, "ADC"); break;
+		case 0x8D: timePeriods = Adc(l_, "ADC"); break;
+		case 0x8E: timePeriods = Adc(Uint16(h_, l_), "ADC"); break;
+		case 0x8F: timePeriods = Adc(a_, "ADC"); break;
+		case 0x90: timePeriods = Sub(b_, "SUB"); break;
+		case 0x91: timePeriods = Sub(c_, "SUB"); break;
+		case 0x92: timePeriods = Sub(d_, "SUB"); break;
+		case 0x93: timePeriods = Sub(e_, "SUB"); break;
+		case 0x94: timePeriods = Sub(h_, "SUB"); break;
+		case 0x95: timePeriods = Sub(l_, "SUB"); break;
+		case 0x96: timePeriods = Sub(Uint16(h_, l_), "SUB"); break;
+		case 0x97: timePeriods = Sub(a_, "SUB"); break;
+		case 0x98: timePeriods = Sbb(b_, "SBB"); break;
+		case 0x99: timePeriods = Sbb(c_, "SBB"); break;
+		case 0x9A: timePeriods = Sbb(d_, "SBB"); break;
+		case 0x9B: timePeriods = Sbb(e_, "SBB"); break;
+		case 0x9C: timePeriods = Sbb(h_, "SBB"); break;
+		case 0x9D: timePeriods = Sbb(l_, "SBB"); break;
+		case 0x9E: timePeriods = Sbb(Uint16(h_, l_), "SBB"); break;
+		case 0x9F: timePeriods = Sbb(a_, "SBB"); break;
+		case 0xA0: timePeriods = Ana(b_, "ANA"); break;
+		case 0xA1: timePeriods = Ana(c_, "ANA"); break;
+		case 0xA2: timePeriods = Ana(d_, "ANA"); break;
+		case 0xA3: timePeriods = Ana(e_, "ANA"); break;
+		case 0xA4: timePeriods = Ana(h_, "ANA"); break;
+		case 0xA5: timePeriods = Ana(l_, "ANA"); break;
+		case 0xA6: timePeriods = Ana(Uint16(h_, l_), "ANA"); break;
+		case 0xA7: timePeriods = Ana(a_, "ANA"); break;
+		case 0xA8: timePeriods = Xra(b_, "XRA"); break;
+		case 0xA9: timePeriods = Xra(c_, "XRA"); break;
+		case 0xAA: timePeriods = Xra(d_, "XRA"); break;
+		case 0xAB: timePeriods = Xra(e_, "XRA"); break;
+		case 0xAC: timePeriods = Xra(h_, "XRA"); break;
+		case 0xAD: timePeriods = Xra(l_, "XRA"); break;
+		case 0xAE: timePeriods = Xra(Uint16(h_, l_), "XRA"); break;
+		case 0xAF: timePeriods = Xra(a_, "XRA"); break;
+		case 0xB0: timePeriods = Ora(b_, "ORA"); break;
+		case 0xB1: timePeriods = Ora(c_, "ORA"); break;
+		case 0xB2: timePeriods = Ora(d_, "ORA"); break;
+		case 0xB3: timePeriods = Ora(e_, "ORA"); break;
+		case 0xB4: timePeriods = Ora(h_, "ORA"); break;
+		case 0xB5: timePeriods = Ora(l_, "ORA"); break;
+		case 0xB6: timePeriods = Ora(Uint16(h_, l_), "ORA"); break;
+		case 0xB7: timePeriods = Ora(a_, "ORA"); break;
+		case 0xB8: timePeriods = Cmp(b_, "CMP"); break;
+		case 0xB9: timePeriods = Cmp(c_, "CMP"); break;
+		case 0xBA: timePeriods = Cmp(d_, "CMP"); break;
+		case 0xBB: timePeriods = Cmp(e_, "CMP"); break;
+		case 0xBC: timePeriods = Cmp(h_, "CMP"); break;
+		case 0xBD: timePeriods = Cmp(l_, "CMP"); break;
+		case 0xBE: timePeriods = Cmp(Uint16(h_, l_), "CMP"); break;
+		case 0xBF: timePeriods = Cmp(a_, "CMP"); break;
+		case 0xC0: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == false, "RNZ"); break;
+		case 0xC1: timePeriods = Pop(b_, c_); break;
+		case 0xC2: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == false, "JNZ"); break;
+		case 0xC3: timePeriods = JmpOnFlag(true, "JMP"); break;
+		case 0xC4: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == false, "CNZ"); break;
+		case 0xC5: timePeriods = Push(b_, c_); break;
+		case 0xC6: timePeriods = Add(++pc_, "ADI"); break;
+		case 0xC7: timePeriods = Rst(); break;
+		case 0xC8: timePeriods = RetOnFlag(status_.test(Condition::ZeroFlag) == true, "RZ"); break;
+		case 0xC9: timePeriods = RetOnFlag(true, "RET"); break;
+		case 0xCA: timePeriods = JmpOnFlag(status_.test(Condition::ZeroFlag) == true, "JZ"); break;
+		case 0xCB: timePeriods = NotImplemented(); break;
+		case 0xCC: timePeriods = CallOnFlag(status_.test(Condition::ZeroFlag) == true, "CZ"); break;
+		case 0xCD: timePeriods = CallOnFlag(true, "CALL"); break;
+		case 0xCE: timePeriods = Adc(++pc_, "ACI"); break;
+		case 0xCF: timePeriods = Rst(); break;
+		case 0xD0: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == false, "RNC"); break;
+		case 0xD1: timePeriods = Pop(d_, e_); break;
+		case 0xD2: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == false, "JNC"); break;
+		case 0xD3: timePeriods = Out(); break;
+		case 0xD4: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == false, "CNC"); break;
+		case 0xD5: timePeriods = Push(d_, e_); break;
+		case 0xD6: timePeriods = Sub(++pc_, "SUI"); break;
+		case 0xD7: timePeriods = Rst(); break;
+		case 0xD8: timePeriods = RetOnFlag(status_.test(Condition::CarryFlag) == true, "RC"); break;
+		case 0xD9: timePeriods = NotImplemented(); break;
+		case 0xDA: timePeriods = JmpOnFlag(status_.test(Condition::CarryFlag) == true, "JC"); break;
+		case 0xDB: timePeriods = In(); break;
+		case 0xDC: timePeriods = CallOnFlag(status_.test(Condition::CarryFlag) == true, "CC"); break;
+		case 0xDD: timePeriods = NotImplemented(); break;
+		case 0xDE: timePeriods = Sbb(++pc_, "SBI"); break;
+		case 0xDF: timePeriods = Rst(); break;
+		case 0xE0: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == false, "RPO"); break;
+		case 0xE1: timePeriods = Pop(h_, l_); break;
+		case 0xE2: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == false, "JPO"); break;
+		case 0xE3: timePeriods = Xthl(); break;
+		case 0xE4: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == false, "CPO"); break;
+		case 0xE5: timePeriods = Push(h_, l_); break;
+		case 0xE6: timePeriods = Ana(++pc_, "ANI"); break;
+		case 0xE7: timePeriods = Rst(); break;
+		case 0xE8: timePeriods = RetOnFlag(status_.test(Condition::ParityFlag) == true, "RPE"); break;
+		case 0xE9: timePeriods = Pchl(); break;
+		case 0xEA: timePeriods = JmpOnFlag(status_.test(Condition::ParityFlag) == true, "JPE"); break;
+		case 0xEB: timePeriods = Xchg(); break;
+		case 0xEC: timePeriods = CallOnFlag(status_.test(Condition::ParityFlag) == true, "CPE"); break;
+		case 0xED: timePeriods = NotImplemented(); break;
+		case 0xEE: timePeriods = Xra(++pc_, "XRI"); break;
+		case 0xEF: timePeriods = Rst(); break;
+		case 0xF0: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == false, "RP"); break;
+		case 0xF1: timePeriods = Pop(a_, status_); status_ = (status_ & Register(0xD7)) | Register(0x02); break;
+		case 0xF2: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == false, "JP"); break;
+		case 0xF3: timePeriods = Di(); break;
+		case 0xF4: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == false, "CP"); break;
+		case 0xF5: timePeriods = Push(a_, status_); break;
+		case 0xF6: timePeriods = Ora(++pc_, "ORI"); break;
+		case 0xF7: timePeriods = Rst(); break;
+		case 0xF8: timePeriods = RetOnFlag(status_.test(Condition::SignFlag) == true, "RM"); break;
+		case 0xF9: timePeriods = Sphl(); break;
+		case 0xFA: timePeriods = JmpOnFlag(status_.test(Condition::SignFlag) == true, "JM"); break;
+		case 0xFB: timePeriods = Ei(); break;
+		case 0xFC: timePeriods = CallOnFlag(status_.test(Condition::SignFlag) == true, "CM"); break;
+		case 0xFD: timePeriods = NotImplemented(); break;
+		case 0xFE: timePeriods = Cmp(++pc_, "CPI"); break;
+		case 0xFF: timePeriods = Rst(); break;
+		default: assert(0); break;
 	}
 
-	nb_instructions++;
 	return timePeriods;
+#endif
+}
+
+std::error_code Intel8080::SetMemoryController(const std::shared_ptr<IController>& memoryController)
+{
+	if(memoryController == nullptr)
+	{
+		return make_error_code(errc::invalid_argument);
+	}
+
+	memoryController_ = memoryController;
+
+	return make_error_code(errc::no_error);
+}
+
+std::error_code Intel8080::SetIoController(const std::shared_ptr<IController>& ioController)
+{
+	if(ioController == nullptr)
+	{
+		return make_error_code(errc::invalid_argument);
+	}
+
+	ioController_ = ioController;
+
+	return make_error_code(errc::no_error);
 }
 
 //This essentially powers on the cpu
@@ -771,21 +767,6 @@ void Intel8080::Reset(uint16_t pc)
 	iff_ = false;
 }
 
-void Intel8080::ReadFromAddress(Signal readLocation, uint16_t addr)
-{
-	controlBus_->Send(readLocation);
-	addressBus_->Send (addr);
-	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-}
-
-void Intel8080::WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t value)
-{
-	controlBus_->Send(writeLocation);
-	addressBus_->Send(addr);
-	dataBus_->Send(value);
-	process_(SystemBus<uint16_t, uint8_t, 8>(addressBus_, dataBus_, controlBus_));
-}
-
 /**
 	INR
 
@@ -800,13 +781,10 @@ uint8_t Intel8080::Inr(Register& r)
 uint8_t Intel8080::Inr()
 {
 	auto addr = Uint16(h_, l_);
-
-	ReadFromAddress(Signal::MemoryRead, addr);
-	//Get the data and process it.
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 	r = Add(r, 0x01, 0, false, "INR");
 	//Inr(r);
-	WriteToAddress(Signal::MemoryWrite, addr, Value(r));
+	memoryController_->Write(addr, Value(r));
 	return 10;
 }
 
@@ -825,18 +803,16 @@ uint8_t Intel8080::Dcr(Register& r)
 
 uint8_t Intel8080::Dcr(uint16_t addr)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 	r = Add(r, 0xFF, 0, false, "DCR");
 	//Dcr(r);
-	WriteToAddress (Signal::MemoryWrite, addr, Value(r));
+	memoryController_->Write(addr, Value(r));
 	return 10;
 }
 
 uint8_t Intel8080::Mvi(Register& reg)
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	reg = dataBus_->Receive();
+	reg = memoryController_->Read(++pc_);
 
 	if constexpr (dbg == true)
 	{
@@ -849,8 +825,7 @@ uint8_t Intel8080::Mvi(Register& reg)
 
 uint8_t Intel8080::Mvi()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto data = dataBus_->Receive();
+	auto data = memoryController_->Read(++pc_);
 	auto addr = Uint16(h_, l_);
 
 	if constexpr (dbg == true)
@@ -858,7 +833,7 @@ uint8_t Intel8080::Mvi()
 		printf("0x%04X MVI [0x%04X], 0x%02X\n", pc_ - 1, addr, data);
 	}
 
-	WriteToAddress (Signal::MemoryWrite, addr, data);
+	memoryController_->Write(addr, data);
 	++pc_;
 	return 10;
 }
@@ -988,10 +963,8 @@ uint8_t Intel8080::Rar()
 
 uint8_t Intel8080::Lxi(Register& regHi, Register& regLow)
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	regLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	regHi = dataBus_->Receive();
+	regLow = memoryController_->Read(++pc_);
+	regHi = memoryController_->Read(++pc_);
 
 	if constexpr (dbg == true)
 	{
@@ -1004,10 +977,8 @@ uint8_t Intel8080::Lxi(Register& regHi, Register& regLow)
 
 uint8_t Intel8080::Lxi()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto spLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	sp_ = Uint16(dataBus_->Receive(), spLow);
+	auto spLow = memoryController_->Read(++pc_);
+	sp_ = Uint16(memoryController_->Read(++pc_), spLow);
 
 	if constexpr (dbg == true)
 	{
@@ -1028,18 +999,17 @@ uint8_t Intel8080::Lxi()
 */
 uint8_t Intel8080::Shld()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
+
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X SHLD, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	WriteToAddress(Signal::MemoryWrite, addr, Value(l_));
-	WriteToAddress(Signal::MemoryWrite, addr + 1, Value(h_));
+	memoryController_->Write(addr, Value(l_));
+	memoryController_->Write(addr + 1, Value(h_));
 	++pc_;
 	return 16;
 }
@@ -1063,7 +1033,7 @@ uint8_t Intel8080::Stax(const Register& hi, const Register& low)
 		printf("0x%04X STAX %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
-	WriteToAddress(Signal::MemoryWrite, Uint16(hi, low), Value(a_));
+	memoryController_->Write(Uint16(hi, low), Value(a_));
 	++pc_;
 	return 7;
 }
@@ -1143,20 +1113,16 @@ uint8_t Intel8080::Dad()
 */
 uint8_t Intel8080::Lhld()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X LHLD, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, addr);
-	l_ = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, addr + 1);
-	h_ = dataBus_->Receive();
+	l_ = memoryController_->Read(addr);
+	h_ = memoryController_->Read(addr + 1);
 	++pc_;
 	return 16;
 }
@@ -1174,8 +1140,7 @@ uint8_t Intel8080::Ldax(const Register& hi, const Register& low)
 		printf("0x%04X LDAX, %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, Uint16(hi, low));
-	a_ = dataBus_->Receive();
+	a_ = memoryController_->Read(Uint16(hi, low));
 	++pc_;
 	return 7;
 }
@@ -1231,17 +1196,15 @@ uint8_t Intel8080::Cma()
 
 uint8_t Intel8080::Sta()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X STA, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	WriteToAddress (Signal::MemoryWrite, addr, Value(a_));
+	memoryController_->Write(addr, Value(a_));
 	++pc_;
 	return 13;
 }
@@ -1260,18 +1223,15 @@ uint8_t Intel8080::Stc()
 
 uint8_t Intel8080::Lda()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	uint16_t addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X LDA, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, addr);
-	a_ = dataBus_->Receive();
+	a_ = memoryController_->Read(addr);
 	++pc_;
 	return 13;
 }
@@ -1309,8 +1269,7 @@ uint8_t Intel8080::Mov(Register& lhs)
 		printf("0x%04X MOV %c, [0x%04X]\n", pc_, registerName_[(opcode_ & 0x38) >> 3], addr);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, addr);
-	lhs = dataBus_->Receive();
+	lhs = memoryController_->Read(addr);
 	pc_++;
 	return 7;
 }
@@ -1324,7 +1283,7 @@ uint8_t Intel8080::Mov(uint8_t value)
 		printf("0x%04X MOV [0x%04X], %c\n", pc_, addr, registerName_[opcode_ & 0x07]);
 	}
 
-	WriteToAddress(Signal::MemoryWrite, addr, value);
+	memoryController_->Write(addr, value);
 	pc_++;
 	return 7;
 }
@@ -1352,9 +1311,9 @@ uint8_t Intel8080::Nop()
 	Implementation of the HLT instruction steps the
 	Program Counter to the next instruction address and stops
 	the computer until an interrupt occurs. The HLT instruction
-	should not normally be implemented when a DI instruction
+	should not normally be implemented when a DI instruction
 	has been executed. Since the DI instruction causes the computer
-	to ignore interrupts, the computer will not operate again
+	to ignore interrupts, the computer will not operate again
 	until the main power switch is turned off and then back on.
 */
 uint8_t Intel8080::Hlt()
@@ -1397,11 +1356,9 @@ uint8_t Intel8080::Add(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Add(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	a_ = Add(a_, Register(dataBus_->Receive()), 0, true, instructionName);
+	a_ = Add(a_, Register(memoryController_->Read(addr)), 0, true, instructionName);
 	return 7;
 }
-
 
 uint8_t Intel8080::Adc(const Register& r, std::string_view instructionName)
 {
@@ -1411,8 +1368,7 @@ uint8_t Intel8080::Adc(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Adc(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	a_ = Add(a_, Register(dataBus_->Receive()), status_[Condition::CarryFlag], true, instructionName);
+	a_ = Add(a_, Register(memoryController_->Read(addr)), status_[Condition::CarryFlag], true, instructionName);
 	return 7;
 }
 
@@ -1431,8 +1387,7 @@ uint8_t Intel8080::Sub(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Sub(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	a_ = Sub(Register(dataBus_->Receive()), 0, instructionName);
+	a_ = Sub(Register(memoryController_->Read(addr)), 0, instructionName);
 	return 7;
 }
 
@@ -1444,8 +1399,7 @@ uint8_t Intel8080::Sbb(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Sbb(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	a_ = Sub(Register(dataBus_->Receive()), status_[Condition::CarryFlag], instructionName);
+	a_ = Sub(Register(memoryController_->Read(addr)), status_[Condition::CarryFlag], instructionName);
 	return 7;
 }
 
@@ -1475,8 +1429,7 @@ uint8_t Intel8080::Ana(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 
 	if constexpr (dbg == true)
 	{
@@ -1519,8 +1472,7 @@ uint8_t Intel8080::Xra(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 
 	if constexpr (dbg == true)
 	{
@@ -1563,8 +1515,7 @@ uint8_t Intel8080::Ora(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Ora(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 
 	if constexpr (dbg == true)
 	{
@@ -1590,8 +1541,7 @@ uint8_t Intel8080::Cmp(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, addr);
-	Register r = dataBus_->Receive();
+	Register r = memoryController_->Read(addr);
 	Sub(r, 0, instructionName);
 	return 7;
 }
@@ -1627,10 +1577,8 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 
 	if (status == true)
 	{
-		ReadFromAddress(Signal::MemoryRead, sp_++);
-		auto pcLow = dataBus_->Receive();
-		ReadFromAddress(Signal::MemoryRead, sp_++);
-		pc_ = Uint16(dataBus_->Receive(), pcLow);
+		auto pcLow = memoryController_->Read(sp_++);
+		pc_ = Uint16(memoryController_->Read(sp_++), pcLow);
 
 		if (std::string(instructionName) == "RET")
 		{
@@ -1661,20 +1609,16 @@ uint8_t Intel8080::Pop(Register& hi, Register& low)
 		}
 	}
 
-	ReadFromAddress(Signal::MemoryRead, sp_++);
-	low = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, sp_++);
-	hi = dataBus_->Receive();
+	low = memoryController_->Read(sp_++);
+	hi = memoryController_->Read(sp_++);
 	pc_++;
 	return 10;
 }
 
 uint8_t Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	auto addr = Uint16(memoryController_->Read(++pc_), addrLow);
 
 	if constexpr (dbg == true)
 	{
@@ -1687,10 +1631,8 @@ uint8_t Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 
 uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addrLow = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto addr = Uint16(dataBus_->Receive(), addrLow);
+	auto addrLow = memoryController_->Read(++pc_);
+	auto addr = Uint16(memoryController_->Read(++pc_), addrLow);
 
 	if constexpr (dbg == true)
 	{
@@ -1702,9 +1644,9 @@ uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	if (status == true)
 	{
 		sp_ += 0xFFFF;
-		WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
+		memoryController_->Write(sp_, pc_ >> 8);
 		sp_ += 0xFFFF;
-		WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
+		memoryController_->Write(sp_, pc_ & 0xFF);
 
 		/*
 			This needs to be moved ... by calling push above
@@ -1737,9 +1679,9 @@ uint8_t Intel8080::Push(const Register& hi, const Register& low)
 	}
 
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, Value(hi));
+	memoryController_->Write(sp_, Value(hi));
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, Value(low));
+	memoryController_->Write(sp_, Value(low));
 	pc_++;
 	return 11;
 }
@@ -1751,8 +1693,7 @@ uint8_t Intel8080::Adi(const Register& r)
 		printf("0x%04X ADI %c\n", pc_, registerName_[(opcode_ & 0x30) >> 3]);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	a_ = Value(a_) + dataBus_->Receive();
+	a_ = Value(a_) + memoryController_->Read(++pc_);
 	++pc_;
 	return 7;
 }
@@ -1777,9 +1718,9 @@ uint8_t Intel8080::Rst(uint8_t restart)
 	}
 
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
+	memoryController_->Write(sp_, pc_ >> 8);
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
+	memoryController_->Write(sp_, pc_ & 0xFF);
 
 	/*
 		This needs to be moved ... by calling push above
@@ -1810,16 +1751,16 @@ uint8_t Intel8080::Rst()
 	++pc_;
 
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, pc_ >> 8);
+	memoryController_->Write(sp_, pc_ >> 8);
 	sp_ += 0xFFFF;
-	WriteToAddress(Signal::MemoryWrite, sp_, pc_ & 0xFF);
+	memoryController_->Write(sp_, pc_ & 0xFF);
 
 	/*
 		This needs to be moved ... by calling push above
 		the pc_ will be incremented before the instruction completes.
 
 		This works because we can't interrupt an instruction mid execution.
-		If we could this would have to FIXED. It isn't technically correct, but works, a minor issue to fix someday.
+		If we could this would have to be FIXED. It isn't technically correct, but works, a minor issue to fix someday.
 	*/
 	pc_ = addr;
 	return 11;
@@ -1827,8 +1768,7 @@ uint8_t Intel8080::Rst()
 
 uint8_t Intel8080::Out()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto out = dataBus_->Receive();
+	auto out = memoryController_->Read(++pc_);
 
 	if constexpr (dbg == true)
 	{
@@ -1836,15 +1776,14 @@ uint8_t Intel8080::Out()
 	}
 
 	//write to IO port 'out' the accumulator
-	WriteToAddress(Signal::IoWrite, out, Value(a_));
+	ioController_->Write(out, Value(a_));
 	++pc_;
 	return 10;
 }
 
 uint8_t Intel8080::In()
 {
-	ReadFromAddress(Signal::MemoryRead, ++pc_);
-	auto in = dataBus_->Receive();
+	auto in = memoryController_->Read(++pc_);
 
 	if constexpr (dbg == true)
 	{
@@ -1852,8 +1791,7 @@ uint8_t Intel8080::In()
 	}
 
 	//Read into the accumulator the value in IO port 'in'.
-	ReadFromAddress(Signal::IoRead, in);
-	a_ = dataBus_->Receive();
+	a_ = ioController_->Read(in);
 	++pc_;
 	return 10;
 }
@@ -1872,10 +1810,8 @@ uint8_t Intel8080::Xthl()
 		printf("0x%04X XTHL\n", pc_);
 	}
 
-	ReadFromAddress(Signal::MemoryRead, sp_);
-	auto spl = dataBus_->Receive();
-	ReadFromAddress(Signal::MemoryRead, sp_ + 1);
-	auto sph = dataBus_->Receive();
+	auto spl = memoryController_->Read(sp_);
+	auto sph = memoryController_->Read(sp_ + 1);
 
 	uint8_t l = Value(l_);
 	uint8_t h = Value(h_);
@@ -1886,8 +1822,8 @@ uint8_t Intel8080::Xthl()
 	l_ = l;
 	h_ = h;
 
-	WriteToAddress(Signal::MemoryWrite, sp_, spl);
-	WriteToAddress(Signal::MemoryWrite, sp_ + 1, sph);
+	memoryController_->Write(sp_, spl);
+	memoryController_->Write(sp_ + 1, sph);
 	pc_++;
 	return 18;
 }

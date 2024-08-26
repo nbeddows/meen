@@ -34,7 +34,6 @@ SOFTWARE.
 #include "meen/clock/ICpuClock.h"
 #include "meen/IMachine.h"
 #include "meen/opt/Opt.h"
-#include "meen/system_bus/SystemBus.h"
 
 namespace MachEmu
 {
@@ -49,7 +48,6 @@ namespace MachEmu
 		std::unique_ptr<ICpu> cpu_;
 		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
-		SystemBus<uint16_t, uint8_t, 8> systemBus_;
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
@@ -64,7 +62,6 @@ namespace MachEmu
 		std::function<const char*()> onLoad_{};
 		std::function<void(const char* json)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
-		void ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus);
 	public:
 		Machine(const char* json);
 		~Machine() = default;

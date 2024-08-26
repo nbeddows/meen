@@ -23,16 +23,13 @@ SOFTWARE.
 #ifndef CPU_FACTORY_H
 #define CPU_FACTORY_H
 
-#include <cstdint>
-#include <functional>
 #include <memory>
 
 #include "meen/cpu/ICpu.h"
-#include "meen/system_bus/SystemBus.h"
 
 namespace MachEmu
 {
-	std::unique_ptr<ICpu> Make8080(const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)>&& process);
+	std::unique_ptr<ICpu> Make8080();
 } // namespace MachEmu
 
 #endif // CPU_FACTORY_H

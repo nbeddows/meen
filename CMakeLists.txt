@@ -157,7 +157,6 @@ if(${enable_python_module} STREQUAL ON)
   )
 endif()
 set(opt_include_files ${include_dir}/meen/opt/Opt.h)
-set(system_bus_include_files ${include_dir}/meen/system_bus/SystemBus.h)
 set(utils_include_files ${include_dir}/meen/utils/Utils.h)
 
 set(${libMachEmu}_private_include_files
@@ -165,7 +164,6 @@ set(${libMachEmu}_private_include_files
   ${cpu_include_files}
   ${machine_include_files}
   ${opt_include_files}
-  ${system_bus_include_files}
   ${utils_include_files}
 )
 
@@ -174,7 +172,6 @@ SOURCE_GROUP(${include_dir}/cpu FILES ${cpu_include_files})
 SOURCE_GROUP(${include_dir}/machine FILES ${machine_include_files})
 SOURCE_GROUP(${include_dir}/machine_py FILES ${machine_py_include_files})
 SOURCE_GROUP(${include_dir}/opt FILES ${opt_include_files})
-SOURCE_GROUP(${include_dir}/system_bus FILES ${system_bus_include_files})
 SOURCE_GROUP(${include_dir}/utils FILES ${utils_include_files})
 
 set(clock_source_files
