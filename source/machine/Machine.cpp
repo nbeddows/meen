@@ -58,7 +58,7 @@ namespace MachEmu
 		if(opt_.CpuType() == "i8080")
 		{
 			clock_ = MakeCpuClock(2000000);
-			cpu_ = Make8080(systemBus_, std::bind(&Machine::ProcessControllers, this, std::placeholders::_1));
+			cpu_ = Make8080();
 		}
 	}
 
@@ -116,40 +116,6 @@ namespace MachEmu
 		return ErrorCode::NoError;
 	}
 
-	void Machine::ProcessControllers(const SystemBus<uint16_t, uint8_t, 8>&& systemBus)
-	{
-		auto controlBus = systemBus.controlBus;
-		auto addressBus = systemBus.addressBus;
-		auto dataBus = systemBus.dataBus;
-
-		if (memoryController_ != nullptr)
-		{
-			//check the control bus to see if there are any operations pending
-			if (controlBus->Receive(Signal::MemoryRead))
-			{
-				dataBus->Send(memoryController_->Read(addressBus->Receive()));
-			}
-
-			if (controlBus->Receive(Signal::MemoryWrite))
-			{
-				memoryController_->Write(addressBus->Receive(), dataBus->Receive());
-			}
-		}
-
-		if (ioController_ != nullptr)
-		{
-			if (controlBus->Receive(Signal::IoRead))
-			{
-				dataBus->Send(ioController_->Read(addressBus->Receive()));
-			}
-
-			if (controlBus->Receive(Signal::IoWrite))
-			{
-				ioController_->Write(addressBus->Receive(), dataBus->Receive());
-			}
-		}
-	}
-
 	// The probably needs to return std/tl::expected
 	uint64_t Machine::Run(uint16_t pc)
 	{
@@ -195,11 +161,11 @@ namespace MachEmu
 #endif
 		auto machineLoop = [this]
 		{
-			auto dataBus = systemBus_.dataBus;
-			auto controlBus = systemBus_.controlBus;
 			auto currTime = nanoseconds::zero();
 			int64_t totalTicks = 0;
 			int64_t lastTicks = 0;
+			bool quit = false;
+
 #ifdef ENABLE_MEEN_SAVE
 			auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 			auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
@@ -389,7 +355,7 @@ namespace MachEmu
 				return str;
 			};
 #endif // ENABLE_MEEN_SAVE
-			while (controlBus->Receive(Signal::PowerOff) == false)
+			while (quit == false)
 			{
 				//Execute the next instruction
 				auto ticks = cpu_->Execute();
@@ -399,6 +365,8 @@ namespace MachEmu
 				// Check if it is time to service interrupts
 				if (totalTicks - lastTicks >= ticksPerIsr_)
 				{
+					lastTicks = totalTicks;
+
 					auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
 
 					switch (isr)
@@ -412,8 +380,9 @@ namespace MachEmu
 						case ISR::Six:
 						case ISR::Seven:
 						{
-							controlBus->Send(Signal::Interrupt);
-							dataBus->Send(static_cast<uint8_t>(isr));
+							ticks = cpu_->Interrupt(isr);
+							currTime = clock_->Tick(ticks);
+							totalTicks += ticks;
 							break;
 						}
 						case ISR::Load:
@@ -558,7 +527,7 @@ namespace MachEmu
 								onSave.get();
 							}
 #endif // ENABLE_MEEN_SAVE
-							controlBus->Send(Signal::PowerOff);
+							quit = true;
 							break;
 						}
 						case ISR::NoInterrupt:
@@ -582,15 +551,11 @@ namespace MachEmu
 							break;
 						}
 					}
-
-					lastTicks = totalTicks;
 				}
 			}
 
 			return currTime.count();
 		};
-
-
 #ifdef ENABLE_MEEN_RP2040
 		// Need to lunch ml on the second core if runAsync is true
 		totalTime = machineLoop();
@@ -613,7 +578,6 @@ namespace MachEmu
 	uint64_t Machine::WaitForCompletion()
 	{
 		uint64_t totalTime = 0;
-
 #ifdef ENABLE_MEEN_RP2040
 		// Wait on the second thread to complete if runAsync is true
 #else
@@ -638,6 +602,7 @@ namespace MachEmu
 			return make_error_code(errc::busy);
 		}
 
+		cpu_->SetMemoryController(controller);
 		memoryController_ = controller;
 		return make_error_code(errc::no_error);
 	}
@@ -654,6 +619,7 @@ namespace MachEmu
 			return make_error_code(errc::busy);
 		}
 
+		cpu_->SetIoController(controller);
 		ioController_ = controller;
 		return make_error_code(errc::no_error);
 	}

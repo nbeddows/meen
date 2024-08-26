@@ -20,13 +20,11 @@ This list will expand as certain milestones are achieved.
 
 3. Implement an abstract controller interface which can be used to read and write data. The interface can then be used to create custom memory and io controllers which can be targeted towards specific programs and architectures. **COMPLETE**
 
-4. Implement a basic system bus which can be used as 'lines' of communication between the cpu and various controllers. **COMPLETE**
+4. Implement a Zilog Z80 cpu emulator complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
 
-5. Implement a Zilog Z80 cpu emulator complete with passing additional individual instruction unit tests. It should also pass the standard z80 zexall tests which can be found online. **NOT STARTED**
+5. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **COMPLETE**
 
-6. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **COMPLETE**
-
-7. Add support for the RP2040 microcontroller. **IN PROGRESS**
+6. Add support for the RP2040 microcontroller. **IN PROGRESS**
 
 ### Overview
 

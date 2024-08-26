@@ -28,12 +28,21 @@ SOFTWARE.
 #include <string>
 #include <system_error>
 
+#include "meen/Base.h"
+#include "meen/IController.h"
+
 namespace MachEmu
 {
 	struct ICpu
 	{
+		virtual std::error_code SetMemoryController(const std::shared_ptr<IController>& memoryController) = 0;
+		
+		virtual std::error_code SetIoController(const std::shared_ptr<IController>& ioController) = 0;
+
 		//Executes the next instruction
 		virtual uint8_t Execute() = 0;
+
+		virtual uint8_t Interrupt(ISR isr) = 0;
 
 		virtual void Reset(uint16_t pc) = 0;
 

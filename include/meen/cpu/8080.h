@@ -30,9 +30,8 @@ SOFTWARE.
 #include <functional>
 #include <string_view>
 
-#include "meen/Base.h"
 #include "meen/cpu/ICpu.h"
-#include "meen/system_bus/SystemBus.h"
+#include "meen/IController.h"
 
 #define ENABLE_OPCODE_TABLE
 
@@ -79,10 +78,6 @@ namespace MachEmu
 		Register h_;
 		//cppcheck-suppress unusedStructMember
 		Register l_;
-		//Helper funtions to prime the address and data buses
-		//for read write operations.
-		void ReadFromAddress(Signal readLocation, uint16_t addr);
-		void WriteToAddress(Signal writeLocation, uint16_t addr, uint8_t value);
 
 		/**
 			The program counter is a 16 bit register which is accessible to the programmer and whose contents indicate the
@@ -116,10 +111,9 @@ namespace MachEmu
 		uint8_t opcode_{};
 #ifdef ENABLE_OPCODE_TABLE 
 		std::unique_ptr<std::function <uint8_t()>[]> opcodeTable_;
-#endif		
-		std::shared_ptr<AddressBus<uint16_t>> addressBus_;
-		std::shared_ptr<DataBus<uint8_t>> dataBus_;
-		std::shared_ptr<ControlBus<8>> controlBus_;
+#endif
+		std::shared_ptr<IController> memoryController_;
+		std::shared_ptr<IController> ioController_;
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
@@ -199,22 +193,22 @@ namespace MachEmu
 		inline uint8_t Di();
 		inline uint8_t Sphl();
 		inline uint8_t Ei();
-		uint8_t Fetch();
-		std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process_;
 
 	public:
 		/* I8080 overrides */
 		uint8_t Execute() final;
+		uint8_t Interrupt(ISR isr);
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 #ifdef ENABLE_MEEN_SAVE
 		std::error_code Load(const std::string&& json) final;
 		std::string Save() const final;
 #endif // ENABLE_MEEN_SAVE
 		void Reset(uint16_t programCounter) final;
+		std::error_code SetMemoryController(const std::shared_ptr<IController>& memoryController) final;
+		std::error_code SetIoController(const std::shared_ptr<IController>& ioController) final;
 		/* End I8080 overrides */
 
-		Intel8080() = default;
-		Intel8080 (const SystemBus<uint16_t, uint8_t, 8>& systemBus, std::function<void(const SystemBus<uint16_t, uint8_t, 8>&&)> process);
+		Intel8080();
 		~Intel8080() = default;
 	};
 } // namespace MachEmu

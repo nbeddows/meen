@@ -5,6 +5,8 @@
 * Added Conan option `with_save` to enable/disable 
   load/save support. 
 * Added support for ArduinoJson for baremetal.
+* Added RP2040 support.
+* Code refactor for a 2x performace boost.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
