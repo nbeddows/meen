@@ -175,16 +175,6 @@ namespace MachEmu
 			{
 				return make_error_code(errc::json_config);
 			}
-#ifdef ENABLE_MEEN_RP2040
-#ifdef ENABLE_NLOHMANN_JSON
-			if (json.contains("runAsync") == true && json["runAsync"].get<bool>() == true)
-#else
-			if (json["runAsync"] != nullptr && json["runAsync"].as<bool>() == true)
-#endif // ENABLE_NLOHMANN_JSON
-			{
-				return make_error_code(errc::not_implemented);
-			}
-#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 #ifndef ENABLE_ZLIB
 #ifdef ENABLE_NLOHMANN_JSON
