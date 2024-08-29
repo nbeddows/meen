@@ -1304,7 +1304,10 @@ TEST_F(MachineTest, ISR_1)
 TEST_F(MachineTest, Tst8080)
 {
 	// use the cpm io controller for cpm based tests
-	machine_->SetIoController(cpmIoController_);
+	auto err = machine_->SetIoController(cpmIoController_);
+    EXPECT_FALSE(err);
+	err = machine_->SetOptions(R"({"isrFreq":0.02})");
+    EXPECT_FALSE(err);
 	LoadAndRun("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})");
 	EXPECT_EQ(74, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU IS OPERATIONAL"));
 }
@@ -1312,7 +1315,10 @@ TEST_F(MachineTest, Tst8080)
 TEST_F(MachineTest, 8080Pre)
 {
 	// use the cpm io controller for cpm based tests
-	machine_->SetIoController(cpmIoController_);
+	auto err = machine_->SetIoController(cpmIoController_);
+    EXPECT_FALSE(err);
+	err = machine_->SetOptions(R"({"isrFreq":0.02})");
+	EXPECT_FALSE(err);
 	LoadAndRun("8080PRE.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280})");
 	EXPECT_EQ(0, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("8080 Preliminary tests complete"));
 }
@@ -1320,7 +1326,10 @@ TEST_F(MachineTest, 8080Pre)
 TEST_F(MachineTest, CpuTest)
 {
 	// use the cpm io controller for cpm based tests
-	machine_->SetIoController(cpmIoController_);
+	auto err = machine_->SetIoController(cpmIoController_);
+	EXPECT_FALSE(err);
+	err = machine_->SetOptions(R"({"isrFreq":0.02})");
+    EXPECT_FALSE(err);
 	LoadAndRun("CPUTEST.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283})");
 	EXPECT_EQ(168, static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("CPU TESTS OK"));
 }
@@ -1328,7 +1337,10 @@ TEST_F(MachineTest, CpuTest)
 TEST_F(MachineTest, 8080Exm)
 {
 	// use the cpm io controller for cpm based tests
-	machine_->SetIoController(cpmIoController_);
+	auto err = machine_->SetIoController(cpmIoController_);
+	EXPECT_FALSE(err);
+	err = machine_->SetOptions(R"({"isrFreq":0.02})");
+    EXPECT_FALSE(err);
 	LoadAndRun("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})");
 	EXPECT_EQ(static_pointer_cast<CpmIoController>(cpmIoController_)->Message().find("ERROR"), std::string::npos);
 }

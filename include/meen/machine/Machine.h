@@ -46,15 +46,16 @@ namespace MachEmu
 	private:
 		std::unique_ptr<ICpuClock> clock_;
 		std::unique_ptr<ICpu> cpu_;
-		std::shared_ptr<IController> memoryController_;
 		std::shared_ptr<IController> ioController_;
+		std::shared_ptr<IController> memoryController_;
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
+		uint64_t runTime_{};
 #ifdef ENABLE_MEEN_RP2040
 
 #else
-		std::future<int64_t> fut_;
+		std::future<void> fut_;
 #endif
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
@@ -62,6 +63,7 @@ namespace MachEmu
 		std::function<const char*()> onLoad_{};
 		std::function<void(const char* json)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
+		friend void RunMachine(Machine* machine);
 	public:
 		Machine(const char* json);
 		~Machine() = default;

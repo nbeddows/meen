@@ -257,6 +257,7 @@ if(${build_os} STREQUAL "baremetal")
   if(${enable_rp2040} STREQUAL ON)
     target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MEEN_RP2040)
     target_link_libraries(${libMachEmu} PUBLIC pico_stdlib)
+    target_link_libraries(${libMachEmu} PRIVATE pico_multicore)
   endif()
 
   target_link_libraries(${libMachEmu} PUBLIC ArduinoJson)
