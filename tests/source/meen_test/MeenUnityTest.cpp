@@ -71,8 +71,8 @@ namespace MachEmu::tests
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
 
-        // 25 millisecond resolution, service interrupts every 12.5 milliseconds
-        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":0.5})");
+        // 25 millisecond resolution, service interrupts every 8.25 milliseconds
+        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":0.25})");
         TEST_ASSERT_FALSE(err);
 
         int64_t nanos = 0;
@@ -288,7 +288,7 @@ namespace MachEmu::tests
     {
         //cppcheck-suppress unknownMacro
         // Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-        auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+        auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true,"isrFreq":0.25})"); // must be async so the Run method returns immediately
 
         // todo: need to expose the private errc header
         if(errc.value() == 10)
@@ -366,9 +366,7 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
-        EXPECT_FALSE(err);
-	    err = machine_->SetOptions(R"({"isrFreq":0.02})");
-        EXPECT_FALSE(err);
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})");
         TEST_ASSERT_EQUAL_INT(74, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU IS OPERATIONAL"));
     }
@@ -377,9 +375,7 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
-        EXPECT_FALSE(err);
-	    err = machine_->SetOptions(R"({"isrFreq":0.02})");
-        EXPECT_FALSE(err);
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("8080PRE.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280})");
         TEST_ASSERT_EQUAL_INT(0, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("8080 Preliminary tests complete"));
     }
@@ -388,9 +384,7 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
-        EXPECT_FALSE(err);
-	    err = machine_->SetOptions(R"({"isrFreq":0.02})");
-        EXPECT_FALSE(err);
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("CPUTEST.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283})");
         TEST_ASSERT_EQUAL_INT(168, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU TESTS OK"));
     }
@@ -399,9 +393,7 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
-        EXPECT_FALSE(err);
-	    err = machine_->SetOptions(R"({"isrFreq":0.02})");
-        EXPECT_FALSE(err);
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})");
         TEST_ASSERT_EQUAL_INT(static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("ERROR"), std::string::npos);
     }

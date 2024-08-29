@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 #include <assert.h>
+#include <bit>
 #include <cinttypes>
 #ifdef ENABLE_MEEN_RP2040
 #include <pico/multicore.h>
@@ -557,21 +558,17 @@ namespace MachEmu
 #ifdef ENABLE_MEEN_RP2040
 		if(opt_.RunAsync() == true)
 		{
-			// Reset the run time to 0 so the unit tests will fail in this case - remove when implementing multicore
-			runTime_ = 0;
-
 			auto runMachineAsync = []
 			{
-				// todo: get Machine pointer from the queue
-				//Machine* m = nullptr;
-				//RunMachine(m);
-				// todo: push m->runTime back to the queue
+				auto m = std::bit_cast<Machine*>(multicore_fifo_pop_blocking());
+				RunMachine(m);
+				multicore_fifo_push_blocking(0xFFFFFFFF);
 			};
 
+			runTime_ = 0;
 			multicore_reset_core1();
 			multicore_launch_core1(runMachineAsync);
-
-			// push machine pointer to the queue
+			multicore_fifo_push_blocking(std::bit_cast<uint32_t>(this));
 		}
 		else
 		{
@@ -584,6 +581,7 @@ namespace MachEmu
 
 		fut_ = std::async(launchPolicy, [this]
 		{
+			runTime_ = 0;
 			RunMachine(this);
 		});
 
@@ -603,7 +601,13 @@ namespace MachEmu
 #ifdef ENABLE_MEEN_RP2040
 		if(running_ == true && opt_.RunAsync() == true)
 		{
-			// todo: wait on the second thread to complete - block on the queue waiting for the runtime
+			auto core1Ret = multicore_fifo_pop_blocking();
+
+			if(core1Ret != 0xFFFFFFFF)
+			{
+				printf("Machine::WaitForCompletion: failed to execute on RP2040 core1\n");
+			}
+
 			running_ = false;
 			totalTime = runTime_;
 		}
