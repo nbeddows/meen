@@ -8,12 +8,20 @@ class TestIoController(BaseIoController):
         self.__lastTime = 0
 
     def Read(self, deviceNumber):
+        # we are powering down, don't perform any spurious reads
+        if self._isr == ISR.Quit:
+            return 0x00
+
         if deviceNumber == 0:
             return self.__deviceData
         else:
             return 0x00
 
     def Write(self, deviceNumber, value):
+        # we are powering down, don't perform any spurious writes
+        if self._isr == ISR.Quit:
+            return
+
         if deviceNumber == 0:
             self.__deviceData = value
         else:

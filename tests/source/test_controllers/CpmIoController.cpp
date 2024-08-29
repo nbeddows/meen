@@ -50,6 +50,12 @@ namespace MachEmu
 
 	void CpmIoController::Write(uint16_t deviceNumber, uint8_t value)
 	{
+		// we are powering down, don't perform any spurious writes
+		if(powerOff_ == true)
+		{
+			return;
+		}
+
 		switch (deviceNumber)
 		{
 			case 0:
