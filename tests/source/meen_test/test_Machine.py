@@ -26,8 +26,7 @@ class MachineTest(unittest.TestCase):
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()
-        # lock the servicing of interrupts to the clock resolution for performance reasons
-        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":1}')
+        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":0.02}')
         self.machine.SetIoController(self.testIoController)
         self.machine.SetMemoryController(self.memoryController)
         err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
@@ -55,7 +54,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_MethodsErrorAfterRunCalled(self):
-        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
+        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true,"isrFreq":0.5}')
         self.assertEqual(err, ErrorCode.NoError)
 
         err = self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0004)
@@ -99,7 +98,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
 
         # 60Hz clock
-        err = self.machine.SetOptions(r'{"clockResolution":16666667}')
+        err = self.machine.SetOptions(r'{"clockResolution":16666667,"isrFreq":0.5}')
         self.assertEqual(err, ErrorCode.NoError)
 
         nanos = 0
@@ -143,7 +142,7 @@ class MachineTest(unittest.TestCase):
         self.memoryController.Write(0x00FF, 0xFD)
         err = self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.SetOptions(r'{"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}}')
+        err = self.machine.SetOptions(r'{"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]},"isrFreq":0}')
         self.assertEqual(err, ErrorCode.NoError)
         self.machine.SetIoController(self.cpmIoController)
         self.machine.Run(0x0100)
@@ -183,8 +182,7 @@ class i8080Test(unittest.TestCase):
         self.programsDir = MachineTestDeps.programsDir
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
-        # lock the servicing of interrupts to the clock resolution for performance reasons
-        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":1}')
+        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":0.02}')
         self.machine.SetIoController(self.cpmIoController)
         self.machine.SetMemoryController(self.memoryController)
         err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)

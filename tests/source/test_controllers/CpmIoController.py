@@ -13,6 +13,10 @@ class CpmIoController(BaseIoController):
         return 0
 
     def Write(self, deviceNumber, value):
+        # we are powering down, don't perform any spurious writes
+        if self._isr == ISR.Quit:
+            return
+
         match deviceNumber:
             case 0:
                 self.__printMode = value

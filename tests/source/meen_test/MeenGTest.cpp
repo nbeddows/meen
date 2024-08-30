@@ -168,7 +168,7 @@ namespace MachEmu::Tests
 	{
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-		auto errc = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true})"); // must be async so the Run method returns immediately
+		auto errc = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
 		EXPECT_FALSE(errc);
 
 		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));

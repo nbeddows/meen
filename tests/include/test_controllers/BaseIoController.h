@@ -37,18 +37,6 @@ namespace MachEmu
     class BaseIoController : public IController
 	{
 		private:
-			/** Power off signal
-
-				A signal to indicate to the ServiceInterrupts routine that
-				it is time to shutdown.
-
-				@remark		The signal is handled during the servicing of interrupts as it
-							is guaranteed that no instructions are currently executing
-							at that time.
-			*/
-			//cppcheck-suppress unusedStructMember
-			bool powerOff_{};
-
 			/** Machine save signal
 			
 				A signal to indicate to the ServiceInterrupts routine that the machine
@@ -81,6 +69,18 @@ namespace MachEmu
 			//cppcheck-suppress unusedStructMember
 			int64_t saveCycleCount_{-1};
 		protected:
+			/** Power off signal
+
+				A signal to indicate to the ServiceInterrupts routine that
+				it is time to shutdown.
+
+				@remark		The signal is handled during the servicing of interrupts as it
+							is guaranteed that no instructions are currently executing
+							at that time.
+			*/
+			//cppcheck-suppress unusedStructMember
+			bool powerOff_{};
+
 			/** Base IO controller write
 			
 				Writes a specifed value to the give port number.

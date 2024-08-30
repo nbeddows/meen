@@ -34,18 +34,23 @@ namespace MachEmu
 	{
 		uint8_t deviceData = 0x00;
 
-		switch (deviceNumber)
+		// we are powering down, don't perform any spurious reads
+		if(powerOff_ == false)
 		{
-			case 0x00:
+
+			switch (deviceNumber)
 			{
-				//return the data of device 0.
-				deviceData = deviceData_;
-				break;
-			}
-			default:
-			{
-				//we don't support other devices, return 0.
-				break;
+				case 0x00:
+				{
+					//return the data of device 0.
+					deviceData = deviceData_;
+					break;
+				}
+				default:
+				{
+					//we don't support other devices, return 0.
+					break;
+				}
 			}
 		}
 
@@ -54,18 +59,22 @@ namespace MachEmu
 
 	void TestIoController::Write(uint16_t deviceNumber, uint8_t value)
 	{
-		switch (deviceNumber)
+		// we are powering down, don't perform any spurious writes
+		if(powerOff_ == false)
 		{
-			case 0:
+			switch (deviceNumber)
 			{
-				//Update device 0 with the contents of the accumulator.
-				deviceData_ = value;
-				break;
-			}
-			default:
-			{
-				BaseIoController::Write (deviceNumber, value);
-				break;
+				case 0:
+				{
+					//Update device 0 with the contents of the accumulator.
+					deviceData_ = value;
+					break;
+				}
+				default:
+				{
+					BaseIoController::Write (deviceNumber, value);
+					break;
+				}
 			}
 		}
 	}

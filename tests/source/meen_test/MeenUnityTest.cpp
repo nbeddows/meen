@@ -367,6 +367,8 @@ namespace MachEmu::tests
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
         TEST_ASSERT_FALSE(err);
+        err = machine->SetOptions(R"({"isrFreq":0.02})");
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})");
         TEST_ASSERT_EQUAL_INT(74, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU IS OPERATIONAL"));
     }
@@ -375,6 +377,8 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
+        TEST_ASSERT_FALSE(err);
+        err = machine->SetOptions(R"({"isrFreq":0.02})");
         TEST_ASSERT_FALSE(err);
         LoadAndRun("8080PRE.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280})");
         TEST_ASSERT_EQUAL_INT(0, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("8080 Preliminary tests complete"));
@@ -385,6 +389,8 @@ namespace MachEmu::tests
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
         TEST_ASSERT_FALSE(err);
+        err = machine->SetOptions(R"({"isrFreq":0.02})");
+        TEST_ASSERT_FALSE(err);
         LoadAndRun("CPUTEST.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283})");
         TEST_ASSERT_EQUAL_INT(168, static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("CPU TESTS OK"));
     }
@@ -393,6 +399,8 @@ namespace MachEmu::tests
     {
         // use the cpm io controller for cpm based tests
         auto err = machine->SetIoController(cpmIoController);
+        TEST_ASSERT_FALSE(err);
+        err = machine->SetOptions(R"({"isrFreq":0.02})");
         TEST_ASSERT_FALSE(err);
         LoadAndRun("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})");
         TEST_ASSERT_EQUAL_INT(static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("ERROR"), std::string::npos);
