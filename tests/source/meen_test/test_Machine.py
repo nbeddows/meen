@@ -210,7 +210,7 @@ class i8080Test(unittest.TestCase):
         self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
 
     # this will take a little while to complete
-    def test_Cpu8080(self):
+    def test_CpuTest(self):
         err = self.memoryController.Load(self.programsDir + 'CPUTEST.COM', 0x0100)
         self.assertEqual(err, ErrorCode.NoError)
         self.machine.OnSave(lambda x: self.CheckMachineState(r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283}', x))

@@ -25,9 +25,9 @@ set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
 set(libMachEmu mach_emu)
-set(major 1)
-set(minor 6)
-set(bugfix 2)
+set(major 2)
+set(minor 0)
+set(bugfix 0)
 
 if(${enable_rp2040} STREQUAL ON)
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
@@ -119,10 +119,16 @@ endif()
 
 if(${build_os} STREQUAL "baremetal")
   find_package(ArduinoJson REQUIRED)
-  find_package(Unity REQUIRED)
+
+  if(NOT BUILD_TESTING STREQUAL OFF)
+    find_package(Unity REQUIRED)
+  endif()
 else()
   find_package(nlohmann_json REQUIRED)
-  find_package(GTest REQUIRED)
+
+  if(NOT BUILD_TESTING STREQUAL OFF)  
+    find_package(GTest REQUIRED)
+  endif()
 endif()
 
 # Stage 3: assign our include, source and resource files and assign to approriate groups
@@ -522,7 +528,7 @@ endif()
 # Stage 6: Set CPack install parameters
 
 set(CMAKE_INSTALL_PREFIX ./)
-set(CPACK_PACKAGE_FILE_NAME ${libMachEmu}-v${CMAKE_PROJECT_VERSION}-${build_os}-${build_arch}-${runtime_dir})
+set(CPACK_PACKAGE_FILE_NAME ${libMachEmu}-v${CMAKE_PROJECT_VERSION}-${build_os}-${build_arch}-${CMAKE_C_COMPILER_ID}-${CMAKE_C_COMPILER_VERSION})
 set(CPACK_GENERATOR TGZ)
 
 if(DEFINED CMAKE_STRIP)

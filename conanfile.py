@@ -5,7 +5,7 @@ import os
 
 class MachEmuRecipe(ConanFile):
     name = "mach_emu"
-    version = "1.6.2"
+    version = "2.0.0"
     package_type = "library"
     test_package_folder = "tests/conan_package_test"
 
@@ -19,7 +19,7 @@ class MachEmuRecipe(ConanFile):
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "fPIC": [True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_rp2040": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
-    default_options = {"gtest*:build_gmock": False, "zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
+    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     # "tests/CMakeLists.txt",\
@@ -64,9 +64,9 @@ class MachEmuRecipe(ConanFile):
 
             if "arm" in self.settings.arch:
                 self.output.error("Compiling for Windows ARM is not supported")
-    
+
             if self.settings_build.os == "Linux" or self.settings_build == "baremetal":
-                self.output.error("Cross compiling from Linux or baremetal to Windows is not supported")                
+                self.output.error("Cross compiling from Linux or baremetal to Windows is not supported")
         elif self.settings.os == "baremetal":
             self.output.info("Load/Save not supported, removing option with_save")
             self.options.rm_safe("with_save")
@@ -89,6 +89,10 @@ class MachEmuRecipe(ConanFile):
 
         if not self.options.get_safe("with_save", False):
             self.options.rm_safe("with_zlib")
+
+        if self.settings.os == "baremetal":
+            if not self.options.get_safe("with_rp2040", False):
+                self.output.error("Baremetal unsupported (did you enable 'with_rp2040'?)")
 
     def layout(self):
         cmake_layout(self)
