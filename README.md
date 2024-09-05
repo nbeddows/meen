@@ -24,7 +24,7 @@ This list will expand as certain milestones are achieved.
 
 5. Add a Python module which wraps the emulator C++ shared library complete with unit tests. **COMPLETE**
 
-6. Add support for the RP2040 microcontroller. **IN PROGRESS**
+6. Add support for the RP2040 microcontroller. **COMPLETE**
 
 ### Overview
 
@@ -53,7 +53,7 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, pip for conan installation, [cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16) and Clang (minimum version 16).
+MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
 
 #### Pre-requisites
 
@@ -64,8 +64,31 @@ MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build sy
 - `sudo apt install cppcheck` ([if building a binary development package](#building-a-binary-development-package)).
 - `sudo apt install doxygen` ([if building a binary development package](#building-a-binary-development-package)).
 - `sudo apt install python3 python-is-python3 python3-dev` (if building the Python module, see steps 3 and 4).
-- `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf` (if cross compiling for 32 bit Arm, see step 3).
-- `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu` (if cross compiling for 64 bit Arm, see step 3).
+- cross compilation:
+  - armv7hf:
+    - `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`.
+  - aarch64:
+    - `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu`.
+  - rp2040:
+    - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`. # Needs to be installed for the 2.x SDK (for picotool) - libusb-1.0-0-dev`.
+    - `git clone https://github.com/raspberrypi/pico-sdk.git --branch 1.5.1`
+    - `cd pico-sdk`
+    - `git submodule update --init`
+    - build the Raspberry Pi Pico SDK:
+      - Conan and the Raspberry Pi Pico Sdk seem to have an issue with conflicting use of the cmake toolchain file
+        which results in test programs not being able to be compiled during the conan build process as outlined [here](https://github.com/raspberrypi/pico-sdk/issues/1693).
+        At this point we need to build the sdk so that we have the required tools pre-built so the Conan build process will succeed:
+        - `mkdir build`<br>
+           **NOTE**: Conan will assume that the build tools are located in the `build` directory, **do not** use a different directory name.
+        - `cd build`
+        - `cmake ..`
+        - `make`
+    - Set the Raspberry Pi Pico SDK Path:
+        -`export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
+        To avoid having to export it on every session, add it to the end of your .bashrc file instead:
+        - `nano ~/.bashrc`
+        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
+	- save, close and re-open shell.
 
 ##### Windows (10)
 
@@ -79,38 +102,44 @@ MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build sy
 #### Configuration
 
 **1.** Install the supported meen conan configurations (v0.1.0) (if not done so already):
-- `conan config install -sf profiles -tf profiles https://${token}@github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
+- `conan config install -sf profiles -tf profiles https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
-**3.** Run conan to install the dependent packages.
-- Windows x86_64 build and host: `conan install . --build=missing --profile:build=windows-msvc-x86_64 --profile:host=windows-msvc-x86_64`.
-- Linux x86_64 build and host: `conan install . --build=missing --profile:build=linux-gcc-x86_64 --profile:host=linux-gcc-x86_64`.
-- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=linux-gcc-armv7hf`.<br>
-- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=linux-gcc-aarch64`.<br>
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=linux-gcc-x86_64 -profile:host=baremetal-gcc-rp2040`.<br>
+**3.** Install dependencies:
+- Windows x86_64 build and host: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193`.
+- Windows x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193-gtest`.
+- Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13`.
+- Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`.
+- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13`.
+- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13-gtest`.
+- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13`.
+- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13-gtest`.
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13`.
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13-unity`.<br>
 
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture, [see pre-requisites](#pre-requisites).
 
-The following install options are supported:
-- build/don't build the unit tests: `--conf=tools.build:skip_test=[True|False(default)]`
+The following additional install options are supported:
 - enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on arm platforms)
 - enable/disable zlib support: `--options=with_zlib=[True(default)|False]`
 
-The following will enable python and disable zlib: `conan install . --build=missing --options=with_python=True --options=with_zlib=False`
+The following will enable python and disable zlib: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193 --options=with_python=True --options=with_zlib=False`
 
 The following dependent packages will be (compiled if required and) installed based on the supplied options:
 
+- `arduinojson`: for parsing machine configuration options  (baremetal).
 - `base64`: for base64 coding.
 - `gtest`: for running the meen unit tests.
 - `hash-library`: for md5 hashing.
 - `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
+- `unity`: for running the meen unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
 
-You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --settings=build_type=Debug`.
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --settings=build_type=Debug`.
 
-You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --options=zlib/*:shared=False`.
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --options=zlib/*:shared=False`.
 
 **4.** Run cmake to configure and generate the build system.
 
@@ -129,10 +158,10 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 
 **6.** Run the unit tests:
 
-C++ - Linux/Windows:
+**C++ - Linux/Windows (x86_64)**:
 - `artifacts/Release/x86_64/bin/mach_emu_test tests/programs/ [--gtest_filter=${gtest_filter}]`.
 
-C++ - Arm Linux:<br>
+**C++ - Linux (armv7hf, armv8):**<br>
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
@@ -142,10 +171,30 @@ When running a cross compiled build the binaries need to be uploaded to the host
 5. Change directory to mach-emu: `cd mach-emu`.
 6. Run the unit tests: `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
-Python:
+**C++ - RP2040 (armv6-m)**
+
+When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
+This example will assume you are deploying the UF2 file from a Raspberry Pi.
+1. Create an Arm Linux binary distribution: see building a binary development package.
+2. Copy the distribution to the arm machine: `scp build/MinSizeRel/mach_emu-v1.6.2-Linux-6.2.0-39-generic-armv6-bin.tar.gz ${user}@raspberrypi:mach_emu-v1.6.2.tar.gz`.
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
+4. Extract the meen-hw archive copied over via scp: `tar -xzf mach_emu-v1.6.2.tar.gz`.
+5. Hold down the `bootsel` button on the pico and plug in the usb cable into the usb port of the Raspberry Pi then release the `bootsel` button.
+6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`.
+7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`.
+8. Mount the device: `sudo mount /dev/sdb1 /mnt/pico`. Run `ls /mnt/pico` to confirm it mounted.
+9. Copy the uf2 image to the pico: `cp mach_emu-v1.6.2-Linux-6.2.0-39-generic-armv6-bin/bin/mach_emu_test.uf2 /mnt/pico`
+10. You should see a new device `ttyACM0`: `ls /dev` to confirm.
+11. Install minicom (if not done already): `sudo apt install minicom`.
+12. Run minicom to see test output: `minicom -b 115200 -o -D /dev/ttyACM0`.
+    You should see the test output running at 1 second intervals.
+13. Quit minicom once done: `ctrl-a, x, enter`
+14. Unmount the device: `sudo umount /mnt/pico`.
+
+**Python**:
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`.
 
-**Note**: the `Cpu8080` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+**Note**: the `CpuTest` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
 - `artifacts\Release\x86_64\bin\mach_emu_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
 - `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
@@ -168,7 +217,7 @@ CPack can be used directly rather than the package target if finer control is re
 
 Run `cpack --help` for a list available generators.
 
-The final package can be stripped by running the mach_emu_strip_pkg target:
+The final package can be stripped by running the mach_emu_strip_pkg target (defined only for platforms that suppor strip):
 - `cmake --build --preset conan-release --target=mach_emu_strip_pkg`.
 
 When the package has been built with unit tests enabled it will contain a script called `run-mach_emu-unit-tests` which can be used to test the development package:
@@ -188,12 +237,12 @@ The following additional options are supported:
 **NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
-1. `conan create . --build=missing`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
-2. `conan create . --build=missing --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
-3. `conan create . --build=missing --options=with_zlib=False`: same as 1 but will disable zlib support. 
-4. `conan create . --build=missing --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
-5. `conan create . --build=missing --conf=tools.build:skip_test=True`: same as 1 but will skip running the unit tests.
-6. `conan create . --build=missing --options=with_i8080_test_suites=True`: same as 1 but will run the i8080 test suites.
+1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
+3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
+4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
+5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13`: same as 1 but will skip running the unit tests.
+6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_i8080_test_suites=True`: same as 1 but will run the i8080 test suites.
 
 #### Upload a Conan package
 
