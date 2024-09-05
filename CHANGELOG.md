@@ -1,3 +1,4 @@
+2.0.0
 * Updated the project layout for improved workflow.
 * Added std::error_code support.
 * Removed the use of exceptions (methods return std::error_code).
@@ -9,6 +10,8 @@
 * Code refactor for a 2x performace boost.
 * The ISR frequency is now honoured when no clock resolution
   is set.
+* Compiler Id and version are now incorporated
+  into the package name.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
