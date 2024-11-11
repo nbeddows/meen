@@ -37,7 +37,7 @@ SOFTWARE.
 
 using namespace std::chrono;
 
-namespace MachEmu
+namespace meen
 {
 	CpuClock::CpuClock(uint64_t speed) :
 		timePeriod_(1000000000 / speed)
@@ -249,4 +249,4 @@ namespace MachEmu
 #endif
 		lastTime_ = epoch_;
 	}
-} // namespace MachEmu
+} // namespace meen

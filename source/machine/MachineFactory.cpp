@@ -23,7 +23,7 @@ SOFTWARE.
 #include "meen/MachineFactory.h"
 #include "meen/machine/Machine.h"
 
-namespace MachEmu
+namespace meen
 {
 	const char* Version()
 	{
@@ -40,4 +40,4 @@ namespace MachEmu
 	{
 		return std::make_unique<Machine>(json);
 	}
-} // namespace MachEmu
+} // namespace meen

@@ -4,13 +4,13 @@
 #include "meen/MachineFactory.h"
 #include "meen/MEEN_Error.h"
 
-namespace MachEmu
+namespace meen
 {
     // Factory and Machine wrapper
     class MachineHolder final
     {
     private:
-        std::unique_ptr<MachEmu::IMachine> machine_;
+        std::unique_ptr<meen::IMachine> machine_;
         std::string json_;
     public:
         MachineHolder();
@@ -21,11 +21,11 @@ namespace MachEmu
         uint64_t Run(uint16_t offset);
         std::string Save() const;
         errc SetClockResolution(int64_t clockResolution);
-        errc SetIoController(MachEmu::IController* controller);
-        errc SetMemoryController(MachEmu::IController* controller);
+        errc SetIoController(meen::IController* controller);
+        errc SetMemoryController(meen::IController* controller);
         errc SetOptions(const char* options);
         uint64_t WaitForCompletion();
     };
-} // namespace MachEmu
+} // namespace meen
 
 #endif // MACHINEHOLDER_H

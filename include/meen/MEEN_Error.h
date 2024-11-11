@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <system_error>
 
-namespace MachEmu
+namespace meen
 {
 	/** Meen Error codes
 
@@ -59,8 +59,8 @@ namespace MachEmu
 
 		@param	ec	The meen::errc to use to create a meen std::error_code
 	*/
-	inline std::error_code make_error_code(errc ec) { return {ec, MachEmu::category()}; }
-} // namespace MachEmu
+	inline std::error_code make_error_code(errc ec) { return {ec, meen::category()}; }
+} // namespace meen
 
 namespace std
 {
@@ -69,7 +69,7 @@ namespace std
 		Inform std that our meen::errc enum is a std::error_code enum.
 	*/
 	template<>
-	struct is_error_code_enum<MachEmu::errc> : public std::true_type {};
+	struct is_error_code_enum<meen::errc> : public std::true_type {};
 } // namespace std
 
 #endif // MEEN_MEEN_ERROR_H

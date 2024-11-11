@@ -23,7 +23,7 @@ SOFTWARE.
 #include "meen/Base.h"
 #include "test_controllers/TestIoController.h"
 
-namespace MachEmu
+namespace meen
 {
 	std::array<uint8_t, 16> TestIoController::Uuid() const
 	{
@@ -108,4 +108,4 @@ namespace MachEmu
 
 		return isr;
 	}
-} // namespace MachEmu
+} // namespace meen

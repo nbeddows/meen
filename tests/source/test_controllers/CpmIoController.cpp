@@ -23,7 +23,7 @@ SOFTWARE.
 #include "meen/Base.h"
 #include "test_controllers/CpmIoController.h"
 
-namespace MachEmu
+namespace meen
 {
     CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController)
 	{
@@ -112,4 +112,4 @@ namespace MachEmu
 	{
 		return BaseIoController::ServiceInterrupts(currTime, cycles);
 	}
-} // namespace MachEmu
+} // namespace meen

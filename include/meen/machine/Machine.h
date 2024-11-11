@@ -35,7 +35,7 @@ SOFTWARE.
 #include "meen/IMachine.h"
 #include "meen/opt/Opt.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Machine
 
@@ -128,6 +128,6 @@ namespace MachEmu
 		*/
 		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // MACHINE_H

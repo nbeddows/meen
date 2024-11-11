@@ -34,7 +34,7 @@ SOFTWARE.
 #include "meen/MEEN_Error.h"
 #include "meen/clock/ICpuClock.h"
 
-namespace MachEmu
+namespace meen
 {
 	//Slow down the current thread to emulate the desired clock speed.
 	//Achieved through a combination of sleep/spin.
@@ -101,6 +101,6 @@ namespace MachEmu
 		//Returns the host CPU time.
 		std::chrono::nanoseconds Tick(uint64_t ticks) final;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // CPUCLOCK_H

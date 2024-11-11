@@ -41,7 +41,7 @@ SOFTWARE.
 
 using namespace std::chrono;
 
-namespace MachEmu
+namespace meen
 {
 	Machine::Machine(const char* options)
 	{
@@ -118,7 +118,7 @@ namespace MachEmu
 		return ErrorCode::NoError;
 	}
 
-	void RunMachine(MachEmu::Machine* m)
+	void RunMachine(meen::Machine* m)
 	{
 		auto currTime = nanoseconds::zero();
 		int64_t totalTicks = 0;
@@ -753,4 +753,4 @@ namespace MachEmu
 
 		return cpu_->GetState(size);
 	}
-} // namespace MachEmu
+} // namespace meen

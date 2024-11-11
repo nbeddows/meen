@@ -3,7 +3,7 @@
 
 #include "meen/machine_py/ControllerPy.h"
 
-namespace MachEmu
+namespace meen
 {
     uint8_t ControllerPy::Read(uint16_t address)
     {
@@ -26,10 +26,10 @@ namespace MachEmu
         );
     };
 
-    MachEmu::ISR ControllerPy::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
+    meen::ISR ControllerPy::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
     {
         PYBIND11_OVERRIDE_PURE(
-            MachEmu::ISR,       /* Return type */
+            meen::ISR,       /* Return type */
             IController,        /* Parent class */
             ServiceInterrupts,  /* Name of function in C++ (must match Python name) */
             currTime,           /* Argument(s) */

@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "meen/IController.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Base IO controller
 		
@@ -121,6 +121,6 @@ namespace MachEmu
 			*/
 			void SaveStateOn(int64_t cycleCount);
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // BASEIOCONTROLLER_H

@@ -27,7 +27,7 @@ SOFTWARE.
 
 #include "meen/clock/ICpuClock.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Factory function to make a cpu clock
 	
@@ -39,6 +39,6 @@ namespace MachEmu
 		@return	unique_ptr				A unique_ptr to the CpuClock interface.
 	*/
 	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
-} // namespace MachEmu
+} // namespace meen
 
 #endif // CPUCLOCK_FACTORY_H

@@ -22,7 +22,7 @@ SOFTWARE.
 
 #include "meen/MEEN_Error.h"
 
-namespace MachEmu
+namespace meen
 {
 	namespace detail
 	{
@@ -77,4 +77,4 @@ namespace MachEmu
 		static detail::category instance;
 		return instance;
 	}
-} // namespace MachEmu
+} // namespace meen

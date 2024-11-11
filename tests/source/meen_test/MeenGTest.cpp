@@ -34,7 +34,7 @@ SOFTWARE.
 #include "test_controllers/TestIoController.h"
 #include "test_controllers/CpmIoController.h"
 
-namespace MachEmu::Tests
+namespace meen::Tests
 {
 	class MachineTest : public testing::Test
 	{
@@ -387,7 +387,7 @@ namespace MachEmu::Tests
 	}
 
 	#include "8080Test.cpp"
-} // namespace MachEmu::Tests
+} // namespace meen::Tests
 
 int main(int argc, char** argv)
 {
@@ -396,7 +396,7 @@ int main(int argc, char** argv)
 
 	if (argc > 1)
 	{
-		MachEmu::Tests::MachineTest::programsDir_ = argv[1];
+		meen::Tests::MachineTest::programsDir_ = argv[1];
 	}
 
 	return RUN_ALL_TESTS();

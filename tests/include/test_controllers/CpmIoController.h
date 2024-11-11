@@ -29,7 +29,7 @@ SOFTWARE.
 
 #include "test_controllers/BaseIoController.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Basic CP/M IO Controller
 
@@ -158,6 +158,6 @@ namespace MachEmu
 		*/
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // CPMIOCONTROLLER_H

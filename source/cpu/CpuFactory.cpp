@@ -22,10 +22,10 @@ SOFTWARE.
 
 #include "meen/cpu/8080.h"
 
-namespace MachEmu
+namespace meen
 {
 	std::unique_ptr<ICpu> Make8080()
 	{
 		return std::make_unique<Intel8080>();
 	}
-} // namespace MachEmu
+} // namespace meen

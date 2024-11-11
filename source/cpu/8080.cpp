@@ -32,7 +32,7 @@ SOFTWARE.
 #include "meen/MEEN_Error.h"
 #include "meen/cpu/8080.h"
 
-namespace MachEmu
+namespace meen
 {
 
 Intel8080::Intel8080()
@@ -1904,4 +1904,4 @@ uint8_t Intel8080::Ei()
 	return 4;
 }
 
-} // namespace MachEmu
+} // namespace meen

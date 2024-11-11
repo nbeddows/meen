@@ -24,7 +24,7 @@ SOFTWARE.
 #include "meen/Base.h"
 #include "test_controllers/BaseIoController.h"
 
-namespace MachEmu
+namespace meen
 {
 	void BaseIoController::SaveStateOn(int64_t cycleCount)
 	{
@@ -60,4 +60,4 @@ namespace MachEmu
 		
 		return isr;
 	}
-} // namespace MachEmu
+} // namespace meen
