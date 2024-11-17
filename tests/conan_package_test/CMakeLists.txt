@@ -1,15 +1,15 @@
 cmake_minimum_required(VERSION 3.25)
-project(MachEmuPackageTest CXX)
+project(MeenPackageTest CXX)
 
 if(NOT BUILD_SHARED_LIBS STREQUAL ON)
   if(DEFINED WIN32)
-    set(static_lib mach_emu_STATIC)
+    set(static_lib meen_STATIC)
   endif()
 endif()
 
-find_package(mach_emu CONFIG REQUIRED)
+find_package(meen CONFIG REQUIRED)
 
-add_executable(MachEmuPackageTest source/MachEmuPackageTest.cpp)
+add_executable(MeenPackageTest source/MeenPackageTest.cpp)
 
 if(DEFINED artifacts_dir OR DEFINED zlib_bin_dir)
   if(MSVC)
@@ -22,10 +22,10 @@ if(DEFINED artifacts_dir OR DEFINED zlib_bin_dir)
   generatePythonUnitTestDeps(${artifacts_dir} testControllersPathNotUsed testProgramsPathNoUsed ${zlib_bin_dir})
 
   add_custom_command(
-    TARGET MachEmuPackageTest POST_BUILD
+    TARGET MeenPackageTest POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/source/MachineTestDeps.py
   )
 endif()
 
-target_compile_definitions(MachEmuPackageTest PRIVATE ${static_lib})
-target_link_libraries(MachEmuPackageTest mach_emu::mach_emu)
+target_compile_definitions(MeenPackageTest PRIVATE ${static_lib})
+target_link_libraries(MeenPackageTest meen::meen)

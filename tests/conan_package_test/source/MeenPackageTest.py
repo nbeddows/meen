@@ -22,6 +22,6 @@ import MachineTestDeps
 import os
 import sys
 
-from mach_emuPy import __version__
-print("mach_emu python module version:", __version__)
+from meenPy import __version__
+print("meen python module version:", __version__)
 

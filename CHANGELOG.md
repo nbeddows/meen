@@ -55,12 +55,12 @@
 * Added `romOffset` config option.
 * Added `romSize` config option.
 * Removed the use of c++20 modules.
-* Enabled MachEmuPy for Linux.
+* Enabled MeenPy for Linux.
 * Implemented `runAsync` option for Linux.
 
 1.4.0 [19/03/24]
 * Added Version API method.
-* Added Python module MachEmuPy.
+* Added Python module MeenPy.
 * Added Python unit tests.
 * Added factory method `MakeMachine`.
 * Deprecated factory method `Make8080Machine`.
@@ -123,8 +123,8 @@
 * Added Doxygen generated html documentation to the sdk.
 
 0.2.1 [18/09/21]
-* The static library machemu.lib has been changed to a dll.
-* MachineFactory::MakeMachine is now exported from machemu.dll.
+* The static library meen.lib has been changed to a dll.
+* MachineFactory::MakeMachine is now exported from meen.dll.
 * Added a SpaceInvaders solution file to the Windows directory of
   the sdk.
 * Changed the directory structure of the sdk Windows directory to
@@ -132,8 +132,8 @@
   and machuemu dependencies.
 
 0.2.0 [17/09/21]
-* Added machemu sdk with SpaceInvaders test app.
-* Now outputting all dependant machemu libraries as machemu.lib so
+* Added meen sdk with SpaceInvaders test app.
+* Now outputting all dependant meen libraries as meen.lib so
   only one library needs to be linked to.
 
 0.1.0 [10/09/21]

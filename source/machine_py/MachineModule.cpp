@@ -15,7 +15,7 @@
 namespace py = pybind11;
 
 //cppcheck-suppress unusedFunction
-PYBIND11_MODULE(mach_emuPy, meen)
+PYBIND11_MODULE(meenPy, meen)
 {        
     meen.attr("__version__") = meen::Version();
 

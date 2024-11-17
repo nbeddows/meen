@@ -27,7 +27,7 @@ namespace meen
 {
 	const char* Version()
 	{
-		return mach_emu_VERSION;
+		return meen_VERSION;
 	}
 
 	//cppcheck-suppress unusedFunction

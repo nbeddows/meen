@@ -28,11 +28,11 @@ This list will expand as certain milestones are achieved.
 
 ### Overview
 
-Conceptually speaking, MachEmu can be represented by the following diagram:
+Conceptually speaking, Meen can be represented by the following diagram:
 
 ![](docs/images/MachineDiagram.png)
 
-As can be seen from the diagram above MachEmu is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
+As can be seen from the diagram above Meen is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
 
 The outer machine represents the inner machine customisation. For example, custom input/output may involve interacting with a keyboard or mouse, or some other proprietary peripheral, whereas custom memory maybe as simple as reading and writing to a block of locally allocated memory, a network socket or some other proprietary memory configuration, this all depends on the machine being built, see `IMachine::SetIoControlller` and `IMachine::SetMemoryController`.
 
@@ -48,12 +48,12 @@ The following table displays the current defacto test suites that these unit tes
 |       | CPUTEST          | PASS   |
 |       | TST8080          | PASS   |
 
-`IMachine.h` specifies the MachEmu API.<br>
-`MachineFactory.h` specifies the MachEmu library entry point.
+`IMachine.h` specifies the Meen API.<br>
+`MachineFactory.h` specifies the Meen library entry point.
 
 ### Compilation
 
-MachEmu uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
+Meen uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12), MSVC(minimum version 16). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
 
 #### Pre-requisites
 
@@ -151,7 +151,7 @@ A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build
 - Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`.
 - Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail).
 
-**5.** Run cmake to compile MachEmu: `cmake --build --preset conan-release`.<br>
+**5.** Run cmake to compile Meen: `cmake --build --preset conan-release`.<br>
 The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
 
 **NOTE**: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
@@ -159,7 +159,7 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 **6.** Run the unit tests:
 
 **C++ - Linux/Windows (x86_64)**:
-- `artifacts/Release/x86_64/bin/mach_emu_test tests/programs/ [--gtest_filter=${gtest_filter}]`.
+- `artifacts/Release/x86_64/bin/meen_test tests/programs/ [--gtest_filter=${gtest_filter}]`.
 
 **C++ - Linux (armv7hf, armv8):**<br>
 
@@ -169,21 +169,21 @@ When running a cross compiled build the binaries need to be uploaded to the host
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
 4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
 5. Change directory to mach-emu: `cd mach-emu`.
-6. Run the unit tests: `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
+6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
 **C++ - RP2040 (armv6-m)**
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 This example will assume you are deploying the UF2 file from a Raspberry Pi.
 1. Create an Arm Linux binary distribution: see building a binary development package.
-2. Copy the distribution to the arm machine: `scp build/MinSizeRel/mach_emu-v1.6.2-Linux-6.2.0-39-generic-armv6-bin.tar.gz ${user}@raspberrypi:mach_emu-v1.6.2.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/MinSizeRel/meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin.tar.gz ${user}@raspberrypi:meen-v1.6.2.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the meen-hw archive copied over via scp: `tar -xzf mach_emu-v1.6.2.tar.gz`.
+4. Extract the meen-hw archive copied over via scp: `tar -xzf meen-v1.6.2.tar.gz`.
 5. Hold down the `bootsel` button on the pico and plug in the usb cable into the usb port of the Raspberry Pi then release the `bootsel` button.
 6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`.
 7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`.
 8. Mount the device: `sudo mount /dev/sdb1 /mnt/pico`. Run `ls /mnt/pico` to confirm it mounted.
-9. Copy the uf2 image to the pico: `cp mach_emu-v1.6.2-Linux-6.2.0-39-generic-armv6-bin/bin/mach_emu_test.uf2 /mnt/pico`
+9. Copy the uf2 image to the pico: `cp meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin/bin/meen_test.uf2 /mnt/pico`
 10. You should see a new device `ttyACM0`: `ls /dev` to confirm.
 11. Install minicom (if not done already): `sudo apt install minicom`.
 12. Run minicom to see test output: `minicom -b 115200 -o -D /dev/ttyACM0`.
@@ -195,20 +195,20 @@ This example will assume you are deploying the UF2 file from a Raspberry Pi.
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`.
 
 **Note**: the `CpuTest` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
-- `artifacts\Release\x86_64\bin\mach_emu_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
+- `artifacts\Release\x86_64\bin\meen_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
 - `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
-The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/mach_emu_test ${test/programs/directory/}`.
+The location of the test programs directory can be overridden if required: `artifacts/Release/x86_64/bin/meen_test ${test/programs/directory/}`.
 
 #### Building a binary development package
 
-MachEmu support the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
+Meen supports the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
 
 Once the [configuration](#configuration) step is complete a binary development tgz package can be built with the following command:
 - `cmake --build --preset conan-release --target=package`.
 
 The package will be located in `build/Release/` with a name similar to the following depending on the platform it was built on:
-- `mach_emu-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`.
+- `meen-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`.
 
 CPack can be used directly rather than the package target if finer control is required:
 - `cpack --config build\CPackConfig.cmake -C ${build_type} -G 7Z`
@@ -217,18 +217,18 @@ CPack can be used directly rather than the package target if finer control is re
 
 Run `cpack --help` for a list available generators.
 
-The final package can be stripped by running the mach_emu_strip_pkg target (defined only for platforms that suppor strip):
-- `cmake --build --preset conan-release --target=mach_emu_strip_pkg`.
+The final package can be stripped by running the meen_strip_pkg target (defined only for platforms that support strip):
+- `cmake --build --preset conan-release --target=meen_strip_pkg`.
 
-When the package has been built with unit tests enabled it will contain a script called `run-mach_emu-unit-tests` which can be used to test the development package:
-- `./run-mach_emu-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
-- `start run-mach_emu-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+When the package has been built with unit tests enabled it will contain a script called `run-meen-unit-tests` which can be used to test the development package:
+- `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
+- `start run-meen-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 
-**NOTE**: the package will not contain Python units tests if MachEmu was not configured with the python module enabled.
+**NOTE**: the package will not contain Python units tests if Meen was not configured with the python module enabled.
 
 #### Export a Conan package
 
-MachEmu can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
+Meen can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
 
 The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
@@ -237,7 +237,7 @@ The following additional options are supported:
 **NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
-1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the mach_emu package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the meen package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
 2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
 3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
 4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
@@ -252,9 +252,9 @@ Example command lines (once the artifactory server has been installed and is run
 1. `conan remote add artifactory http://<server-ip>:8081/artifactory/api/conan/conan-local`: add the package server to the list of Conan remotes.
 2. `conan remote login artifactory <user> -p <password>`: login to the artifactory server so commands can be issued.
 3. `conan remote list`: list the remotes to ensure that it has been added.
-4. `conan upload mach_emu -r=artifactory`: upload the mach_emu package to the remote.
-5. `conan search mach_emu -r=artifactory`: search the remote to ensure that it was uploaded.
-6. `conan remove mach_emu -r=artifactory`: remove the mach_emu package from the remote.
+4. `conan upload meen -r=artifactory`: upload the meen package to the remote.
+5. `conan search meen -r=artifactory`: search the remote to ensure that it was uploaded.
+6. `conan remove meen -r=artifactory`: remove the meen package from the remote.
 7. `conan remote remove artfactory`: remove the artifactory remote from the list of remotes.
 
 ### Basic principles of operation
@@ -339,7 +339,7 @@ The following table describes the supported options (note, when no option is spe
 | compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
 |                       |        | "none"             | No compression will be used when saving the state of the ram                       |
 | encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via `MachEmu::MakeMachine`)  |
+| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via `Meen::MakeMachine`)  |
 | isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
 |                       |        | 1                  | Service interrupts after each clock tick when the `clockResolution` is >= 0 or each|
 |                       |        |                    | second when the `clockResolution` is -1                                            |
@@ -364,14 +364,14 @@ The following table describes the supported options (note, when no option is spe
 There are two methods of supplying configuration options:
 
 1. Via the `MakeMachine` factory method:<br>
-    C++ - `auto machine = MachEmu::MakeMachine(R"({"cpu":"i8080"})")`<br>
+    C++ - `auto machine = Meen::MakeMachine(R"({"cpu":"i8080"})")`<br>
     Python - `self.machine = MakeMachine(r'{"cpu":"i8080"}')`
 
 2. Via the `IMachine` interface method:<br>
     C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
     Python - `self.machine.SetOptions(r'{"isrFreq":1.0}')`
 
-See `MachEmu::MakeMachine` and `IMachine::SetOptions` for further details.
+See `Meen::MakeMachine` and `IMachine::SetOptions` for further details.
 
 ### Acknowledgements
 

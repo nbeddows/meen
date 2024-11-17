@@ -27,15 +27,15 @@ SOFTWARE.
 #include "meen/IMachine.h"
 
 #ifdef _WINDOWS
-#if mach_emu_STATIC
+#if meem_STATIC
 #define DLL_EXP_IMP
-#elif defined mach_emu_EXPORTS
+#elif defined meen_EXPORTS
 #define DLL_EXP_IMP __declspec(dllexport)
 #else
 #define DLL_EXP_IMP __declspec(dllimport)
 #endif
 #else
-#ifdef mach_emu_EXPORTS
+#ifdef meen_EXPORTS
 #define DLL_EXP_IMP [[gnu::visibility("default")]]
 #else
 #define DLL_EXP_IMP
@@ -50,12 +50,14 @@ namespace meen
 		@return A string containing the current version, in a format
 				described by [semantic versioning](https://semver.org/)
 
-				```
+				@code
+
 				<major>"."<minor>"."<patch>
 				<major>"."<minor>"."<patch>"-"<pre-release>
 				<major>"."<minor>"."<patch>"+"<build>
 				<major>"."<minor>"."<patch>"-"<pre-release>"+"<build>
-				```
+				
+				@endcode
 
 		@remark Available since 1.4.0.
 

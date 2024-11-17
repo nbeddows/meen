@@ -3,8 +3,8 @@ from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 from conan.tools.build import can_run
 import os
 
-class MachEmuRecipe(ConanFile):
-    name = "mach_emu"
+class MeenRecipe(ConanFile):
+    name = "meen"
     version = "2.0.0"
     package_type = "library"
     test_package_folder = "tests/conan_package_test"
@@ -124,7 +124,7 @@ class MachEmuRecipe(ConanFile):
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
-            self.run(os.path.join(testsDir, "mach_emu_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/programs/")))
+            self.run(os.path.join(testsDir, "meen_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/programs/")))
             if self.options.get_safe("with_python", False):
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:

@@ -1,5 +1,5 @@
-from mach_emuPy import Controller
-from mach_emuPy import ISR
+from meenPy import Controller
+from meenPy import ISR
 import numpy as np
 
 class MemoryController(Controller):

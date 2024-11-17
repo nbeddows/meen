@@ -1,5 +1,5 @@
 from BaseIoController import BaseIoController
-from mach_emuPy import ISR
+from meenPy import ISR
 
 class CpmIoController(BaseIoController):
     def __init__(self, memoryController):
