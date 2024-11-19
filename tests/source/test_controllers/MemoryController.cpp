@@ -25,7 +25,7 @@ SOFTWARE.
 #include "meen/Base.h"
 #include "test_controllers/MemoryController.h"
 
-namespace MachEmu
+namespace meen
 {
 	MemoryController::MemoryController()
 	{
@@ -93,4 +93,4 @@ namespace MachEmu
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;
 	}
-} // namespace MachEmu
+} // namespace meen

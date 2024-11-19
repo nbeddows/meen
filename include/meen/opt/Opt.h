@@ -32,13 +32,13 @@ SOFTWARE.
 #include <system_error>
 #include <vector>
 
-namespace MachEmu
+namespace meen
 {
 	/** Machine options
 
 		A wrapper around json option parsing.
 
-		@see	MachEmu::MakeMachine for configuration options.
+		@see	meen::MakeMachine for configuration options.
 
 		@todo	Add option for high resolution timer.
 	*/
@@ -154,6 +154,6 @@ namespace MachEmu
 			bool SaveAsync() const;
 #endif
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // OPT_H

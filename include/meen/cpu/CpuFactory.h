@@ -27,9 +27,9 @@ SOFTWARE.
 
 #include "meen/cpu/ICpu.h"
 
-namespace MachEmu
+namespace meen
 {
 	std::unique_ptr<ICpu> Make8080();
-} // namespace MachEmu
+} // namespace meen
 
 #endif // CPU_FACTORY_H

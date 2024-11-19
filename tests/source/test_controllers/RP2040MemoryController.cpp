@@ -46,7 +46,7 @@ extern uint8_t exm8080End;
 extern uint8_t tst8080Start;
 extern uint8_t tst8080End;
 
-namespace MachEmu
+namespace meen
 {
 	MemoryController::MemoryController()
 	{
@@ -136,4 +136,4 @@ namespace MachEmu
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;
 	}
-} // namespace MachEmu
+} // namespace meen

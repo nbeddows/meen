@@ -4,7 +4,7 @@ if(DEFINED ARGV3)
     set(addZlibBinDir "import os\nos.add_dll_directory(os.path.abspath(\"${ARGV3}\"))\n")
 endif()
 
-if (NOT DEFINED MachEmuPackageTest)
+if (NOT DEFINED MeenPackageTest)
    set(unitTestDeps "# absolute path to Python controller test modules\nsys.path.append(\"${testControllersPath}\")\nprogramsDir = \"${testProgramsPath}\"\n")
 endif()
 

@@ -32,7 +32,7 @@ SOFTWARE.
 
 	Free standing methods that provide utility support.
 */
-namespace MachEmu::Utils
+namespace meen::Utils
 {
 #ifdef ENABLE_BASE64	
 	/** Binary to text encoding with optional compression
@@ -83,6 +83,6 @@ namespace MachEmu::Utils
 	*/
 	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len);
 #endif // ENABLE_HASH_LIBRARY
-} // namespace MachEmu::Utils
+} // namespace meen::Utils
 
 #endif // UTILS_H

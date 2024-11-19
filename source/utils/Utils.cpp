@@ -33,7 +33,7 @@ SOFTWARE.
 
 #include "meen/utils/Utils.h"
 
-namespace MachEmu::Utils
+namespace meen::Utils
 {
 #ifdef ENABLE_BASE64
 	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, uint32_t binLen)
@@ -135,4 +135,4 @@ namespace MachEmu::Utils
 		return hash;
 	}
 #endif // ENABLE_HASH_LIBRARY
-} // namespace MachEmu::Utils
+} // namespace meen::Utils

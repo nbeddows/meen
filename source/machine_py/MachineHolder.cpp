@@ -3,16 +3,16 @@
 
 #include "meen/machine_py/MachineHolder.h"
 
-namespace MachEmu
+namespace meen
 {
 	MachineHolder::MachineHolder()
 	{
-		machine_ = MachEmu::MakeMachine();
+		machine_ = meen::MakeMachine();
 	}
 
 	MachineHolder::MachineHolder(const char* json)
 	{
-		machine_ = MachEmu::MakeMachine(json);
+		machine_ = meen::MakeMachine(json);
 	}
 
 	errc MachineHolder::SetClockResolution(int64_t clockResolution)
@@ -55,16 +55,16 @@ namespace MachEmu
 		return machine_->Run(offset);
 	}
 
-	errc MachineHolder::SetIoController(MachEmu::IController* controller)
+	errc MachineHolder::SetIoController(meen::IController* controller)
 	{
 		// custom deleter, don't delete this pointer from c++, python owns it
-		auto err = machine_->SetIoController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		auto err = machine_->SetIoController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {}));
 		return static_cast<errc>(err.value());
 	}
 
-	errc MachineHolder::SetMemoryController(MachEmu::IController* controller)
+	errc MachineHolder::SetMemoryController(meen::IController* controller)
 	{
-		auto err = machine_->SetMemoryController(std::shared_ptr<MachEmu::IController>(controller, [](MachEmu::IController*) {}));
+		auto err = machine_->SetMemoryController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {}));
 		return static_cast<errc>(err.value());
 	}
 
@@ -81,4 +81,4 @@ namespace MachEmu
 		pybind11::gil_scoped_release nogil{};
 		return machine_->WaitForCompletion();
 	}
-} // namespace MachEmu
+} // namespace meen

@@ -36,7 +36,7 @@ SOFTWARE.
 #include "test_controllers/TestIoController.h"
 #include "test_controllers/CpmIoController.h"
 
-namespace MachEmu::tests
+namespace meen::tests
 {
     static std::shared_ptr<IController> cpmIoController;
     static std::shared_ptr<MemoryController> memoryController;
@@ -405,21 +405,21 @@ namespace MachEmu::tests
         LoadAndRun("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})");
         TEST_ASSERT_EQUAL_INT(static_pointer_cast<CpmIoController>(cpmIoController)->Message().find("ERROR"), std::string::npos);
     }
-} // namespace MachEmu::tests
+} // namespace meen::tests
 
 void setUp()
 {
-    MachEmu::tests::memoryController->Clear();
+    meen::tests::memoryController->Clear();
     //CP/M Warm Boot is at memory address 0x00, this will be
     //emulated with the exitTest subroutine.
-    TEST_ASSERT_EQUAL_INT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/exitTest.bin").c_str(), 0x00));
+    TEST_ASSERT_EQUAL_INT8(0, meen::tests::memoryController->Load((meen::tests::programsDir + "/exitTest.bin").c_str(), 0x00));
     //CP/M BDOS print message system call is at memory address 0x05,
     //this will be emulated with the bdosMsg subroutine.
-    TEST_ASSERT_EQUAL_INT8(0, MachEmu::tests::memoryController->Load((MachEmu::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05));
-    MachEmu::tests::machine->SetMemoryController(MachEmu::tests::memoryController);
-    MachEmu::tests::machine->SetIoController(MachEmu::tests::testIoController);
+    TEST_ASSERT_EQUAL_INT8(0, meen::tests::memoryController->Load((meen::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05));
+    meen::tests::machine->SetMemoryController(meen::tests::memoryController);
+    meen::tests::machine->SetIoController(meen::tests::testIoController);
     // Set default options
-    auto err = MachEmu::tests::machine->SetOptions(nullptr);
+    auto err = meen::tests::machine->SetOptions(nullptr);
     TEST_ASSERT_FALSE(err);
 }
 
@@ -444,7 +444,7 @@ int main(int argc, char** argv)
 
     if (argc > 1)
     {
-        MachEmu::tests::programsDir = argv[1];
+        meen::tests::programsDir = argv[1];
     }
 
 #ifdef ENABLE_MEEN_RP2040
@@ -456,22 +456,22 @@ int main(int argc, char** argv)
     while(true)
 #endif
     {
-        MachEmu::tests::suiteSetUp();
+        meen::tests::suiteSetUp();
         UNITY_BEGIN();
-        RUN_TEST(MachEmu::tests::test_SetNullptrIoController);
-        RUN_TEST(MachEmu::tests::test_SetNullptrMemoryController);
-        RUN_TEST(MachEmu::tests::test_SetCpuAfterConstruction);
-        RUN_TEST(MachEmu::tests::test_NegativeISRFrequency);
-        RUN_TEST(MachEmu::tests::test_OnLoad);
-        RUN_TEST(MachEmu::tests::test_OnLoadAsync);
-        RUN_TEST(MachEmu::tests::test_Tst8080);
-        RUN_TEST(MachEmu::tests::test_8080Pre);
-        //RUN_TEST(MachEmu::tests::test_CpuTest);
-        //RUN_TEST(MachEmu::tests::test_8080Exm);
-        RUN_TEST(MachEmu::tests::test_MethodsErrorAfterRunCalled);
-        RUN_TEST(MachEmu::tests::test_RunTimed);
-        RUN_TEST(MachEmu::tests::test_RunTimedAsync);
-        err = MachEmu::tests::suiteTearDown(UNITY_END());
+        RUN_TEST(meen::tests::test_SetNullptrIoController);
+        RUN_TEST(meen::tests::test_SetNullptrMemoryController);
+        RUN_TEST(meen::tests::test_SetCpuAfterConstruction);
+        RUN_TEST(meen::tests::test_NegativeISRFrequency);
+        RUN_TEST(meen::tests::test_OnLoad);
+        RUN_TEST(meen::tests::test_OnLoadAsync);
+        RUN_TEST(meen::tests::test_Tst8080);
+        RUN_TEST(meen::tests::test_8080Pre);
+        //RUN_TEST(meen::tests::test_CpuTest);
+        //RUN_TEST(meen::tests::test_8080Exm);
+        RUN_TEST(meen::tests::test_MethodsErrorAfterRunCalled);
+        RUN_TEST(meen::tests::test_RunTimed);
+        RUN_TEST(meen::tests::test_RunTimedAsync);
+        err = meen::tests::suiteTearDown(UNITY_END());
 
         //struct mallinfo m = mallinfo();
         //printf("FREE HEAP: %d\n", GetTotalHeap() - m.uordblks);

@@ -31,7 +31,7 @@ SOFTWARE.
 #include "meen/Base.h"
 #include "meen/IController.h"
 
-namespace MachEmu
+namespace meen
 {
 	struct ICpu
 	{
@@ -55,6 +55,6 @@ namespace MachEmu
 #endif // ENABLE_MEEN_SAVE
 		virtual ~ICpu() = default;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // ICPU_H

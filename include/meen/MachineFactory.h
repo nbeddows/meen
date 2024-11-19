@@ -27,22 +27,22 @@ SOFTWARE.
 #include "meen/IMachine.h"
 
 #ifdef _WINDOWS
-#if mach_emu_STATIC
+#if meem_STATIC
 #define DLL_EXP_IMP
-#elif defined mach_emu_EXPORTS
+#elif defined meen_EXPORTS
 #define DLL_EXP_IMP __declspec(dllexport)
 #else
 #define DLL_EXP_IMP __declspec(dllimport)
 #endif
 #else
-#ifdef mach_emu_EXPORTS
+#ifdef meen_EXPORTS
 #define DLL_EXP_IMP [[gnu::visibility("default")]]
 #else
 #define DLL_EXP_IMP
 #endif
 #endif
 
-namespace MachEmu
+namespace meen
 {
 	/**
 		The meen library version
@@ -50,12 +50,14 @@ namespace MachEmu
 		@return A string containing the current version, in a format
 				described by [semantic versioning](https://semver.org/)
 
-				```
+				@code
+
 				<major>"."<minor>"."<patch>
 				<major>"."<minor>"."<patch>"-"<pre-release>
 				<major>"."<minor>"."<patch>"+"<build>
 				<major>"."<minor>"."<patch>"-"<pre-release>"+"<build>
-				```
+				
+				@endcode
 
 		@remark Available since 1.4.0.
 
@@ -100,7 +102,7 @@ namespace MachEmu
 							| compressor      | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
 							|                 |        | "none"             | No compression will be used when saving the state of the ram                       |
 							| encoder         | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-							| cpu             | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via MachEmu::MakeMachine)    |
+							| cpu             | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via meen::MakeMachine)    |
 							| isrFreq         | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
 							|                 |        | 1                  | Service interrupts after each clock tick                                           |
 							|                 |        | n                  | Service interrupts frequency, example: 0.5 - twice per clock tick                  |
@@ -123,6 +125,6 @@ namespace MachEmu
 		@return		A unique machine pointer that can be loaded with memory and io controllers.
 	*/
 	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine(const char* config = nullptr);
-} // namespace MachEmu
+} // namespace meen
 
 #endif // MACHINE_FACTORY_H

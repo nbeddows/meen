@@ -136,6 +136,6 @@ void printEnvironment(const char* version)
 // It then prints out the meen version along with environment information.
 int main()
 {
-    printEnvironment(MachEmu::Version());
+    printEnvironment(meen::Version());
     return 0;
 }

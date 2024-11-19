@@ -26,7 +26,7 @@ SOFTWARE.
 #include <array>
 #include "test_controllers/BaseIoController.h"
 
-namespace MachEmu
+namespace meen
 {
     /** Basic example IO controller
 
@@ -114,6 +114,6 @@ namespace MachEmu
 		*/
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // TESTIOCONTROLLER_H

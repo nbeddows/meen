@@ -27,7 +27,7 @@ SOFTWARE.
 #include <cstdint>
 #include "meen/Base.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Device interface
 
@@ -105,6 +105,6 @@ namespace MachEmu
 		*/
 		virtual ~IController() = default;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // ICONTROLLER_H

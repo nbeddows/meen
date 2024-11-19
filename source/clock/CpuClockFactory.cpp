@@ -23,11 +23,11 @@ SOFTWARE.
 #include "meen/clock/CpuClock.h"
 #include "meen/clock/CpuClockFactory.h"
 
-namespace MachEmu
+namespace meen
 {
 	//factory free form function
 	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed)
 	{
 		return std::make_unique<CpuClock>(speed);
 	}
-} // namespace MachEmu
+} // namespace meen

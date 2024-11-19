@@ -23,7 +23,7 @@ SOFTWARE.
 #ifndef BASE_H
 #define BASE_H
 
-namespace MachEmu
+namespace meen
 {
 	/** Interrupt service routine
 
@@ -61,6 +61,6 @@ namespace MachEmu
 		NotImplemented,			/**< Warning, specifed configuration option is not implemented */
 		UnknownOption			/**< Warning, unrecognised configuration option found */
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // BASE_H

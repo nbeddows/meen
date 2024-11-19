@@ -26,7 +26,7 @@ SOFTWARE.
 #include "meen/MEEN_Error.h"
 #include "meen/opt/Opt.h"
 
-namespace MachEmu
+namespace meen
 {
 #ifndef ENABLE_NLOHMANN_JSON
 	void Opt::Merge(JsonVariant dst, JsonVariantConst src)
@@ -328,4 +328,4 @@ namespace MachEmu
 #endif // ENABLE_NLOHMANN_JSON
 	}
 #endif // ENABLE_MEEN_SAVE
-} // namespace MachEmu
+} // namespace meen

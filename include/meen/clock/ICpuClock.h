@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include <system_error>
 
-namespace MachEmu
+namespace meen
 {
 	/** ICpuClock
 	
@@ -93,6 +93,6 @@ namespace MachEmu
 
 		virtual ~ICpuClock() = default;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // ICPUCLOCK_H

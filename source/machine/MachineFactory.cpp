@@ -23,11 +23,11 @@ SOFTWARE.
 #include "meen/MachineFactory.h"
 #include "meen/machine/Machine.h"
 
-namespace MachEmu
+namespace meen
 {
 	const char* Version()
 	{
-		return mach_emu_VERSION;
+		return meen_VERSION;
 	}
 
 	//cppcheck-suppress unusedFunction
@@ -40,4 +40,4 @@ namespace MachEmu
 	{
 		return std::make_unique<Machine>(json);
 	}
-} // namespace MachEmu
+} // namespace meen

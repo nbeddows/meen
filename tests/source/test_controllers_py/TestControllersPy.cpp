@@ -9,26 +9,26 @@ namespace py = pybind11;
 
 PYBIND11_MODULE(TestControllersPy, TestControllers)
 {
-    py::class_<MachEmu::MemoryController, MachEmu::IController>(TestControllers, "MemoryController")
+    py::class_<meen::MemoryController, meen::IController>(TestControllers, "MemoryController")
         .def(py::init<>())
-        .def("Clear", &MachEmu::MemoryController::Clear)
-        .def("Load", &MachEmu::MemoryController::Load)
-        .def("Read", &MachEmu::MemoryController::Read)
-        .def("Write", &MachEmu::MemoryController::Write)
-        .def("ServiceInterrupts", &MachEmu::MemoryController::ServiceInterrupts);
+        .def("Clear", &meen::MemoryController::Clear)
+        .def("Load", &meen::MemoryController::Load)
+        .def("Read", &meen::MemoryController::Read)
+        .def("Write", &meen::MemoryController::Write)
+        .def("ServiceInterrupts", &meen::MemoryController::ServiceInterrupts);
 
-    py::class_<MachEmu::TestIoController, MachEmu::IController>(TestControllers, "TestIoController")
+    py::class_<meen::TestIoController, meen::IController>(TestControllers, "TestIoController")
         .def(py::init<>())
-        .def("Read", &MachEmu::TestIoController::Read)
-        .def("Write", &MachEmu::TestIoController::Write)
-        .def("SaveStateOn", &MachEmu::TestIoController::SaveStateOn)
-        .def("ServiceInterrupts", &MachEmu::TestIoController::ServiceInterrupts);
+        .def("Read", &meen::TestIoController::Read)
+        .def("Write", &meen::TestIoController::Write)
+        .def("SaveStateOn", &meen::TestIoController::SaveStateOn)
+        .def("ServiceInterrupts", &meen::TestIoController::ServiceInterrupts);
 
-    py::class_<MachEmu::CpmIoController, MachEmu::IController>(TestControllers, "CpmIoController")
-        .def(py::init<const std::shared_ptr<MachEmu::IController>&>())
-        .def("Message", &MachEmu::CpmIoController::Message)
-        .def("Read", &MachEmu::CpmIoController::Read)
-        .def("Write", &MachEmu::CpmIoController::Write)
-        .def("SaveStateOn", &MachEmu::CpmIoController::SaveStateOn)
-        .def("ServiceInterrupts", &MachEmu::CpmIoController::ServiceInterrupts);
+    py::class_<meen::CpmIoController, meen::IController>(TestControllers, "CpmIoController")
+        .def(py::init<const std::shared_ptr<meen::IController>&>())
+        .def("Message", &meen::CpmIoController::Message)
+        .def("Read", &meen::CpmIoController::Read)
+        .def("Write", &meen::CpmIoController::Write)
+        .def("SaveStateOn", &meen::CpmIoController::SaveStateOn)
+        .def("ServiceInterrupts", &meen::CpmIoController::ServiceInterrupts);
 }

@@ -35,7 +35,7 @@ SOFTWARE.
 
 #define ENABLE_OPCODE_TABLE
 
-namespace MachEmu
+namespace meen
 {
 	class Intel8080 final : public ICpu
 	{
@@ -211,6 +211,6 @@ namespace MachEmu
 		Intel8080();
 		~Intel8080() = default;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // _8080_H

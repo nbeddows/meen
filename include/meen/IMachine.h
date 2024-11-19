@@ -29,7 +29,7 @@ SOFTWARE.
 #include <system_error>
 #include "meen/IController.h"
 
-namespace MachEmu
+namespace meen
 {
 	/** Machine interface
 
@@ -360,6 +360,6 @@ namespace MachEmu
 		*/
 		virtual ~IMachine() = default;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // IMACHINE_H

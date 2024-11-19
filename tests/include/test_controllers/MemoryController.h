@@ -28,7 +28,7 @@ SOFTWARE.
 
 #include "meen/IController.h"
 
-namespace MachEmu
+namespace meen
 {
 	/**
 		Basic example memory controller
@@ -130,6 +130,6 @@ namespace MachEmu
 		*/
 		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
 	};
-} // namespace MachEmu
+} // namespace meen
 
 #endif // MEMORYCONTROLLER_H

@@ -24,7 +24,7 @@ cmake_minimum_required (VERSION 3.25)
 set(include_dir include)
 set(resource_dir resource)
 set(source_dir source)
-set(libMachEmu mach_emu)
+set(meen meen)
 set(major 2)
 set(minor 0)
 set(bugfix 0)
@@ -33,7 +33,7 @@ if(${enable_rp2040} STREQUAL ON)
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
-project(${libMachEmu} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
+project(${meen} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 if(${enable_rp2040} STREQUAL ON)
@@ -84,7 +84,7 @@ else()
 
   if(DEFINED WIN32)
     set(ext lib)
-    set(${libMachEmu}_${lib_type} ${libMachEmu}_${lib_type})
+    set(${meen}_${lib_type} ${meen}_${lib_type})
   else()
     set(ext a)
   endif()
@@ -133,14 +133,14 @@ endif()
 
 # Stage 3: assign our include, source and resource files and assign to approriate groups
 
-set(${libMachEmu}_public_include_files
+set(${meen}_public_include_files
   ${include_dir}/meen/Base.h
   ${include_dir}/meen/IController.h
   ${include_dir}/meen/IMachine.h
   ${include_dir}/meen/MachineFactory.h
 )
 
-SOURCE_GROUP(${include_dir} FILES ${${libMachEmu}_public_include_files})
+SOURCE_GROUP(${include_dir} FILES ${${meen}_public_include_files})
 
 set(clock_include_files
   ${include_dir}/meen/clock/CpuClock.h
@@ -157,7 +157,7 @@ set(cpu_include_files
 
 set(machine_include_files ${include_dir}/meen/machine/Machine.h)
 if(${enable_python_module} STREQUAL ON)
-  set(${libMachEmu}_py_include_files
+  set(${meen}_py_include_files
     ${include_dir}/meen/machine_py/ControllerPy.h
     ${include_dir}/meen/machine_py/MachineHolder.h
   )
@@ -165,7 +165,7 @@ endif()
 set(opt_include_files ${include_dir}/meen/opt/Opt.h)
 set(utils_include_files ${include_dir}/meen/utils/Utils.h)
 
-set(${libMachEmu}_private_include_files
+set(${meen}_private_include_files
   ${clock_include_files}
   ${cpu_include_files}
   ${machine_include_files}
@@ -196,7 +196,7 @@ set(machine_source_files
 )
 
 if(${enable_python_module} STREQUAL ON)
-  set(${libMachEmu}_py_source_files
+  set(${meen}_py_source_files
     ${source_dir}/machine_py/ControllerPy.cpp
     ${source_dir}/machine_py/MachineHolder.cpp
     ${source_dir}/machine_py/MachineModule.cpp
@@ -206,7 +206,7 @@ endif()
 set(opt_source_files ${source_dir}/opt/Opt.cpp)
 set(utils_source_files ${source_dir}/utils/Utils.cpp)
 
-set(${libMachEmu}_source_files
+set(${meen}_source_files
   ${source_dir}/MEEN_Error.cpp
   ${clock_source_files}
   ${cpu_source_files}
@@ -227,10 +227,10 @@ if(DEFINED MSVC)
 
   generate_product_version(
 	  versionResource
-	  BUNDLE "Machine Emulator"
+	  BUNDLE "Machine Emulator ENgine"
 	  COMPANY_NAME "Nicolas Beddows"
-	  FILE_DESCRIPTION "MachEmu API"
-	  NAME "MachEmu"
+	  FILE_DESCRIPTION "Meen API"
+	  NAME "Meen"
 	  ORIGINAL_FILE_NAME "${lib_name}.dll"
 	  PRODUCT_ICON ""
 	  VERSION_MAJOR ${major}
@@ -238,74 +238,74 @@ if(DEFINED MSVC)
 	  VERSION_PATCH ${bugfix}
 	)
 
-	set (${libMachEmu}_resource_files
+	set (${meen}_resource_files
 		${versionResource}
 	)
 
-	SOURCE_GROUP(${resource_dir} FILES ${${libMachEmu}_resource_files})
+	SOURCE_GROUP(${resource_dir} FILES ${${meen}_resource_files})
 endif()
 
 # Stage 4: Create libraries and set their properties
 
-add_library(${libMachEmu} ${lib_type}
-  ${${libMachEmu}_private_include_files}
-  ${${libMachEmu}_public_include_files}
-  ${${libMachEmu}_resource_files}
-  ${${libMachEmu}_source_files}
+add_library(${meen} ${lib_type}
+  ${${meen}_private_include_files}
+  ${${meen}_public_include_files}
+  ${${meen}_resource_files}
+  ${${meen}_source_files}
 )
 
-set_target_properties(${libMachEmu} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${CMAKE_PROJECT_VERSION})
-target_compile_definitions(${libMachEmu} PRIVATE ${libMachEmu}_VERSION=\"${CMAKE_PROJECT_VERSION}\")
-target_compile_definitions(${libMachEmu} PUBLIC ${libMachEmu}_${lib_type})
-target_include_directories(${libMachEmu} PRIVATE ${include_dir})
+set_target_properties(${meen} PROPERTIES VERSION ${CMAKE_PROJECT_VERSION} SOVERSION ${CMAKE_PROJECT_VERSION})
+target_compile_definitions(${meen} PRIVATE ${meen}_VERSION=\"${CMAKE_PROJECT_VERSION}\")
+target_compile_definitions(${meen} PUBLIC ${meen}_${lib_type})
+target_include_directories(${meen} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
   if(${enable_rp2040} STREQUAL ON)
-    target_compile_definitions(${libMachEmu} PUBLIC ENABLE_MEEN_RP2040)
-    target_link_libraries(${libMachEmu} PUBLIC pico_stdlib)
-    target_link_libraries(${libMachEmu} PRIVATE pico_multicore)
+    target_compile_definitions(${meen} PUBLIC ENABLE_MEEN_RP2040)
+    target_link_libraries(${meen} PUBLIC pico_stdlib)
+    target_link_libraries(${meen} PRIVATE pico_multicore)
   endif()
 
-  target_link_libraries(${libMachEmu} PUBLIC ArduinoJson)
+  target_link_libraries(${meen} PUBLIC ArduinoJson)
 
   if(DEFINED MSVC)
     message("todo: disable exceptions and rtti for msvc")
   else()
-    target_compile_options(${libMachEmu} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
+    target_compile_options(${meen} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
   endif()
 else()
-  target_compile_definitions(${libMachEmu} PUBLIC ENABLE_NLOHMANN_JSON)
-  target_link_libraries(${libMachEmu} PUBLIC nlohmann_json::nlohmann_json)
+  target_compile_definitions(${meen} PUBLIC ENABLE_NLOHMANN_JSON)
+  target_link_libraries(${meen} PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
 if(${enable_base64} STREQUAL ON)
-  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_BASE64)
-  target_link_libraries(${libMachEmu} PRIVATE aklomp::base64)
+  target_compile_definitions(${meen} PRIVATE ENABLE_BASE64)
+  target_link_libraries(${meen} PRIVATE aklomp::base64)
 endif()
 
 if(${enable_hash_library} STREQUAL ON)
-  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_HASH_LIBRARY)
-  target_link_libraries(${libMachEmu} PRIVATE hash-library::hash-library)
+  target_compile_definitions(${meen} PRIVATE ENABLE_HASH_LIBRARY)
+  target_link_libraries(${meen} PRIVATE hash-library::hash-library)
 endif()
 
 # check all the features required for save support, if the are enabled, then enable save support
 if(${enable_base64} STREQUAL ON AND ${enable_hash_library} STREQUAL ON)
-  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_MEEN_SAVE)
+  target_compile_definitions(${meen} PRIVATE ENABLE_MEEN_SAVE)
 endif()
 
 if(${enable_zlib} STREQUAL ON)
-  target_compile_definitions(${libMachEmu} PRIVATE ENABLE_ZLIB)
-  target_link_libraries(${libMachEmu} PRIVATE ZLIB::ZLIB)
+  target_compile_definitions(${meen} PRIVATE ENABLE_ZLIB)
+  target_link_libraries(${meen} PRIVATE ZLIB::ZLIB)
 endif()
 
 if(${enable_python_module} STREQUAL ON)
-  pybind11_add_module(${libMachEmu}Py
-    ${${libMachEmu}_py_include_files}
-    ${${libMachEmu}_py_source_files}
+  pybind11_add_module(${meen}Py
+    ${${meen}_py_include_files}
+    ${${meen}_py_source_files}
   )
-  target_link_directories(${libMachEmu}Py PRIVATE ${Python_LIBRARY_DIRS})
-  target_link_libraries(${libMachEmu}Py PRIVATE pybind11::headers ${libMachEmu})
-  install(TARGETS ${libMachEmu}Py DESTINATION ${runtime_dir})
+  target_link_directories(${meen}Py PRIVATE ${Python_LIBRARY_DIRS})
+  target_link_libraries(${meen}Py PRIVATE pybind11::headers ${meen})
+  install(TARGETS ${meen}Py DESTINATION ${runtime_dir})
 endif()
 
 if(DEFINED zlib_bin_dir)
@@ -387,32 +387,31 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
 ##### MEEN TEST
 
-  set(meen_test meen_test)
+  #set(meen_test meen_test)
 
   if(${build_os} STREQUAL "baremetal")
-    set(${meen_test}_source_files tests/${source_dir}/${meen_test}/MeenUnityTest.cpp)
-    set(${meen_test}_deps unity::unity)
+    set(${meen}_test_source_files tests/${source_dir}/${meen}_test/MeenUnityTest.cpp)
+    set(${meen}_test_deps unity::unity)
   else()
-    set(${meen_test}_source_files tests/${source_dir}/${meen_test}/MeenGTest.cpp)
-    set(${meen_test}_deps GTest::GTest)
+    set(${meen}_test_source_files tests/${source_dir}/${meen}_test/MeenGTest.cpp)
+    set(${meen}_test_deps GTest::GTest)
   endif()
 
-  SOURCE_GROUP(${source_dir} FILES ${${meen_test}_source_files})
+  SOURCE_GROUP(${source_dir} FILES ${${meen}_test_source_files})
 
-  # todo change ${libMachEmu}_test to ${meen_test} for 2.0
-  add_executable(${libMachEmu}_test ${${meen_test}_source_files})
+  add_executable(${meen}_test ${${meen}_test_source_files})
 
   if(${build_os} STREQUAL "baremetal")
     if(${enable_rp2040} STREQUAL ON)
-      pico_enable_stdio_usb(${libMachEmu}_test 1)
-      pico_enable_stdio_uart(${libMachEmu}_test 0)
-      pico_set_program_url(${libMachEmu}_test "https://github.com/neddows/mach-emu")
-      pico_add_extra_outputs(${libMachEmu}_test)
-      install(PROGRAMS ${CMAKE_BINARY_DIR}/${libMachEmu}_test.bin DESTINATION ./bin)
-      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.uf2 DESTINATION ./bin)
-      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.dis DESTINATION ./lib)
-      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.elf.map DESTINATION ./lib)
-      install(FILES ${CMAKE_BINARY_DIR}/${libMachEmu}_test.hex DESTINATION ./lib)
+      pico_enable_stdio_usb(${meen}_test 1)
+      pico_enable_stdio_uart(${meen}_test 0)
+      pico_set_program_url(${meen}_test "https://github.com/neddows/mach-emu")
+      pico_add_extra_outputs(${meen}_test)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/${meen}_test.bin DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.uf2 DESTINATION ./bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.dis DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.elf.map DESTINATION ./lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.hex DESTINATION ./lib)
     endif()
   endif()
 
@@ -422,7 +421,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     generatePythonUnitTestDeps(${artifacts_dir} ${CMAKE_SOURCE_DIR}/tests/source/test_controllers ${CMAKE_SOURCE_DIR}/tests/programs/ ${zlib_bin_dir})
 
     add_custom_command(
-        TARGET ${libMachEmu}_test POST_BUILD
+        TARGET ${meen}_test POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/tests/source/${meen_test}/MachineTestDeps.py
         )
 
@@ -431,19 +430,19 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   endif()
 
   if(DEFINED MSVC)
-    set_target_properties(${libMachEmu}_test PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/tests/programs/\"")
+    set_target_properties(${meen}_test PROPERTIES VS_DEBUGGER_COMMAND_ARGUMENTS "\"${CMAKE_SOURCE_DIR}/tests/programs/\"")
   endif()
 
-  set_target_properties(${libMachEmu}_test PROPERTIES FOLDER tests)
-  target_compile_definitions(${libMachEmu}_test PRIVATE PROGRAMS_DIR=\"programs/\")
+  set_target_properties(${meen}_test PROPERTIES FOLDER tests)
+  target_compile_definitions(${meen}_test PRIVATE PROGRAMS_DIR=\"programs/\")
 
-  target_link_libraries(${libMachEmu}_test PRIVATE
-    ${${meen_test}_deps}
-    ${libMachEmu}
+  target_link_libraries(${meen}_test PRIVATE
+    ${${meen}_test_deps}
+    ${meen}
     ${test_controllers}
   )
 
-  install(TARGETS ${libMachEmu}_test RUNTIME DESTINATION ${runtime_dir})
+  install(TARGETS ${meen}_test RUNTIME DESTINATION ${runtime_dir})
 
   if(${build_os} STREQUAL "baremetal")
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/bdosMsg.bin DESTINATION tests/programs)
@@ -465,8 +464,8 @@ if(NOT BUILD_TESTING STREQUAL OFF)
         set(pythonExecute "echo Running Python unit tests\npython tests\\test_Machine.py -v %python-filter%")
       endif()
 
-      # start run-mach_emu-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
-      file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat
+      # start run-meen-unit-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
+      file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.bat
           "@echo off\n\
 set gtest-filter=--gtest_filter=*\n\
 ${pythonFilter}
@@ -480,13 +479,13 @@ GOTO parse\n\
 echo Adding %cd%\\${runtime_dir} to PATH\n\
 PATH=%cd%\\${runtime_dir};%PATH%\n\
 echo Running C++ unit tests\n\
-${runtime_dir}\\${libMachEmu}_test %gtest-filter% tests\\programs\\\n\
+${runtime_dir}\\${meen}_test %gtest-filter% tests\\programs\\\n\
 ${pythonExecute}\n\
 pause\n\
 exit"
       )
 
-      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.bat DESTINATION .)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.bat DESTINATION .)
     else()
       if(enable_python_module STREQUAL ON)
         set(pythonFilter "export python_filter=\"-k*\"")
@@ -494,7 +493,7 @@ exit"
         set(pythonExecute "echo Running Python unit tests\npython tests/test_Machine.py -v \${python_filter}")
       endif()
 
-      file(WRITE ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh
+      file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.sh
 "#!/bin/bash\n\
 export gtest_filter=\"--gtest_filter=*\"\n\
 ${pythonFilter}\n\
@@ -507,7 +506,7 @@ while [[ \$# -gt 0 ]]; do\n\
     ${pythonCmdLine}\n\
     *)\n\
       echo Invalid option: \$1\n\
-      echo ./run-${libMachEmu}-unit-tests [--gtest_filter \\\$gtest_filter][--python_filter \\\${python_filter}
+      echo ./run-${meen}-unit-tests [--gtest_filter \\\$gtest_filter][--python_filter \\\${python_filter}
       exit\n\
       ;;\n\
   esac\n\
@@ -516,11 +515,11 @@ done\n\
 echo Adding `pwd`/${runtime_dir} to LD_LIBRARY_PATH\n\
 export LD_LIBRARY_PATH=`pwd`/${runtime_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
-${runtime_dir}/${libMachEmu}_test \"\${gtest_filter}\" tests/programs/\n\
+${runtime_dir}/${meen}_test \"\${gtest_filter}\" tests/programs/\n\
 ${pythonExecute}"
       )
 
-      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${libMachEmu}-unit-tests.sh DESTINATION .)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.sh DESTINATION .)
     endif()
   endif()
 endif()
@@ -528,25 +527,25 @@ endif()
 # Stage 6: Set CPack install parameters
 
 set(CMAKE_INSTALL_PREFIX ./)
-set(CPACK_PACKAGE_FILE_NAME ${libMachEmu}-v${CMAKE_PROJECT_VERSION}-${build_os}-${build_arch}-${CMAKE_C_COMPILER_ID}-${CMAKE_C_COMPILER_VERSION})
+set(CPACK_PACKAGE_FILE_NAME ${meen}-v${CMAKE_PROJECT_VERSION}-${build_os}-${build_arch}-${CMAKE_C_COMPILER_ID}-${CMAKE_C_COMPILER_VERSION})
 set(CPACK_GENERATOR TGZ)
 
 if(DEFINED CMAKE_STRIP)
-  add_custom_target(${libMachEmu}_strip_pkg
+  add_custom_target(${meen}_strip_pkg
     COMMAND ${CMAKE_COMMAND} -E tar -xzf ${CPACK_PACKAGE_FILE_NAME}.tar.gz
-    COMMAND ${CMAKE_STRIP} -s ${CPACK_PACKAGE_FILE_NAME}/${runtime_dir}/${libMachEmu}_test
-    COMMAND ${CMAKE_STRIP} -s ${CPACK_PACKAGE_FILE_NAME}/${archive_dir}/lib${libMachEmu}.${ext}
+    COMMAND ${CMAKE_STRIP} -s ${CPACK_PACKAGE_FILE_NAME}/${runtime_dir}/${meen}_test
+    COMMAND ${CMAKE_STRIP} -s ${CPACK_PACKAGE_FILE_NAME}/${archive_dir}/lib${meen}.${ext}
     COMMAND ${CMAKE_COMMAND} -E tar czf ${CPACK_PACKAGE_FILE_NAME}.tar.gz ${CPACK_PACKAGE_FILE_NAME}/
     COMMAND ${CMAKE_COMMAND} -E rm -r ${CPACK_PACKAGE_FILE_NAME}/
   )
 endif()
 
-target_sources(${libMachEmu} INTERFACE FILE_SET HEADERS BASE_DIRS ${include_dir} FILES ${${libMachEmu}_public_include_files})
+target_sources(${meen} INTERFACE FILE_SET HEADERS BASE_DIRS ${include_dir} FILES ${${meen}_public_include_files})
 
 install(CODE "execute_process(COMMAND doxygen ${CMAKE_SOURCE_DIR}/docs/Doxyfile)")
 install(CODE "execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_SOURCE_DIR}/docs/images ${CMAKE_BINARY_DIR}/docs/html/docs/images)")
 install(CODE "execute_process(COMMAND cppcheck -ibuild -i_CPack_Packages -itests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 ${CMAKE_SOURCE_DIR})")
-install(TARGETS ${libMachEmu} FILE_SET HEADERS)
+install(TARGETS ${meen} FILE_SET HEADERS)
 install(DIRECTORY ${CMAKE_BINARY_DIR}/docs DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG.md DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.md RENAME LICENSE DESTINATION .)
