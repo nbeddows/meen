@@ -517,44 +517,39 @@ namespace meen
 		m->runTime_ = currTime.count();
 	}
 
-	// The probably needs to return std/tl::expected
-	uint64_t Machine::Run(uint16_t pc)
+	std::error_code Machine::Run(uint16_t pc)
 	{
 		if (memoryController_ == nullptr)
 		{
-			printf("Machine::Run: no memory controller has been set");
-			return 0;
+			return make_error_code(errc::memory_controller);
 		}
 
 		if (ioController_ == nullptr)
 		{
-			printf("Machine::Run: no io controller has been set");
-			return 0;
+			return make_error_code(errc::io_controller);
 		}
 
 		if (running_ == true)
 		{
-			printf("Machine::Run: the machine is running");
-			return 0;
+			return make_error_code(errc::busy);
 		}
 
 		if(clock_ == nullptr)
 		{
-			printf("Machine::Run: the clock is invalid\n");
-			return 0;
+			return make_error_code(errc::clock_resolution);
 		}
 
 		if(cpu_ == nullptr)
 		{
-			printf("Machine::Run: the cpu is invalid\n");
-			return 0;
+			return make_error_code(errc::cpu);
 		}
 
 		cpu_->Reset(pc);
 		clock_->Reset();
 		SetClockResolution(opt_.ClockResolution());
 		running_ = true;
-		auto runTime = 0;
+		runTime_ = 0;
+
 #ifdef ENABLE_MEEN_RP2040
 		if(opt_.RunAsync() == true)
 		{
@@ -565,7 +560,6 @@ namespace meen
 				multicore_fifo_push_blocking(0xFFFFFFFF);
 			};
 
-			runTime_ = 0;
 			multicore_reset_core1();
 			multicore_launch_core1(runMachineAsync);
 			multicore_fifo_push_blocking(std::bit_cast<uint32_t>(this));
@@ -574,14 +568,12 @@ namespace meen
 		{
 			RunMachine(this);
 			running_ = false;
-			runTime = runTime_;
 		}
 #else
 		auto launchPolicy = opt_.RunAsync() ? std::launch::async : std::launch::deferred;
 
 		fut_ = std::async(launchPolicy, [this]
 		{
-			runTime_ = 0;
 			RunMachine(this);
 		});
 
@@ -589,37 +581,37 @@ namespace meen
 		{
 			fut_.get();
 			running_ = false;
-			runTime = runTime_;
 		}
 #endif // ENABLE_MEEN_RP2040
-		return runTime;
+		return make_error_code(errc::no_error);
 	}
 
-	uint64_t Machine::WaitForCompletion()
+	std::expected<uint64_t, std::error_code> Machine::WaitForCompletion()
 	{
-		uint64_t totalTime = 0;
-#ifdef ENABLE_MEEN_RP2040
-		if(running_ == true && opt_.RunAsync() == true)
+		if(running_ == true)
 		{
+#ifdef ENABLE_MEEN_RP2040
 			auto core1Ret = multicore_fifo_pop_blocking();
 
 			if(core1Ret != 0xFFFFFFFF)
 			{
-				printf("Machine::WaitForCompletion: failed to execute on RP2040 core1\n");
+				return std::unexpected(make_error_code(errc::async));
 			}
+#else
+			if (fut_.valid() == true)
+			{
+				fut_.get();
+			}
+			else
+			{
+				return std::unexpected(make_error_code(errc::async));		
+			}
+#endif // ENABLE_MEEN_RP2040
 
 			running_ = false;
-			totalTime = runTime_;
 		}
-#else
-		if (fut_.valid() == true)
-		{
-			fut_.get();
-			running_ = false;
-			totalTime = runTime_;
-		}
-#endif // ENABLE_MEEN_RP2040
-		return totalTime;
+
+		return runTime_;
 	}
 
 	std::error_code Machine::SetMemoryController(const std::shared_ptr<IController>& controller)

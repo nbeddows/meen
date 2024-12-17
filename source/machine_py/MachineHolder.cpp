@@ -50,9 +50,10 @@ namespace meen
 		return machine_->Save();
 	}
 
-	uint64_t MachineHolder::Run(uint16_t offset)
+	errc MachineHolder::Run(uint16_t offset)
 	{
-		return machine_->Run(offset);
+		auto err = machine_->Run(offset);
+		return static_cast<errc>(err.value());
 	}
 
 	errc MachineHolder::SetIoController(meen::IController* controller)
@@ -79,6 +80,6 @@ namespace meen
 		// WaitForCompletion is a long running function that does not interract with Python.
 		// Release the Python Global Interpreter Lock so the calling script doesn't stall.
 		pybind11::gil_scoped_release nogil{};
-		return machine_->WaitForCompletion();
+		return machine_->WaitForCompletion().value_or(0);
 	}
 } // namespace meen

@@ -72,13 +72,13 @@ namespace meen
 
 			@see IMachine::Run
 		*/
-		uint64_t Run(uint16_t pc) final;
+		std::error_code Run(uint16_t pc) final;
 
 		/** WaitForCompletion
 
 			@see IMachine::WaitForCompletion
 		*/
-		uint64_t WaitForCompletion() final;
+		std::expected<uint64_t, std::error_code> WaitForCompletion() final;
 
 		/** SetMemoryController
 
