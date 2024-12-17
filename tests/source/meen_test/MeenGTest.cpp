@@ -120,7 +120,9 @@ namespace meen::Tests
 
 		auto dir = programsDir_ + name;
 		ASSERT_EQ(0, memoryController_->Load(dir.c_str(), 0x100));
-		machine_->Run(0x100);
+
+		auto err = machine_->Run(0x100);
+		EXPECT_FALSE(err);
 	}
 
 	TEST_F(MachineTest, SetNullptrMemoryController)
@@ -180,7 +182,9 @@ namespace meen::Tests
 			errc = machine_->OnSave(nullptr);
 			// todo: need to expose the private errc header
 			EXPECT_TRUE(errc.value() == 0 || errc.value() == 10);
-			machine_->Run(0x04);
+			
+			errc = machine_->Run(0x04);
+			EXPECT_FALSE(errc);
 
 			// All these methods should return errors
 			//machine_->Run(0x100);
@@ -216,6 +220,7 @@ namespace meen::Tests
 		EXPECT_NO_THROW
 		(
 			std::error_code err;
+			int64_t nanos = 0;
 
 			if (runAsync == true)
 			{
@@ -236,28 +241,18 @@ namespace meen::Tests
 			err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
 			EXPECT_FALSE(err);
 
-			int64_t nanos = 0;
+			err = machine_->Run(0x04);
+			EXPECT_FALSE(err);
 
-			// If an over sleep occurs after the last batch of instructions are executed during a machine run
-			// there is no way to compensate for this which means running a timed test just once will result in
-			// sporadic failures. To counter this we will run the machine multiples times and take the average
-			// of the accumulated run time, this should smooth out the errors caused by end of program over sleeps.
-			int64_t iterations = 1;
-
-			for (int i = 0; i < iterations; i++)
+			nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
 			{
-				if (runAsync == true)
-				{
-					machine_->Run(0x04);
-					nanos += machine_->WaitForCompletion();
-				}
-				else
-				{
-					nanos += machine_->Run(0x04);
-				}
-			}
+				// We want to force a failure here, ec should be non zero
+				EXPECT_EQ(0, ec.value());
+				// We failed, return back a 0 run time
+				return std::expected<uint64_t, std::error_code>(0);
+			}).value();
 
-			auto error = (nanos / iterations) - 1000000000;
+			auto error = nanos - 1000000000;
 			// Allow an average 500 micros of over sleep error
 			EXPECT_EQ(true, error >= 0 && error <= 500000);
 		);
@@ -317,12 +312,12 @@ namespace meen::Tests
 			err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
 			EXPECT_FALSE(err);
 			machine_->SetIoController(cpmIoController_);
-			machine_->Run(0x0100);
 
-			if (runAsync == true)
-			{
-				machine_->WaitForCompletion();
-			}
+			err = machine_->Run(0x0100);
+			EXPECT_FALSE(err);
+
+			auto ex = machine_->WaitForCompletion();
+			EXPECT_TRUE(ex);
 
 			EXPECT_EQ(74, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 
@@ -333,17 +328,20 @@ namespace meen::Tests
 			cpmIoController->SaveStateOn(-1);
 
 			// run it again, but this time trigger the load interrupt
-			machine_->Run(0x00FE);
+			err = machine_->Run(0x00FE);
+			EXPECT_FALSE(err);
+
+			ex = machine_->WaitForCompletion();
+			EXPECT_TRUE(ex);
+
+			// Since we are not saving/loading the io state the contents of the message buffer can
+			// be in one of two states depending on how long the OnLoad initiation handler took to complete.
+			auto pos = cpmIoController->Message().find("CPU IS OPERATIONAL");
 
 			// Currently we are not saving the state of the io (do we need to?????)
 			// This can cause variable output as discussed below
 			if (runAsync == true)
 			{
-				machine_->WaitForCompletion();
-
-				// Since we are not saving/loading the io state the contents of the message buffer can
-				// be in one of two states depending on how long the OnLoad initiation handler took to complete.
-				auto pos = cpmIoController->Message().find("CPU IS OPERATIONAL");
 				// If the OnLoad initiation handler was quick to complete (sub 150 ticks) the preamble message would
 				// not have been written to the message string and the success message should be found at pos 3, otherwise
 				// the preamble message was written and it should be found at pos 74
@@ -354,7 +352,7 @@ namespace meen::Tests
 				// Since we loaded mid program the message from the tests won't contain the premable
 				// (since we are not saving/loading the io state), just the result,
 				// hence we should find the success message earlier in the message string.
-				EXPECT_EQ(3, cpmIoController->Message().find("CPU IS OPERATIONAL"));
+				EXPECT_EQ(3, pos);
 			}
 
 			// When we are in the middle of a save when another save is requested it will be dropped.

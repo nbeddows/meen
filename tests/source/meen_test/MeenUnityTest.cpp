@@ -52,7 +52,7 @@ namespace meen::tests
         {
             err = machine->SetOptions(R"({"runAsync":true})");
 
-            // todo: need to expose the private errc header
+            // todo: need to expose the private errc header - THIS IS NOW IMPLEMENTED IN 2.0: REMOVE THIS BLOCK
             if(err.value() == 10)
             {
                 // not implemented, skip the test
@@ -77,26 +77,18 @@ namespace meen::tests
 
         int64_t nanos = 0;
 
-        // If an over sleep occurs after the last batch of instructions are executed during a machine run
-        // there is no way to compensate for this which means running a timed test just once will result in
-        // sporadic failures. To counter this we will run the machine multiples times and take the average
-        // of the accumulated run time, this should smooth out the errors caused by end of program over sleeps.
-        int64_t iterations = 1;
+        err = machine->Run(0x04);
+        TEST_ASSERT_FALSE(err);
 
-        for (int i = 0; i < iterations; i++)
+        nanos += machine->WaitForCompletion().or_else([](std::error_code ec)
         {
-            if (runAsync == true)
-            {
-                machine->Run(0x04);
-                nanos += machine->WaitForCompletion();
-            }
-            else
-            {
-                nanos += machine->Run(0x04);
-            }
-        }
+            // We want to force a failure here, ec should be non zero
+            TEST_ASSERT_FALSE(ec);
+            // The machine didn't run, return an expected value of 0
+            return std::expected<uint64_t, std::error_code>(0);
+        }).value();
 
-        auto error = (nanos / iterations) - 1000000000;
+        auto error = nanos - 1000000000;
         // Allow an average 500 micros of over sleep error
         TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
     }
@@ -151,12 +143,12 @@ namespace meen::tests
         err = machine->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
         TEST_ASSERT_FALSE(err);
         machine->SetIoController(cpmIoController);
-        machine->Run(0x0100);
 
-        if (runAsync == true)
-        {
-            machine->WaitForCompletion();
-        }
+        err = machine->Run(0x0100);
+        TEST_ASSERT_FALSE(err);
+
+        auto ex = machine->WaitForCompletion();
+        TEST_ASSERT_TRUE(ex);
 
         TEST_ASSERT_EQUAL_INT(74, cpm->Message().find("CPU IS OPERATIONAL"));
 
@@ -167,17 +159,20 @@ namespace meen::tests
         cpm->SaveStateOn(-1);
 
         // run it again, but this time trigger the load interrupt
-        machine->Run(0x00FE);
+        err = machine->Run(0x00FE);
+        TEST_ASSERT_FALSE(err);
+
+        ex = machine->WaitForCompletion();
+        TEST_ASSERT_TRUE(ex);
+
+        // Since we are not saving/loading the io state the contents of the message buffer can
+        // be in one of two states depending on how long the OnLoad initiation handler took to complete.
+        auto pos = cpm->Message().find("CPU IS OPERATIONAL");
 
         // Currently we are not saving the state of the io (do we need to?????)
         // This can cause variable output as discussed below
         if (runAsync == true)
         {
-            machine->WaitForCompletion();
-
-            // Since we are not saving/loading the io state the contents of the message buffer can
-            // be in one of two states depending on how long the OnLoad initiation handler took to complete.
-            auto pos = cpm->Message().find("CPU IS OPERATIONAL");
             // If the OnLoad initiation handler was quick to complete (sub 150 ticks) the preamble message would
             // not have been written to the message string and the success message should be found at pos 3, otherwise
             // the preamble message was written and it should be found at pos 74
@@ -188,7 +183,7 @@ namespace meen::tests
             // Since we loaded mid program the message from the tests won't contain the premable
             // (since we are not saving/loading the io state), just the result,
             // hence we should find the success message earlier in the message string.
-            TEST_ASSERT_EQUAL_INT(3, cpm->Message().find("CPU IS OPERATIONAL"));
+            TEST_ASSERT_EQUAL_INT(3, pos);
         }
 
         // When we are in the middle of a save when another save is requested it will be dropped.
@@ -231,7 +226,9 @@ namespace meen::tests
 
         auto dir = programsDir + name;
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load(dir.c_str(), 0x100));
-        machine->Run(0x100);
+
+        auto err = machine->Run(0x100);
+        TEST_ASSERT_FALSE(err);
     }
 
     static void suiteSetUp()
@@ -258,7 +255,7 @@ namespace meen::tests
     static void test_SetNullptrMemoryController()
     {
         auto errc = machine->SetMemoryController(nullptr);
-	TEST_ASSERT_TRUE(errc);
+	    TEST_ASSERT_TRUE(errc);
         TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
     }
 
@@ -306,10 +303,12 @@ namespace meen::tests
         errc = machine->OnSave(nullptr);
         // todo: need to expose the private errc header
         TEST_ASSERT_TRUE(errc.value() == 0 || errc.value() == 10);
-        machine->Run(0x04);
+ 
+        errc = machine->Run(0x04);
+        TEST_ASSERT_FALSE(errc);
 
         // All these methods should return errors
-        //machine_->Run(0x100);
+        //machine->Run(0x100);
         errc = machine->SetOptions(R"({"isrFreq":1})");
         TEST_ASSERT_TRUE(errc);
         errc = machine->SetMemoryController(memoryController);
@@ -322,7 +321,8 @@ namespace meen::tests
         TEST_ASSERT_TRUE(errc);
 
         // Since we are running async we need to wait for completion
-        machine->WaitForCompletion();
+        auto ex = machine->WaitForCompletion();
+        TEST_ASSERT_TRUE(ex);
 
         // We are now no longer running, all these methods should not return errors
         errc = machine->SetOptions(R"({"isrFreq":1})");
