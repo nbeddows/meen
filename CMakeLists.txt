@@ -35,6 +35,7 @@ endif()
 
 project(${meen} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
+set(CMAKE_CXX_STANDARD 23)
 
 if(${enable_rp2040} STREQUAL ON)
   add_executable(Pioasm IMPORTED)
@@ -386,8 +387,6 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   endif()
 
 ##### MEEN TEST
-
-  #set(meen_test meen_test)
 
   if(${build_os} STREQUAL "baremetal")
     set(${meen}_test_source_files tests/${source_dir}/${meen}_test/MeenUnityTest.cpp)
