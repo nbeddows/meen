@@ -38,6 +38,12 @@ SOFTWARE.
 
 namespace meen::tests
 {
+// Use std::expected monadics if they are supported
+#if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
+	static constexpr bool useMonadics_ = true;
+#else
+	static constexpr bool useMonadics_ = true;
+#endif
     static std::shared_ptr<IController> cpmIoController;
     static std::shared_ptr<MemoryController> memoryController;
     static std::shared_ptr<IController> testIoController;
@@ -80,14 +86,26 @@ namespace meen::tests
         err = machine->Run(0x04);
         TEST_ASSERT_FALSE(err);
 
-        nanos += machine->WaitForCompletion().or_else([](std::error_code ec)
+		if constexpr (useMonadics_ == true)
         {
-            // We want to force a failure here, ec should be non zero
-            TEST_ASSERT_FALSE(ec);
-            // The machine didn't run, return an expected value of 0
-            return std::expected<uint64_t, std::error_code>(0);
-        }).value();
+            // Use std::expected monadics
+            nanos += machine->WaitForCompletion().or_else([](std::error_code ec)
+            {
+                // We want to force a failure here, ec should be non zero
+                TEST_ASSERT_FALSE(ec);
+                // The machine didn't run, return an expected value of 0
+                return std::expected<uint64_t, std::error_code>(0);
+            }).value();
+        }
+        else
+        {
+            // std::expected monadics are unsupported
+			auto ex = machine->WaitForCompletion();
+			TEST_ASSERT_TRUE(ex);
 
+			nanos += ex.value();
+        }
+        
         auto error = nanos - 1000000000;
         // Allow an average 500 micros of over sleep error
         TEST_ASSERT_TRUE(error >= 0 && error <= 500000);

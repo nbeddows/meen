@@ -39,6 +39,12 @@ namespace meen::Tests
 	class MachineTest : public testing::Test
 	{
 	protected:
+// Use std::expected monadics if they are supported
+#if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
+		static constexpr bool useMonadics_ = true;
+#else
+		static constexpr bool useMonadics_ = true;
+#endif
 		static std::shared_ptr<IController> cpmIoController_;
 		static std::shared_ptr<MemoryController> memoryController_;
 		static std::shared_ptr<IController> testIoController_;
@@ -244,13 +250,25 @@ namespace meen::Tests
 			err = machine_->Run(0x04);
 			EXPECT_FALSE(err);
 
-			nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
+			if constexpr (useMonadics_ == true)
 			{
-				// We want to force a failure here, ec should be non zero
-				EXPECT_EQ(0, ec.value());
-				// We failed, return back a 0 run time
-				return std::expected<uint64_t, std::error_code>(0);
-			}).value();
+				// Use std::expected monadics
+				nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
+				{
+					// We want to force a failure here, ec should be non zero
+					EXPECT_FALSE(ec);
+					// We failed, return back a 0 run time
+					return std::expected<uint64_t, std::error_code>(0);
+				}).value();
+			}
+			else
+			{
+				// std::expected monadics are unsupported
+				auto ex = machine_->WaitForCompletion();
+				EXPECT_TRUE(ex);
+
+				nanos += ex.value();
+			}
 
 			auto error = nanos - 1000000000;
 			// Allow an average 500 micros of over sleep error
