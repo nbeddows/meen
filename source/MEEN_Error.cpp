@@ -46,6 +46,8 @@ namespace meen
 						return "The engine is running";
 					case errc::clock_resolution:
 						return "The clock resolution can't be set, either it's too high/low or the host clock can't be queried";
+					case errc::cpu:
+						return "The cpu is invalid";
 					case errc::incompatible_ram:
 						return "The ram to load is incompatible with this component";
 					case errc::incompatible_rom:
@@ -54,10 +56,14 @@ namespace meen
 						return "The uuid to load does not match this component";
 					case errc::invalid_argument:
 						return "An argument supplied to the method is invalid";
+					case errc::io_controller:
+						return "Invalid io controller";
 					case errc::json_config:
 						return "A JSON configuration parameter is invalid";
 					case errc::json_parse:
 						return "A JSON parse error occurred while processing the configuration file/string";
+					case errc::memory_controller:
+						return "Invalid memory controller";
 					case errc::no_zlib:
 						return "MEEN compiled without zlib support";
 					case errc::not_implemented:

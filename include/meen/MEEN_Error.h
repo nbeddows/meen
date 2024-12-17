@@ -34,14 +34,18 @@ namespace meen
 	enum errc
 	{
 		no_error,           /**< No error has occurred. */
-		busy,               /**< The engine is currently running. */
-		clock_resolution,   /**< The resolution can' be set, either it is too high/low or the host clock can't be queried. */
+		async,				/**< An asynchronous operation failed to complete. */
+		busy,               /**< MEEN is currently running. */
+		clock_resolution,   /**< The resolution can't be set, either it is too high/low or the host clock can't be queried. */
+		cpu,				/**< The cpu is invalid. */
 		incompatible_ram,   /**< The ram to load is not compatible with this component. */
 		incompatible_rom,   /**< The rom to load is not compatible with this component. */
 		incompatible_uuid,  /**< The uuid to load does not match this component. */
 		invalid_argument,   /**< An argument passed to this method is invalid. */
+		io_controller,		/**< The supplied io controller is invalid. */
 		json_config,        /**< A JSON configuration parameter is invalid. */
 		json_parse,	        /**< The JSON configuration file/string is malformed. */
+		memory_controller,	/**< The supplied memory controller is invalid. */
 		no_zlib,            /**< MEEN compiled without ZLIB support */
 		not_implemented,    /**< The method is not implemented. */
 		unknown_option      /**< An unknown JSON option was encountered and ignored. */
