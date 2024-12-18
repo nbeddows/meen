@@ -23,10 +23,12 @@ SOFTWARE.
 #ifndef IMACHINE_H
 #define IMACHINE_H
 
+#include <expected>
 #include <functional>
 #include <memory>
 #include <string>
 #include <system_error>
+
 #include "meen/IController.h"
 
 namespace meen
@@ -110,31 +112,26 @@ namespace meen
 										which the cpu will start executing the instructions
 										contained in the rom files that were loaded into memory.
 
-			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
-
-			@throws						std::runtime_error if no memory or io controller has been set on this
-										machine.
+			@return						A std::error_code - todo: document the error codes.
 
 			@remark						When no program counter is specified cpu instruction
 										execution will begin from memory address 0x00.
 
-			@remark						When the run asynchronous configuration option is set to true
-										the return value will always be 0.
-
 			@see SetMemoryController
 		*/
-		virtual uint64_t Run(uint16_t pc = 0x00) = 0;
+		virtual std::error_code Run(uint16_t pc = 0x00) = 0;
 
 		/** Wait for the machine to finish running
 
 			Block the current thread until the machine execution loop has completed.
 
-			@return						The duration of the run time of the machine as a uint64_t in nanoseconds.
+			@return						A std::expected with an expected value of the duration of the
+										run time of the machine as a uint64_t in nanoseconds and an
+										unexpected value as a std::error_code.
 
-			@remark						When the run asynchronous option is set to false (default) or the Run method has not been called
-										this method will return 0 immediatley.
+			@remark						Repeated calls to this method will return the last valid meen run time. 
 		*/
-		virtual uint64_t WaitForCompletion() = 0;
+		virtual std::expected<uint64_t, std::error_code> WaitForCompletion() = 0;
 
 		/** Set a custom memory controller
 

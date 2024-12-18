@@ -18,7 +18,7 @@ namespace meen
 
         errc OnLoad(std::function<std::string()>&& onLoad);
         errc OnSave(std::function<void(std::string&&)>&& onSave);
-        uint64_t Run(uint16_t offset);
+        errc Run(uint16_t offset);
         std::string Save() const;
         errc SetClockResolution(int64_t clockResolution);
         errc SetIoController(meen::IController* controller);
