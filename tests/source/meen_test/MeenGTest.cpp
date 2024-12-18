@@ -39,12 +39,6 @@ namespace meen::Tests
 	class MachineTest : public testing::Test
 	{
 	protected:
-// Use std::expected monadics if they are supported
-#if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-		static constexpr bool useMonadics_ = true;
-#else
-		static constexpr bool useMonadics_ = true;
-#endif
 		static std::shared_ptr<IController> cpmIoController_;
 		static std::shared_ptr<MemoryController> memoryController_;
 		static std::shared_ptr<IController> testIoController_;
@@ -223,57 +217,49 @@ namespace meen::Tests
 
 	void MachineTest::Run(bool runAsync)
 	{
-		EXPECT_NO_THROW
-		(
-			std::error_code err;
-			int64_t nanos = 0;
+		std::error_code err;
+		int64_t nanos = 0;
 
-			if (runAsync == true)
-			{
-				err = machine_->SetOptions(R"({"runAsync":true})");
-				EXPECT_FALSE(err);
-			}
-
-			// Run a program that should take a second to complete
-			// (in actual fact it's 2000047 ticks, 47 ticks over a second.
-			// We need to be as close a possible to 2000000 ticks without
-			// going under so the cpu sleeps at the end
-			// of the program so it maintains sync. It's never going to
-			// be perfect, but its close enough for testing purposes).
-			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
-			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
-
-			// 25 millisecond resolution, service interrupts every 8.25 milliseconds
-			err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
+		if (runAsync == true)
+		{
+			err = machine_->SetOptions(R"({"runAsync":true})");
 			EXPECT_FALSE(err);
+		}
 
-			err = machine_->Run(0x04);
-			EXPECT_FALSE(err);
+		// Run a program that should take a second to complete
+		// (in actual fact it's 2000047 ticks, 47 ticks over a second.
+		// We need to be as close a possible to 2000000 ticks without
+		// going under so the cpu sleeps at the end
+		// of the program so it maintains sync. It's never going to
+		// be perfect, but its close enough for testing purposes).
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
+		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
 
-			if constexpr (useMonadics_ == true)
-			{
-				// Use std::expected monadics
-				nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
-				{
-					// We want to force a failure here, ec should be non zero
-					EXPECT_FALSE(ec);
-					// We failed, return back a 0 run time
-					return std::expected<uint64_t, std::error_code>(0);
-				}).value();
-			}
-			else
-			{
-				// std::expected monadics are unsupported
-				auto ex = machine_->WaitForCompletion();
-				EXPECT_TRUE(ex);
+		// 25 millisecond resolution, service interrupts every 8.25 milliseconds
+		err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
+		EXPECT_FALSE(err);
 
-				nanos += ex.value();
-			}
+		err = machine_->Run(0x04);
+		EXPECT_FALSE(err);
 
-			auto error = nanos - 1000000000;
-			// Allow an average 500 micros of over sleep error
-			EXPECT_EQ(true, error >= 0 && error <= 500000);
-		);
+// Use std::expected monadics if they are supported
+#if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
+		nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
+		{
+			// We want to force a failure here, ec should be non zero
+			EXPECT_FALSE(ec);
+			// We failed, return back a 0 run time
+			return std::expected<uint64_t, std::error_code>(0);
+		}).value();
+#else
+		auto ex = machine_->WaitForCompletion();
+		EXPECT_TRUE(ex);
+
+		nanos += ex.value();
+#endif
+		auto error = nanos - 1000000000;
+		// Allow an average 500 micros of over sleep error
+		EXPECT_EQ(true, error >= 0 && error <= 500000);
 	}
 
 	TEST_F(MachineTest, RunTimed)
