@@ -13,8 +13,9 @@
 * Compiler Id and version are now incorporated
   into the package name.
 * Changed top level namespace from MachEmu to meen.
-* IMachine::Run now returns a std::error_code
+* IMachine::Run now returns a std::error_code.
 * IMachine::WaitForCompletion now returns a std::expected.
+* Updated the minimum msvc version required in the README to 1706.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
