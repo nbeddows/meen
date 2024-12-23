@@ -20,8 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef MEEN_MEEN_ERROR_H
-#define MEEN_MEEN_ERROR_H
+#ifndef MEEN_ERROR_H
+#define MEEN_ERROR_H
 
 #include <system_error>
 
@@ -29,7 +29,8 @@ namespace meen
 {
 	/** Meen Error codes
 
-		Used to define error values that are compatible with std::error_code.
+		Used to define error values that are compatible with std::error_code. These values
+		can be used to compare against any error_code value that a MEEN API method returns.
 	*/
 	enum errc
 	{
@@ -46,34 +47,10 @@ namespace meen
 		json_config,        /**< A JSON configuration parameter is invalid. */
 		json_parse,	        /**< The JSON configuration file/string is malformed. */
 		memory_controller,	/**< The supplied memory controller is invalid. */
-		no_zlib,            /**< MEEN compiled without ZLIB support */
+		no_zlib,            /**< MEEN compiled without ZLIB support. */
 		not_implemented,    /**< The method is not implemented. */
 		unknown_option      /**< An unknown JSON option was encountered and ignored. */
 	};
-
-	/** The custom meen error category
-
-		Defines the name of the error category and the messages that each meen::errc returns.
-	*/
-	const std::error_category& category();
-
-	/** std::error_code wrapper
-
-		A simple convenience wrapper
-
-		@param	ec	The meen::errc to use to create a meen std::error_code
-	*/
-	inline std::error_code make_error_code(errc ec) { return {ec, meen::category()}; }
 } // namespace meen
 
-namespace std
-{
-	/** Boilerplate
-
-		Inform std that our meen::errc enum is a std::error_code enum.
-	*/
-	template<>
-	struct is_error_code_enum<meen::errc> : public std::true_type {};
-} // namespace std
-
-#endif // MEEN_MEEN_ERROR_H
+#endif // MEEN_ERROR_H
