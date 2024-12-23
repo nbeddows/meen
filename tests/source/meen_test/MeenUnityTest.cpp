@@ -31,6 +31,7 @@ SOFTWARE.
 #endif
 #include <unity/unity.h>
 
+#include "meen/Error.h"
 #include "meen/MachineFactory.h"
 #include "test_controllers/MemoryController.h"
 #include "test_controllers/TestIoController.h"
@@ -51,14 +52,6 @@ namespace meen::tests
         if (runAsync == true)
         {
             err = machine->SetOptions(R"({"runAsync":true})");
-
-            // todo: need to expose the private errc header - THIS IS NOW IMPLEMENTED IN 2.0: REMOVE THIS BLOCK
-            if(err.value() == 10)
-            {
-                // not implemented, skip the test
-                TEST_IGNORE_MESSAGE("runAsync:true not supported");
-            }
-
             TEST_ASSERT_FALSE(err);
         }
 
@@ -86,8 +79,8 @@ namespace meen::tests
         {
             // We want to force a failure here, ec should be non zero
             TEST_ASSERT_FALSE(ec);
-            // The machine didn't run, return an expected value of 0
-            return std::expected<uint64_t, std::error_code>(0);
+            // The machine didn't run, return an expected value of no_error
+            return std::expected<uint64_t, std::error_code>(errc::no_error);
         }).value();
 #else
         auto ex = machine->WaitForCompletion();
@@ -105,8 +98,7 @@ namespace meen::tests
         std::vector<std::string> saveStates;
         auto err = machine->OnSave([&](const char* json) { saveStates.emplace_back(json); });
 
-        // todo: need to expose the private errc header
-        if(err.value() == 10)
+        if(err.value() == errc::json_config)
         {
             // not implemented, skip the test
             TEST_IGNORE_MESSAGE("Machine::OnSave not supported");
@@ -115,8 +107,7 @@ namespace meen::tests
         // 0 - mid program save state, 1 and 2 - end of program save states
         err = machine->OnLoad([&] { return saveStates[0].c_str(); });
 
-        // todo: need to expose the private errc header
-        if(err.value() == 10)
+        if(err.value() == errc::json_config)
         {
             // not implemented, skip the test
             TEST_IGNORE_MESSAGE("Machine::OnLoad not supported");
@@ -126,8 +117,7 @@ namespace meen::tests
         {
             err = machine->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
 
-            // todo: need to expose the private errc header
-            if(err.value() == 10)
+            if(err.value() == errc::json_config)
             {
                 // not implemented, skip the test
                 TEST_IGNORE_MESSAGE("runAsync:true not supported");
@@ -292,55 +282,45 @@ namespace meen::tests
     {
         //cppcheck-suppress unknownMacro
         // Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-        auto errc = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true,"isrFreq":0.25})"); // must be async so the Run method returns immediately
-
-        // todo: need to expose the private errc header
-        if(errc.value() == 10)
-        {
-            // not implemented, skip the test
-            TEST_IGNORE_MESSAGE("runAsync:true not supported");
-        }
-
-        TEST_ASSERT_FALSE(errc);
+        auto err = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true,"isrFreq":0.25})"); // must be async so the Run method returns immediately
+        TEST_ASSERT_FALSE(err);
 
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
         TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
 
         // We aren't interested in saving, clear the onSave callback
-        errc = machine->OnSave(nullptr);
-        // todo: need to expose the private errc header
-        TEST_ASSERT_TRUE(errc.value() == 0 || errc.value() == 10);
+        err = machine->OnSave(nullptr);
+        TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
  
-        errc = machine->Run(0x04);
-        TEST_ASSERT_FALSE(errc);
+        err = machine->Run(0x04);
+        TEST_ASSERT_FALSE(err);
 
         // All these methods should return errors
         //machine->Run(0x100);
-        errc = machine->SetOptions(R"({"isrFreq":1})");
-        TEST_ASSERT_TRUE(errc);
-        errc = machine->SetMemoryController(memoryController);
-        TEST_ASSERT_TRUE(errc);
-        errc = machine->SetIoController(testIoController);
-        TEST_ASSERT_TRUE(errc);
-        errc = machine->OnLoad([]{ return ""; });
-        TEST_ASSERT_TRUE(errc);
-        errc = machine->OnSave([](const char*){});
-        TEST_ASSERT_TRUE(errc);
+        err = machine->SetOptions(R"({"isrFreq":1})");
+        TEST_ASSERT_TRUE(err);
+        err = machine->SetMemoryController(memoryController);
+        TEST_ASSERT_TRUE(err);
+        err = machine->SetIoController(testIoController);
+        TEST_ASSERT_TRUE(err);
+        err = machine->OnLoad([]{ return ""; });
+        TEST_ASSERT_TRUE(err);
+        err = machine->OnSave([](const char*){});
+        TEST_ASSERT_TRUE(err);
 
         // Since we are running async we need to wait for completion
         auto ex = machine->WaitForCompletion();
         TEST_ASSERT_TRUE(ex);
 
         // We are now no longer running, all these methods should not return errors
-        errc = machine->SetOptions(R"({"isrFreq":1})");
-        TEST_ASSERT_FALSE(errc);
-        errc = machine->SetMemoryController(memoryController);
-        TEST_ASSERT_FALSE(errc);
-        errc = machine->SetIoController(testIoController);
-        TEST_ASSERT_FALSE(errc);
-        errc = machine->OnLoad([]{ return ""; });
-        // todo: need to expose the private errc header
-        TEST_ASSERT_TRUE(errc.value() == 0 || errc.value() == 10);
+        err = machine->SetOptions(R"({"isrFreq":1})");
+        TEST_ASSERT_FALSE(err);
+        err = machine->SetMemoryController(memoryController);
+        TEST_ASSERT_FALSE(err);
+        err = machine->SetIoController(testIoController);
+        TEST_ASSERT_FALSE(err);
+        err = machine->OnLoad([]{ return ""; });
+        TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
     }
 
     static void test_RunTimed()

@@ -101,17 +101,11 @@ class MachineTest(unittest.TestCase):
         err = self.machine.SetOptions(r'{"clockResolution":16666667,"isrFreq":0.5}')
         self.assertEqual(err, ErrorCode.NoError)
 
-        nanos = 0
-        iterations = 1
+        err = self.machine.Run(0x0004)
+        self.assertEqual(err, ErrorCode.NoError)
+        nanos = self.machine.WaitForCompletion()
 
-        for i in range(iterations):
-            if runAsync == True:
-                self.machine.Run(0x0004)
-                nanos += self.machine.WaitForCompletion()
-            else:
-                nanos += self.machine.Run(0x0004)
-
-        error = nanos / iterations - 1000000000
+        error = nanos - 1000000000
         self.assertTrue(error >= 0 and error <= 500000)
 
     def test_RunTimed(self):

@@ -1,8 +1,8 @@
 #ifndef MACHINEHOLDER_H
 #define MACHINEHOLDER_H
 
+#include "meen/Error.h"
 #include "meen/MachineFactory.h"
-#include "meen/MEEN_Error.h"
 
 namespace meen
 {

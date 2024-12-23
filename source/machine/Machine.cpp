@@ -34,10 +34,10 @@ SOFTWARE.
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
 #endif // ENABLE_MEEN_SAVE
-#include "meen/MEEN_Error.h"
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
 #include "meen/machine/Machine.h"
+#include "meen/utils/ErrorCode.h"
 
 using namespace std::chrono;
 
