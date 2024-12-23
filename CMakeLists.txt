@@ -434,11 +434,11 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
     add_custom_command(
         TARGET ${meen}_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/tests/source/${meen_test}/MachineTestDeps.py
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/tests/source/${meen}_test/MachineTestDeps.py
         )
 
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/meen_test/MachineTestDeps.py DESTINATION tests)
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/meen_test/test_Machine.py DESTINATION tests)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/${meen}_test/MachineTestDeps.py DESTINATION tests)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/${meen}_test/test_Machine.py DESTINATION tests)
   endif()
 
   if(DEFINED MSVC)
