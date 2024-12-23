@@ -23,8 +23,8 @@ SOFTWARE.
 #include <assert.h>
 #include <fstream>
 
-#include "meen/MEEN_Error.h"
 #include "meen/opt/Opt.h"
+#include "meen/utils/ErrorCode.h"
 
 namespace meen
 {

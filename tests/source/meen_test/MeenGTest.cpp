@@ -27,6 +27,7 @@ SOFTWARE.
 #else
 #include <ArduinoJson.h>
 #endif
+#include "meen/Error.h"
 #include "meen/IController.h"
 #include "meen/IMachine.h"
 #include "meen/MachineFactory.h"
@@ -170,8 +171,8 @@ namespace meen::Tests
 	{
 		//cppcheck-suppress unknownMacro
 		// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-		auto errc = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
-		EXPECT_FALSE(errc);
+		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
+		EXPECT_FALSE(err);
 
 		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
 		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
@@ -179,39 +180,36 @@ namespace meen::Tests
 		EXPECT_NO_THROW
 		(
 			// We aren't interested in saving, clear the onSave callback
-			errc = machine_->OnSave(nullptr);
-			// todo: need to expose the private errc header
-			EXPECT_TRUE(errc.value() == 0 || errc.value() == 10);
-			
-			errc = machine_->Run(0x04);
-			EXPECT_FALSE(errc);
+			err = machine_->OnSave(nullptr);
+			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
+
+			err = machine_->Run(0x04);
+			EXPECT_FALSE(err);
 
 			// All these methods should return errors
-			//machine_->Run(0x100);
-			errc = machine_->SetOptions(R"({"isrFreq":1})");
-			EXPECT_TRUE(errc);
-			errc = machine_->SetMemoryController(memoryController_);
-			EXPECT_TRUE(errc);
-			errc = machine_->SetIoController(testIoController_);
-			EXPECT_TRUE(errc);
-			errc = machine_->OnLoad([]{ return ""; });
-			EXPECT_TRUE(errc);
-			errc = machine_->OnSave([](const char*){});
-			EXPECT_TRUE(errc);
+			err = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_TRUE(err);
+			err = machine_->SetMemoryController(memoryController_);
+			EXPECT_TRUE(err);
+			err = machine_->SetIoController(testIoController_);
+			EXPECT_TRUE(err);
+			err = machine_->OnLoad([]{ return ""; });
+			EXPECT_TRUE(err);
+			err = machine_->OnSave([](const char*){});
+			EXPECT_TRUE(err);
 
 			// Since we are running async we need to wait for completion
 			machine_->WaitForCompletion();
 
 			// We are now no longer running, all these methods should not return errors
-			errc = machine_->SetOptions(R"({"isrFreq":1})");
-			EXPECT_FALSE(errc);
-			errc = machine_->SetMemoryController(memoryController_);
-			EXPECT_FALSE(errc);
-			errc = machine_->SetIoController(testIoController_);
-			EXPECT_FALSE(errc);
-			errc = machine_->OnLoad([]{ return ""; });
-			// todo: need to expose the private errc header
-			EXPECT_TRUE(errc.value() == 0 || errc.value() == 10);
+			err = machine_->SetOptions(R"({"isrFreq":1})");
+			EXPECT_FALSE(err);
+			err = machine_->SetMemoryController(memoryController_);
+			EXPECT_FALSE(err);
+			err = machine_->SetIoController(testIoController_);
+			EXPECT_FALSE(err);
+			err = machine_->OnLoad([]{ return ""; });
+			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
 		);
 	}
 
@@ -279,8 +277,7 @@ namespace meen::Tests
 			std::vector<std::string> saveStates;
 			auto err = machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
 
-			// todo: need to expose the private errc header
-			if(err.value() == 10)
+			if(err.value() == errc::json_config)
 			{
 				// not implemented, skip the test
 				GTEST_SKIP() << "Machine::OnSave not supported";
@@ -289,8 +286,7 @@ namespace meen::Tests
 			// 0 - mid program save state, 1 and 2 - end of program save states
 			err = machine_->OnLoad([&] { return saveStates[0].c_str(); });
 
-			// todo: need to expose the private errc header
-			if(err.value() == 10)
+			if(err.value() == errc::json_config)
 			{
 				// not implemented, skip the test
 				GTEST_SKIP() << "Machine::OnLoad not supported";

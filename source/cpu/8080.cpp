@@ -29,8 +29,8 @@ SOFTWARE.
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
 #endif // ENABLE_MEEN_SAVE
-#include "meen/MEEN_Error.h"
 #include "meen/cpu/8080.h"
+#include "meen/utils/ErrorCode.h"
 
 namespace meen
 {

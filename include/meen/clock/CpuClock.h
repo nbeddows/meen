@@ -31,8 +31,8 @@ SOFTWARE.
 #include <pico/stdlib.h>
 #endif // ENABLE_MEEN_RP2040
 
-#include "meen/MEEN_Error.h"
 #include "meen/clock/ICpuClock.h"
+#include "meen/utils/ErrorCode.h"
 
 namespace meen
 {

@@ -136,6 +136,7 @@ endif()
 
 set(${meen}_public_include_files
   ${include_dir}/meen/Base.h
+  ${include_dir}/meen/Error.h
   ${include_dir}/meen/IController.h
   ${include_dir}/meen/IMachine.h
   ${include_dir}/meen/MachineFactory.h
@@ -150,21 +151,28 @@ set(clock_include_files
 )
 
 set(cpu_include_files
-  ${include_dir}/meen/MEEN_Error.h
   ${include_dir}/meen/cpu/8080.h
   ${include_dir}/meen/cpu/CpuFactory.h
   ${include_dir}/meen/cpu/ICpu.h
 )
 
 set(machine_include_files ${include_dir}/meen/machine/Machine.h)
+
 if(${enable_python_module} STREQUAL ON)
   set(${meen}_py_include_files
     ${include_dir}/meen/machine_py/ControllerPy.h
     ${include_dir}/meen/machine_py/MachineHolder.h
   )
 endif()
-set(opt_include_files ${include_dir}/meen/opt/Opt.h)
-set(utils_include_files ${include_dir}/meen/utils/Utils.h)
+
+set(opt_include_files
+  ${include_dir}/meen/opt/Opt.h
+)
+
+set(utils_include_files
+  ${include_dir}/meen/utils/ErrorCode.h
+  ${include_dir}/meen/utils/Utils.h
+)
 
 set(${meen}_private_include_files
   ${clock_include_files}
@@ -204,11 +212,16 @@ if(${enable_python_module} STREQUAL ON)
   )
 endif()
 
-set(opt_source_files ${source_dir}/opt/Opt.cpp)
-set(utils_source_files ${source_dir}/utils/Utils.cpp)
+set(opt_source_files
+  ${source_dir}/opt/Opt.cpp
+)
+
+set(utils_source_files
+  ${source_dir}/utils/ErrorCode.cpp
+  ${source_dir}/utils/Utils.cpp
+)
 
 set(${meen}_source_files
-  ${source_dir}/MEEN_Error.cpp
   ${clock_source_files}
   ${cpu_source_files}
   ${machine_source_files}
@@ -421,11 +434,11 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
     add_custom_command(
         TARGET ${meen}_test POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/tests/source/${meen_test}/MachineTestDeps.py
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CMAKE_CURRENT_BINARY_DIR}/MachineTestDeps${build_type}.py ${CMAKE_CURRENT_SOURCE_DIR}/tests/source/${meen}_test/MachineTestDeps.py
         )
 
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/meen_test/MachineTestDeps.py DESTINATION tests)
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/meen_test/test_Machine.py DESTINATION tests)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/${meen}_test/MachineTestDeps.py DESTINATION tests)
+    install(FILES ${CMAKE_SOURCE_DIR}/tests/source/${meen}_test/test_Machine.py DESTINATION tests)
   endif()
 
   if(DEFINED MSVC)

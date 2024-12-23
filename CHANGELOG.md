@@ -16,6 +16,8 @@
 * IMachine::Run now returns a std::error_code.
 * IMachine::WaitForCompletion now returns a std::expected.
 * Updated the minimum msvc version required in the README to 1706.
+* Added Error.h with errc enum to compare meen error_code values.
+* Clang is no longer officially supported.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "meen/MEEN_Error.h"
+#include "meen/utils/ErrorCode.h"
 
 namespace meen
 {
