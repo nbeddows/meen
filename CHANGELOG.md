@@ -18,6 +18,10 @@
 * Updated the minimum msvc version required in the README to 1706.
 * Added Error.h with errc enum to compare meen error_code values.
 * Clang is no longer officially supported.
+* Removed the following IMachine API methods: SetClockResolution,
+  Save, GetState.
+* Factory methods are based on cpu type (removed MakeMachine
+  in favour of Make8080Machine) and take no options.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
