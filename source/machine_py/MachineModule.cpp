@@ -2,15 +2,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#define ENABLE_MACHINE_HOLDER
-
-#ifdef ENABLE_MACHINE_HOLDER
-    #include "meen/machine_py/MachineHolder.h"
-#else
-    #include "meen/MachineFactory.h"
-#endif
-
+#include "meen/machine/Machine.h"
 #include "meen/machine_py/ControllerPy.h"
+#include "meen/machine_py/MachineHolder.h"
 
 namespace py = pybind11;
 
@@ -43,30 +37,17 @@ PYBIND11_MODULE(meenPy, meen)
         .value("Quit", meen::ISR::Quit)
         .value("NoInterrupt", meen::ISR::NoInterrupt);
 
-#ifdef ENABLE_MACHINE_HOLDER
-    py::class_<meen::MachineHolder>(meen, "MakeMachine")
-        .def(py::init<>())
-        .def(py::init<const char*>())
+    meen.def("Make8080Machine", &meen::MachineHolder::Make8080Machine);
+    
+    py::class_<meen::MachineHolder>(meen, "Machine")
+        .def(py::init<meen::Cpu>())
         .def("OnLoad", &meen::MachineHolder::OnLoad)
         .def("OnSave", &meen::MachineHolder::OnSave)
         .def("Run", &meen::MachineHolder::Run)
-        .def("Save", &meen::MachineHolder::Save)
-        .def("SetClockResolution", &meen::MachineHolder::SetClockResolution)
         .def("SetIoController", &meen::MachineHolder::SetIoController)
         .def("SetMemoryController", &meen::MachineHolder::SetMemoryController)
         .def("SetOptions", &meen::MachineHolder::SetOptions)
         .def("WaitForCompletion", &meen::MachineHolder::WaitForCompletion);
-#else
-    meen.def("Make8080Machine", &meen::Make8080Machine);
-
-    py::class_<meen::IMachine, std::shared_ptr<meen::IMachine>>(meen, "IMachine")
-        .def("Run", &meen::IMachine::Run)
-        .def("SetClockResolution", &meen::IMachine::SetClockResolution)
-        .def("SetIoController", &meen::IMachine::SetIoController);
-        .def("SetMemoryController", &meen::IMachine::SetMemoryController);
-        .def("SetOptions", &meen::IMachine::SetOptions)
-        .def("WaitForCompletion", &meen::IMachine::WaitForCompletion);
-#endif
 
     py::class_<meen::IController, meen::ControllerPy>(meen, "Controller")
         .def(py::init<>())

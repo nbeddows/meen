@@ -3,6 +3,7 @@
 
 #include "meen/Error.h"
 #include "meen/MachineFactory.h"
+#include "meen/machine/Machine.h"
 
 namespace meen
 {
@@ -13,14 +14,12 @@ namespace meen
         std::unique_ptr<meen::IMachine> machine_;
         std::string json_;
     public:
-        MachineHolder();
-        MachineHolder(const char* json);
+        static MachineHolder Make8080Machine();
 
+        MachineHolder(Cpu cpu);
         errc OnLoad(std::function<std::string()>&& onLoad);
         errc OnSave(std::function<void(std::string&&)>&& onSave);
         errc Run(uint16_t offset);
-        std::string Save() const;
-        errc SetClockResolution(int64_t clockResolution);
         errc SetIoController(meen::IController* controller);
         errc SetMemoryController(meen::IController* controller);
         errc SetOptions(const char* options);

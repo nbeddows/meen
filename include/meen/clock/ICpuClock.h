@@ -80,8 +80,6 @@ namespace meen
 			@return						no_error			The resolution was set successfully.
 										clock_resolution	The resolution was set, however, the host does not support
 															a high enough resolution timer for this resolution.
-
-			@see	IMachine::SetClockResolution
 		*/
 		virtual std::error_code SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks = nullptr) = 0;
 

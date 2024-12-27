@@ -65,18 +65,6 @@ namespace meen
 	*/
 	DLL_EXP_IMP const char* Version();
 
-	/** Create a machine
-
-		Build a machine based on the Intel 8080 cpu.
-
-		@return			A unique i8080 machine pointer that can be loaded with memory and io controllers.
-
-		@deprecated		since 1.4.0
-
-		@see			MakeMachine
-	*/
-	DLL_EXP_IMP [[deprecated("Will be removed in v2.0.0, please use MakeMachine which is more flexible")]] std::unique_ptr<IMachine> Make8080Machine();
-
 	/** Create a Machine
 
 		Build a machine based on the supplied configuration.
@@ -124,7 +112,7 @@ namespace meen
 		
 		@return		A unique machine pointer that can be loaded with memory and io controllers.
 	*/
-	DLL_EXP_IMP std::unique_ptr<IMachine> MakeMachine(const char* config = nullptr);
+	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
 } // namespace meen
 
 #endif // MACHINE_FACTORY_H
