@@ -79,8 +79,8 @@ namespace meen::tests
         {
             // We want to force a failure here, ec should be non zero
             TEST_ASSERT_FALSE(ec);
-            // The machine didn't run, return an expected value of no_error
-            return std::expected<uint64_t, std::error_code>(errc::no_error);
+            // The machine didn't run, return a run time of zero
+            return std::expected<uint64_t, std::error_code>(0);
         }).value();
 #else
         auto ex = machine->WaitForCompletion();
@@ -232,7 +232,7 @@ namespace meen::tests
     {
         // Note that the tests don't require a json string to be set as it just uses the default values,
         // it is used here for demonstation purposes only
-        machine = MakeMachine(R"({"cpu":"i8080"})");
+        machine = Make8080Machine();
         memoryController = std::make_shared<MemoryController>();
         cpmIoController = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController));
         testIoController = std::make_shared<TestIoController>();
@@ -262,13 +262,6 @@ namespace meen::tests
         auto errc = machine->SetIoController(nullptr);
         TEST_ASSERT_TRUE(errc);
         TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", errc.message().c_str());
-    }
-
-    static void test_SetCpuAfterConstruction()
-    {
-        //cppcheck-suppress unknownMacro
-        auto errc = machine->SetOptions(R"({"cpu":"i8080"})");
-        TEST_ASSERT_TRUE(errc);
     }
 
     static void test_NegativeISRFrequency()
@@ -447,7 +440,6 @@ int main(int argc, char** argv)
         UNITY_BEGIN();
         RUN_TEST(meen::tests::test_SetNullptrIoController);
         RUN_TEST(meen::tests::test_SetNullptrMemoryController);
-        RUN_TEST(meen::tests::test_SetCpuAfterConstruction);
         RUN_TEST(meen::tests::test_NegativeISRFrequency);
         RUN_TEST(meen::tests::test_OnLoad);
         RUN_TEST(meen::tests::test_OnLoadAsync);

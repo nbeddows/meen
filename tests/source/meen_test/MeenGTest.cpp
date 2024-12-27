@@ -65,7 +65,7 @@ namespace meen::Tests
 	{
 		// Note that the tests don't require a json string to be set as it just uses the default values,
 		// it is used here for demonstation purposes only
-		machine_ = MakeMachine(R"({"cpu":"i8080"})");
+		machine_ = Make8080Machine();
 		memoryController_ = std::make_shared<MemoryController>();
 		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
 		testIoController_ = std::make_shared<TestIoController>();
@@ -144,16 +144,6 @@ namespace meen::Tests
 			auto errc = machine_->SetIoController(nullptr);
 			EXPECT_TRUE(errc);
 			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
-		);
-	}
-
-	TEST_F(MachineTest, SetCpuAfterConstruction)
-	{
-		EXPECT_NO_THROW
-		(
-			//cppcheck-suppress unknownMacro
-			auto errc = machine_->SetOptions(R"({"cpu":"i8080"})");
-			EXPECT_TRUE(errc)
 		);
 	}
 

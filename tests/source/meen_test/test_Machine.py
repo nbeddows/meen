@@ -6,7 +6,7 @@ import unittest
 
 from meenPy import __version__
 from meenPy import ErrorCode
-from meenPy import MakeMachine
+from meenPy import Make8080Machine
 
 # import Python controller modules (a port of the c++ modules below)
 # always use the c++ memory controller module for performance reasons, the python module is available strictly for demonstration purposes
@@ -26,9 +26,11 @@ class MachineTest(unittest.TestCase):
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
         self.testIoController = TestIoController()
-        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":0.02}')
+        self.machine = Make8080Machine()
         self.machine.SetIoController(self.testIoController)
         self.machine.SetMemoryController(self.memoryController)
+        err = self.machine.SetOptions(r'{"isrFreq":0.02}')
+        self.assertEqual(err, ErrorCode.NoError)
         err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
         self.assertEqual(err, ErrorCode.NoError)
         err = self.memoryController.Load(self.programsDir + 'bdosMsg.bin', 0x0005)
@@ -44,10 +46,6 @@ class MachineTest(unittest.TestCase):
     def test_SetNoMemoryController(self):
         err = self.machine.SetMemoryController(None)
         self.assertEqual(err, ErrorCode.InvalidArgument)
-
-    def test_SetCpuAfterConstruction(self):
-        err = self.machine.SetOptions(r'{"cpu":"i8080"}')
-        self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_NegativeISRFrequency(self):
         err = self.machine.SetOptions(r'{"isrFreq":-1.0}')
@@ -176,9 +174,11 @@ class i8080Test(unittest.TestCase):
         self.programsDir = MachineTestDeps.programsDir
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController(self.memoryController)
-        self.machine = MakeMachine(r'{"cpu":"i8080","isrFreq":0.02}')
+        self.machine = Make8080Machine()
         self.machine.SetIoController(self.cpmIoController)
         self.machine.SetMemoryController(self.memoryController)
+        err = self.machine.SetOptions(r'{"isrFreq":0.02}')
+        self.assertEqual(err, ErrorCode.NoError)
         err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
         self.assertEqual(err, ErrorCode.NoError)
         err = self.memoryController.Load(self.programsDir + 'bdosMsg.bin', 0x0005)
