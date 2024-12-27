@@ -160,14 +160,6 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 			}
 #ifdef ENABLE_NLOHMANN_JSON
-			if (json_.contains("cpu") == true && json.contains("cpu") == true)
-#else
-			if (json_["cpu"] != nullptr && json["cpu"] != nullptr)
-#endif // ENABLE_NLOHMANN_JSON
-			{
-				return make_error_code(errc::json_config);
-			}
-#ifdef ENABLE_NLOHMANN_JSON
 			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
 #else
 			if (json["isrFreq"] != nullptr && json["isrFreq"].as<double>() < 0)
@@ -203,29 +195,6 @@ namespace meen
 		return json_["clockResolution"].get<int64_t>();
 #else
 		return json_["clockResolution"].as<int64_t>();
-#endif // ENABLE_NLOHMANN_JSON
-	}
-
-	std::string Opt::CpuType() const
-	{
-#ifdef ENABLE_NLOHMANN_JSON
-		if (json_.contains("cpu") == true)
-		{
-			return json_["cpu"].get<std::string>();
-		}
-		else
-		{
-			return "";
-		}
-#else
-		if(json_["cpu"])
-		{
-			return json_["cpu"].as<std::string>();
-		}
-		else
-		{
-			return "";
-		}
 #endif // ENABLE_NLOHMANN_JSON
 	}
 

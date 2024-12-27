@@ -91,12 +91,6 @@ namespace meen
 			*/
 			int64_t ClockResolution() const;
 
-			/** Cpu type
-
-				Supported cpus, currently only i8080 is supported.
-			*/
-			std::string CpuType() const;
-
 			/** Interrupt service routine frequency
 
 				A multipler applied to the machine clock resolution to alter the rate

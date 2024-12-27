@@ -43,26 +43,19 @@ using namespace std::chrono;
 
 namespace meen
 {
-	Machine::Machine(const char* options)
+	Machine::Machine(Cpu cpu)
 	{
-		auto errc = SetOptions(options);
-
-		if (errc)
+		switch (cpu)
 		{
-			printf("Machine::Machine SetOptions failed (using defaults): %s\n", errc.message().c_str());
-		}
-
-		// if no cpu type specified, set the default
-		if(opt_.CpuType().empty() == true)
-		{
-			errc = SetOptions(R"({"cpu":"i8080"})");
-			assert(!errc);
-		}
-
-		if(opt_.CpuType() == "i8080")
-		{
-			clock_ = MakeCpuClock(2000000);
-			cpu_ = Make8080();
+			case Cpu::i8080:
+			{
+				clock_ = MakeCpuClock(2000000);
+				cpu_ = Make8080();
+			}
+			default:
+			{
+				break;
+			}
 		}
 	}
 
@@ -74,48 +67,6 @@ namespace meen
 		}
 
 		return opt_.SetOptions(options);
-	}
-
-	ErrorCode Machine::SetClockResolution(int64_t clockResolution)
-	{
-		if (running_ == true)
-		{
-			//return make_error_code(errc::busy);
-			return ErrorCode::ClockResolution;
-		}
-
-		if (clockResolution < -1 || clockResolution > 10000000000)
-		{
-			//return make_error_code(errc::clock_resolution);
-			return ErrorCode::ClockResolution;
-		}
-
-		if(clock_ == nullptr)
-		{
-			return ErrorCode::NoClock;
-		}
-
-		char str[32]{};
-#ifdef ENABLE_MEEN_RP2040
-		snprintf(str, 32, "{\"clockResolution\":%" PRIi32 "}", clockResolution);
-#else
-		snprintf(str, 32, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
-#endif // ENABLE_MEEN_RP2040
-		opt_.SetOptions(str);
-		//opt_.SetOptions(std::format(R"({{"clockResolution":{}}})", clockResolution).c_str());
-
-		int64_t resInTicks = 0;
-
-		auto errc = clock_->SetTickResolution(nanoseconds(clockResolution), &resInTicks);
-
-		if (errc)
-		{
-			return ErrorCode::ClockResolution;
-		}
-
-		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
-
-		return ErrorCode::NoError;
 	}
 
 	void RunMachine(meen::Machine* m)
@@ -546,9 +497,18 @@ namespace meen
 
 		cpu_->Reset(pc);
 		clock_->Reset();
-		SetClockResolution(opt_.ClockResolution());
 		running_ = true;
 		runTime_ = 0;
+
+		int64_t resInTicks = 0;
+		auto err = clock_->SetTickResolution(nanoseconds(opt_.ClockResolution()), &resInTicks);
+
+		if (err)
+		{
+			return make_error_code(errc::clock_resolution);
+		}
+
+		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 
 #ifdef ENABLE_MEEN_RP2040
 		if(opt_.RunAsync() == true)
@@ -676,73 +636,5 @@ namespace meen
 #else
 		return make_error_code(errc::not_implemented);
 #endif // ENABLE_MEEN_SAVE
-	}
-
-	std::string Machine::Save() const
-	{
-#ifdef ENABLE_MEEN_SAVE
-		if (running_ == true)
-		{
-			return "Machine::Save: the machine is running, save failed";
-		}
-
-		if (memoryController_ == nullptr)
-		{
-			return "Machine::Save: no memory controller set, save failed";
-		}
-
-		auto rm = [this](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
-		{
-			std::vector<uint8_t> mem;
-
-			for (const auto& m : metadata)
-			{
-				for (auto addr = m.first; addr < m.first + m.second; addr++)
-				{
-					mem.push_back(memoryController_->Read(addr));
-				}
-			}
-
-			return mem;
-		};
-
-		auto rom = rm(opt_.Rom());
-		auto ram = rm(opt_.Ram());
-		auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
-		auto memUuid = memoryController_->Uuid();
-		auto romMd5 = Utils::Md5(rom.data(), rom.size());
-		auto writeState = [&](char* data, size_t dataSize)
-		{
-			auto count = snprintf(data, dataSize, fmtStr,
-				cpu_->Save().c_str(),
-				Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
-				Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
-				opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
-				Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str());
-			return count;
-		};
-
-		auto count = writeState(nullptr, 0) + 1;
-		std::string state(count, '\0');
-		writeState(state.data(), count);
-		return state;
-#else
-		return "Machine::Save: save support disabled, save failed";
-#endif // ENABLE_MEEN_SAVE
-	}
-
-	std::unique_ptr<uint8_t[]> Machine::GetState(int* size) const
-	{
-		if (running_ == true)
-		{
-			return nullptr;
-		}
-
-		if(cpu_ == nullptr)
-		{
-			return nullptr;
-		}
-
-		return cpu_->GetState(size);
 	}
 } // namespace meen

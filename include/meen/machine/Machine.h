@@ -37,6 +37,11 @@ SOFTWARE.
 
 namespace meen
 {
+	enum class Cpu
+	{
+		i8080
+	};
+	
 	/** Machine
 
 		@see IMachine.h
@@ -65,7 +70,7 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 		friend void RunMachine(Machine* machine);
 	public:
-		Machine(const char* json);
+		Machine(Cpu cpu);
 		~Machine() = default;
 
 		/** Run
@@ -109,24 +114,6 @@ namespace meen
 			@see IMachine::OnSave
 		*/
 		std::error_code OnSave(std::function<void(const char* json)>&& onSave) final;
-
-		/** Get the machine state
-
-			@see IMachine::GetState
-		*/
-		std::string Save() const final;
-
-		/** Set the clock resolution.
-
-			@see IMachine::SetClockResolution
-		*/
-		ErrorCode SetClockResolution(int64_t clockResolution) final;
-
-		/** GetCpuState
-
-			@see IMachine::GetCpuState
-		*/
-		std::unique_ptr<uint8_t[]> GetState(int* size) const final;
 	};
 } // namespace meen
 

@@ -46,8 +46,6 @@ namespace meen
 
 		virtual void Reset(uint16_t pc) = 0;
 
-		virtual std::unique_ptr<uint8_t[]> GetState(int* size) const = 0;
-
 #ifdef ENABLE_MEEN_SAVE
 		virtual std::error_code Load(const std::string&& json) = 0;
 

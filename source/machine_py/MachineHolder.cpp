@@ -5,23 +5,17 @@
 
 namespace meen
 {
-	MachineHolder::MachineHolder()
+	MachineHolder::MachineHolder(Cpu cpu)
 	{
-		machine_ = meen::MakeMachine();
-	}
-
-	MachineHolder::MachineHolder(const char* json)
-	{
-		machine_ = meen::MakeMachine(json);
-	}
-
-	errc MachineHolder::SetClockResolution(int64_t clockResolution)
-	{
-		auto count = snprintf(nullptr, 0, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
-		auto str = std::string(count + 1, '\0');
-		snprintf(str.data(), count + 1, "{\"clockResolution\":%" PRIi64 "}", clockResolution);
-		auto err = machine_->SetOptions(str.c_str());
-		return static_cast<errc>(err.value());
+		switch(cpu)
+		{
+			case Cpu::i8080:
+			{
+				machine_ = meen::Make8080Machine();
+			}
+			default:
+				break;
+		}
 	}
 
 	errc MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
@@ -43,11 +37,6 @@ namespace meen
 		});
 
 		return static_cast<errc>(err.value());
-	}
-
-	std::string MachineHolder::Save() const
-	{
-		return machine_->Save();
 	}
 
 	errc MachineHolder::Run(uint16_t offset)
@@ -81,5 +70,10 @@ namespace meen
 		// Release the Python Global Interpreter Lock so the calling script doesn't stall.
 		pybind11::gil_scoped_release nogil{};
 		return machine_->WaitForCompletion().value_or(0);
+	}
+
+	MachineHolder MachineHolder::Make8080Machine()
+	{
+		return MachineHolder(Cpu::i8080);
 	}
 } // namespace meen

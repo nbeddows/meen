@@ -33,11 +33,6 @@ namespace meen
 	//cppcheck-suppress unusedFunction
 	std::unique_ptr<IMachine> Make8080Machine()
 	{
-		return MakeMachine();
-	}
-
-	std::unique_ptr<IMachine> MakeMachine(const char* json)
-	{
-		return std::make_unique<Machine>(json);
+		return std::make_unique<Machine>(Cpu::i8080);
 	}
 } // namespace meen

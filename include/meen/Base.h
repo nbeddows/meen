@@ -48,19 +48,6 @@ namespace meen
 		Quit,					/**< Exit the IMachine::Run control loop. */
 		NoInterrupt,			/**< No interrupt has occurred. */
 	};
-
-	/** MachuEmu error codes
-	
-		@todo		Convert to ErrorCode to std::error_code
-	*/
-	enum class ErrorCode
-	{
-		NoError,				/**< Success, no error has occured */
-		ClockResolution,		/**< Warning, clock resolution may be inaccurate */
-		NoClock,				/**< The clock has not been set */
-		NotImplemented,			/**< Warning, specifed configuration option is not implemented */
-		UnknownOption			/**< Warning, unrecognised configuration option found */
-	};
 } // namespace meen
 
 #endif // BASE_H
