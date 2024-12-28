@@ -75,13 +75,9 @@ namespace meen
 									to their defaults.
 
 				@return		no_error: all options were set successfully.<br>
-							unknown_option: all recognised options were set successfully though unrecognised options were found.
-
-				@throws		std::runtime_error or any exception that the underlying json parser can throw, in this case nlohmann_json
-
-				@throws		std::runtime_error if the cpu option is specified.
-
-				@throws		std::invalid_argument if the interrupt service routine frequency is negative.
+							json_parse: the json input is malformed.<br>
+							json_config: the isr frequency is negative.<br>
+							no_zlib: zib option was specifed but zlib has been disabled.
 			*/
 			std::error_code SetOptions(const char* json);
 

@@ -44,10 +44,7 @@ namespace meen::Utils
 		@param	binLen					The length in bytes of the binary data.
 
 		@return							The encoded text representation of the given binary data as a std::string using the specified encoder.
-	
-		@throws	std::invalid_argument	Unsupported encoder or compressor parameters.
-
-		@throws	std::runtime_error		The binary data failed to compress.
+										An empty string is returned if the binary data failed to compress and/or encode.
 	*/
 	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, const uint32_t binLen);
 
@@ -62,10 +59,7 @@ namespace meen::Utils
 		@param	txt						The encoded binary data as a std::string which must be in the format specified by the decoder parameter.
 
 		@return							The (decompressed and) decoded binary data obtained from the specified text.
-
-		@throws	std::invalid_argument	Unsupported decoder or decompressor parameters.
-
-		@throws	std::runtime_error		The binary data failed to decompress.
+										An empty vector is retuned if the txt failed to decompress and/or decode.
 	*/
 	std::vector<uint8_t> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& txt);
 #endif // ENABLE_BASE64

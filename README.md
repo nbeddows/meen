@@ -1,14 +1,11 @@
 
 ### Introduction
 
-MACHineEMUlator is a project which aims to define a simple framework for creating an emulated machine.
+Machine Emulator ENgine (MEEN) is a project which aims to define a simple framework for creating an emulated machine.
 
 ##### Motivation
 
-I needed something simple and extensible to keep myself busy during all the spare time we had during the COVID-19 pandemic
-and to allow myself to keep up with the latest c++ standards, learn about cpu emulation (an interest my mine) and to pick up
-a bit of Python and other scripting languages where applicable. This is just one of many implementations out there, and while
-speed is not a motivating factor behind this project, optimisations will be considered if and when they are needed.
+I needed something simple and extensible to allow myself to keep up with the latest C/C++ standards, learn about cpu emulation (an interest my mine) and to pick up a bit of Python and other scripting languages where applicable. This is just one of many implementations out there, and while speed is not a motivating factor behind this project, optimisations will be considered if and when they are needed.
 
 ##### Project Goals
 
@@ -28,16 +25,15 @@ This list will expand as certain milestones are achieved.
 
 ### Overview
 
-Conceptually speaking, Meen can be represented by the following diagram:
+Conceptually speaking, MEEN can be represented by the following diagram:
 
 ![](docs/images/MachineDiagram.png)
 
-As can be seen from the diagram above Meen is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
+As can be seen from the diagram above MEEN is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
 
 The outer machine represents the inner machine customisation. For example, custom input/output may involve interacting with a keyboard or mouse, or some other proprietary peripheral, whereas custom memory maybe as simple as reading and writing to a block of locally allocated memory, a network socket or some other proprietary memory configuration, this all depends on the machine being built, see `IMachine::SetIoControlller` and `IMachine::SetMemoryController`.
 
-Example code in this framework is supplied in the form of unit tests. A test IO contoller library is supplied which gives implementations of both an IO controller and
-a memory controller.
+Example code in this framework is supplied in the form of unit tests. A test IO contoller library is supplied which gives implementations of both an IO controller and a memory controller.
 
 The following table displays the current defacto test suites that these unit tests run.
 
@@ -48,12 +44,12 @@ The following table displays the current defacto test suites that these unit tes
 |       | CPUTEST          | PASS   |
 |       | TST8080          | PASS   |
 
-`IMachine.h` specifies the Meen API.<br>
-`MachineFactory.h` specifies the Meen library entry point.
+`IMachine.h` specifies the MEEN API.<br>
+`MachineFactory.h` specifies the MEEN library entry point.
 
 ### Compilation
 
-Meen uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
+MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) for documentation. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
 
 #### Pre-requisites
 
@@ -101,7 +97,7 @@ Meen uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 #### Configuration
 
-**1.** Install the supported meen conan configurations (v0.1.0) (if not done so already):
+**1.** Install the supported MEEN Conan configurations (v0.1.0) (if not done so already):
 - `conan config install -sf profiles -tf profiles https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
@@ -130,11 +126,11 @@ The following dependent packages will be (compiled if required and) installed ba
 
 - `arduinojson`: for parsing machine configuration options  (baremetal).
 - `base64`: for base64 coding.
-- `gtest`: for running the meen unit tests.
+- `gtest`: for running the MEEN unit tests.
 - `hash-library`: for md5 hashing.
 - `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
-- `unity`: for running the meen unit tests (baremetal).
+- `unity`: for running the MEEN unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
 
 You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --settings=build_type=Debug`.
@@ -151,7 +147,7 @@ A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build
 - Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`.
 - Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail).
 
-**5.** Run cmake to compile Meen: `cmake --build --preset conan-release`.<br>
+**5.** Run cmake to compile MEEN: `cmake --build --preset conan-release`.<br>
 The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can also be used as long as they have been configured in the previous steps.
 
 **NOTE**: when cross compiling the default build directory may need to be removed if any build conflicts occur: `rm -rf build`. Go to Step 3.
@@ -165,10 +161,10 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/mach-emu-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:mach-emu-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:meen-v1.5.1.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the mach-emu archive copied over via scp: `tar -xzf mach-emu-v1.5.1.tar.gz`.
-5. Change directory to mach-emu: `cd mach-emu`.
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v1.5.1.tar.gz`.
+5. Change directory to meen: `cd meen`.
 6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
 **C++ - RP2040 (armv6-m)**
@@ -202,7 +198,7 @@ The location of the test programs directory can be overridden if required: `arti
 
 #### Building a binary development package
 
-Meen supports the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
+MEEN supports the building of standalone binary development packages. The motivation behind this is to have a package with minimal build dependencies (doesn't enforce the user of the package to use Conan and CMake for example). This allows the user to integrate the package into other environments where such dependencies may not be available.
 
 Once the [configuration](#configuration) step is complete a binary development tgz package can be built with the following command:
 - `cmake --build --preset conan-release --target=package`.
@@ -224,11 +220,11 @@ When the package has been built with unit tests enabled it will contain a script
 - `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 - `start run-meen-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`.
 
-**NOTE**: the package will not contain Python units tests if Meen was not configured with the python module enabled.
+**NOTE**: the package will not contain Python units tests if MEEN was not configured with the python module enabled.
 
 #### Export a Conan package
 
-Meen can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
+MEEN can be exported as a package to the local Conan cache so it can be consumed by other Conan based projects on the same machine. It supports the same options as discussed in step 3 of the [configuration](#configuration) section.
 
 The following additional options are supported:
 - disable running the exported package tests: `--test_folder=""`
@@ -237,7 +233,7 @@ The following additional options are supported:
 **NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
-1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the meen package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the MEEN package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
 2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
 3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
 4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
@@ -252,18 +248,19 @@ Example command lines (once the artifactory server has been installed and is run
 1. `conan remote add artifactory http://<server-ip>:8081/artifactory/api/conan/conan-local`: add the package server to the list of Conan remotes.
 2. `conan remote login artifactory <user> -p <password>`: login to the artifactory server so commands can be issued.
 3. `conan remote list`: list the remotes to ensure that it has been added.
-4. `conan upload meen -r=artifactory`: upload the meen package to the remote.
+4. `conan upload meen -r=artifactory`: upload the MEEN package to the remote.
 5. `conan search meen -r=artifactory`: search the remote to ensure that it was uploaded.
-6. `conan remove meen -r=artifactory`: remove the meen package from the remote.
+6. `conan remove meen -r=artifactory`: remove the MEEN package from the remote.
 7. `conan remote remove artfactory`: remove the artifactory remote from the list of remotes.
 
 ### Basic principles of operation
 
-The following code snippet gives and example of how a machine can be instantiated, configured and executed:
+The following code snippet gives and example of how a machine can be instantiated, configured and executed.
+Error handling has been ommitted for simplicity.
 
 ```cpp
 // Create a synchronous i8080 machine running as fast as possible 
-auto machine = MakeMachine();
+auto machine = Make8080Machine();
 
 // Create a custom memory controller (See tests for examples)
 auto customMemoryController = std::make_unique<CustomMemoryController>();
@@ -279,7 +276,7 @@ machine->SetIOController(customIOController);
 machine->SetMemoryController(customMemoryController);
 
 // Can be called from a different thread if the runAsync/loadAsync options are specifed
-machine_->OnLoad([]
+machine->OnLoad([]
 {
 	// Return the json state to load, could be read from disk for example
 	return "json state as passed to OnSave";
@@ -294,7 +291,7 @@ machine->OnSave([](const char* json)
 
 // Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
 // These values are used for load and save requests
-machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":8192}]},"ram":{"block":[{"offset":8192,"size":16384}]}})");
+machine->SetOptions(R"({"rom":{"file":[{"offset":0,"size":8192}]},"ram":{"block":[{"offset":8192,"size":16384}]}})");
 
 // Set the clock resolution - not setting this will run the
 // machine as fast as possible (default)
@@ -330,22 +327,24 @@ Supported protocols:
 
 The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
 
-| Option                | Type   | Value	          | Remarks                                                                            |
+| Option                | Type   | Value              | Remarks                                                                            |
 |:----------------------|:-------|:-------------------|:-----------------------------------------------------------------------------------|
 | clockResolution       | int64  | -1 (default)       | Run the machine as fast as possible with the highest possible resolution           |
 |                       |        | 0                  | Run the machine at realtime (or as close to) with the highest possible resolution  |
 |                       |        | 0 - 1000000        | Will always spin the cpu to maintain the clock speed and is not recommended        |
-|                       |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick          |
+|                       |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick, note    |
+|                       |        |                    | that this is only a request and while best efforts are made to honour it, the      |
+|                       |        |                    | consistency of the tick rate will not be perfect, especially at higher resolutions |
+|                       |        |                    | when no high resolution clock is available.                                        |
 | compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
 |                       |        | "none"             | No compression will be used when saving the state of the ram                       |
 | encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-| cpu                   | string | "i8080" (default)  | A machine based on the Intel8080 cpu (can only be set via `Meen::MakeMachine`)  |
 | isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
 |                       |        | 1                  | Service interrupts after each clock tick when the `clockResolution` is >= 0 or each|
 |                       |        |                    | second when the `clockResolution` is -1                                            |
 |                       |        | n                  | Service interrupts frequency: as a ratio of the clockResolution when it is >=0, or |
 |                       |        |                    | the cpu ticks per second when the `clockResolution` is -1, for example: 0.5 - twice|
-|                       |        |                    | per clock tick (clockResolution >= 0) or twice per second (`clockResolution` == -1)|                    
+|                       |        |                    | per clock tick (clockResolution >= 0) or twice per second (`clockResolution` == -1)|
 | loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                               |
 |                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
 | ramOffset (deprecated)| uint16 | n (default: 0)     | The offset in bytes from the start of the memory to the start of the ram           |
@@ -361,17 +360,12 @@ The following table describes the supported options (note, when no option is spe
 | saveAsync             | bool   | true               | Run the save completion handler on a separate thread                               |
 |                       |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option  |
 
-There are two methods of supplying configuration options:
+Configuration options can be supplied to MEEN via the IMachine SetOptions method:
 
-1. Via the `MakeMachine` factory method:<br>
-    C++ - `auto machine = Meen::MakeMachine(R"({"cpu":"i8080"})")`<br>
-    Python - `self.machine = MakeMachine(r'{"cpu":"i8080"}')`
+C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
+Python - `self.machine.SetOptions(r'{"isrFreq":1.0}')`
 
-2. Via the `IMachine` interface method:<br>
-    C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
-    Python - `self.machine.SetOptions(r'{"isrFreq":1.0}')`
-
-See `Meen::MakeMachine` and `IMachine::SetOptions` for further details.
+See `IMachine::SetOptions` for further details.
 
 ### Acknowledgements
 
