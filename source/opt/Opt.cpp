@@ -121,7 +121,7 @@ namespace meen
 			if (jsonStr.starts_with("file://") == true)
 			{
 				jsonStr.remove_prefix(strlen("file://"));
-				//todo: use FILE* here, test wih nullptr, amke sure it doesn't throw
+				//todo: use FILE* here, test wih nullptr, make sure it doesn't throw
 				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
 #ifdef ENABLE_NLOHMANN_JSON
 				json = nlohmann::json::parse(fin, nullptr, false);

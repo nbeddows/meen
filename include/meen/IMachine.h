@@ -40,20 +40,20 @@ namespace meen
 		guarantee in regards to thread safety. All methods should be called
 		from the same thread.
 
-		Basic Principles of Operation:
+		Basic Principles of Operation (error checking has been ommitted for simplicity):
 
 		@code{.cpp}
 
 		// Create a synchronous i8080 machine running as fast as possible 
-		auto machine = MakeMachine();
+		auto machine = Make8080Machine();
 
 		// Create a custom memory controller (See tests for examples)
 		auto customMemoryController = std::make_unique<CustomMemoryController>();
 
-		// Load memory with program via custom controller method
+		// Load controller with a program via a custom controller method
 		customMemoryController->LoadProgram("myProgram.com");
 
-		// Create custom IO Controller (See tests for examples)
+		// Create a custom IO Controller (See tests for examples)
 		auto customIOController = std::make_unique<CustomIOController>();
 
 		// Set the memory and IO controllers with the machine
@@ -112,12 +112,18 @@ namespace meen
 										which the cpu will start executing the instructions
 										contained in the rom files that were loaded into memory.
 
-			@return						A std::error_code - todo: document the error codes.
+			@return						A std::error_code:
+
+										errc::memory_controller: no memory controller has been set.
+										errc::io_controller: no io controller has been set.
+										errc::busy: meen is running.
+										errc::cpu: the machine cpu is invalid.
+										errc::clock_resolution: the clock is invalid or the supplied clock resolution is too high.
 
 			@remark						When no program counter is specified cpu instruction
 										execution will begin from memory address 0x00.
 
-			@see SetMemoryController
+			@see meen::errc
 		*/
 		virtual std::error_code Run(uint16_t pc = 0x00) = 0;
 
@@ -140,9 +146,10 @@ namespace meen
 
 			@param	controller		The memory controller to be used with this machine.
 
-			@throws					std::invalid_argument exception when controller is nullptr.
+			@return					A std::error_code:
 
-			@throws					std::runtime_error if the machine is currently running.
+									errc::invalid_argument: the controller is nullptr.
+									errc::busy: meen is running.
 
 			@remark					See Tests/TestControllers/MemoryController.cpp
 		*/
@@ -155,9 +162,10 @@ namespace meen
 
 			@param	controller	The io controller to be used with this machine.
 
-			@throws				std::invalid_argument when the controller is nullptr.
+			@return					A std::error_code:
 
-			@throws				std::runtime_error when the machine is currently running.
+									errc::invalid_argument: the controller is nullptr.
+									errc::busy: meen is running.
 
 			@remark				See Tests/TestControllers/TestIoController.cpp.
 		*/
@@ -165,21 +173,19 @@ namespace meen
 
 		/** Set machine options
 
+			See README.txt section 'Configuration options' for a complete list of options and their defaults.
+
 			@param		options		A json string specifying the desired options to update. Passing in an options string of nullptr will set all options
 									to their defaults.
 
-			@return					no_error: all options were set successfully.<br>
-									unknown_option: all recognised options were set successfully though unrecognised options were found.
+			@return					std::error code:<br>
 
-			@throws					std::runtime_error or any other exception that the underlying json parser throws (nlohmann json)
+									errc::no_error: all options were set successfully.<br>
+									errc::json_config: one of the option values are illegal.<br>
+									errc::json_parse: the json input parameter options is malformed.<br>
+									errc::busy: meen is running.
 
-			@throws					std::runtime_error when the cpu option is specified or if the machine is currently running.
-
-			@throws					std::invalid_argument when any option value is illegal.
-
-			@remark					The `cpu` configuration option can only be set via the factory machine constructor.
-
-			@see					MakeMachine for supported configuration options.
+			@see					MakeMachine factory methods for supported configuration options.
 		*/
 		virtual std::error_code SetOptions(const char* options) = 0;
 
@@ -210,17 +216,17 @@ namespace meen
 					"pc":0,								// The program counter
 					"sp":0								// The stack pointer
 				},
-			{
-			"memory":
-			{
-				"uuid":"zRjYZ92/TaqtWroc666wMQ==",		// The base64 unique identifier for the memory controller
-				"rom":"FkgjfhUYrudiMj7y65789Io=",		// The base64 MD5 hash of the rom
-				"ram":
+				"memory":
 				{
-					"encoder":"base64",					// The binary to text encoding for the ram
-					"compressor":"zlib",				// The compressor to use for the ram
-					"size":57343,						// The size of the uncompressed ram
-					"bytes":"... the ram bytes ..."		// The compressed and encoded ram bytes
+					"uuid":"zRjYZ92/TaqtWroc666wMQ==",		// The base64 unique identifier for the memory controller
+					"rom":"FkgjfhUYrudiMj7y65789Io=",		// The base64 MD5 hash of the rom
+					"ram":
+					{
+						"encoder":"base64",					// The binary to text encoding for the ram
+						"compressor":"zlib",				// The compressor to use for the ram
+						"size":57343,						// The size of the uncompressed ram
+						"bytes":"... the ram bytes ..."		// The compressed and encoded ram bytes
+					}
 				}
 			}
 
@@ -230,7 +236,11 @@ namespace meen
 										generated via the ISR::Save interrupt. Is mutually exclusive with the OnLoad
 										initiation handler.
 
-			@throws						std::runtime_error if the machine is currently running.
+			@return						std::error_code:<br>
+
+										errc::no_error: the state completion handler was set successfully.<br>
+										errc::busy: meen is currently running.<br>
+										errc::not_implemented: save support has been disabled.
 
 			@remark						The function parameter onSave will be called from a different thread from which this
 										method was called if the runAsync or saveAsync config options have been specified.
@@ -249,7 +259,11 @@ namespace meen
 			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
 										interrupt is triggered. Is mutually exclusive with the OnSave completion handler.
 
-			@throws						std::runtime_error if machine is currently running.
+			@return						std::error_code:<br>
+
+										errc::no_error: the state completion handler was set successfully.<br>
+										errc::busy: meen is currently running.<br>
+										errc::not_implemented: load support has been disabled.
 
 			@remark						The function parameter onLoad will be called from a different thread from which this
 										method was called if the runAsync or loadAsync config options have been specified.
