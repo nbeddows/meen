@@ -58,19 +58,24 @@ namespace meen
 		return memorySize_;
 	}
 
-	int MemoryController::Load(const char* romFile, uint16_t offset)
+	std::error_code MemoryController::Load(const char* romFile, uint16_t offset)
 	{
 		auto sv = std::string_view(romFile, strlen(romFile));
 
 		auto copyFromFlashToRam = [this, offset](uint8_t* src, uint16_t srcSize)
 		{
+			if (srcSize > memory_.size())
+			{
+				return std::make_error_code(std::errc::file_too_large);
+			}
+		
 			if(srcSize > memory_.size() - offset)
 			{
-				return -1;
+				return std::make_error_code(std::errc::no_buffer_space);
 			}
 
 			memcpy(memory_.data() + offset, src, srcSize);
-			return 0;
+			return std::error_code{};
 		};
 
 		if(sv.ends_with("bdosMsg.bin") == true)
@@ -107,7 +112,7 @@ namespace meen
 		}
 		else
 		{
-			return -1;
+			return std::error_code{};
 		}
 	}
 

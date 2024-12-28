@@ -61,8 +61,11 @@ namespace meen::tests
         // going under so the cpu sleeps at the end
         // of the program so it maintains sync. It's never going to
         // be perfect, but its close enough for testing purposes).
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
+        err = memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04);
+        TEST_ASSERT_FALSE(err);
+        
+        err = memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353);
+        TEST_ASSERT_FALSE(err);
 
         // 25 millisecond resolution, service interrupts every 8.25 milliseconds
         err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":0.25})");
@@ -133,7 +136,9 @@ namespace meen::tests
         memoryController->Write(0x00FE, 0xD3);
         // The data to write to the controller that will trigger the ISR::Load interrupt
         memoryController->Write(0x00FF, 0xFD);
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "/TST8080.COM").c_str(), 0x100));
+
+        err = memoryController->Load((programsDir + "/TST8080.COM").c_str(), 0x100);
+        TEST_ASSERT_FALSE(err);
         // Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
         // located at the end of the program so this will make up the ram size since the program
         // never writes beyond this.
@@ -222,9 +227,11 @@ namespace meen::tests
         });
 
         auto dir = programsDir + name;
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load(dir.c_str(), 0x100));
 
-        auto err = machine->Run(0x100);
+        auto err = memoryController->Load(dir.c_str(), 0x100);
+        TEST_ASSERT_FALSE(err);
+
+        err = machine->Run(0x100);
         TEST_ASSERT_FALSE(err);
     }
 
@@ -278,8 +285,11 @@ namespace meen::tests
         auto err = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true,"isrFreq":0.25})"); // must be async so the Run method returns immediately
         TEST_ASSERT_FALSE(err);
 
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04));
-        TEST_ASSERT_EQUAL_UINT8(0, memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353));
+        err = memoryController->Load((programsDir + "nopStart.bin").c_str(), 0x04);
+        TEST_ASSERT_FALSE(err);
+
+        err = memoryController->Load((programsDir + "nopEnd.bin").c_str(), 0xC353);
+        TEST_ASSERT_FALSE(err);
 
         // We aren't interested in saving, clear the onSave callback
         err = machine->OnSave(nullptr);
@@ -392,14 +402,19 @@ void setUp()
     meen::tests::memoryController->Clear();
     //CP/M Warm Boot is at memory address 0x00, this will be
     //emulated with the exitTest subroutine.
-    TEST_ASSERT_EQUAL_INT8(0, meen::tests::memoryController->Load((meen::tests::programsDir + "/exitTest.bin").c_str(), 0x00));
+    auto err = meen::tests::memoryController->Load((meen::tests::programsDir + "/exitTest.bin").c_str(), 0x00);
+    TEST_ASSERT_FALSE(err);
+
     //CP/M BDOS print message system call is at memory address 0x05,
     //this will be emulated with the bdosMsg subroutine.
-    TEST_ASSERT_EQUAL_INT8(0, meen::tests::memoryController->Load((meen::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05));
+    err = meen::tests::memoryController->Load((meen::tests::programsDir + "/bdosMsg.bin").c_str(), 0x05);
+    TEST_ASSERT_FALSE(err);
+    
     meen::tests::machine->SetMemoryController(meen::tests::memoryController);
     meen::tests::machine->SetIoController(meen::tests::testIoController);
+    
     // Set default options
-    auto err = meen::tests::machine->SetOptions(nullptr);
+    err = meen::tests::machine->SetOptions(nullptr);
     TEST_ASSERT_FALSE(err);
 }
 
