@@ -37,35 +37,35 @@ namespace meen
 		return memorySize_;
 	}
 
-	int MemoryController::Load(const char* romFile, uint16_t offset)
+	std::error_code MemoryController::Load(const char* romFile, uint16_t offset)
 	{
 		std::ifstream fin(romFile, std::ios::binary | std::ios::ate);
 
 		if (!fin)
 		{
-			return -1;
+			return std::make_error_code(std::errc::no_such_file_or_directory);
 		}
 
 		if (static_cast<size_t>(fin.tellg()) > memorySize_)
 		{
-			return -1;
+			return std::make_error_code(std::errc::file_too_large);
 		}
 
 		uint16_t size = static_cast<uint16_t>(fin.tellg());
 
 		if (size > memorySize_ - offset)
 		{
-			return -1;
+			return std::make_error_code(std::errc::no_buffer_space);
 		}
 
 		fin.seekg(0, std::ios::beg);
 
 		if (!(fin.read(reinterpret_cast<char*>(&memory_[offset]), size)))
 		{
-			return -1;
+			return std::make_error_code(std::errc::io_error);
 		}
 
-		return 0;
+		return std::error_code{};
 	}
 
 	std::array<uint8_t, 16> MemoryController::Uuid() const

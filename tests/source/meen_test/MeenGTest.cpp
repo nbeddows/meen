@@ -80,16 +80,22 @@ namespace meen::Tests
 	void MachineTest::SetUp()
 	{
 		memoryController_->Clear();
+		
 		//CP/M Warm Boot is at memory address 0x00, this will be
 		//emulated with the exitTest subroutine.
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00));
+		auto err = memoryController_->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00);
+		ASSERT_FALSE(err);
+		
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05));
+		err = memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05);
+		ASSERT_FALSE(err);
+
 		machine_->SetMemoryController(memoryController_);
 		machine_->SetIoController(testIoController_);
+		
 		// Set default options
-		auto err = machine_->SetOptions(nullptr);
+		err = machine_->SetOptions(nullptr);
 		EXPECT_FALSE(err);
 	}
 
@@ -120,9 +126,10 @@ namespace meen::Tests
 		});
 
 		auto dir = programsDir_ + name;
-		ASSERT_EQ(0, memoryController_->Load(dir.c_str(), 0x100));
+		auto err = memoryController_->Load(dir.c_str(), 0x100);
+		ASSERT_FALSE(err);
 
-		auto err = machine_->Run(0x100);
+		err = machine_->Run(0x100);
 		EXPECT_FALSE(err);
 	}
 
@@ -164,8 +171,11 @@ namespace meen::Tests
 		auto err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
 		EXPECT_FALSE(err);
 
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
+		err = memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
+		ASSERT_FALSE(err);
+		
+		err = memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
+		ASSERT_FALSE(err);
 
 		EXPECT_NO_THROW
 		(
@@ -220,8 +230,11 @@ namespace meen::Tests
 		// going under so the cpu sleeps at the end
 		// of the program so it maintains sync. It's never going to
 		// be perfect, but its close enough for testing purposes).
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04));
-		ASSERT_EQ(0, memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353));
+		err = memoryController_->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
+		ASSERT_FALSE(err);
+
+		err = memoryController_->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
+		ASSERT_FALSE(err);
 
 		// 25 millisecond resolution, service interrupts every 8.25 milliseconds
 		err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
@@ -295,7 +308,9 @@ namespace meen::Tests
 			memoryController_->Write(0x00FE, 0xD3);
 			// The data to write to the controller that will trigger the ISR::Load interrupt
 			memoryController_->Write(0x00FF, 0xFD);
-			ASSERT_EQ(0, memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100));
+
+			err = memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100);
+			ASSERT_FALSE(err);
 			// Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
 			// located at the end of the program so this will make up the ram size since the program
 			// never writes beyond this.

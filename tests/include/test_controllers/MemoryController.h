@@ -24,6 +24,7 @@ SOFTWARE.
 #define MEMORYCONTROLLER_H
 
 #include <array>
+#include <system_error>
 #include <vector>
 
 #include "meen/IController.h"
@@ -70,11 +71,14 @@ namespace meen
 
 			@param	offset					The memory location to load the program into.
 
-			@throw	std::runtime_error		The rom file failed to open.
-			@throw	std::length_error		The rom file is too large for the given offset.
-			@throw	std::invalid_argument	Failed to read the rom file into memory.
+			@return 						A std::error_code:<br>
+			
+											std::errc::no_such_file_or_directory: the rom file at the path specified does not exist.<br>
+											std::errc::file_too_large: the rom file is larger than the available memory.<br>
+											std::errc::no_buffer_space: the rom file can not be loaded at the offset specified.<br>
+											std::errc::io_error: a read error occurred while loading the rom.
 		*/
-		int Load(const char* romFilePath, uint16_t offset);
+		std::error_code Load(const char* romFilePath, uint16_t offset);
 		
 		/** Memory clear
 		
