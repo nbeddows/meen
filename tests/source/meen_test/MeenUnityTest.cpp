@@ -99,7 +99,11 @@ namespace meen::tests
     static void Load(bool runAsync)
     {
         std::vector<std::string> saveStates;
-        auto err = machine->OnSave([&](const char* json) { saveStates.emplace_back(json); });
+        auto err = machine->OnSave([&](const char* json)
+        {
+            saveStates.emplace_back(json);
+            return errc::no_error;
+        });
 
         if(err.value() == errc::json_config)
         {
@@ -108,7 +112,19 @@ namespace meen::tests
         }
 
         // 0 - mid program save state, 1 and 2 - end of program save states
-        err = machine->OnLoad([&] { return saveStates[0].c_str(); });
+        err = machine->OnLoad([&](char* json, int* jsonLen)
+        {
+            if(json == nullptr)
+            {
+                *jsonLen = saveStates[0].length();
+            }
+            else
+            {
+                memcpy(json, saveStates[0].c_str(), *jsonLen);
+            }
+
+            return err::no_error;
+        });
 
         if(err.value() == errc::json_config)
         {
@@ -224,6 +240,7 @@ namespace meen::tests
             serializeJson(expectedJson, expectedStr);
 #endif
             TEST_ASSERT_EQUAL_STRING(expectedStr.c_str(), actualStr.c_str());
+            return errc::no_error;
         });
 
         auto dir = programsDir + name;
@@ -306,9 +323,9 @@ namespace meen::tests
         TEST_ASSERT_TRUE(err);
         err = machine->SetIoController(testIoController);
         TEST_ASSERT_TRUE(err);
-        err = machine->OnLoad([]{ return ""; });
+        err = machine->OnLoad([](char* json, int* jsonLen){return std::error_code{};});
         TEST_ASSERT_TRUE(err);
-        err = machine->OnSave([](const char*){});
+        err = machine->OnSave([](const char*){ return errc::no_error; });
         TEST_ASSERT_TRUE(err);
 
         // Since we are running async we need to wait for completion

@@ -18,7 +18,7 @@ namespace meen
 
         MachineHolder(Cpu cpu);
         errc OnLoad(std::function<std::string()>&& onLoad);
-        errc OnSave(std::function<void(std::string&&)>&& onSave);
+        errc OnSave(std::function<errc(std::string&&)>&& onSave);
         errc Run(uint16_t offset);
         errc SetIoController(meen::IController* controller);
         errc SetMemoryController(meen::IController* controller);

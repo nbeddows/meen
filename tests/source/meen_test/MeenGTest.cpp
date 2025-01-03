@@ -123,6 +123,7 @@ namespace meen::Tests
 			serializeJson(expectedJson, expectedStr);
 #endif
 			EXPECT_STREQ(expectedStr.c_str(), actualStr.c_str());
+			return errc::no_error;
 		});
 
 		auto dir = programsDir_ + name;
@@ -193,9 +194,9 @@ namespace meen::Tests
 			EXPECT_TRUE(err);
 			err = machine_->SetIoController(testIoController_);
 			EXPECT_TRUE(err);
-			err = machine_->OnLoad([]{ return ""; });
+			err = machine_->OnLoad([](char* json, int* jsonLen){ return errc::no_error; });
 			EXPECT_TRUE(err);
-			err = machine_->OnSave([](const char*){});
+			err = machine_->OnSave([](const char*){ return errc::no_error; } );
 			EXPECT_TRUE(err);
 
 			// Since we are running async we need to wait for completion
@@ -208,7 +209,7 @@ namespace meen::Tests
 			EXPECT_FALSE(err);
 			err = machine_->SetIoController(testIoController_);
 			EXPECT_FALSE(err);
-			err = machine_->OnLoad([]{ return ""; });
+			err = machine_->OnLoad([](char* json, int* jsonLen){ return errc::no_error; });
 			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
 		);
 	}
@@ -278,7 +279,11 @@ namespace meen::Tests
 		EXPECT_NO_THROW
 		(
 			std::vector<std::string> saveStates;
-			auto err = machine_->OnSave([&](const char* json) { saveStates.emplace_back(json); });
+			auto err = machine_->OnSave([&](const char* json)
+			{
+				saveStates.emplace_back(json);
+				return errc::no_error;
+			});
 
 			if(err.value() == errc::json_config)
 			{
@@ -287,7 +292,19 @@ namespace meen::Tests
 			}
 
 			// 0 - mid program save state, 1 and 2 - end of program save states
-			err = machine_->OnLoad([&] { return saveStates[0].c_str(); });
+			err = machine_->OnLoad([&](char* json, int* jsonLen)
+			{
+				if(json == nullptr)
+				{
+					*jsonLen = saveStates[0].length();
+				}
+				else
+				{
+					memcpy(json, saveStates[0].c_str(), *jsonLen);
+				}
+
+				return errc::no_error;
+			});
 
 			if(err.value() == errc::json_config)
 			{
