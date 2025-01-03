@@ -2,9 +2,9 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
-#include "meen/machine/Machine.h"
+#include "meen/Error.h"
+#include "meen/MachineFactory.h"
 #include "meen/machine_py/ControllerPy.h"
-#include "meen/machine_py/MachineHolder.h"
 
 namespace py = pybind11;
 
@@ -37,17 +37,62 @@ PYBIND11_MODULE(meenPy, meen)
         .value("Quit", meen::ISR::Quit)
         .value("NoInterrupt", meen::ISR::NoInterrupt);
 
-    meen.def("Make8080Machine", &meen::MachineHolder::Make8080Machine);
+    meen.def("Make8080Machine", &meen::Make8080Machine);
     
-    py::class_<meen::MachineHolder>(meen, "Machine")
-        .def(py::init<meen::Cpu>())
-        .def("OnLoad", &meen::MachineHolder::OnLoad)
-        .def("OnSave", &meen::MachineHolder::OnSave)
-        .def("Run", &meen::MachineHolder::Run)
-        .def("SetIoController", &meen::MachineHolder::SetIoController)
-        .def("SetMemoryController", &meen::MachineHolder::SetMemoryController)
-        .def("SetOptions", &meen::MachineHolder::SetOptions)
-        .def("WaitForCompletion", &meen::MachineHolder::WaitForCompletion);
+    py::class_<meen::IMachine>(meen, "IMachine")
+        .def("OnLoad", [](meen::IMachine& machine, std::function<std::string()>&& onLoad)
+        {
+            return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen)
+            {
+                auto str = ol();
+
+                if(jsonLen == nullptr)
+                {
+                    return meen::errc::invalid_argument;
+                }
+
+                if (json == nullptr)
+                {
+                    *jsonLen = str.length();
+                }
+                else
+                {				
+                    if (str.length() > *jsonLen)
+                    {
+                        return meen::errc::invalid_argument;
+                    }
+
+                    strncpy(json, str.c_str(), *jsonLen);
+                }
+                
+                return meen::errc::no_error;
+            }).value());            
+        })
+        .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json)>&& onSave)
+        {
+            return static_cast<meen::errc>(machine.OnSave(std::move(onSave)).value());
+        })
+        .def("Run", [](meen::IMachine& machine, uint16_t offset)
+        {
+            return static_cast<meen::errc>(machine.Run(offset).value());
+        })
+        .def("SetIoController", [](meen::IMachine& machine, meen::IController* controller)
+        {
+            return static_cast<meen::errc>(machine.SetIoController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+        })
+        .def("SetMemoryController", [](meen::IMachine& machine, meen::IController* controller)
+        {
+            return static_cast<meen::errc>(machine.SetMemoryController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+        })
+        .def("SetOptions", [](meen::IMachine& machine, const char* options)
+        {
+            return static_cast<meen::errc>(machine.SetOptions(options).value());
+        })
+        .def("WaitForCompletion", [](meen::IMachine& machine)
+        {
+            pybind11::gil_scoped_release nogil{};
+		    return machine.WaitForCompletion().value_or(0);
+        });
 
     py::class_<meen::IController, meen::ControllerPy>(meen, "Controller")
         .def(py::init<>())
