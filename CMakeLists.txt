@@ -161,7 +161,6 @@ set(machine_include_files ${include_dir}/meen/machine/Machine.h)
 if(${enable_python_module} STREQUAL ON)
   set(${meen}_py_include_files
     ${include_dir}/meen/machine_py/ControllerPy.h
-    ${include_dir}/meen/machine_py/MachineHolder.h
   )
 endif()
 
@@ -207,7 +206,6 @@ set(machine_source_files
 if(${enable_python_module} STREQUAL ON)
   set(${meen}_py_source_files
     ${source_dir}/machine_py/ControllerPy.cpp
-    ${source_dir}/machine_py/MachineHolder.cpp
     ${source_dir}/machine_py/MachineModule.cpp
   )
 endif()
