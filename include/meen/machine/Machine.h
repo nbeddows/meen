@@ -65,8 +65,8 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
 #ifdef ENABLE_MEEN_SAVE
-		std::function<const char*()> onLoad_{};
-		std::function<void(const char* json)> onSave_{};
+		std::function<std::error_code(char* json, int* jsonLen)> onLoad_{};
+		std::function<std::error_code(const char* json)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
 		friend void RunMachine(Machine* machine);
 	public:
@@ -107,13 +107,13 @@ namespace meen
 
 			@see IMachine::OnLoad
 		*/
-		std::error_code OnLoad(std::function<const char*()>&& onLoad) final;
+		std::error_code OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad) final;
 
 		/** OnSave
 
 			@see IMachine::OnSave
 		*/
-		std::error_code OnSave(std::function<void(const char* json)>&& onSave) final;
+		std::error_code OnSave(std::function<errc(const char* json)>&& onSave) final;
 	};
 } // namespace meen
 

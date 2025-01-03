@@ -2,6 +2,7 @@
 #include <pybind11/pybind11.h>
 
 #include "meen/machine_py/MachineHolder.h"
+#include "meen/utils/ErrorCode.h"
 
 namespace meen
 {
@@ -20,20 +21,40 @@ namespace meen
 
 	errc MachineHolder::OnLoad(std::function<std::string()>&& onLoad)
 	{
-		auto err = machine_->OnLoad([this, ol = std::move(onLoad)]
+		auto err = machine_->OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen)
 		{
-			json_ = ol();
-			return json_.c_str();
+			auto str = ol();
+
+			if(jsonLen == nullptr)
+			{
+				return errc::invalid_argument;
+			}
+
+			if (json == nullptr)
+			{
+				*jsonLen = str.length();
+			}
+			else
+			{				
+				if (str.length() > *jsonLen)
+				{
+					return errc::invalid_argument;
+				}
+
+				strncpy(json, str.c_str(), *jsonLen);
+			}
+			
+			return errc::no_error;
 		});
 
 		return static_cast<errc>(err.value());
 	}
 
-	errc MachineHolder::OnSave(std::function<void(std::string&&)>&& onSave)
+	errc MachineHolder::OnSave(std::function<errc(std::string&&)>&& onSave)
 	{
 		auto err = machine_->OnSave([os = std::move(onSave)](const char* json)
 		{
-			os(json);
+			return os(json);
 		});
 
 		return static_cast<errc>(err.value());

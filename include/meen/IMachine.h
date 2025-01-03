@@ -29,6 +29,7 @@ SOFTWARE.
 #include <string>
 #include <system_error>
 
+#include "meen/Error.h" 
 #include "meen/IController.h"
 
 namespace meen
@@ -249,12 +250,14 @@ namespace meen
 										will be ignored.
 			@since	version 1.5.0
 		*/
-		virtual std::error_code OnSave(std::function<void(const char* json)>&& onSave) = 0;
+		virtual std::error_code OnSave(std::function<errc(const char* json)>&& onSave) = 0;
 
 		/** Machine load state initiation handler
 		
 			Registers a method that will be called when the ISR::Load interrupt is triggered. The register
-			method returns a const char* which is the json machine state to load.
+			method returns a std:error_code and accepts two parameters: json - the char array to write the
+			machine state json, jsonLen - the length of the json state array. When the json array is nullptr
+			the length of the json state array must be written to jsonLen.
 
 			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
 										interrupt is triggered. Is mutually exclusive with the OnSave completion handler.
@@ -267,6 +270,9 @@ namespace meen
 
 			@remark						The function parameter onLoad will be called from a different thread from which this
 										method was called if the runAsync or loadAsync config options have been specified.
+
+			@remark						The function parameter onLoad should return errc::invalid argument if it's jsonLen
+										parameter is nullptr or if it's jsonLen parameter is too small.
 
 			@remark						The machine state can fail to load for numerous reasons:
 										- when the machine cpu does not match the load state cpu.
@@ -284,7 +290,7 @@ namespace meen
 
 			@since	version 1.5.0
 		*/
-		virtual std::error_code OnLoad(std::function<const char*()>&& onLoad) = 0;
+		virtual std::error_code OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad) = 0;
 
 		/** Destruct the machine
 

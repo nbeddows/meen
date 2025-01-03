@@ -220,7 +220,7 @@ namespace meen
 
 				// Once all checks are complete, restore the cpu and the memory
 #ifdef ENABLE_NLOHMANN_JSON
-				auto errc = cpu_->Load(json["cpu"].dump());
+				auto err = cpu_->Load(json["cpu"].dump());
 #else
 				std::string cpuStr;
 				serializeJson(json["cpu"], cpuStr);
@@ -230,11 +230,11 @@ namespace meen
 					return make_error_code(errc::json_parse);
 				}
 
-				auto errc = cpu_->Load(std::move(cpuStr));
+				auto err = cpu_->Load(std::move(cpuStr));
 #endif // ENABLE_NLOHMANN_JSON
-				if(errc)
+				if(err)
 				{
-					return errc;
+					return err;
 				}
 
 				for (const auto& rm : ramMetadata)
@@ -246,7 +246,7 @@ namespace meen
 				}
 			}
 
-			return make_error_code(errc::no_error);
+			return std::error_code{};
 		};
 
 		auto checkHandler = [](std::future<std::string>& fut)
@@ -305,28 +305,30 @@ namespace meen
 							onLoad = std::async(loadLaunchPolicy, [onLoad_]
 							{
 								std::string str;
-
-								// TODO: this user defined method needs to be marked as nothrow
-								auto json = onLoad_();
-
-								if (json != nullptr)
+								int len = 0;
+								auto err = onLoad_(nullptr, &len);
+								
+								if(!err)
 								{
-									// return a copy of the json c string as a std::string
-									str = json;
+									str.resize(len + 1, '\0');
+									err = onLoad_(str.data(), &len);
 								}
-								else
+								
+								if(err)
 								{
-									printf("ISR::Load: the JSON string state to load is empty\n");
+									str.clear();
+									// todo: need to have proper logging
+									printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
 								}
 
 								return str;
 							});
 
-							auto errc = loadMachineState(checkHandler(onLoad));
+							auto err = loadMachineState(checkHandler(onLoad));
 
-							if(errc)
+							if(err)
 							{
-								printf("ISR::Load failed to load the machine state: %s\n", errc.message().c_str());
+								printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
 							}
 						}
 #endif // ENABLE_MEEN_SAVE
@@ -338,7 +340,7 @@ namespace meen
 						// If a user defined callback is set and we are not processing a save or load request
 						if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 						{
-							auto err = make_error_code(errc::no_error);
+							auto err = std::error_code{};
 							auto memUuid = memoryController_->Uuid();
 
 							if (opt_.Encoder() != "base64")
@@ -403,6 +405,8 @@ namespace meen
 								{
 									// TODO: this method needs to be marked as nothrow
 									onSave_(state.c_str());
+									// handle return error_code
+
 									return std::string("");
 								});
 
@@ -543,7 +547,7 @@ namespace meen
 			running_ = false;
 		}
 #endif // ENABLE_MEEN_RP2040
-		return make_error_code(errc::no_error);
+		return std::error_code{};
 	}
 
 	std::expected<uint64_t, std::error_code> Machine::WaitForCompletion()
@@ -588,7 +592,7 @@ namespace meen
 
 		cpu_->SetMemoryController(controller);
 		memoryController_ = controller;
-		return make_error_code(errc::no_error);
+		return std::error_code{};
 	}
 
 	std::error_code Machine::SetIoController(const std::shared_ptr<IController>& controller)
@@ -605,10 +609,10 @@ namespace meen
 
 		cpu_->SetIoController(controller);
 		ioController_ = controller;
-		return make_error_code(errc::no_error);
+		return std::error_code{};
 	}
 
-	std::error_code Machine::OnSave(std::function<void(const char* json)>&& onSave)
+	std::error_code Machine::OnSave(std::function<errc(const char* json)>&& onSave)
 	{
 #ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
@@ -617,13 +621,13 @@ namespace meen
 		}
 
 		onSave_ = std::move(onSave);
-		return make_error_code(errc::no_error);
+		return std::error_code{};
 #else
 		return make_error_code(errc::not_implemented);
 #endif // ENABLE_MEEN_SAVE
 	}
 
-	std::error_code Machine::OnLoad(std::function<const char*()>&& onLoad)
+	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad)
 	{
 #ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
@@ -632,7 +636,7 @@ namespace meen
 		}
 
 		onLoad_ = std::move(onLoad);
-		return make_error_code(errc::no_error);
+		return std::error_code{};
 #else
 		return make_error_code(errc::not_implemented);
 #endif // ENABLE_MEEN_SAVE

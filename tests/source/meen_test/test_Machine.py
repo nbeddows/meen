@@ -69,7 +69,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.Busy)
         err = self.machine.SetIoController(self.testIoController)
         self.assertEqual(err, ErrorCode.Busy)
-        err = self.machine.OnSave(lambda x: print(x))
+        err = self.machine.OnSave(lambda: ErrorCode.NoError)
         self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
 
         self.machine.WaitForCompletion()
@@ -82,7 +82,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.SetIoController(self.testIoController)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.OnSave(lambda x: print(x))
+        err = self.machine.OnSave(lambda: ErrorCode.NoError)
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
 
     def RunTimed(self, runAsync):
@@ -115,12 +115,19 @@ class MachineTest(unittest.TestCase):
     def Load(self, runAsync):
         saveStates = []
 
-        err = self.machine.OnSave(lambda x: saveStates.append(x.rstrip('\0')))
+        def saveJson(json):
+            saveStates.append(json.rstrip('\0'))
+            return ErrorCode.NoError
+
+        err = self.machine.OnSave(saveJson)
         
         if err == ErrorCode.NotImplemented:
             self.skipTest("Machine.OnSave is not supported")
 
-        err = self.machine.OnLoad(lambda: saveStates[0])
+        def loadJson():
+            return saveStates[0]
+
+        err = self.machine.OnLoad(loadJson)
 
         if err == ErrorCode.NotImplemented:
             self.skipTest("Machine.OnLoad is not supported")
@@ -188,6 +195,7 @@ class i8080Test(unittest.TestCase):
         e = json.loads(expected)
         a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
+        ErrorCode.NoError
 
     def test_8080Pre(self):
         err = self.memoryController.Load(self.programsDir + '8080PRE.COM', 0x0100)
