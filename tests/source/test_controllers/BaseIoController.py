@@ -7,7 +7,7 @@ class BaseIoController(Controller):
         self._isr = ISR.NoInterrupt
         self.__saveCycleCount = -1
 
-    def ServiceInterrupts(self, currTime, cycles):
+    def ServiceInterrupts(self, currTime, cycles, controller):
         if cycles == self.__saveCycleCount:
             self._isr = ISR.Save
 
@@ -18,7 +18,7 @@ class BaseIoController(Controller):
 
         return isr
     
-    def Write(self, port, value):
+    def Write(self, port, value, controller):
         if port == 0xFF:
             self._isr = ISR.Quit
         elif port == 0xFE:

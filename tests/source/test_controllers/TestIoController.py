@@ -7,7 +7,7 @@ class TestIoController(BaseIoController):
         self.__deviceData = 0xAA
         self.__lastTime = 0
 
-    def Read(self, deviceNumber):
+    def Read(self, deviceNumber, controller):
         # we are powering down, don't perform any spurious reads
         if self._isr == ISR.Quit:
             return 0x00
@@ -17,7 +17,7 @@ class TestIoController(BaseIoController):
         else:
             return 0x00
 
-    def Write(self, deviceNumber, value):
+    def Write(self, deviceNumber, value, controller):
         # we are powering down, don't perform any spurious writes
         if self._isr == ISR.Quit:
             return
@@ -27,8 +27,8 @@ class TestIoController(BaseIoController):
         else:
             super().Write(deviceNumber, value)
 
-    def ServiceInterrupts(self, currTime, cycles):
-        isr = super().ServiceInterrupts(currTime, cycles)
+    def ServiceInterrupts(self, currTime, cycles, controller):
+        isr = super().ServiceInterrupts(currTime, cycles, controller)
 
         if isr == ISR.NoInterrupt:
             t = currTime - self.__lastTime
