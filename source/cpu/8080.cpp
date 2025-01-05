@@ -430,7 +430,7 @@ uint8_t Intel8080::Interrupt(ISR isr)
 
 uint8_t Intel8080::Execute()
 {
-	opcode_ = memoryController_->Read(pc_);
+	opcode_ = memoryController_->Read(pc_, ioController_);
 
 #ifdef ENABLE_OPCODE_TABLE
 	return opcodeTable_[opcode_]();
@@ -702,28 +702,14 @@ uint8_t Intel8080::Execute()
 #endif
 }
 
-std::error_code Intel8080::SetMemoryController(const std::shared_ptr<IController>& memoryController)
+void Intel8080::SetMemoryController(IController* memoryController)
 {
-	if(memoryController == nullptr)
-	{
-		return make_error_code(errc::invalid_argument);
-	}
-
 	memoryController_ = memoryController;
-
-	return make_error_code(errc::no_error);
 }
 
-std::error_code Intel8080::SetIoController(const std::shared_ptr<IController>& ioController)
+void Intel8080::SetIoController(IController* ioController)
 {
-	if(ioController == nullptr)
-	{
-		return make_error_code(errc::invalid_argument);
-	}
-
 	ioController_ = ioController;
-
-	return make_error_code(errc::no_error);
 }
 
 //This essentially powers on the cpu
@@ -756,10 +742,10 @@ uint8_t Intel8080::Inr(Register& r)
 uint8_t Intel8080::Inr()
 {
 	auto addr = Uint16(h_, l_);
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 	r = Add(r, 0x01, 0, false, "INR");
 	//Inr(r);
-	memoryController_->Write(addr, Value(r));
+	memoryController_->Write(addr, Value(r), ioController_);
 	return 10;
 }
 
@@ -778,16 +764,16 @@ uint8_t Intel8080::Dcr(Register& r)
 
 uint8_t Intel8080::Dcr(uint16_t addr)
 {
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 	r = Add(r, 0xFF, 0, false, "DCR");
 	//Dcr(r);
-	memoryController_->Write(addr, Value(r));
+	memoryController_->Write(addr, Value(r), ioController_);
 	return 10;
 }
 
 uint8_t Intel8080::Mvi(Register& reg)
 {
-	reg = memoryController_->Read(++pc_);
+	reg = memoryController_->Read(++pc_, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -800,7 +786,7 @@ uint8_t Intel8080::Mvi(Register& reg)
 
 uint8_t Intel8080::Mvi()
 {
-	auto data = memoryController_->Read(++pc_);
+	auto data = memoryController_->Read(++pc_, ioController_);
 	auto addr = Uint16(h_, l_);
 
 	if constexpr (dbg == true)
@@ -808,7 +794,7 @@ uint8_t Intel8080::Mvi()
 		printf("0x%04X MVI [0x%04X], 0x%02X\n", pc_ - 1, addr, data);
 	}
 
-	memoryController_->Write(addr, data);
+	memoryController_->Write(addr, data, ioController_);
 	++pc_;
 	return 10;
 }
@@ -938,8 +924,8 @@ uint8_t Intel8080::Rar()
 
 uint8_t Intel8080::Lxi(Register& regHi, Register& regLow)
 {
-	regLow = memoryController_->Read(++pc_);
-	regHi = memoryController_->Read(++pc_);
+	regLow = memoryController_->Read(++pc_, ioController_);
+	regHi = memoryController_->Read(++pc_, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -952,8 +938,8 @@ uint8_t Intel8080::Lxi(Register& regHi, Register& regLow)
 
 uint8_t Intel8080::Lxi()
 {
-	auto spLow = memoryController_->Read(++pc_);
-	sp_ = Uint16(memoryController_->Read(++pc_), spLow);
+	auto spLow = memoryController_->Read(++pc_, ioController_);
+	sp_ = Uint16(memoryController_->Read(++pc_, ioController_), spLow);
 
 	if constexpr (dbg == true)
 	{
@@ -974,8 +960,8 @@ uint8_t Intel8080::Lxi()
 */
 uint8_t Intel8080::Shld()
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 
 	if constexpr (dbg == true)
@@ -983,8 +969,8 @@ uint8_t Intel8080::Shld()
 		printf("0x%04X SHLD, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	memoryController_->Write(addr, Value(l_));
-	memoryController_->Write(addr + 1, Value(h_));
+	memoryController_->Write(addr, Value(l_), ioController_);
+	memoryController_->Write(addr + 1, Value(h_), ioController_);
 	++pc_;
 	return 16;
 }
@@ -1008,7 +994,7 @@ uint8_t Intel8080::Stax(const Register& hi, const Register& low)
 		printf("0x%04X STAX %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
-	memoryController_->Write(Uint16(hi, low), Value(a_));
+	memoryController_->Write(Uint16(hi, low), Value(a_), ioController_);
 	++pc_;
 	return 7;
 }
@@ -1088,16 +1074,16 @@ uint8_t Intel8080::Dad()
 */
 uint8_t Intel8080::Lhld()
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X LHLD, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	l_ = memoryController_->Read(addr);
-	h_ = memoryController_->Read(addr + 1);
+	l_ = memoryController_->Read(addr, ioController_);
+	h_ = memoryController_->Read(addr + 1, ioController_);
 	++pc_;
 	return 16;
 }
@@ -1115,7 +1101,7 @@ uint8_t Intel8080::Ldax(const Register& hi, const Register& low)
 		printf("0x%04X LDAX, %c\n", pc_, registerName_[(opcode_ & 0x10) >> 3]);
 	}
 
-	a_ = memoryController_->Read(Uint16(hi, low));
+	a_ = memoryController_->Read(Uint16(hi, low), ioController_);
 	++pc_;
 	return 7;
 }
@@ -1171,15 +1157,15 @@ uint8_t Intel8080::Cma()
 
 uint8_t Intel8080::Sta()
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X STA, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	memoryController_->Write(addr, Value(a_));
+	memoryController_->Write(addr, Value(a_), ioController_);
 	++pc_;
 	return 13;
 }
@@ -1198,15 +1184,15 @@ uint8_t Intel8080::Stc()
 
 uint8_t Intel8080::Lda()
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	uint16_t addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	uint16_t addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 	if constexpr (dbg == true)
 	{
 		printf("0x%04X LDA, [0x%04X]\n", pc_ - 2, addr);
 	}
 
-	a_ = memoryController_->Read(addr);
+	a_ = memoryController_->Read(addr, ioController_);
 	++pc_;
 	return 13;
 }
@@ -1244,7 +1230,7 @@ uint8_t Intel8080::Mov(Register& lhs)
 		printf("0x%04X MOV %c, [0x%04X]\n", pc_, registerName_[(opcode_ & 0x38) >> 3], addr);
 	}
 
-	lhs = memoryController_->Read(addr);
+	lhs = memoryController_->Read(addr, ioController_);
 	pc_++;
 	return 7;
 }
@@ -1258,7 +1244,7 @@ uint8_t Intel8080::Mov(uint8_t value)
 		printf("0x%04X MOV [0x%04X], %c\n", pc_, addr, registerName_[opcode_ & 0x07]);
 	}
 
-	memoryController_->Write(addr, value);
+	memoryController_->Write(addr, value, ioController_);
 	pc_++;
 	return 7;
 }
@@ -1331,7 +1317,7 @@ uint8_t Intel8080::Add(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Add(uint16_t addr, std::string_view instructionName)
 {
-	a_ = Add(a_, Register(memoryController_->Read(addr)), 0, true, instructionName);
+	a_ = Add(a_, Register(memoryController_->Read(addr, ioController_)), 0, true, instructionName);
 	return 7;
 }
 
@@ -1343,7 +1329,7 @@ uint8_t Intel8080::Adc(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Adc(uint16_t addr, std::string_view instructionName)
 {
-	a_ = Add(a_, Register(memoryController_->Read(addr)), status_[Condition::CarryFlag], true, instructionName);
+	a_ = Add(a_, Register(memoryController_->Read(addr, ioController_)), status_[Condition::CarryFlag], true, instructionName);
 	return 7;
 }
 
@@ -1362,7 +1348,7 @@ uint8_t Intel8080::Sub(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Sub(uint16_t addr, std::string_view instructionName)
 {
-	a_ = Sub(Register(memoryController_->Read(addr)), 0, instructionName);
+	a_ = Sub(Register(memoryController_->Read(addr, ioController_)), 0, instructionName);
 	return 7;
 }
 
@@ -1374,7 +1360,7 @@ uint8_t Intel8080::Sbb(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Sbb(uint16_t addr, std::string_view instructionName)
 {
-	a_ = Sub(Register(memoryController_->Read(addr)), status_[Condition::CarryFlag], instructionName);
+	a_ = Sub(Register(memoryController_->Read(addr, ioController_)), status_[Condition::CarryFlag], instructionName);
 	return 7;
 }
 
@@ -1404,7 +1390,7 @@ uint8_t Intel8080::Ana(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Ana(uint16_t addr, std::string_view instructionName)
 {
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -1447,7 +1433,7 @@ uint8_t Intel8080::Xra(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Xra(uint16_t addr, std::string_view instructionName)
 {
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -1490,7 +1476,7 @@ uint8_t Intel8080::Ora(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Ora(uint16_t addr, std::string_view instructionName)
 {
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -1516,7 +1502,7 @@ uint8_t Intel8080::Cmp(const Register& r, std::string_view instructionName)
 
 uint8_t Intel8080::Cmp(uint16_t addr, std::string_view instructionName)
 {
-	Register r = memoryController_->Read(addr);
+	Register r = memoryController_->Read(addr, ioController_);
 	Sub(r, 0, instructionName);
 	return 7;
 }
@@ -1552,8 +1538,8 @@ uint8_t Intel8080::RetOnFlag(bool status, std::string_view instructionName)
 
 	if (status == true)
 	{
-		auto pcLow = memoryController_->Read(sp_++);
-		pc_ = Uint16(memoryController_->Read(sp_++), pcLow);
+		auto pcLow = memoryController_->Read(sp_++, ioController_);
+		pc_ = Uint16(memoryController_->Read(sp_++, ioController_), pcLow);
 
 		if (std::string(instructionName) == "RET")
 		{
@@ -1584,16 +1570,16 @@ uint8_t Intel8080::Pop(Register& hi, Register& low)
 		}
 	}
 
-	low = memoryController_->Read(sp_++);
-	hi = memoryController_->Read(sp_++);
+	low = memoryController_->Read(sp_++, ioController_);
+	hi = memoryController_->Read(sp_++, ioController_);
 	pc_++;
 	return 10;
 }
 
 uint8_t Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	auto addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	auto addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 	if constexpr (dbg == true)
 	{
@@ -1606,8 +1592,8 @@ uint8_t Intel8080::JmpOnFlag(bool status, std::string_view instructionName)
 
 uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 {
-	auto addrLow = memoryController_->Read(++pc_);
-	auto addr = Uint16(memoryController_->Read(++pc_), addrLow);
+	auto addrLow = memoryController_->Read(++pc_, ioController_);
+	auto addr = Uint16(memoryController_->Read(++pc_, ioController_), addrLow);
 
 	if constexpr (dbg == true)
 	{
@@ -1619,9 +1605,9 @@ uint8_t Intel8080::CallOnFlag(bool status, std::string_view instructionName)
 	if (status == true)
 	{
 		sp_ += 0xFFFF;
-		memoryController_->Write(sp_, pc_ >> 8);
+		memoryController_->Write(sp_, pc_ >> 8, ioController_);
 		sp_ += 0xFFFF;
-		memoryController_->Write(sp_, pc_ & 0xFF);
+		memoryController_->Write(sp_, pc_ & 0xFF, ioController_);
 
 		/*
 			This needs to be moved ... by calling push above
@@ -1654,9 +1640,9 @@ uint8_t Intel8080::Push(const Register& hi, const Register& low)
 	}
 
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, Value(hi));
+	memoryController_->Write(sp_, Value(hi), ioController_);
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, Value(low));
+	memoryController_->Write(sp_, Value(low), ioController_);
 	pc_++;
 	return 11;
 }
@@ -1668,7 +1654,7 @@ uint8_t Intel8080::Adi(const Register& r)
 		printf("0x%04X ADI %c\n", pc_, registerName_[(opcode_ & 0x30) >> 3]);
 	}
 
-	a_ = Value(a_) + memoryController_->Read(++pc_);
+	a_ = Value(a_) + memoryController_->Read(++pc_, ioController_);
 	++pc_;
 	return 7;
 }
@@ -1693,9 +1679,9 @@ uint8_t Intel8080::Rst(uint8_t restart)
 	}
 
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, pc_ >> 8);
+	memoryController_->Write(sp_, pc_ >> 8, ioController_);
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, pc_ & 0xFF);
+	memoryController_->Write(sp_, pc_ & 0xFF, ioController_);
 
 	/*
 		This needs to be moved ... by calling push above
@@ -1726,9 +1712,9 @@ uint8_t Intel8080::Rst()
 	++pc_;
 
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, pc_ >> 8);
+	memoryController_->Write(sp_, pc_ >> 8, ioController_);
 	sp_ += 0xFFFF;
-	memoryController_->Write(sp_, pc_ & 0xFF);
+	memoryController_->Write(sp_, pc_ & 0xFF, ioController_);
 
 	/*
 		This needs to be moved ... by calling push above
@@ -1743,7 +1729,7 @@ uint8_t Intel8080::Rst()
 
 uint8_t Intel8080::Out()
 {
-	auto out = memoryController_->Read(++pc_);
+	auto out = memoryController_->Read(++pc_, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -1751,14 +1737,14 @@ uint8_t Intel8080::Out()
 	}
 
 	//write to IO port 'out' the accumulator
-	ioController_->Write(out, Value(a_));
+	ioController_->Write(out, Value(a_), memoryController_);
 	++pc_;
 	return 10;
 }
 
 uint8_t Intel8080::In()
 {
-	auto in = memoryController_->Read(++pc_);
+	auto in = memoryController_->Read(++pc_, ioController_);
 
 	if constexpr (dbg == true)
 	{
@@ -1766,7 +1752,7 @@ uint8_t Intel8080::In()
 	}
 
 	//Read into the accumulator the value in IO port 'in'.
-	a_ = ioController_->Read(in);
+	a_ = ioController_->Read(in, memoryController_);
 	++pc_;
 	return 10;
 }
@@ -1785,8 +1771,8 @@ uint8_t Intel8080::Xthl()
 		printf("0x%04X XTHL\n", pc_);
 	}
 
-	auto spl = memoryController_->Read(sp_);
-	auto sph = memoryController_->Read(sp_ + 1);
+	auto spl = memoryController_->Read(sp_, ioController_);
+	auto sph = memoryController_->Read(sp_ + 1, ioController_);
 
 	uint8_t l = Value(l_);
 	uint8_t h = Value(h_);
@@ -1797,8 +1783,8 @@ uint8_t Intel8080::Xthl()
 	l_ = l;
 	h_ = h;
 
-	memoryController_->Write(sp_, spl);
-	memoryController_->Write(sp_ + 1, sph);
+	memoryController_->Write(sp_, spl, ioController_);
+	memoryController_->Write(sp_ + 1, sph, ioController_);
 	pc_++;
 	return 18;
 }

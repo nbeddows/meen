@@ -112,8 +112,8 @@ namespace meen
 #ifdef ENABLE_OPCODE_TABLE 
 		std::unique_ptr<std::function <uint8_t()>[]> opcodeTable_;
 #endif
-		std::shared_ptr<IController> memoryController_;
-		std::shared_ptr<IController> ioController_;
+		IController* memoryController_{};
+		IController* ioController_{};
 
 		static uint8_t Value(const Register& r) { return static_cast<uint8_t>(r.to_ulong()); }
 		static uint16_t Uint16(const Register& hi, const Register& low) { return (Value(hi) << 8) | Value(low); }
@@ -203,8 +203,8 @@ namespace meen
 		std::string Save() const final;
 #endif // ENABLE_MEEN_SAVE
 		void Reset(uint16_t programCounter) final;
-		std::error_code SetMemoryController(const std::shared_ptr<IController>& memoryController) final;
-		std::error_code SetIoController(const std::shared_ptr<IController>& ioController) final;
+		void SetMemoryController(IController* memoryController) final;
+		void SetIoController(IController* ioController) final;
 		/* End I8080 overrides */
 
 		Intel8080();
