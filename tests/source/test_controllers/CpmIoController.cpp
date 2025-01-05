@@ -25,11 +25,6 @@ SOFTWARE.
 
 namespace meen
 {
-    CpmIoController::CpmIoController(const std::shared_ptr<IController>& memoryController)
-	{
-		memoryController_ = memoryController;
-	}
-
 	std::string CpmIoController::Message()
 	{
 		auto str = std::move(message_);
@@ -43,12 +38,12 @@ namespace meen
 	}
 
 	//Not used, just return 0;
-	uint8_t CpmIoController::Read(uint16_t deviceNumber)
+	uint8_t CpmIoController::Read([[maybe_unused]] uint16_t deviceNumber, [[maybe_unused]] IController* controller)
 	{
 		return 0;
 	}
 
-	void CpmIoController::Write(uint16_t deviceNumber, uint8_t value)
+	void CpmIoController::Write(uint16_t deviceNumber, uint8_t value, IController* memoryController)
 	{
 		// we are powering down, don't perform any spurious writes
 		if(powerOff_ == true)
@@ -77,13 +72,13 @@ namespace meen
 					case 9:
 					{
 						uint16_t addr = (addrHi_ << 8) | value;
-						uint8_t aChar = memoryController_->Read(addr);
+						uint8_t aChar = memoryController->Read(addr, nullptr);
 
 						while (aChar != '$')
 						{
 							//printf("%c", aChar);
 							message_.push_back(aChar);
-							aChar = memoryController_->Read(++addr);
+							aChar = memoryController->Read(++addr, nullptr);
 						}
 						break;
 					}
@@ -102,14 +97,14 @@ namespace meen
 			}
 			default:
 			{
-				BaseIoController::Write(deviceNumber, value);
+				BaseIoController::Write(deviceNumber, value, nullptr);
 			}
 		}
 	}
 
 	//No interrupts
-	ISR CpmIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
+	ISR CpmIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller)
 	{
-		return BaseIoController::ServiceInterrupts(currTime, cycles);
+		return BaseIoController::ServiceInterrupts(currTime, cycles, controller);
 	}
 } // namespace meen

@@ -57,12 +57,6 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		std::string message_;
 
-		/** Program memory
-
-			The memory controller that output messages will be read from.
-		*/
-		std::shared_ptr<IController> memoryController_;
-
 		/** Printing mode
 
 			The BDOS output mode.
@@ -86,14 +80,6 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		uint8_t addrHi_{};
 	public:
-		/** CP/M IO constructor
-
-			An IO controller that emulates the CP/M BDOS output routine.
-		
-			@param	memoryController	The memory for the program from which any output message will be read from.
-		*/
-		explicit CpmIoController(const std::shared_ptr<IController>& memoryController);
-
 		/** Output message buffer
 
 			The output message generated from one of the print modes.
@@ -116,36 +102,37 @@ namespace meen
 
 		/** CP/M IO controller read
 
-			@param	port	The port number to read from.
+			@param	port		The port number to read from.
+			@param	controller	Unused in this implementation.	
 
-			@return			A uint16_t value specific to the port number w.
-
-			@remark			Not used by this controller, always returns 0.
+			@return				A uint16_t value specific to the port number.
+	
+			@remark				Not used by this controller, always returns 0.
 		*/
-		uint8_t Read(uint16_t port) final;
+		uint8_t Read(uint16_t port, IController* controller) final;
 
 		/** CP/M IO controller write
 
 			Writes the specified value to the given port.
 
-			@param	port	The port to be written to.
+			@param	port		The port to be written to.
+			@param	value		The value to be written to the specified port when Port is PrintMode or AddrHi.
+			@param	controller	The memory controller for the program from which any output message will be read from.
 
-			@param	value	The value to be written to the specified port when Port is PrintMode or AddrHi.
-			
-			@remark			When the Port is Port::Process the value is either the low 8 bit address when the Port::PrintMode is 9 or the actual
-							value to print when Port::PrintMode is 2.
+			@remark				When the Port is Port::Process the value is either the low 8 bit address when the Port::PrintMode is 9 or the actual
+								value to print when Port::PrintMode is 2.
 
-			@see			CpmIoController::Port
+			@see				CpmIoController::Port
 		*/
-		void Write(uint16_t port, uint8_t value) final;
+		void Write(uint16_t port, uint8_t value, IController* controller) final;
 
 		/** CP/M IO interrupt handler
 
 			Checks the IO controller to see if any interrupts are pending.
 
 			@param	currTime	The time in nanoseconds of the machine clock.
-
 			@param	cycles		The total number of cycles that have elapsed.
+			@param	controller	Unused by this implementation.
 			
 			@return				The interrupt that requires servicing by the
 								cpu.
@@ -156,7 +143,7 @@ namespace meen
 
 			@see				IContoller::ServiceInterrupts
 		*/
-		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) final;
 	};
 } // namespace meen
 

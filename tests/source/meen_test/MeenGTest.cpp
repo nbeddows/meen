@@ -40,9 +40,9 @@ namespace meen::Tests
 	class MachineTest : public testing::Test
 	{
 	protected:
-		static std::shared_ptr<IController> cpmIoController_;
-		static std::shared_ptr<MemoryController> memoryController_;
-		static std::shared_ptr<IController> testIoController_;
+		static std::unique_ptr<IController> cpmIoController_;
+		static std::unique_ptr<MemoryController> memoryController_;
+		static std::unique_ptr<IController> testIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
 		static void LoadAndRun(const char* name, const char* expected);
@@ -55,10 +55,10 @@ namespace meen::Tests
 		void SetUp();
 	};
 
-	std::shared_ptr<IController> MachineTest::cpmIoController_;
-	std::shared_ptr<MemoryController> MachineTest::memoryController_;
+	std::unique_ptr<IController> MachineTest::cpmIoController_;
+	std::unique_ptr<MemoryController> MachineTest::memoryController_;
 	std::string MachineTest::programsDir_;
-	std::shared_ptr<IController> MachineTest::testIoController_;
+	std::unique_ptr<IController> MachineTest::testIoController_;
 	std::unique_ptr<IMachine> MachineTest::machine_;
 
 	void MachineTest::SetUpTestCase()
@@ -66,9 +66,9 @@ namespace meen::Tests
 		// Note that the tests don't require a json string to be set as it just uses the default values,
 		// it is used here for demonstation purposes only
 		machine_ = Make8080Machine();
-		memoryController_ = std::make_shared<MemoryController>();
-		cpmIoController_ = std::make_shared<CpmIoController>(static_pointer_cast<IController>(memoryController_));
-		testIoController_ = std::make_shared<TestIoController>();
+		memoryController_ = std::make_unique<MemoryController>();
+		cpmIoController_ = std::make_unique<CpmIoController>();
+		testIoController_ = std::make_unique<TestIoController>();
 
 		// Use the default directory if it has not been set by the user
 		if(programsDir_.empty() == true)
@@ -91,8 +91,8 @@ namespace meen::Tests
 		err = memoryController_->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05);
 		ASSERT_FALSE(err);
 
-		machine_->SetMemoryController(memoryController_);
-		machine_->SetIoController(testIoController_);
+		machine_->AttachMemoryController(std::move(memoryController_));
+		machine_->AttachIoController(std::move(testIoController_));
 		
 		// Set default options
 		err = machine_->SetOptions(nullptr);
@@ -138,7 +138,7 @@ namespace meen::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			auto errc = machine_->SetMemoryController(nullptr);
+			auto errc = machine_->AttachMemoryController(nullptr);
 			EXPECT_TRUE(errc);
 			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 		);
@@ -149,7 +149,7 @@ namespace meen::Tests
 		EXPECT_NO_THROW
 		(
 			//cppcheck-suppress unknownMacro
-			auto errc = machine_->SetIoController(nullptr);
+			auto errc = machine_->AttachIoController(nullptr);
 			EXPECT_TRUE(errc);
 			EXPECT_STREQ("An argument supplied to the method is invalid", errc.message().c_str());
 		);
@@ -190,9 +190,9 @@ namespace meen::Tests
 			// All these methods should return errors
 			err = machine_->SetOptions(R"({"isrFreq":1})");
 			EXPECT_TRUE(err);
-			err = machine_->SetMemoryController(memoryController_);
+			err = machine_->AttachMemoryController(std::move(memoryController_));
 			EXPECT_TRUE(err);
-			err = machine_->SetIoController(testIoController_);
+			err = machine_->AttachIoController(std::move(testIoController_));
 			EXPECT_TRUE(err);
 			err = machine_->OnLoad([](char* json, int* jsonLen){ return errc::no_error; });
 			EXPECT_TRUE(err);
@@ -205,9 +205,9 @@ namespace meen::Tests
 			// We are now no longer running, all these methods should not return errors
 			err = machine_->SetOptions(R"({"isrFreq":1})");
 			EXPECT_FALSE(err);
-			err = machine_->SetMemoryController(memoryController_);
+			err = machine_->AttachMemoryController(std::move(memoryController_));
 			EXPECT_FALSE(err);
-			err = machine_->SetIoController(testIoController_);
+			err = machine_->AttachIoController(std::move(testIoController_));
 			EXPECT_FALSE(err);
 			err = machine_->OnLoad([](char* json, int* jsonLen){ return errc::no_error; });
 			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
@@ -318,13 +318,13 @@ namespace meen::Tests
 				EXPECT_FALSE(err);
 			}
 
-			auto cpmIoController = static_pointer_cast<CpmIoController>(cpmIoController_);
+			auto cpmIoController = static_cast<CpmIoController*>(cpmIoController_.get());
 			// Trigger a save when the 3000th cycle has executed.
 			cpmIoController->SaveStateOn(3000);
 			// Call the out instruction
-			memoryController_->Write(0x00FE, 0xD3);
+			memoryController_->Write(0x00FE, 0xD3, nullptr);
 			// The data to write to the controller that will trigger the ISR::Load interrupt
-			memoryController_->Write(0x00FF, 0xFD);
+			memoryController_->Write(0x00FF, 0xFD, nullptr);
 
 			err = memoryController_->Load((programsDir_ + "/TST8080.COM").c_str(), 0x100);
 			ASSERT_FALSE(err);
@@ -333,7 +333,7 @@ namespace meen::Tests
 			// never writes beyond this.
 			err = machine_->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
 			EXPECT_FALSE(err);
-			machine_->SetIoController(cpmIoController_);
+			machine_->AttachIoController(std::move(cpmIoController_));
 
 			err = machine_->Run(0x0100);
 			EXPECT_FALSE(err);

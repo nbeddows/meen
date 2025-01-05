@@ -73,12 +73,12 @@ namespace meen
 		return{ 0xCD, 0x18, 0xD8, 0x67, 0xDD, 0xBF, 0x4D, 0xAA, 0xAD, 0x5A, 0xBA, 0x1C, 0xEB, 0xAE, 0xB0, 0x31 };
 	}
 
-	uint8_t MemoryController::Read(uint16_t addr)
+	uint8_t MemoryController::Read(uint16_t addr, [[maybe_unusued]] IController* controller)
 	{
 		return memory_[addr];
 	}
 
-	void MemoryController::Write(uint16_t addr, uint8_t data)
+	void MemoryController::Write(uint16_t addr, uint8_t data, [[maybe_unused]] IController* controller)
 	{
 		memory_[addr] = data;
 	}
@@ -88,7 +88,7 @@ namespace meen
 		memory_.assign(memory_.size(), 0);
 	}
 
-	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
+	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles, [[maybe_unused]] IController* controller)
 	{
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;
