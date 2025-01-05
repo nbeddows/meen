@@ -140,7 +140,7 @@ namespace meen
 		*/
 		virtual std::expected<uint64_t, std::error_code> WaitForCompletion() = 0;
 
-		/** Set a custom memory controller
+		/** Attach a custom memory controller
 
 			The machine will use this controller when it needs to read
 			and/or write data to ram.
@@ -149,29 +149,69 @@ namespace meen
 
 			@return					A std::error_code:
 
-									errc::invalid_argument: the controller is nullptr.
 									errc::busy: meen is running.
 
-			@remark					See Tests/TestControllers/MemoryController.cpp
-		*/
-		virtual std::error_code SetMemoryController (const std::shared_ptr<IController>& controller) = 0;
+			@remark					The controller must be stopped, otherwise errc::busy will be returned. This
+									will be returned when the runAsync option has been set and Run has been called
+									and is not complete. WaitForCompletion must be called to ensure meen is finished.
 
-		/** Set a custom io controller
+			@remark					Attaching a controller transfers ownership of the controller to meen.
+									The only way to transfer ownership back to the caller is via DetachMemoryController.
+									Consecutive different controller attachments will result in the destruction
+									of the currently attached controller.
+
+			@sa						See Tests/TestControllers/MemoryController.cpp
+		*/
+		virtual std::error_code AttachMemoryController (std::unique_ptr<IController>&& controller) = 0;
+		
+		/**	Detach a custom memory controller.
+
+		  	Transfer ownership of the controller from meen back to the caller
+
+			@remark					Once this method has been successfully called, calls to methods which require
+									a controller to be attched will fail.
+
+			@return					A std::expected with an expected value of a unique_ptr to the detached controller
+									and an unexpected value of a std::error_code (errc::busy when meen is in a running state).
+		 */
+		virtual std::expected<std::unique_ptr<IController>, std::error_code> DetachMemoryController() = 0;
+
+		/** Attach a custom io controller
 
 			The machine will use this controller when it needs to read
-			and/or write to an io device.
+			and/or write data to an io device.
 
-			@param	controller	The io controller to be used with this machine.
+			@param	controller		The io controller to be used with this machine.
 
 			@return					A std::error_code:
 
-									errc::invalid_argument: the controller is nullptr.
 									errc::busy: meen is running.
 
-			@remark				See Tests/TestControllers/TestIoController.cpp.
-		*/
-		virtual std::error_code SetIoController (const std::shared_ptr<IController>& controller) = 0;
+			@remark					The controller must be stopped, otherwise errc::busy will be returned. This
+									will be returned when the runAsync option has been set and Run has been called
+									and is not complete. WaitForCompletion must be called to ensure meen is finished.
 
+			@remark					Attaching a controller transfers ownership of the controller to meen.
+									The only way to transfer ownership back to the caller is via DetachIoController.
+									Consecutive different controller attachments will result in the destruction
+									of the currently attached controller.
+
+			@sa						See Tests/TestControllers/MemoryController.cpp
+		*/
+		virtual std::error_code AttachIoController (std::unique_ptr<IController>&& controller) = 0;
+		
+		/**	Detach a custom io controller.
+
+		  	Transfer ownership of the controller from meen back to the caller
+
+			@remark					Once this method has been successfully called, calls to methods which require
+									a controller to be attched will fail.
+
+			@return					A std::expected with an expected value of a unique_ptr to the detached controller
+									and an unexpected value of a std::error_code (errc::busy when meen is in a running state).
+		 */
+		virtual std::expected<std::unique_ptr<IController>, std::error_code> DetachIoController() = 0;
+		
 		/** Set machine options
 
 			See README.txt section 'Configuration options' for a complete list of options and their defaults.
