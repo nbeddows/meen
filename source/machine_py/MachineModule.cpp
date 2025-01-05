@@ -76,13 +76,25 @@ PYBIND11_MODULE(meenPy, meen)
         {
             return static_cast<meen::errc>(machine.Run(offset).value());
         })
+        //.def("SetIoController", [](meen::IMachine& machine, const std::shared_ptr<meen::IController>& controller)
         .def("SetIoController", [](meen::IMachine& machine, meen::IController* controller)
         {
-            return static_cast<meen::errc>(machine.SetIoController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+            auto l0 = [](meen::IController* c){};
+            auto l1 = [](meen::IController* c){ delete c; };
+
+            //std::unique_ptr<meen::IController, decltype(l0)> foo(controller, [](meen::IController* c){ delete c; });
+            std::unique_ptr<meen::IController, decltype(l0)> foo(controller, l0);
+            //std::unique_ptr<meen::IController, decltype([](meen::IController*){})> foo(controller);
+            //auto bar = std::shared_ptr<meen::IController>(controller, [](meen::IController*) {});
+            //auto baz = std::unique_ptr<meen::IController>(controller, [](meen::IController*) {});
+
+            
+            return meen::errc::no_error;
         })
-        .def("SetMemoryController", [](meen::IMachine& machine, meen::IController* controller)
+        .def("SetMemoryController", [](meen::IMachine& machine, const meen::IController& controller)
         {
-            return static_cast<meen::errc>(machine.SetMemoryController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+            return meen::errc::no_error;
+            //return static_cast<meen::errc>(machine.AttachMemoryController(std::move(controller)).value());
         })
         .def("SetOptions", [](meen::IMachine& machine, const char* options)
         {
