@@ -474,6 +474,11 @@ namespace meen
 
 	std::error_code Machine::Run(uint16_t pc)
 	{
+		if (running_ == true)
+		{
+			return make_error_code(errc::busy);
+		}
+
 		if (memoryController_ == nullptr)
 		{
 			return make_error_code(errc::memory_controller);
@@ -482,11 +487,6 @@ namespace meen
 		if (ioController_ == nullptr)
 		{
 			return make_error_code(errc::io_controller);
-		}
-
-		if (running_ == true)
-		{
-			return make_error_code(errc::busy);
 		}
 
 		if(clock_ == nullptr)
@@ -499,11 +499,6 @@ namespace meen
 			return make_error_code(errc::cpu);
 		}
 
-		cpu_->Reset(pc);
-		clock_->Reset();
-		running_ = true;
-		runTime_ = 0;
-
 		int64_t resInTicks = 0;
 		auto err = clock_->SetTickResolution(nanoseconds(opt_.ClockResolution()), &resInTicks);
 
@@ -512,6 +507,10 @@ namespace meen
 			return make_error_code(errc::clock_resolution);
 		}
 
+		cpu_->Reset(pc);
+		clock_->Reset();
+		runTime_ = 0;
+		running_ = true;
 		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 
 #ifdef ENABLE_MEEN_RP2040
@@ -578,7 +577,7 @@ namespace meen
 		return runTime_;
 	}
 
-	std::error_code Machine::AttachMemoryController (std::unique_ptr<IController>&& controller)
+	std::error_code Machine::AttachMemoryController (IControllerPtr&& controller)
 	{
 		if (running_ == true)
 		{
@@ -596,7 +595,7 @@ namespace meen
 		return std::error_code{};
 	}
 		
-	std::expected<std::unique_ptr<IController>, std::error_code> Machine::DetachMemoryController()
+	std::expected<IControllerPtr, std::error_code> Machine::DetachMemoryController()
 	{
 		if (running_ == true)
 		{
@@ -614,7 +613,7 @@ namespace meen
 		return controller;
 	}
 
-	std::error_code Machine::AttachIoController (std::unique_ptr<IController>&& controller)
+	std::error_code Machine::AttachIoController (IControllerPtr&& controller)
 	{
 		if (running_ == true)
 		{
@@ -632,7 +631,7 @@ namespace meen
 		return std::error_code{};
 	}
 		
-	std::expected<std::unique_ptr<IController>, std::error_code> Machine::DetachIoController()
+	std::expected<IControllerPtr, std::error_code> Machine::DetachIoController()
 	{
 		if (running_ == true)
 		{
