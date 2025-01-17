@@ -25,7 +25,25 @@ SOFTWARE.
 
 #include <array>
 #include <cstdint>
+#include <memory>
+
 #include "meen/Base.h"
+
+#ifdef _WINDOWS
+#if meen_STATIC
+#define DLL_EXP_IMP
+#elif defined meen_EXPORTS
+#define DLL_EXP_IMP __declspec(dllexport)
+#else
+#define DLL_EXP_IMP __declspec(dllimport)
+#endif
+#else
+#ifdef meen_EXPORTS
+#define DLL_EXP_IMP [[gnu::visibility("default")]]
+#else
+#define DLL_EXP_IMP
+#endif
+#endif
 
 namespace meen
 {
@@ -113,6 +131,51 @@ namespace meen
 		*/
 		virtual ~IController() = default;
 	};
+
+	/** Custom contoller deleter
+	
+		All custom controllers must have this deleter attached for machine compatibility.
+
+		Since all machine controller attachments are via unique_ptr, this deleter allows
+		for the skipping of the deleteing of the attached pointer. This can be useful if
+		you are handling the memory via some other mechanism.
+
+		This should not have to be directly referenced by the user, use the IControllerPtr
+		using directive instead.
+
+		auto p1 = IControllerPtr(myController) - p1 takes ownership of myController and deletes it when its reference count hits 0.
+		auto p2 = IControllerPtr(myController, ControllerDeleter(false)) - p2 takes ownership of myController and DOES NOT delete it when its reference count hits 0.
+	*/
+	struct ControllerDeleter
+	{
+	private:
+		/**	Delete this controller
+		
+			True if this controller should be deleted, false otherwise.
+		*/
+		bool delete_{};
+	public:
+		/** Initialisation constructor
+		
+			@param	del		True if this controller should be deleted (default behaviour), false otherwise.
+
+			@remark			The non default behaviour is used internally and should not be altered.
+		*/
+		DLL_EXP_IMP explicit ControllerDeleter(bool del = true);
+
+		/** Operator overload
+		
+			Invoked when this deleter is attached to a smart pointer and it's
+			reference count hits 0.
+		*/
+		DLL_EXP_IMP void operator()(IController* controller);
+	};
+
+	/** Convenience using directive.
+
+		Using this directive will guarantee machine compatibility when creating controllers.
+	*/
+	using IControllerPtr = std::unique_ptr<IController, ControllerDeleter>;
 } // namespace meen
 
 #endif // ICONTROLLER_H
