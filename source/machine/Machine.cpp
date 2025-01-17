@@ -678,4 +678,17 @@ namespace meen
 		return make_error_code(errc::not_implemented);
 #endif // ENABLE_MEEN_SAVE
 	}
+
+	ControllerDeleter::ControllerDeleter(bool del)
+	{
+		delete_ = del;
+	}
+	
+	void ControllerDeleter::operator()(IController* controller)
+	{
+		if(delete_ == true)
+		{
+			delete controller;
+		}
+	};
 } // namespace meen
