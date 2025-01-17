@@ -25,7 +25,7 @@ class TestIoController(BaseIoController):
         if deviceNumber == 0:
             self.__deviceData = value
         else:
-            super().Write(deviceNumber, value)
+            super().Write(deviceNumber, value, controller)
 
     def ServiceInterrupts(self, currTime, cycles, controller):
         isr = super().ServiceInterrupts(currTime, cycles, controller)
