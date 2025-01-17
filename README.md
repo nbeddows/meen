@@ -31,7 +31,7 @@ Conceptually speaking, MEEN can be represented by the following diagram:
 
 As can be seen from the diagram above MEEN is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
 
-The outer machine represents the inner machine customisation. For example, custom input/output may involve interacting with a keyboard or mouse, or some other proprietary peripheral, whereas custom memory maybe as simple as reading and writing to a block of locally allocated memory, a network socket or some other proprietary memory configuration, this all depends on the machine being built, see `IMachine::SetIoControlller` and `IMachine::SetMemoryController`.
+The outer machine represents the inner machine customisation. For example, custom input/output may involve interacting with a keyboard or mouse, or some other proprietary peripheral, whereas custom memory maybe as simple as reading and writing to a block of locally allocated memory, a network socket or some other proprietary memory configuration, this all depends on the machine being built, see `IMachine::AttachIoControlller` and `IMachine::AttachMemoryController`.
 
 Example code in this framework is supplied in the form of unit tests. A test IO contoller library is supplied which gives implementations of both an IO controller and a memory controller.
 
@@ -190,7 +190,7 @@ This example will assume you are deploying the UF2 file from a Raspberry Pi.
 **Python**:
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`.
 
-**Note**: the `CpuTest` and `8080Exm` tests will take a while to complete, especially with Python. For the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+**Note**: for the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
 - `artifacts\Release\x86_64\bin\meen_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
 - `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
@@ -255,7 +255,23 @@ Example command lines (once the artifactory server has been installed and is run
 
 ### Basic principles of operation
 
-The following code snippet gives and example of how a machine can be instantiated, configured and executed.
+Unless specifically stated in the `IMachine.h` api and/or `MachineFactory.h` factory, there is
+no guarantee in regards to thread safety. All methods should be called from the same thread.
+
+The Python and C++ APIs are identical except the following caveats:
+
+- The Python API does not have a DetachMemmory/IO controller method. This is due to the fact that one can not
+move memory from Python into C++. Attaching memory from Python does not move the memory but rather provides a
+pointer to the memory. Due to this fact one must take care when accessing the controllers from Python. The
+controllers **must** not be accessed while the machine is running. All API methods return ErrorCode.Busy when
+the machine is running, therefore if you are unsure about the running state you can call the AttachIoController
+method with `None`, if the method returns ErrorCode.Busy then the machine is currently running, otherwise it
+will return ErrorCode.InvalidArgument and the machine is not running.
+
+- The Python machine api method `OnLoad` returns the json machine state and accepts no parameters.
+
+The following C++ code snippet gives an example of how a machine can be instantiated, configured and executed.
+The Python API is identical (taking into account the caveats listed above).
 Error handling has been ommitted for simplicity.
 
 ```cpp
@@ -263,23 +279,29 @@ Error handling has been ommitted for simplicity.
 auto machine = Make8080Machine();
 
 // Create a custom memory controller (See tests for examples)
-auto customMemoryController = std::make_unique<CustomMemoryController>();
+auto customMemoryController = IControllerPtr(new CustomMemoryController());
 
-// Load memory with program via custom controller method
-customMemoryController->LoadProgram("myProgram.com");
+// Load the controller with a program via a custom controller method
+static_cast<CustomMemoryController*>(customMemoryController.get())->LoadProgram("myProgram.com");
+		
+// Create a custom IO Controller and attach it to the machine (See tests for examples)
+machine->AttachIOController(IControllerPtr(new CustomIOController()));
 
-// Create custom IO Controller (See tests for examples)
-auto customIOController = std::make_unique<CustomIOController>();
-
-// Set the memory and IO controllers with the machine
-machine->SetIOController(customIOController);
-machine->SetMemoryController(customMemoryController);
+// Attach the custom memory controller with a loaded program to the machine
+machine->AttachMemoryController(std::move(customMemoryController));
 
 // Can be called from a different thread if the runAsync/loadAsync options are specifed
-machine->OnLoad([]
+machine->OnLoad([](char* json, int* jsonLength)
 {
 	// Return the json state to load, could be read from disk for example
-	return "json state as passed to OnSave";
+  if(json == nullptr)
+  {
+    *jsonLen = JsonToLoadLength;
+  }
+  else
+  {
+    memcpy(json, jsonToLoad, *jsonLength);
+  }
 });
 
 // Can be called from a different thread if the runAsync/saveAsync options are specifed
@@ -299,10 +321,10 @@ machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz
 
 // Run the machine sychronously, it won't return until the custom IO
 // controller ServiceInterrupts override generates an ISR::Quit interrupt
-auto runTime = machine->Run();
+machine->Run();
 
 // Run the machine asychronously - this can be done by setting the following json config
-// option either in the MakeMachine factory method or via IMachine::SetOptions
+// option via IMachine::SetOptions api method
 machine->SetOptions(R"({"runAsync":true})");
 machine->Run();
 
