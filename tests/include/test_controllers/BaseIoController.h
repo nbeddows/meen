@@ -94,7 +94,7 @@ namespace meen
 
 				@see			powerOff_
 			*/
-			void Write(uint16_t port, uint8_t value) override;			
+			void Write(uint16_t port, uint8_t value, IController* controller) override;
 			
 			/**	Base IO interrupt handler
 			
@@ -108,7 +108,7 @@ namespace meen
 
 				@remark				The only way a machine can exit is when an ISR::Quit interrupt is generated.
 			*/
-			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) override;
+			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) override;
 		public:
 			/** Save state after N cycles
 

@@ -5,35 +5,38 @@
 
 namespace meen
 {
-    uint8_t ControllerPy::Read(uint16_t address)
+    uint8_t ControllerPy::Read(uint16_t address, IController* controller)
     {
         PYBIND11_OVERRIDE_PURE(
             uint8_t,            /* Return type */
             IController,        /* Parent class */
             Read,               /* Name of function in C++ (must match Python name) */
-            address             /* Argument(s) */
+            address,            /* Argument(s) */
+            controller
         );
     };
 
-    void ControllerPy::Write(uint16_t address, uint8_t value)
+    void ControllerPy::Write(uint16_t address, uint8_t value, IController* controller)
     {
         PYBIND11_OVERRIDE_PURE(
             void,               /* Return type */
             IController,        /* Parent class */
             Write,              /* Name of function in C++ (must match Python name) */
             address,            /* Argument(s) */
-            value
+            value,
+            controller
         );
     };
 
-    meen::ISR ControllerPy::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
+    meen::ISR ControllerPy::ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller)
     {
         PYBIND11_OVERRIDE_PURE(
             meen::ISR,       /* Return type */
             IController,        /* Parent class */
             ServiceInterrupts,  /* Name of function in C++ (must match Python name) */
             currTime,           /* Argument(s) */
-            cycles
+            cycles,
+            controller
         );
     }
 

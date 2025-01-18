@@ -77,10 +77,10 @@ namespace meen
 		bool quit = false;
 		auto cpu_ = m->cpu_.get();
 		auto clock_ = m->clock_.get();
-		auto ioController_ = m->ioController_.get();
+		auto ioController = m->ioController_.get();
 		auto ticksPerIsr_ = m->ticksPerIsr_;
 #ifdef ENABLE_MEEN_SAVE
-		auto memoryController_ = m->memoryController_.get();
+		auto memoryController = m->memoryController_.get();
 		auto opt_ = m->opt_;
 		auto onLoad_ = m->onLoad_;
 		auto onSave_ = m->onSave_;
@@ -95,7 +95,7 @@ namespace meen
 			{
 				// perform checks to make sure that this machine load state is compatible with this machine
 
-				auto memUuid = memoryController_->Uuid();
+				auto memUuid = memoryController->Uuid();
 
 				if (memUuid == std::array<uint8_t, 16>{})
 				{
@@ -149,7 +149,7 @@ namespace meen
 				{
 					for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 					{
-						rom.push_back(memoryController_->Read(addr));
+						rom.push_back(memoryController->Read(addr, ioController));
 					}
 				}
 
@@ -241,7 +241,7 @@ namespace meen
 				{
 					for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 					{
-						memoryController_->Write(addr, ram[ramIndex++]);
+						memoryController->Write(addr, ram[ramIndex++], ioController);
 					}
 				}
 			}
@@ -278,7 +278,7 @@ namespace meen
 			{
 				lastTicks = totalTicks;
 
-				auto isr = ioController_->ServiceInterrupts(currTime.count(), totalTicks);
+				auto isr = ioController->ServiceInterrupts(currTime.count(), totalTicks, memoryController);
 
 				switch (isr)
 				{
@@ -341,7 +341,7 @@ namespace meen
 						if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 						{
 							auto err = std::error_code{};
-							auto memUuid = memoryController_->Uuid();
+							auto memUuid = memoryController->Uuid();
 
 							if (opt_.Encoder() != "base64")
 							{
@@ -355,7 +355,7 @@ namespace meen
 
 							if(!err)
 							{
-								auto rm = [memoryController_](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
+								auto rm = [memoryController](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
 								{
 									std::vector<uint8_t> mem;
 
@@ -363,7 +363,7 @@ namespace meen
 									{
 										for (auto addr = m.first; addr < m.first + m.second; addr++)
 										{
-											mem.push_back(memoryController_->Read(addr));
+											mem.push_back(memoryController->Read(addr, nullptr));
 										}
 									}
 
@@ -474,6 +474,11 @@ namespace meen
 
 	std::error_code Machine::Run(uint16_t pc)
 	{
+		if (running_ == true)
+		{
+			return make_error_code(errc::busy);
+		}
+
 		if (memoryController_ == nullptr)
 		{
 			return make_error_code(errc::memory_controller);
@@ -482,11 +487,6 @@ namespace meen
 		if (ioController_ == nullptr)
 		{
 			return make_error_code(errc::io_controller);
-		}
-
-		if (running_ == true)
-		{
-			return make_error_code(errc::busy);
 		}
 
 		if(clock_ == nullptr)
@@ -499,11 +499,6 @@ namespace meen
 			return make_error_code(errc::cpu);
 		}
 
-		cpu_->Reset(pc);
-		clock_->Reset();
-		running_ = true;
-		runTime_ = 0;
-
 		int64_t resInTicks = 0;
 		auto err = clock_->SetTickResolution(nanoseconds(opt_.ClockResolution()), &resInTicks);
 
@@ -512,6 +507,10 @@ namespace meen
 			return make_error_code(errc::clock_resolution);
 		}
 
+		cpu_->Reset(pc);
+		clock_->Reset();
+		runTime_ = 0;
+		running_ = true;
 		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 
 #ifdef ENABLE_MEEN_RP2040
@@ -578,38 +577,76 @@ namespace meen
 		return runTime_;
 	}
 
-	std::error_code Machine::SetMemoryController(const std::shared_ptr<IController>& controller)
+	std::error_code Machine::AttachMemoryController (IControllerPtr&& controller)
 	{
-		if (controller == nullptr)
-		{
-			return make_error_code(errc::invalid_argument);
-		}
-
 		if (running_ == true)
 		{
 			return make_error_code(errc::busy);
 		}
 
-		cpu_->SetMemoryController(controller);
-		memoryController_ = controller;
+		if(controller == nullptr)
+		{
+			return make_error_code(errc::invalid_argument);
+		}
+
+		cpu_->SetMemoryController(controller.get());
+		memoryController_ = std::move(controller);
+		// controller = nullptr;
 		return std::error_code{};
 	}
-
-	std::error_code Machine::SetIoController(const std::shared_ptr<IController>& controller)
+		
+	std::expected<IControllerPtr, std::error_code> Machine::DetachMemoryController()
 	{
-		if (controller == nullptr)
+		if (running_ == true)
 		{
-			return make_error_code(errc::invalid_argument);
+			return std::unexpected<std::error_code>(make_error_code(errc::busy));
 		}
 
+		if(memoryController_ == nullptr)
+		{
+			return std::unexpected<std::error_code>(make_error_code(errc::memory_controller));
+		}
+
+		cpu_->SetMemoryController(nullptr);
+		auto controller = std::move(memoryController_);
+		memoryController_ = nullptr;
+		return controller;
+	}
+
+	std::error_code Machine::AttachIoController (IControllerPtr&& controller)
+	{
 		if (running_ == true)
 		{
 			return make_error_code(errc::busy);
 		}
 
-		cpu_->SetIoController(controller);
-		ioController_ = controller;
+		if(controller == nullptr)
+		{
+			return make_error_code(errc::invalid_argument);
+		}
+
+		cpu_->SetIoController(controller.get());
+		ioController_ = std::move(controller);
+		// controller = nullptr;
 		return std::error_code{};
+	}
+		
+	std::expected<IControllerPtr, std::error_code> Machine::DetachIoController()
+	{
+		if (running_ == true)
+		{
+			return std::unexpected<std::error_code>(make_error_code(errc::busy));
+		}
+
+		if(ioController_ == nullptr)
+		{
+			return std::unexpected<std::error_code>(make_error_code(errc::io_controller));
+		}
+
+		cpu_->SetIoController(nullptr);
+		auto controller = std::move(ioController_);
+		ioController_ = nullptr;
+		return controller;
 	}
 
 	std::error_code Machine::OnSave(std::function<errc(const char* json)>&& onSave)
@@ -641,4 +678,17 @@ namespace meen
 		return make_error_code(errc::not_implemented);
 #endif // ENABLE_MEEN_SAVE
 	}
+
+	ControllerDeleter::ControllerDeleter(bool del)
+	{
+		delete_ = del;
+	}
+	
+	void ControllerDeleter::operator()(IController* controller)
+	{
+		if(delete_ == true)
+		{
+			delete controller;
+		}
+	};
 } // namespace meen

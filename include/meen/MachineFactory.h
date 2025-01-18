@@ -26,22 +26,6 @@ SOFTWARE.
 #include <memory>
 #include "meen/IMachine.h"
 
-#ifdef _WINDOWS
-#if meem_STATIC
-#define DLL_EXP_IMP
-#elif defined meen_EXPORTS
-#define DLL_EXP_IMP __declspec(dllexport)
-#else
-#define DLL_EXP_IMP __declspec(dllimport)
-#endif
-#else
-#ifdef meen_EXPORTS
-#define DLL_EXP_IMP [[gnu::visibility("default")]]
-#else
-#define DLL_EXP_IMP
-#endif
-#endif
-
 namespace meen
 {
 	/**

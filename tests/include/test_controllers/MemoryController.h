@@ -104,35 +104,36 @@ namespace meen
 
 			The maximum size of each read is 8 bits from a 16 address.
 
-			@param		address		The 16 bit address to read from.
+			@param	address		The 16 bit address to read from.
+			@param	controller	Unused by this implementation.
 
-			@return					The 8 bits residing at the 16 bit memory address.
+			@return				The 8 bits residing at the 16 bit memory address.
 		*/
-		uint8_t Read(uint16_t address) final;
+		uint8_t Read(uint16_t , IController* controller) final;
 		
 		/** Write a byte of data to memory
 		
 			The maximum size of each write is 8 bits to a 16 address.
 		
-			@param		address		The 16 bit address to write to.
-			
-			@param		value		The 8 bit value to write.
+			@param	address		The 16 bit address to write to.
+			@param	value		The 8 bit value to write.
+			@param	controller	Unused by this implementation.			
 		*/
-		void Write(uint16_t address, uint8_t value) final;
+		void Write(uint16_t address, uint8_t value, IController* controller) final;
 
 		/** Memory IO interrupt handler
 		 
 			Checks the memory controller to see if any interrupts are pending.
 		
 			@param	currTime	The time in nanoseconds of the machine clock.
-
 			@param	cycles		The total number of cycles that have elapsed.
-		
+			@param	controller	Unused by this implementation.
+
 			@return				ISR::NoInterrupt.
 
 			@remark				This controller never generates any interrupts.
 		*/
-		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) final;
 	};
 } // namespace meen
 

@@ -23,7 +23,7 @@ class MemoryController(Controller):
     def Write(self, addr, data):
         self.__memory[addr] = data
 
-    def ServiceInterrupts(self, currTime, cycles):
+    def ServiceInterrupts(self, currTime, cycles, ioController):
         return ISR.NoInterrupt
     
     def Uuid(self):

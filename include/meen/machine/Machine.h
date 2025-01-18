@@ -51,8 +51,8 @@ namespace meen
 	private:
 		std::unique_ptr<ICpuClock> clock_;
 		std::unique_ptr<ICpu> cpu_;
-		std::shared_ptr<IController> ioController_;
-		std::shared_ptr<IController> memoryController_;
+		IControllerPtr ioController_;
+		IControllerPtr memoryController_;
 		Opt opt_;
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
@@ -85,17 +85,29 @@ namespace meen
 		*/
 		std::expected<uint64_t, std::error_code> WaitForCompletion() final;
 
-		/** SetMemoryController
+		/** AttachMemoryController
 
-			@see IMachine::SetMemoryController
+			@see IMachine::AttachMemoryController
 		*/
-		std::error_code SetMemoryController(const std::shared_ptr<IController>& controller) final;
+		std::error_code AttachMemoryController (IControllerPtr&& controller) final;
+		
+		/** DetachMemoryController
 
-		/** SetIoController
-
-			@see IMachine::SetIoController
+			@see IMachine::DetachMemoryController
 		*/
-		std::error_code SetIoController(const std::shared_ptr<IController>& controller) final;
+		std::expected<IControllerPtr, std::error_code> DetachMemoryController() final;
+
+		/** AttachIoController
+
+			@see IMachine::AttachIoController
+		*/
+		std::error_code AttachIoController (IControllerPtr&& controller) final;
+
+		/** DetachIoController
+
+			@see IMachine::DetachIoController
+		*/
+		std::expected<IControllerPtr, std::error_code> DetachIoController () final;
 
 		/** SetOptions
 

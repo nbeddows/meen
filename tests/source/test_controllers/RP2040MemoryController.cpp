@@ -136,7 +136,7 @@ namespace meen
 		memory_.assign(memory_.size(), 0);
 	}
 
-	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
+	ISR MemoryController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles, [[maybe_unused]] IController* ioController)
 	{
 		// this controller never issues any interrupts
 		return ISR::NoInterrupt;

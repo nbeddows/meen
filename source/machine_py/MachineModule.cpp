@@ -15,14 +15,22 @@ PYBIND11_MODULE(meenPy, meen)
 
     py::enum_<meen::errc>(meen, "ErrorCode")
         .value("NoError", meen::errc::no_error)
+        .value("Async", meen::errc::async)
         .value("Busy", meen::errc::busy)
         .value("ClockResolution", meen::errc::clock_resolution)
+        .value("Cpu", meen::errc::cpu)
+        .value("IncompatibleRam", meen::errc::incompatible_ram)
+        .value("IncompatibleRom", meen::errc::incompatible_rom)
+        .value("IncompatibleUuid", meen::errc::incompatible_uuid)
         .value("InvalidArgument", meen::errc::invalid_argument)
+        .value("IoController", meen::errc::io_controller)
         .value("JsonConfig", meen::errc::json_config)
         .value("JsonParse", meen::errc::json_parse)
+        .value("MemoryController", meen::errc::memory_controller)
+        .value("NoZlib", meen::errc::no_zlib)
         .value("NotImplemented", meen::errc::not_implemented)
         .value("UnknownOption", meen::errc::unknown_option);
-    
+
     py::enum_<meen::ISR>(meen, "ISR")
         .value("Zero", meen::ISR::Zero)
         .value("One", meen::ISR::One)
@@ -56,7 +64,7 @@ PYBIND11_MODULE(meenPy, meen)
                     *jsonLen = str.length();
                 }
                 else
-                {				
+                {
                     if (str.length() > *jsonLen)
                     {
                         return meen::errc::invalid_argument;
@@ -76,13 +84,13 @@ PYBIND11_MODULE(meenPy, meen)
         {
             return static_cast<meen::errc>(machine.Run(offset).value());
         })
-        .def("SetIoController", [](meen::IMachine& machine, meen::IController* controller)
+        .def("AttachIoController", [](meen::IMachine& machine, meen::IController* controller)
         {
-            return static_cast<meen::errc>(machine.SetIoController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+            return static_cast<meen::errc>(machine.AttachIoController(meen::IControllerPtr(controller, meen::ControllerDeleter(false))).value());            
         })
-        .def("SetMemoryController", [](meen::IMachine& machine, meen::IController* controller)
+        .def("AttachMemoryController", [](meen::IMachine& machine, meen::IController* controller)
         {
-            return static_cast<meen::errc>(machine.SetMemoryController(std::shared_ptr<meen::IController>(controller, [](meen::IController*) {})).value());
+            return static_cast<meen::errc>(machine.AttachMemoryController(meen::IControllerPtr(controller, meen::ControllerDeleter(false))).value());
         })
         .def("SetOptions", [](meen::IMachine& machine, const char* options)
         {

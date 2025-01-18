@@ -22,6 +22,14 @@
   Save, GetState.
 * Factory methods are based on cpu type (removed MakeMachine
   in favour of Make8080Machine) and take no options.
+* Unit test memory controller Load method returns a std::error_code
+* The `IMachine::OnLoad` callback signature has changed.
+* Removed superfluous pybind machine holder.
+* Replaced `IMachine` api methods `SetIoController` and
+  `SetMemoryController` with `AttachIoController` and
+  `AttachMemoryController` and added `DetachIoController`
+  and `DetachMemoryController` to allow for the machine
+  to take and relinquish controller ownership.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

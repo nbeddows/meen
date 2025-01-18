@@ -30,7 +30,7 @@ namespace meen
 		return{ 0xD8, 0x62, 0xFA, 0xBD, 0xDE, 0xDD, 0x47, 0xB7, 0x8C, 0x38, 0xD0, 0xDE, 0xB5, 0xCC, 0x45, 0xBE };
 	}
 
-    uint8_t TestIoController::Read(uint16_t deviceNumber)
+    uint8_t TestIoController::Read(uint16_t deviceNumber, [[maybe_unused]] IController* controller)
 	{
 		uint8_t deviceData = 0x00;
 
@@ -57,7 +57,7 @@ namespace meen
 		return deviceData;
 	}
 
-	void TestIoController::Write(uint16_t deviceNumber, uint8_t value)
+	void TestIoController::Write(uint16_t deviceNumber, uint8_t value, IController* controller)
 	{
 		// we are powering down, don't perform any spurious writes
 		if(powerOff_ == false)
@@ -72,16 +72,16 @@ namespace meen
 				}
 				default:
 				{
-					BaseIoController::Write (deviceNumber, value);
+					BaseIoController::Write (deviceNumber, value, controller);
 					break;
 				}
 			}
 		}
 	}
 
-	ISR TestIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles)
+	ISR TestIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles, [[maybe_unused]] IController* controller)
 	{
-		auto isr = BaseIoController::ServiceInterrupts(currTime, cycles);
+		auto isr = BaseIoController::ServiceInterrupts(currTime, cycles, controller);
 
 		if (isr == ISR::NoInterrupt)
 		{

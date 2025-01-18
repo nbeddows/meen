@@ -75,13 +75,14 @@ namespace meen
 			@param	ioDeviceNumber	The io device number to read from.
 									Only one device is supported, ie;
 									device number 0.
+			@param	controller	Unused by this implementation.
 
 			@return					The contents of the io device at the
 									time of the function call.
 
 			@see					IController::Read()
 		*/
-		uint8_t Read(uint16_t ioDeviceNumber) final;
+		uint8_t Read(uint16_t ioDeviceNumber, IController* controller) final;
 
 		/** Write to a device
 
@@ -90,12 +91,12 @@ namespace meen
 			@param	ioDeviceNumber	The io device number to write to.
 									Only one device is supported, ie;
 									device number 0.
-
 			@param	value			The data to write to the io device.
+			@param	controller		Unused by this implementation.
 
 			@see					IController::Write()
 		*/
-		void Write(uint16_t ioDeviceNumber, uint8_t value) final;
+		void Write(uint16_t ioDeviceNumber, uint8_t value, IController* controller) final;
 
 		/** Interrupt handler
 
@@ -104,15 +105,15 @@ namespace meen
 			one second intervals.
 
 			@param	currTime	The time in nanoseconds of the machine clock.
-
 			@param	cycles		The total number of cycles that have elapsed.
+			@param	controller	Unused by this implementation.
 
 			@return				The interrupt that requires servicing by the
 								cpu. In this case, ISR::One every second.
 
 			@see IContoller::ServiceInterrupts()
 		*/
-		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles) final;
+		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) final;
 	};
 } // namespace meen
 

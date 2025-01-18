@@ -31,14 +31,14 @@ namespace meen
 		saveCycleCount_ = cycleCount;
 	}
 
-    void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value)
+    void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value, [[maybe_unused]] IController* controller)
 	{
 		powerOff_ = port == 0xFF;
 		save_ = port == 0xFE;
 		load_ = port == 0xFD;
 	}
 
-	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles)
+	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles, [[maybe_unused]] IController* memoryController)
 	{
 		auto isr = ISR::NoInterrupt;
 

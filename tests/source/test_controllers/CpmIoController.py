@@ -2,17 +2,16 @@ from BaseIoController import BaseIoController
 from meenPy import ISR
 
 class CpmIoController(BaseIoController):
-    def __init__(self, memoryController):
+    def __init__(self):
         super().__init__()
-        self.__memoryController = memoryController
         self.__message = ''
         self.__printMode = 0
         self.__addrHi = 0
 
-    def Read(self, deviceNumber):
+    def Read(self, deviceNumber, controller):
         return 0
 
-    def Write(self, deviceNumber, value):
+    def Write(self, deviceNumber, value, controller):
         # we are powering down, don't perform any spurious writes
         if self._isr == ISR.Quit:
             return
@@ -26,21 +25,21 @@ class CpmIoController(BaseIoController):
                 match self.__printMode:
                     case 9:
                         addr = (self.__addrHi << 8) | value
-                        aChar = chr(self.__memoryController.Read(addr))
+                        aChar = chr(controller.Read(addr, None))
 
                         while aChar != '$':
                             self.__message += aChar
                             addr += 1
-                            aChar = chr(self.__memoryController.Read(addr))
+                            aChar = chr(controller.Read(addr, None))
                     case 2:
                         self.__message += chr(value)
                     case _:
                         pass
             case _:
-                super().Write(deviceNumber, value)
+                super().Write(deviceNumber, value, controller)
 
-    def ServiceInterrupts(self, currTime, cycles):
-        return super().ServiceInterrupts(currTime, cycles)
+    def ServiceInterrupts(self, currTime, cycles, memoryController):
+        return super().ServiceInterrupts(currTime, cycles, memoryController)
 
     def Message(self):
         return self.__message

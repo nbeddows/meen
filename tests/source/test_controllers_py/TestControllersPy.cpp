@@ -28,7 +28,7 @@ PYBIND11_MODULE(TestControllersPy, TestControllers)
         .def("ServiceInterrupts", &meen::TestIoController::ServiceInterrupts);
 
     py::class_<meen::CpmIoController, meen::IController>(TestControllers, "CpmIoController")
-        .def(py::init<const std::shared_ptr<meen::IController>&>())
+        .def(py::init<>())
         .def("Message", &meen::CpmIoController::Message)
         .def("Read", &meen::CpmIoController::Read)
         .def("Write", &meen::CpmIoController::Write)
