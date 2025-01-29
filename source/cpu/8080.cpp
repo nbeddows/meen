@@ -1291,8 +1291,7 @@ uint8_t Intel8080::Hlt()
 		printf("0x%04X HLT\n", pc_);
 	}
 
-	// Untested
-	assert(0);
+	hlt_ = true;
 	pc_++;
 	return 7;
 }
