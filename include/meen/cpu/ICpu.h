@@ -44,10 +44,10 @@ namespace meen
 
 		virtual uint8_t Interrupt(ISR isr) = 0;
 
-		virtual void Reset(uint16_t pc) = 0;
+		virtual void Reset(uint16_t pc) = 0; // pc should not be needed now that load is improved
 
 #ifdef ENABLE_MEEN_SAVE
-		virtual std::error_code Load(const std::string&& json) = 0;
+		virtual std::error_code Load(const std::string&& json, bool checkUuid) = 0;
 
 		virtual std::string Save() const = 0;
 #endif // ENABLE_MEEN_SAVE

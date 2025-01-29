@@ -301,7 +301,7 @@ Intel8080::Intel8080()
 }
 
 #ifdef ENABLE_MEEN_SAVE
-std::error_code Intel8080::Load(const std::string&& str)
+std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 {
 #ifdef ENABLE_NLOHMANN_JSON
 	auto json = nlohmann::json::parse(str, nullptr, false);
@@ -311,45 +311,49 @@ std::error_code Intel8080::Load(const std::string&& str)
 		return make_error_code(errc::json_parse);
 	}
 
-	if(!json.contains("uuid"))
+	if (checkUuid == true)
 	{
-		return make_error_code(errc::json_parse);
+		if(!json.contains("uuid"))
+		{
+			return make_error_code(errc::json_config);
+		}
+
+		auto sv = json["uuid"].get<std::string_view>();
+
+		if(sv.starts_with("base64://") == true)
+		{
+			sv.remove_prefix(strlen("base64://"));
+			// The cpus must be the same
+			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv.begin(), sv.end()));
+
+			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+			{
+				return make_error_code(errc::incompatible_uuid);
+			}
+		}
+		else
+		{
+			return make_error_code(errc::json_config);
+		}
 	}
 
-	// The cpus must be the same
-	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].get<std::string>());
-
-	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+	if (json.contains("registers"))
 	{
-		return make_error_code(errc::incompatible_uuid);
+		auto registers = json["registers"];
+
+		// Restore the state of the cpu
+		a_ = registers.value<uint8_t>("a", Value(a_));
+		b_ = registers.value<uint8_t>("b", Value(b_));
+		c_ = registers.value<uint8_t>("c", Value(c_));
+		d_ = registers.value<uint8_t>("d", Value(d_));
+		e_ = registers.value<uint8_t>("e", Value(e_));
+		h_ = registers.value<uint8_t>("h", Value(h_));
+		l_ = registers.value<uint8_t>("l", Value(l_));
+		status_ = registers.value<uint8_t>("s", Value(status_)) | 0x02;
 	}
 
-	// Make sure everything exists and is copied out
-	if(!json.contains("registers") || !json.contains("pc") || !json.contains("sp"))
-	{
-		return make_error_code(errc::json_parse);
-	}
-
-	auto registers = json["registers"];
-
-	if(!registers.contains("a") || !registers.contains("b") || !registers.contains("c") ||
-	   !registers.contains("d") || !registers.contains("e") || !registers.contains("h") ||
-	   !registers.contains("l") || !registers.contains("s"))
-	{
-		return make_error_code(errc::json_parse);
-	}
-
-	// Restore the state of the cpu
-	a_ = registers["a"].get<uint8_t>();
-	b_ = registers["b"].get<uint8_t>();
-	c_ = registers["c"].get<uint8_t>();
-	d_ = registers["d"].get<uint8_t>();
-	e_ = registers["e"].get<uint8_t>();
-	h_ = registers["h"].get<uint8_t>();
-	l_ = registers["l"].get<uint8_t>();
-	status_ = registers["s"].get<uint8_t>();
-	pc_ = json["pc"].get<uint16_t>();
-	sp_ = json["sp"].get<uint16_t>();
+	pc_ = json.value<uint16_t>("pc", Value(pc_));
+	sp_ = json.value<uint16_t>("sp", Value(sp_));
 #else
 	JsonDocument json;
 	auto e = deserializeJson(json, str);
@@ -359,45 +363,50 @@ std::error_code Intel8080::Load(const std::string&& str)
 		return make_error_code(errc::json_parse);
 	}
 
-	if(json["uuid"] == nullptr)
+	if (checkUuid == true)
 	{
-		return make_error_code(errc::json_parse);
+		if(json["uuid"] == nullptr)
+		{
+			return make_error_code(errc::json_parse);
+		}
+
+		auto sv = json["uuid"].as<std::string_view>();
+
+		if (sv.starts_with("base64://") == true)
+		{
+			sv.remove_prefix(strlen("base64://"));
+			
+			// The cpus must be the same
+			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv.begin(), sv.end()));
+
+			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+			{
+				return make_error_code(errc::incompatible_uuid);
+			}
+		}
+		else
+		{
+			return make_error_code(errc::json_config);
+		}
 	}
 
-	// The cpus must be the same
-	auto jsonUuid = Utils::TxtToBin("base64", "none", 16, json["uuid"].as<std::string>());
-
-	if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+	if (json["registers"] != nullptr)
 	{
-		return make_error_code(errc::incompatible_uuid);
+		auto registers = json["registers"];
+
+		// Restore the state of the cpu
+		a_ = registers["a"] ? registers["a"].as<uint8_t>() : value(a_);
+		b_ = registers["b"] ? registers["b"].as<uint8_t>() : value(b_);
+		c_ = registers["c"] ? registers["c"].as<uint8_t>() : value(c_);
+		d_ = registers["d"] ? registers["d"].as<uint8_t>() : value(d_);
+		e_ = registers["e"] ? registers["e"].as<uint8_t>() : value(e_);
+		h_ = registers["h"] ? registers["h"].as<uint8_t>() : value(h_);
+		l_ = registers["l"] ? registers["l"].as<uint8_t>() : value(l_);
+		status_ = (registers["s"] ? registers["s"].as<uint8_t>() : value(status_)) | 0x02;
 	}
 
-	// Make sure everything exists and is copied out
-	if(json["registers"] == nullptr || json["pc"] == nullptr || json["sp"] == nullptr)
-	{
-		return make_error_code(errc::json_parse);
-	}
-
-	auto registers = json["registers"];
-
-	if(registers["a"] == nullptr || registers["b"] == nullptr || registers["c"] == nullptr ||
-	   registers["d"] == nullptr || registers["e"] == nullptr || registers["h"] == nullptr ||
-	   registers["l"] == nullptr || registers["s"] == nullptr)
-	{
-		return make_error_code(errc::json_parse);
-	}
-
-	// Restore the state of the cpu
-	a_ = registers["a"].as<uint8_t>();
-	b_ = registers["b"].as<uint8_t>();
-	c_ = registers["c"].as<uint8_t>();
-	d_ = registers["d"].as<uint8_t>();
-	e_ = registers["e"].as<uint8_t>();
-	h_ = registers["h"].as<uint8_t>();
-	l_ = registers["l"].as<uint8_t>();
-	status_ = registers["s"].as<uint8_t>();
-	pc_ = json["pc"].as<uint16_t>();
-	sp_ = json["sp"].as<uint16_t>();
+	pc_ = json["pc"] ? json["pc"].as<uint16_t>() : value(pc_);
+	sp_ = json["sp"] ? json["sp"].as<uint16_t>() : value(sp_);
 #endif
 	return make_error_code(errc::no_error);
 }
