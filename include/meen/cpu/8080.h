@@ -105,6 +105,9 @@ namespace meen
 		//interrupt flip-flip - 1 enabled, 0 disabled
 		//cppcheck-suppress unusedStructMember
 		bool iff_{};
+		// cpu halt - 1 enabled, 0 disabled
+		//cppcheck-suppress unusedStructMember
+		bool hlt_{};
 
 		//The opcode for the instruction to be executed.
 		//cppcheck-suppress unusedStructMember
