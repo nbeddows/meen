@@ -274,7 +274,7 @@ namespace meen
 			totalTicks += ticks;
 
 			// Check if it is time to service interrupts
-			if (totalTicks - lastTicks >= ticksPerIsr_)
+			if (totalTicks - lastTicks >= ticksPerIsr_ || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
 			{
 				lastTicks = totalTicks;
 

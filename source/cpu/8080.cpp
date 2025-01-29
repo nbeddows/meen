@@ -423,6 +423,7 @@ uint8_t Intel8080::Interrupt(ISR isr)
 		//the interrupt enable system is automatically
 		//disabled whenever an interrupt is acknowledged
 		iff_ = false;
+		hlt_ = false;
 	}
 
 	return timePeriods;
@@ -430,6 +431,11 @@ uint8_t Intel8080::Interrupt(ISR isr)
 
 uint8_t Intel8080::Execute()
 {
+	if (hlt_ == true)
+	{
+		return 0;
+	}
+
 	opcode_ = memoryController_->Read(pc_, ioController_);
 
 #ifdef ENABLE_OPCODE_TABLE
@@ -726,6 +732,7 @@ void Intel8080::Reset(uint16_t pc)
 	sp_ = 0;
 	status_ = 0b00000010;
 	iff_ = false;
+	hlt_ = false;
 }
 
 /**
@@ -1284,8 +1291,7 @@ uint8_t Intel8080::Hlt()
 		printf("0x%04X HLT\n", pc_);
 	}
 
-	// Untested
-	assert(0);
+	hlt_ = true;
 	pc_++;
 	return 7;
 }
