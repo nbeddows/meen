@@ -4,27 +4,39 @@ from meenPy import ISR
 class BaseIoController(Controller):
     def __init__(self):
         super().__init__()
-        self._isr = ISR.NoInterrupt
-        self.__saveCycleCount = -1
+        self._saveCycleCount = -1
+        self._load = False
+        self._save = False
+        self._powerOff = False
 
     def ServiceInterrupts(self, currTime, cycles, controller):
-        if cycles == self.__saveCycleCount:
-            self._isr = ISR.Save
+        isr = ISR.NoInterrupt
 
-        isr = self._isr
-
-        if self._isr == ISR.Quit or self._isr == ISR.Save or self._isr == ISR.Load:
-            self._isr = ISR.NoInterrupt
-
+        # load takes precedence over save
+        if self._load == True:
+            isr = ISR.Load
+            self._load = False
+        elif self._save == True or self._saveCycleCount == cycles:
+            isr = ISR.Save
+            self._save = False
+        elif self._powerOff == True:
+            isr = ISR.Quit
+            self._powerOff = False
+        
         return isr
     
     def Write(self, port, value, controller):
-        if port == 0xFF:
-            self._isr = ISR.Quit
-        elif port == 0xFE:
-            self._isr = ISR.Save
-        elif port == 0xFD:
-            self._isr = ISR.Load
+        # don't clear an outstanding power off
+        if self._powerOff == False:
+            self._powerOff = port == 0xFF
+
+        # don't clear an outstanding save
+        if self._save == False:
+            self._save = port == 0xFE
+
+        # don't clear an outstanding load
+        if self._load == False:
+            self._load = port == 0xFD
 
     def SaveStateOn(self, cycleCount):
-        self.__saveCycleCount = cycleCount
+        self._saveCycleCount = cycleCount

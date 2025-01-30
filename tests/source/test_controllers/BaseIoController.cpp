@@ -20,7 +20,6 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-
 #include "meen/Base.h"
 #include "test_controllers/BaseIoController.h"
 
@@ -33,29 +32,44 @@ namespace meen
 
     void BaseIoController::Write(uint16_t port, [[maybe_unused]] uint8_t value, [[maybe_unused]] IController* controller)
 	{
-		powerOff_ = port == 0xFF;
-		save_ = port == 0xFE;
-		load_ = port == 0xFD;
+		// don't clear an outstanding power off
+		if (powerOff_ == false)
+		{
+			powerOff_ = port == 0xFF;
+		}
+
+		// don't clear an outstanding save
+		if (save_ == false)
+		{
+			save_ = port == 0xFE;
+		}
+
+		// don't clear an outstanding load
+		if (load_ == false)
+		{
+			load_ = port == 0xFD;
+		}
 	}
 
 	ISR BaseIoController::ServiceInterrupts([[maybe_unused]] uint64_t currTime, [[maybe_unused]] uint64_t cycles, [[maybe_unused]] IController* memoryController)
 	{
 		auto isr = ISR::NoInterrupt;
 
-		if (powerOff_ == true)
+		// load takes precedence over save
+		if (load_ == true)
 		{
-			isr = ISR::Quit;
-			powerOff_ = false;
+			isr = ISR::Load;
+			load_ = false;
 		}
 		else if (save_ == true || saveCycleCount_ == cycles)
 		{
 			isr = ISR::Save;
 			save_ = false;
 		}
-		else if (load_ == true)
+		else if (powerOff_ == true)
 		{
-			isr = ISR::Load;
-			load_ = false;
+			isr = ISR::Quit;
+			powerOff_ = false;
 		}
 		
 		return isr;
