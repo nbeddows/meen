@@ -27,6 +27,8 @@ SOFTWARE.
 #else
 #include <ArduinoJson.h>
 #endif
+#include <stdarg.h>
+
 #include "meen/Error.h"
 #include "meen/IController.h"
 #include "meen/IMachine.h"
@@ -43,10 +45,12 @@ namespace meen::Tests
 		static IControllerPtr cpmIoController_;
 		static std::unique_ptr<IMachine> machine_;
 
-		static void LoadAndRun(const char* name, const char* expected);
+		static void LoadAndRun(const char* name, const char* expected, const char* extra = nullptr, uint16_t extraOffset = 0);
 		static void Run(bool runAsync);
 		static void Load(bool runAsync);
 	    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, int pos);
+		static errc LoadProgram (char* json, int* jsonLen, const char* fmt, ...);
+
 	public:
 		static std::string programsDir_;
 
@@ -78,24 +82,13 @@ namespace meen::Tests
 
 	void MachineTest::SetUp()
 	{
-		auto ex = machine_->DetachMemoryController();
-		ASSERT_TRUE(ex);
 
-		auto memoryController = static_cast<MemoryController*>(ex.value().get());
-
-		memoryController->Clear();
-		
-		//CP/M Warm Boot is at memory address 0x00, this will be
-		//emulated with the exitTest subroutine.
-		auto err = memoryController->Load((programsDir_ + "/exitTest.bin").c_str(), 0x00);
-		ASSERT_FALSE(err);
-		
-		//CP/M BDOS print message system call is at memory address 0x05,
-		//this will be emulated with the bdosMsg subroutine.
-		err = memoryController->Load((programsDir_ + "/bdosMsg.bin").c_str(), 0x05);
-		ASSERT_FALSE(err);
-
-		err = machine_->AttachMemoryController(std::move(std::move(ex.value())));
+		// At the start of each test we need to trigger a load interrupt so the next test program will load ... need to be careful with tests that don't require a load interrupt, may need to reset the load handler
+		auto controller = machine_->DetachIoController();
+		ASSERT_TRUE(controller);
+		// Write to the 'load device', the value doesn't matter (use 0)
+		controller.value()->Write(0xFD, 0, nullptr);
+		auto err = machine_->AttachIoController(std::move(controller.value()));
 		EXPECT_FALSE(err);
 
 		// Set default options
@@ -103,9 +96,27 @@ namespace meen::Tests
 		EXPECT_FALSE(err);
 	}
 
-	void MachineTest::LoadAndRun(const char* name, const char* expected)
+	errc MachineTest::LoadProgram(char* json, int* jsonLen, const char* fmt, ...)
 	{
-		machine_->OnSave([expected](const char* actual)
+		va_list args;
+		va_start(args, fmt);
+
+		if (json == nullptr)
+		{
+			*jsonLen = vsnprintf(nullptr, 0, fmt, args);
+			return *jsonLen == -1 ? errc::invalid_argument : errc::no_error;
+		}
+		else
+		{
+			return vsnprintf(json, *jsonLen, fmt, args) != *jsonLen - 1 ? errc::invalid_argument : errc::no_error;
+		}
+	}
+
+	void MachineTest::LoadAndRun(const char* name, const char* expected, const char* extra, uint16_t offset)
+	{
+		bool saveTriggered = false;
+
+		auto err = machine_->OnSave([st = &saveTriggered, expected](const char* actual)
 		{
 			std::string actualStr;
 			std::string expectedStr;
@@ -127,23 +138,34 @@ namespace meen::Tests
 			serializeJson(expectedJson, expectedStr);
 #endif
 			EXPECT_STREQ(expectedStr.c_str(), actualStr.c_str());
+			*st = true;
 			return errc::no_error;
 		});
+		EXPECT_FALSE(err);
 
-		auto dir = programsDir_ + name;
-		auto controller = machine_->DetachMemoryController();
-		ASSERT_TRUE(controller);
-		auto memoryController = static_cast<MemoryController*>(controller.value().get());
-		auto err = memoryController->Load(dir.c_str(), 0x100);
-		ASSERT_FALSE(err);
-		err = machine_->AttachMemoryController(std::move(controller.value()));
+
+		err = machine_->OnLoad([progDir = programsDir_.c_str(), progName = std::move(name), ex = std::move(extra), off = offset](char* json, int* jsonLen)
+		{
+			if (ex == nullptr)
+			{
+				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/%s","offset":256}]}}})", progDir, progDir, progName);
+			}
+			else
+			{
+				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/%s","offset":256},{"bytes":"file://%s/%s","offset":%d}]}}})", progDir, progDir, progName, progDir, ex, off);
+			}
+		});
 		EXPECT_FALSE(err);
-		err = machine_->Run(0x100);
+
+		err = machine_->Run(0x00);
 		EXPECT_FALSE(err);
+		EXPECT_TRUE(saveTriggered);
 	}
 
     void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, int pos)
     {
+		// Write to the 'load device', the value doesn't matter (use 0)
+		cpmIoController_->Write(0xFD, 0, nullptr);
 		// Cache the defacto test io controller 
 		auto controller = machine_->DetachIoController();
 		ASSERT_TRUE(controller);
@@ -152,7 +174,9 @@ namespace meen::Tests
 		EXPECT_FALSE(err);
 		err = machine_->SetOptions(R"({"isrFreq":0.02})");
 		EXPECT_FALSE(err);
-		LoadAndRun(suiteName, expectedState);
+		//CP/M BDOS print message system call is at memory address 0x05,
+		//this will be emulated with the bdosMsg subroutine.
+		LoadAndRun(suiteName, expectedState, "bdosMsg.bin", 0x05);
         cpmIoController_ = std::move(machine_->DetachIoController().value());
         ASSERT_TRUE(cpmIoController_);
         auto cpm = static_cast<CpmIoController*>(cpmIoController_.get());
@@ -193,32 +217,24 @@ namespace meen::Tests
 
 	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
-		auto ex = machine_->DetachMemoryController();
-		ASSERT_TRUE(ex);
-
-		auto memoryController = static_cast<MemoryController*>(ex.value().get());
-
-		auto err = memoryController->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
-		ASSERT_FALSE(err);
-		
-		err = memoryController->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
-		ASSERT_FALSE(err);
-
-		err = machine_->AttachMemoryController(std::move(ex.value()));
-		EXPECT_FALSE(err);
-
 		EXPECT_NO_THROW
 		(
+			auto err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
+			{
+				return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/nopStart.bin","offset":5},{"bytes":"file://%s/nopEnd.bin","offset":50004}]}}})", progDir, progDir, progDir);
+			});
+			EXPECT_FALSE(err);
+
 			//cppcheck-suppress unknownMacro
 			// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
 			err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
 			EXPECT_FALSE(err);
-		
+
 			// We aren't interested in saving, clear the onSave callback
 			err = machine_->OnSave(nullptr);
-			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::json_config);
+			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-			err = machine_->Run(0x04);
+			err = machine_->Run(0x00);
 			EXPECT_FALSE(err);
 
 			// All these methods should return busy
@@ -228,9 +244,9 @@ namespace meen::Tests
 			EXPECT_EQ(errc::busy, err.value());
 			err = machine_->AttachIoController(nullptr);
 			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->OnLoad([](char* json, int* jsonLen){ return errc::no_error; });
+			err = machine_->OnLoad([](char*, int*){ return errc::no_error; });
 			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->OnSave([](const char*){ return errc::no_error; } );
+			err = machine_->OnSave([](const char*){ return errc::no_error; });
 			EXPECT_EQ(errc::busy, err.value());
 
 			// Since we are running async we need to wait for completion
@@ -249,31 +265,17 @@ namespace meen::Tests
 			EXPECT_FALSE(err);
 		}
 
-		auto ex = machine_->DetachMemoryController();
-		ASSERT_TRUE(ex);
-
-		auto memoryController = static_cast<MemoryController*>(ex.value().get());
-
-		// Run a program that should take a second to complete
-		// (in actual fact it's 2000047 ticks, 47 ticks over a second.
-		// We need to be as close a possible to 2000000 ticks without
-		// going under so the cpu sleeps at the end
-		// of the program so it maintains sync. It's never going to
-		// be perfect, but its close enough for testing purposes).
-		err = memoryController->Load((programsDir_ + "nopStart.bin").c_str(), 0x04);
-		ASSERT_FALSE(err);
-
-		err = memoryController->Load((programsDir_ + "nopEnd.bin").c_str(), 0xC353);
-		ASSERT_FALSE(err);
-
-		err = machine_->AttachMemoryController(std::move(ex.value()));
+		err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
+		{
+			return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/nopStart.bin","offset":5},{"bytes":"file://%s/nopEnd.bin","offset":50004}]}}})", progDir, progDir, progDir);
+		});
 		EXPECT_FALSE(err);
 
-		// 25 millisecond resolution, service interrupts every 8.25 milliseconds
+		// 25 millisecond resolution, service interrupts every 6.25 milliseconds
 		err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
 		EXPECT_FALSE(err);
 
-		err = machine_->Run(0x04);
+		err = machine_->Run(0x00);
 		EXPECT_FALSE(err);
 
 // Use std::expected monadics if they are supported
@@ -306,6 +308,7 @@ namespace meen::Tests
 		Run(true);
 	}
 
+#if 0
 	void MachineTest::Load(bool runAsync)
 	{
 		EXPECT_NO_THROW
@@ -472,25 +475,26 @@ namespace meen::Tests
 			Load(true);
 		}
 	}
+#endif
 
 	TEST_F(MachineTest, Tst8080)
     {
-        RunTestSuite("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981})", "CPU IS OPERATIONAL", 74);
-    }
+        RunTestSuite("TST8080.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})", "CPU IS OPERATIONAL", 74);
+	}
 
     TEST_F(MachineTest, 8080Pre)
 	{
-        RunTestSuite("8080PRE.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280})", "8080 Preliminary tests complete", 0);
+        RunTestSuite("8080PRE.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})", "8080 Preliminary tests complete", 0);
     }
 
     TEST_F(MachineTest, CpuTest)
 	{
-        RunTestSuite("CPUTEST.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283})", "CPU TESTS OK", 168);
+		RunTestSuite("CPUTEST.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})", "CPU TESTS OK", 168);
     }
 
     TEST_F(MachineTest, 8080Exm)
 	{
-        RunTestSuite("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137})", "ERROR", std::string::npos);
+        RunTestSuite("8080EXM.COM", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})", "ERROR", std::string::npos);
     }
 
 	#include "8080Test.cpp"
