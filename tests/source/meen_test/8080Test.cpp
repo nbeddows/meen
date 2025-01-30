@@ -1014,98 +1014,42 @@ TEST_F(MachineTest, ADI_2)
 
 TEST_F(MachineTest, RST_0)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x00);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst0.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":261,"sp":0})");
+	LoadAndRun("rst0.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":261,"sp":0})", "rst.bin", 0x00);
 }
 
 TEST_F(MachineTest, RST_1)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x08);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst1.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst1.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x08);
 }
 
 TEST_F(MachineTest, RST_2)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x10);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst2.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst2.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x10);
 }
 
 TEST_F(MachineTest, RST_3)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x18);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst3.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst3.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x18);
 }
 
 TEST_F(MachineTest, RST_4)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x20);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst4.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst4.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x20);
 }
 
 TEST_F(MachineTest, RST_5)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x28);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst5.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst5.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x28);
 }
 
 TEST_F(MachineTest, RST_6)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x30);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst6.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst6.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x30);
 }
 
 TEST_F(MachineTest, RST_7)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	memoryController->Load((programsDir_ + "/rst.bin").c_str(), 0x38);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-	LoadAndRun("rst7.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})");
+	LoadAndRun("rst7.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":2,"b":0,"c":0,"d":0,"e":0,"h":0,"l":0,"s":2},"pc":2,"sp":0})", "rst.bin", 0x38);
 }
 
 TEST_F(MachineTest, RZ)
@@ -1338,23 +1282,13 @@ TEST_F(MachineTest, CPI0)
 
 TEST_F(MachineTest, ISR_1)
 {
-	// Cache the defacto test io controller 
-	auto controller = machine_->DetachMemoryController();
-	ASSERT_TRUE(controller);
-	auto memoryController = static_cast<MemoryController*>(controller.value().get());
-	// Load the interrupt service routine at the correct address
-	// The ioController fires rst 1 every second.
-	memoryController->Load((programsDir_ + "/isr.bin").c_str(), 0x08);
-	auto err = machine_->AttachMemoryController(std::move(controller.value()));
-	EXPECT_FALSE(err);
-
 	// Set to the resolution to 50Hz
-	err = machine_->SetOptions(R"({"clockResolution":25000000})");
+	auto err = machine_->SetOptions(R"({"clockResolution":25000000})");
 	EXPECT_FALSE(err);
 
 	// There is a chance for an infinite spin if the test fails.
 	// TODO: since we fire every second we need to test that the Run
 	// method takes a second to complete, pass back the Run value
 	// from LoadAndRun.
-	LoadAndRun("spinUntilIsr.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":1,"c":0,"d":0,"e":0,"h":0,"l":0,"s":135},"pc":2,"sp":0})");
+	LoadAndRun("spinUntilIsr.bin", R"({"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":1,"c":0,"d":0,"e":0,"h":0,"l":0,"s":135},"pc":2,"sp":0})", "isr.bin", 0x08);
 }
