@@ -4,26 +4,18 @@ from meenPy import ISR
 class TestIoController(BaseIoController):
     def __init__(self):
         super().__init__()
-        self.__deviceData = 0xAA
-        self.__lastTime = 0
+        self._deviceData = 0xAA
+        self._lastTime = 0
 
     def Read(self, deviceNumber, controller):
-        # we are powering down, don't perform any spurious reads
-        if self._isr == ISR.Quit:
-            return 0x00
-
         if deviceNumber == 0:
-            return self.__deviceData
+            return self._deviceData
         else:
             return 0x00
 
     def Write(self, deviceNumber, value, controller):
-        # we are powering down, don't perform any spurious writes
-        if self._isr == ISR.Quit:
-            return
-
         if deviceNumber == 0:
-            self.__deviceData = value
+            self._deviceData = value
         else:
             super().Write(deviceNumber, value, controller)
 
@@ -31,14 +23,14 @@ class TestIoController(BaseIoController):
         isr = super().ServiceInterrupts(currTime, cycles, controller)
 
         if isr == ISR.NoInterrupt:
-            t = currTime - self.__lastTime
+            t = currTime - self._lastTime
 
             if t >= 0:
                 if t > 1000000000:
-                    self.__lastTime = currTime
+                    self._lastTime = currTime
                     isr = ISR.One
             else:
-                self.__lastTime = currTime
+                self._lastTime = currTime
 
         return isr
 
