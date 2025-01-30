@@ -59,26 +59,6 @@ namespace meen
 			Memory controller constructor
 		*/
 		MemoryController();
-
-		/**
-			Load a program
-
-			Loads a program into memory at a specified offset from the
-			starting memory address 0x0000.
-
-			@param	romFilePath				The (absolute or relative) address on local disk
-											where the program resides.
-
-			@param	offset					The memory location to load the program into.
-
-			@return 						A std::error_code:<br>
-			
-											std::errc::no_such_file_or_directory: the rom file at the path specified does not exist.<br>
-											std::errc::file_too_large: the rom file is larger than the available memory.<br>
-											std::errc::no_buffer_space: the rom file can not be loaded at the offset specified.<br>
-											std::errc::io_error: a read error occurred while loading the rom.
-		*/
-		std::error_code Load(const char* romFilePath, uint16_t offset);
 		
 		/** Memory clear
 		
