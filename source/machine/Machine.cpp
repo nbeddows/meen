@@ -200,11 +200,10 @@ namespace meen
 
 					if (bytes.starts_with("file://") == true)
 					{
-						FILE* fin = nullptr;
 						bytes.remove_prefix(strlen("file://"));
-						auto err = fopen_s (&fin, std::string(bytes.begin(), bytes.end()).c_str(), "rb");
+						FILE* fin = fopen(std::string(bytes.begin(), bytes.end()).c_str(), "rb");
 
-						if(err != 0)
+						if(fin == nullptr)
 						{
 							return make_error_code(errc::incompatible_rom);
 						}
@@ -237,7 +236,7 @@ namespace meen
 							memoryController->Write(i, byte, ioController);
 						}
 
-						err = ferror(fin);
+						auto err = ferror(fin);
 						fclose(fin);
 
 						if(err != 0)
