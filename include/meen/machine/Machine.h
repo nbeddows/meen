@@ -79,7 +79,7 @@ namespace meen
 
 			@see IMachine::Run
 		*/
-		std::error_code Run(uint16_t pc) final;
+		std::error_code Run() final;
 
 		/** WaitForCompletion
 

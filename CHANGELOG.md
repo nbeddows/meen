@@ -30,7 +30,9 @@
   `AttachMemoryController` and added `DetachIoController`
   and `DetachMemoryController` to allow for the machine
   to take and relinquish controller ownership.
-  * Added support for the i8080 halt instruction.
+* Added support for the i8080 halt instruction.
+* Removed the pc (program counter) parameter from
+  `IMachine::Run`.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

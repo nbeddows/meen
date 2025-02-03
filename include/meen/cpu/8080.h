@@ -208,7 +208,7 @@ namespace meen
 		std::error_code Load(const std::string&& json, bool checkUuid) final;
 		std::string Save() const final;
 #endif // ENABLE_MEEN_SAVE
-		void Reset(uint16_t programCounter) final;
+		void Reset() final;
 		void SetMemoryController(IController* memoryController) final;
 		void SetIoController(IController* ioController) final;
 		/* End I8080 overrides */

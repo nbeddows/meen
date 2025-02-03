@@ -736,7 +736,7 @@ namespace meen
 		m->runTime_ = currTime.count();
 	}
 
-	std::error_code Machine::Run(uint16_t pc)
+	std::error_code Machine::Run()
 	{
 		if (running_ == true)
 		{
@@ -771,7 +771,7 @@ namespace meen
 			return make_error_code(errc::clock_resolution);
 		}
 
-		cpu_->Reset(pc);
+		cpu_->Reset();
 		clock_->Reset();
 		runTime_ = 0;
 		running_ = true;

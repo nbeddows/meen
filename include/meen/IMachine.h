@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -109,27 +109,27 @@ namespace meen
 	{
 		/** Run the machine
 
-			Run the roms loaded into memory initialising execution at the given
-			program counter.
+			Start executing the instructions that reside in the currently loaded
+			memory controller.
 
-			@param	pc					The program counter is the memory address at
-										which the cpu will start executing the instructions
-										contained in the rom files that were loaded into memory.
+			@remark						Before a program has been loaded, current existing memory will continue ti be executed.
+										This is relevant when no inital program has been loaded. In this case, current existing
+										memory will be executed from address 0x0000. The memory controller's internal memory
+										should be initialised to 0x00 before the first call to IMachine::Run is made. Failure
+										to initialise the memory to a known state will result in undefined behaviour.
 
 			@return						A std::error_code:
 
-										errc::memory_controller: no memory controller has been set.
-										errc::io_controller: no io controller has been set.
+										errc::memory_controller: no memory controller has been attached.
+										errc::io_controller: no io controller has been attached.
 										errc::busy: meen is running.
 										errc::cpu: the machine cpu is invalid.
 										errc::clock_resolution: the clock is invalid or the supplied clock resolution is too high.
 
-			@remark						When no program counter is specified cpu instruction
-										execution will begin from memory address 0x00.
-
-			@see meen::errc
+			@sa							OnLoad
+			@sa							meen::errc
 		*/
-		virtual std::error_code Run(uint16_t pc = 0x00) = 0;
+		virtual std::error_code Run() = 0;
 
 		/** Wait for the machine to finish running
 
