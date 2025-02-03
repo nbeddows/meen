@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -80,11 +80,13 @@ namespace meen
 		auto clock_ = m->clock_.get();
 		auto ioController = m->ioController_.get();
 		auto ticksPerIsr_ = m->ticksPerIsr_;
+		auto& romMetadata = m->romMetadata_;
+		auto& ramMetadata = m->ramMetadata_;
 #ifdef ENABLE_MEEN_SAVE
 		auto memoryController = m->memoryController_.get();
-		auto opt_ = m->opt_;
-		auto onLoad_ = m->onLoad_;
-		auto onSave_ = m->onSave_;
+		auto& opt_ = m->opt_;
+		auto& onLoad_ = m->onLoad_;
+		auto& onSave_ = m->onSave_;
 		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
@@ -95,7 +97,7 @@ namespace meen
 			if (str.empty() == false)
 			{
 				// perform checks to make sure that this machine load state is compatible with this machine
-
+				int offset = 0;
 				auto memUuid = memoryController->Uuid();
 
 				if (memUuid == std::array<uint8_t, 16>{})
@@ -138,32 +140,35 @@ namespace meen
 #ifdef ENABLE_NLOHMANN_JSON
 				if (memory.contains("uuid"))
 				{
-					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, memory["uuid"].get<std::string>());
+					auto sv = memory["uuid"].get<std::string_view>();
 #else
 				if (memory["uuid"] == nullptr)
 				{
-					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, memory["uuid"].as<std::string>());
+					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
+
+					if (sv.starts_with("base64://"))
+					{
+						sv.remove_prefix(strlen("base64://"));
+					}
+					else
+					{
+						return make_error_code(errc::json_config);
+					}
+
+					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv));
+
 					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
 					{
 						return make_error_code(errc::incompatible_uuid);
 					}
 				}
 
-#ifdef ENABLE_NLOHMANN_JSON
-				if (!memory["rom"].contains("block"))
-#else
-				if (memory["rom"]["block"] == nullptr)
-#endif // ENABLE_NLOHMANN_JSON
-				{
-					return make_error_code(errc::json_parse);
-				}
+				bool clear = true;
 
-#ifdef ENABLE_NLOHMANN_JSON
-				for (auto it = memory["rom"]["block"].begin(); it < memory["rom"]["block"].end(); it++)
+				// NEED TO HANDLE THE ARDUINO JSON CASE!!
+				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const nlohmann::json& block)
 				{
-					auto block = it.value();
-					
 					if (!block.contains("bytes"))
 					{
 						return make_error_code(errc::json_config);
@@ -182,7 +187,7 @@ namespace meen
 							return make_error_code(errc::json_config);
 						}
 					}
-	
+
 					if (block.contains("size"))
 					{
 						size = block["size"].get<int>();
@@ -210,26 +215,26 @@ namespace meen
 							fseek(fin, 0, SEEK_END);
 							size = ftell(fin);
 							fseek(fin, 0, SEEK_SET);
-						}			
+						}
 
 						// only support a max of 16 bit addressing
-						if(offset + size > 65535)
+						if(offset + size > 0xFFFF)
 						{
 							fclose(fin);
 							return make_error_code(errc::json_config);
 						}
 
-						while(ftell(fin) < size)
+						for (int i = offset; ftell(fin) < size; i++)
 						{
 							uint8_t byte = 0;
 							auto read = fread(&byte, 1, 1, fin);
-							
+
 							if(read == 0)
 							{
 								break;
 							}
 
-							memoryController->Write(offset++, byte, ioController);
+							memoryController->Write(i, byte, ioController);
 						}
 
 						err = ferror(fin);
@@ -239,6 +244,14 @@ namespace meen
 						{
 							return make_error_code(errc::incompatible_rom);
 						}
+
+						if (clear == true)
+						{
+							romMetadata.clear();
+							clear = false;
+						}
+
+						romMetadata.emplace(offset, size);
 					}
 					else if (bytes.starts_with("base64://") == true)
 					{
@@ -248,6 +261,11 @@ namespace meen
 						{
 							bytes.remove_prefix(strlen("md5://"));
 
+							if (size == 0)
+							{
+								size = bytes.length();
+							}
+
 							auto jsonMd5 = Utils::TxtToBin("base64",
 								"none",
 								size,
@@ -255,9 +273,12 @@ namespace meen
 
 							std::vector<uint8_t> rom;
 
-							for (int addr = offset; addr < offset + size; addr++)
+							for (const auto& rm : romMetadata)
 							{
-								rom.push_back(memoryController->Read(addr, ioController));
+								for (int addr = rm.first; addr < rm.first + rm.second; addr++)
+								{
+									rom.push_back(memoryController->Read(addr, ioController));
+								}
 							}
 
 							auto romMd5 = Utils::Md5(rom.data(), rom.size());
@@ -269,9 +290,15 @@ namespace meen
 						}
 						else if (bytes.starts_with("zlib://") == true)
 						{
-							if (size <= 0 || offset + size > 65535)
+							if (size <= 0 || offset + size > 0xFFFF)
 							{
 								return make_error_code(errc::json_config);
+							}
+
+							if (clear == true)
+							{
+								romMetadata.clear();
+								clear = false;
 							}
 
 							bytes.remove_prefix(strlen("zlib://"));
@@ -284,10 +311,18 @@ namespace meen
 
 							// assert(size == unzip.length());
 
-							for (const auto& byte : unzip)
+							for (int i = 0; i < unzip.size(); i++)
 							{
-								memoryController->Write(offset++, byte, ioController);
-							}							
+								memoryController->Write(offset + i, unzip[i], ioController);
+							}
+
+							if (clear == true)
+							{
+								romMetadata.clear();
+								clear = false;
+							}
+
+							romMetadata.emplace(offset, size);
 						}
 						else
 						{
@@ -297,95 +332,161 @@ namespace meen
 							}
 
 							// Check to see if we will overrun the source or detination memmory
-							if (offset + size > 65535 || size > bytes.length())
+							if (offset + size > 0xFFFF || size > bytes.length())
 							{
 								return make_error_code(errc::json_config);
 							}
 
 							for (int i = 0; i < size; i++)
 							{
-								memoryController->Write(offset++, bytes[i], ioController);
+								memoryController->Write(offset + i, bytes[i], ioController);
 							}
+
+							if (clear == true)
+							{
+								romMetadata.clear();
+								clear = false;
+							}
+
+							romMetadata.emplace(offset, size);
 						}
 					}
 					else
 					{
 						return make_error_code(errc::json_config);
 					}
+
+					return std::error_code{};
+				};
+
+#ifdef ENABLE_NLOHMANN_JSON
+				if (memory["rom"].contains("block"))
+#else
+				if (memory["rom"]["block"])
+#endif // ENABLE_NLOHMANN_JSON
+				{
+					for (auto it = memory["rom"]["block"].begin(); it < memory["rom"]["block"].end(); it++)
+					{
+						auto err = loadRom(it.value());
+
+						if (err)
+						{
+							return err;
+						}
+					}
+				}
+				else
+				{
+					auto err = loadRom(memory["rom"]);
+
+					if (err)
+					{
+						return err;
+					}
 				}
 
-				if (memory.contains("ram"))
+#ifdef ENABLE_NLOHMANN_JSON
+				offset = 0;
+				ramMetadata.clear();
+
+				// store an ascending sorted ram map with offset as the key (derived from the rom)
+				for (const auto& r : romMetadata)
 				{
-					if (!memory["ram"].contains("block"))
+					if (offset < r.first)
 					{
-						return make_error_code(errc::json_parse);
+						ramMetadata.emplace(offset, r.first - offset);
 					}
 
-					for (auto it = memory["ram"]["block"].begin(); it < memory["ram"]["block"].end(); it++)
+					offset = r.first + r.second;
+				}
+
+				// add the last ram block
+				if (offset < 0xFFFF)
+				{
+					ramMetadata.emplace(offset, 0xFFFF - offset);
+				}
+
+#ifdef ENABLE_NLOHMANN_JSON
+				if (memory.contains("ram"))
+#else
+				if (memory["ram"])
+#endif // ENABLE_NLOHMANN_JSON
+				{
+					// flat ram, decompress the entire ram
+#ifdef ENABLE_NLOHMANN_JSON
+					if (!memory["ram"].contains("bytes"))
+#else
+					if (!memory["ram"]["bytes"])
+#endif
 					{
-						auto block = it.value();
+						return make_error_code(errc::json_config);
+					}
 
-						if (!block.contains("bytes"))
+#ifdef ENABLE_NLOHMANN_JSON
+					auto bytes = memory["ram"]["bytes"].get<std::string_view>();
+#else
+					auto bytes = memory["ram"]["bytes"].as<std::string_view>();
+#endif
+					std::vector<uint8_t> ram;
+					int size = 0;
+
+					for (const auto& rm : ramMetadata)
+					{
+						size += rm.second;
+					}
+
+					if (bytes.starts_with("base64://") == true)
+					{
+						std::string compressor = "none";
+						bytes.remove_prefix(strlen("base64://"));
+
+						if (bytes.starts_with("zlib://") == true)
+						{
+							compressor = "zlib";
+							bytes.remove_prefix(strlen("zlib://"));
+						}
+
+						ram = Utils::TxtToBin("base64",
+							compressor,
+							size,
+							std::string(bytes.begin(), bytes.end()));
+
+						// if ram is empty, return no_zlib ... TxtToBin, BinToTxt need to return std::expected
+						if (ram.empty() == true || ram.size() != size)
+						{
+							return make_error_code(errc::incompatible_ram);
+						}
+					}
+					else
+					{
+						return make_error_code(errc::json_config);
+					}
+
+					auto ramIt = ram.begin();
+
+					// loop ramMetadata writing the size bytes from decompressed ram to memory at offset
+					for (const auto& rm : ramMetadata)
+					{
+						// only support a max of 16 bit addressing
+						if (rm.first + rm.second > 0xFFFF)
 						{
 							return make_error_code(errc::json_config);
 						}
 
-						auto bytes = block["bytes"].get<std::string_view>();
-						int offset = 0;
-						int size = 0;
-
-						if (block.contains("offset"))
+						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 						{
-							offset = block["offset"].get<int>();
-
-							if (offset < 0)
-							{
-								return make_error_code(errc::json_config);
-							}
+							memoryController->Write(addr, *ramIt++, ioController);
 						}
-
-						if (block.contains("size"))
+					}
+				}
+				else
+				{
+					// make sure the ram is clear
+					for (const auto& rm : ramMetadata)
+					{
+						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 						{
-							size = block["size"].get<int>();
-
-							if (size < 0)
-							{
-								return make_error_code(errc::json_config);
-							}
-						}
-
-						if (bytes.starts_with("base64://") == true)
-						{
-							std::string compressor = "none";
-							bytes.remove_prefix(strlen("base64://"));
-
-							if(bytes.starts_with("zlib://") == true)
-							{
-								compressor = "zlib";
-								bytes.remove_prefix(strlen("zlib://"));
-							}
-
-							auto ram = Utils::TxtToBin("base64",
-								compressor,
-								size,
-								std::string(bytes.begin(), bytes.end()));
-
-							// assert (ram.size() == size);
-
-							// only support a max of 16 bit addressing
-							if (offset + size > 65535)
-							{
-								return make_error_code(errc::json_config);
-							}
-
-							for (const auto& byte : ram)
-							{
-								memoryController->Write(offset++, byte, ioController);
-							}
-						}
-						else
-						{
-							return make_error_code(errc::json_config);
+							memoryController->Write(addr, 0x00, ioController);
 						}
 					}
 				}
@@ -425,13 +526,10 @@ namespace meen
 			return str;
 		};
 #endif // ENABLE_MEEN_SAVE
+		int ticks = 0;
+
 		while (quit == false)
 		{
-			//Execute the next instruction
-			auto ticks = cpu_->Execute();
-			currTime = clock_->Tick(ticks);
-			totalTicks += ticks;
-
 			// Check if it is time to service interrupts
 			if (totalTicks - lastTicks >= ticksPerIsr_ || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
 			{
@@ -516,7 +614,7 @@ namespace meen
 
 							if(!err)
 							{
-								auto rm = [memoryController](std::vector<std::pair<uint16_t, uint16_t>>&& metadata)
+								auto rm = [memoryController](const std::map<uint16_t, uint16_t>& metadata)
 								{
 									std::vector<uint8_t> mem;
 
@@ -531,13 +629,14 @@ namespace meen
 									return mem;
 								};
 
-								auto ram = rm(opt_.Ram());
-								auto rom = rm(opt_.Rom());
-								auto fmtStr = "{\"cpu\":%s,\"memory\":{\"uuid\":\"%s\",\"rom\":\"%s\",\"ram\":{\"encoder\":\"%s\",\"compressor\":\"%s\",\"size\":%d,\"bytes\":\"%s\"}}}";
+								auto ram = rm(ramMetadata);
+								auto rom = rm(romMetadata);
+								auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
 								auto romMd5 = Utils::Md5(rom.data(), rom.size());
+								size_t dataSize = 0;
 
 								// todo - replace snprintf with std::format
-								auto writeState = [&](size_t& dataSize)
+								auto writeState = [&]()
 								{
 									std::string str;
 									char* data = nullptr;
@@ -551,18 +650,18 @@ namespace meen
 									//cppcheck-suppress nullPointer
 									dataSize = snprintf(data, dataSize, fmtStr,
 										cpu_->Save().c_str(),
+										opt_.Encoder().c_str(),
 										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
+										opt_.Encoder().c_str(),
 										Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
-										opt_.Encoder().c_str(), opt_.Compressor().c_str(), ram.size(),
+										ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
 										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str()) + 1;
-
 									return str;
 								};
 
-								size_t count = 0;
-								writeState(count);
-
-								onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState(count)]
+								writeState();
+								
+								onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
 								{
 									// TODO: this method needs to be marked as nothrow
 									onSave_(state.c_str());
@@ -628,6 +727,11 @@ namespace meen
 					}
 				}
 			}
+
+			//Execute the next instruction
+			ticks = cpu_->Execute();
+			currTime = clock_->Tick(ticks);
+			totalTicks += ticks;
 		}
 
 		m->runTime_ = currTime.count();
@@ -667,13 +771,6 @@ namespace meen
 		{
 			return make_error_code(errc::clock_resolution);
 		}
-
-		// clear the memory
-		for (int i = 0; i < 65535; i++)
-		{
-			memoryController_->Write(i, 0, ioController_.get());
-		}
-
 
 		cpu_->Reset(pc);
 		clock_->Reset();
