@@ -48,7 +48,7 @@ namespace meen::Tests
 		static void LoadAndRun(const char* name, const char* expected, const char* extra = nullptr, uint16_t extraOffset = 0);
 		static void Run(bool runAsync);
 		static void Load(bool runAsync);
-	    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, int pos);
+	    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos);
 		static errc LoadProgram (char* json, int* jsonLen, const char* fmt, ...);
 
 	public:
@@ -75,7 +75,7 @@ namespace meen::Tests
 
 		auto err = machine_->AttachMemoryController(IControllerPtr(new MemoryController()));
 		EXPECT_FALSE(err);
-		
+
 		err = machine_->AttachIoController(IControllerPtr(new TestIoController()));
 		EXPECT_FALSE(err);
 	}
@@ -161,11 +161,11 @@ namespace meen::Tests
 		EXPECT_TRUE(saveTriggered);
 	}
 
-    void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, int pos)
+    void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
     {
 		// Write to the 'load device', the value doesn't matter (use 0)
 		cpmIoController_->Write(0xFD, 0, nullptr);
-		// Cache the defacto test io controller 
+		// Cache the defacto test io controller
 		auto controller = machine_->DetachIoController();
 		ASSERT_TRUE(controller);
 		// use the cpm io controller for cpm based tests
@@ -176,14 +176,14 @@ namespace meen::Tests
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
 		LoadAndRun(suiteName, expectedState, "bdosMsg.bin", 0x05);
-        cpmIoController_ = std::move(machine_->DetachIoController().value());
-        ASSERT_TRUE(cpmIoController_);
-        auto cpm = static_cast<CpmIoController*>(cpmIoController_.get());
+		cpmIoController_ = std::move(machine_->DetachIoController().value());
+		ASSERT_TRUE(cpmIoController_);
+		auto cpm = static_cast<CpmIoController*>(cpmIoController_.get());
 		EXPECT_EQ(cpm->Message().find(expectedMsg), pos);
 		// Restore the defacto test io controller
 		err = machine_->AttachIoController(std::move(controller.value()));
 		EXPECT_FALSE(err);
-    }
+	}
 
 	TEST_F(MachineTest, AttachNullptrMemoryController)
 	{
@@ -473,24 +473,24 @@ namespace meen::Tests
 	}
 
 	TEST_F(MachineTest, Tst8080)
-    {
-        RunTestSuite("TST8080.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})", "CPU IS OPERATIONAL", 74);
+	{
+		RunTestSuite("TST8080.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})", "CPU IS OPERATIONAL", 74);
 	}
 
-    TEST_F(MachineTest, 8080Pre)
+	TEST_F(MachineTest, 8080Pre)
 	{
-        RunTestSuite("8080PRE.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})", "8080 Preliminary tests complete", 0);
-    }
+		RunTestSuite("8080PRE.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})", "8080 Preliminary tests complete", 0);
+	}
 
-    TEST_F(MachineTest, CpuTest)
+	TEST_F(MachineTest, CpuTest)
 	{
 		RunTestSuite("CPUTEST.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})", "CPU TESTS OK", 168);
-    }
+	}
 
-    TEST_F(MachineTest, 8080Exm)
+	TEST_F(MachineTest, 8080Exm)
 	{
-       RunTestSuite("8080EXM.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})", "ERROR", std::string::npos);
-    }
+		RunTestSuite("8080EXM.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})", "ERROR", std::string::npos);
+	}
 
 	#include "8080Test.cpp"
 } // namespace meen::Tests
