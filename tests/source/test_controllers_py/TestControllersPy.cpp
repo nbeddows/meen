@@ -12,10 +12,6 @@ PYBIND11_MODULE(TestControllersPy, TestControllers)
     py::class_<meen::MemoryController, meen::IController>(TestControllers, "MemoryController")
         .def(py::init<>())
         .def("Clear", &meen::MemoryController::Clear)
-        .def("Load", [](meen::MemoryController& controller, const char* romFilePath, uint16_t offset)
-        {
-            return controller.Load(romFilePath, offset).value();
-        })
         .def("Read", &meen::MemoryController::Read)
         .def("Write", &meen::MemoryController::Write)
         .def("ServiceInterrupts", &meen::MemoryController::ServiceInterrupts);
