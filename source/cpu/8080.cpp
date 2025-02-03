@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -352,7 +352,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 		status_ = registers.value<uint8_t>("s", Value(status_)) | 0x02;
 	}
 
-	pc_ = json.value<uint16_t>("pc", Value(pc_));
+	programCounter_ = pc_ = json.value<uint16_t>("pc", Value(programCounter_));
 	sp_ = json.value<uint16_t>("sp", Value(sp_));
 #else
 	JsonDocument json;
@@ -414,7 +414,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 std::string Intel8080::Save() const
 {
 	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
-	auto fmtStr = "{\"uuid\":\"%s\",\"registers\":{\"a\":%d,\"b\":%d,\"c\":%d,\"d\":%d,\"e\":%d,\"h\":%d,\"l\":%d,\"s\":%d},\"pc\":%d,\"sp\":%d}";
+	auto fmtStr = R"({"uuid":"base64://%s","registers":{"a":%d,"b":%d,"c":%d,"d":%d,"e":%d,"h":%d,"l":%d,"s":%d},"pc":%d,"sp":%d})";
 	auto count = snprintf(nullptr, 0, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	std::string str(count + 1, '\0');
 	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
@@ -442,7 +442,7 @@ uint8_t Intel8080::Execute()
 {
 	if (hlt_ == true)
 	{
-		return 0;
+		return 0;//Nop(); // Do we return Nop() here??, 0 is a cpu stall, Nop() will tick the clock but won't execute instrutions
 	}
 
 	opcode_ = memoryController_->Read(pc_, ioController_);
@@ -737,7 +737,7 @@ void Intel8080::Reset(uint16_t pc)
 	e_.reset();
 	h_.reset();
 	l_.reset();
-	pc_ = pc;
+	pc_ = programCounter_;
 	sp_ = 0;
 	status_ = 0b00000010;
 	iff_ = false;

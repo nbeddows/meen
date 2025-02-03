@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -85,6 +85,9 @@ namespace meen
 		*/
 		//cppcheck-suppress unusedStructMember
 		uint16_t pc_{};
+		// The canonical program counter, each reset will set pc_ to this value
+		//cppcheck-suppress unusedStructMember
+		uint16_t programCounter_{};
 
 		/**
 			A stack is an area of memory set aside by the programmer in which data or addresses are stored and retrieved
