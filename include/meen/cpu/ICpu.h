@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -44,7 +44,7 @@ namespace meen
 
 		virtual uint8_t Interrupt(ISR isr) = 0;
 
-		virtual void Reset(uint16_t pc) = 0; // pc should not be needed now that load is improved
+		virtual void Reset() = 0;
 
 #ifdef ENABLE_MEEN_SAVE
 		virtual std::error_code Load(const std::string&& json, bool checkUuid) = 0;

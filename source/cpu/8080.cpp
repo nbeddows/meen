@@ -728,7 +728,7 @@ void Intel8080::SetIoController(IController* ioController)
 }
 
 //This essentially powers on the cpu
-void Intel8080::Reset(uint16_t pc)
+void Intel8080::Reset()
 {
 	a_.reset();
 	b_.reset();
