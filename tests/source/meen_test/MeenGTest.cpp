@@ -156,7 +156,7 @@ namespace meen::Tests
 		});
 		EXPECT_FALSE(err);
 
-		err = machine_->Run(0x00);
+		err = machine_->Run();
 		EXPECT_FALSE(err);
 		EXPECT_TRUE(saveTriggered);
 	}
@@ -233,7 +233,7 @@ namespace meen::Tests
 			err = machine_->OnSave(nullptr);
 			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-			err = machine_->Run(0x00);
+			err = machine_->Run();
 			EXPECT_FALSE(err);
 
 			// All these methods should return busy
@@ -274,7 +274,7 @@ namespace meen::Tests
 		err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
 		EXPECT_FALSE(err);
 
-		err = machine_->Run(0x00);
+		err = machine_->Run();
 		EXPECT_FALSE(err);
 
 // Use std::expected monadics if they are supported
@@ -379,7 +379,7 @@ namespace meen::Tests
 			err = machine_->AttachIoController(std::move(cpmIoController_));
 			EXPECT_FALSE(err);
 
-			err = machine_->Run(0x0000);
+			err = machine_->Run();
 			EXPECT_FALSE(err);
 
 			auto ex = machine_->WaitForCompletion();
@@ -406,7 +406,7 @@ namespace meen::Tests
 			EXPECT_FALSE(err);
 
 			// run it again, but this time trigger the load interrupt
-			err = machine_->Run(0x0000);
+			err = machine_->Run();
 			EXPECT_FALSE(err);
 
 			ex = machine_->WaitForCompletion();
