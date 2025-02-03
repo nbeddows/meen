@@ -76,9 +76,20 @@ PYBIND11_MODULE(meenPy, meen)
                 return meen::errc::no_error;
             }).value());            
         })
-        .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json)>&& onSave)
+        .def("OnSave", [](meen::IMachine& machine, std::function<void(std::string&& json)>&& onSave)
         {
-            return static_cast<meen::errc>(machine.OnSave(std::move(onSave)).value());
+            if (onSave)
+            {    
+                return static_cast<meen::errc>(machine.OnSave([os = std::move(onSave)](const char* json)
+                {
+                    os(std::move(json));
+                    return meen::errc::no_error;
+                }).value());
+            }
+            else
+            {
+                return static_cast<meen::errc>(machine.OnSave(nullptr).value());
+            }
         })
         .def("Run", [](meen::IMachine& machine, uint16_t offset)
         {

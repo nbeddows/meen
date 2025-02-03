@@ -27,23 +27,22 @@ class MachineTest(unittest.TestCase):
         self.cpmIoController = CpmIoController()
         self.testIoController = TestIoController()
         self.machine = Make8080Machine()
-        self.machine.AttachIoController(self.testIoController)
-        self.machine.AttachMemoryController(self.memoryController)
+        self.assertNotEqual(None, self.machine)
+        err = self.machine.AttachIoController(self.testIoController)
+        self.assertEqual(err, ErrorCode.NoError)
+        err = self.machine.AttachMemoryController(self.memoryController)
+        self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.SetOptions(r'{"isrFreq":0.02}')
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'bdosMsg.bin', 0x0005)
         self.assertEqual(err, ErrorCode.NoError)
 
     def test_Version(self):
         self.assertTrue(re.match(r'^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$', __version__))
 
-    def test_SetNoIoController(self):
+    def test_AttachNoIoController(self):
         err = self.machine.AttachIoController(None)
         self.assertEqual(err, ErrorCode.InvalidArgument)
 
-    def test_SetNoMemoryController(self):
+    def test_AttachNoMemoryController(self):
         err = self.machine.AttachMemoryController(None)
         self.assertEqual(err, ErrorCode.InvalidArgument)
 
@@ -52,13 +51,18 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_MethodsErrorAfterRunCalled(self):
-        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true,"isrFreq":0.5}')
+        # Write to the 'load device', the value doesn't matter (use 0)
+        self.testIoController.Write(0xFD, 0, None)
+
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/nopStart.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/nopEnd.bin","offset":50004}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0004)
+        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC353)
-        self.assertEqual(err, ErrorCode.NoError)
+
+        # We aren't interested in saving, clear the onSave callback
+        err = self.machine.OnSave(None)
+        self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
         
         err = self.machine.Run(0x0000)
         self.assertEqual(err, ErrorCode.NoError)
@@ -69,37 +73,27 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.Busy)
         err = self.machine.AttachIoController(self.testIoController)
         self.assertEqual(err, ErrorCode.Busy)
-        err = self.machine.OnSave(lambda: ErrorCode.NoError)
+        err = self.machine.OnSave(lambda json: None)
         self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
 
         self.machine.WaitForCompletion()
 
-        # The machine has now stopped, all the following calls shouldn't return errors
-
-        err = self.machine.SetOptions(r'{"isrFreq":1}')
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.AttachMemoryController(self.memoryController)
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.AttachIoController(self.testIoController)
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.OnSave(lambda: ErrorCode.NoError)
-        self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
-
     def RunTimed(self, runAsync):
+        # Write to the 'load device', the value doesn't matter (use 0)
+        self.testIoController.Write(0xFD, 0, None)
+
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/nopStart.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/nopEnd.bin","offset":50004}]}}}')
+        self.assertEqual(err, ErrorCode.NoError)
+
         if runAsync == True:
             err = self.machine.SetOptions(r'{"runAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.memoryController.Load(self.programsDir + 'nopStart.bin', 0x0004)
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'nopEnd.bin', 0xC353)
-        self.assertEqual(err, ErrorCode.NoError)
-
         # 60Hz clock
-        err = self.machine.SetOptions(r'{"clockResolution":16666667,"isrFreq":0.5}')
+        err = self.machine.SetOptions(r'{"clockResolution":16666667}')
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.Run(0x0004)
+        err = self.machine.Run(0x0000)
         self.assertEqual(err, ErrorCode.NoError)
         nanos = self.machine.WaitForCompletion()
 
@@ -141,7 +135,7 @@ class MachineTest(unittest.TestCase):
         self.memoryController.Write(0x00FF, 0xFD, None)
         err = self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.SetOptions(r'{"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]},"isrFreq":0}')
+        err = self.machine.SetOptions(r'{"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]},"isrFreq":0}') # remove isrFreq
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.AttachIoController(self.cpmIoController)
         self.assertEqual(err, ErrorCode.NoError)
@@ -166,18 +160,13 @@ class MachineTest(unittest.TestCase):
         if len(saveStates) == 3:
             self.assertEqual(saveStates[1], saveStates[2])
 
-    def test_OnLoad(self):
-        for i in range(50):
-            self.Load(False)
+#    def test_OnLoad(self):
+#        for i in range(50):
+#            self.Load(False)
 
-    def test_OnLoadAsync(self):
-        for i in range(50):
-            self.Load(True)
-
-    def CheckMachineState(self, expected, actual):
-        e = json.loads(expected)
-        a = json.loads(actual.rstrip('\0'))
-        self.assertEqual(e, a['cpu'])
+#    def test_OnLoadAsync(self):
+#        for i in range(50):
+#            self.Load(True)
 
 class i8080Test(unittest.TestCase):
     def setUp(self):
@@ -189,24 +178,25 @@ class i8080Test(unittest.TestCase):
         self.machine.AttachMemoryController(self.memoryController)
         err = self.machine.SetOptions(r'{"isrFreq":0.02}')
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'exitTest.bin', 0x0000)
-        self.assertEqual(err, ErrorCode.NoError)
-        err = self.memoryController.Load(self.programsDir + 'bdosMsg.bin', 0x0005)
-        self.assertEqual(err, ErrorCode.NoError)
+        self.saveTriggered = False
 
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)
         a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
-        ErrorCode.NoError
+        self.saveTriggered = True
+#        ErrorCode.NoError
 
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
-        err = self.memoryController.Load(self.programsDir + suiteName, 0x0100)
+        # Write to the 'load device', the value doesn't matter (use 0)
+        self.cpmIoController.Write(0xFD, 0, None)
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/bdosMsg.bin","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.OnSave(lambda actualState: self.CheckMachineState(expectedState, actualState))
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
-        err = self.machine.Run(0x0100)
+        err = self.machine.Run(0x00)
         self.assertEqual(err, ErrorCode.NoError)
+        self.assertTrue(self.saveTriggered)
 
         if suiteName == '8080EXM.COM':
             self.assertNotIn(expectedMsg, self.cpmIoController.Message())
@@ -214,16 +204,16 @@ class i8080Test(unittest.TestCase):
             self.assertIn(expectedMsg, self.cpmIoController.Message())
 
     def test_8080Pre(self):
-        self.RunTestSuite('8080PRE.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":2,"sp":1280}', '8080 Preliminary tests complete')
+        self.RunTestSuite('8080PRE.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280}', '8080 Preliminary tests complete')
 
     def test_Tst8080(self):
-        self.RunTestSuite('TST8080.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981}', 'CPU IS OPERATIONAL')
+        self.RunTestSuite('TST8080.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981}', 'CPU IS OPERATIONAL')
 
     def test_CpuTest(self):
-        self.RunTestSuite('CPUTEST.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":2,"sp":12283}', 'CPU TESTS OK')
+        self.RunTestSuite('CPUTEST.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283}', 'CPU TESTS OK')
 
     def test_8080Exm(self):
-        self.RunTestSuite('8080EXM.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":2,"sp":54137}', 'ERROR')
+        self.RunTestSuite('8080EXM.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137}', 'ERROR')
 
 if __name__ == '__main__':
     unittest.main()

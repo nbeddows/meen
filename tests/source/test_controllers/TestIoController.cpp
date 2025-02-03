@@ -34,23 +34,18 @@ namespace meen
 	{
 		uint8_t deviceData = 0x00;
 
-		// we are powering down, don't perform any spurious reads
-		if(powerOff_ == false)
+		switch (deviceNumber)
 		{
-
-			switch (deviceNumber)
+			case 0x00:
 			{
-				case 0x00:
-				{
-					//return the data of device 0.
-					deviceData = deviceData_;
-					break;
-				}
-				default:
-				{
-					//we don't support other devices, return 0.
-					break;
-				}
+				//return the data of device 0.
+				deviceData = deviceData_;
+				break;
+			}
+			default:
+			{
+				//we don't support other devices, return 0.
+				break;
 			}
 		}
 
@@ -59,22 +54,18 @@ namespace meen
 
 	void TestIoController::Write(uint16_t deviceNumber, uint8_t value, IController* controller)
 	{
-		// we are powering down, don't perform any spurious writes
-		if(powerOff_ == false)
+		switch (deviceNumber)
 		{
-			switch (deviceNumber)
+			case 0:
 			{
-				case 0:
-				{
-					//Update device 0 with the contents of the accumulator.
-					deviceData_ = value;
-					break;
-				}
-				default:
-				{
-					BaseIoController::Write (deviceNumber, value, controller);
-					break;
-				}
+				//Update device 0 with the contents of the accumulator.
+				deviceData_ = value;
+				break;
+			}
+			default:
+			{
+				BaseIoController::Write (deviceNumber, value, controller);
+				break;
 			}
 		}
 	}

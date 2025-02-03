@@ -270,6 +270,8 @@ will return ErrorCode.InvalidArgument and the machine is not running.
 
 - The Python machine api method `OnLoad` returns the json machine state and accepts no parameters.
 
+- The Python machine api method `OnSave` does not return a value.
+
 The following C++ code snippet gives an example of how a machine can be instantiated, configured and executed.
 The Python API is identical (taking into account the caveats listed above).
 Error handling has been ommitted for simplicity.
