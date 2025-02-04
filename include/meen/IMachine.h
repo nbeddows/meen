@@ -43,44 +43,38 @@ namespace meen
 
 		@code{.cpp}
 
-		// Create a synchronous i8080 machine running as fast as possible 
+		// Create a synchronous i8080 machine running as fast as possible
 		auto machine = Make8080Machine();
 
-		// Create a custom memory controller (See tests for examples)
-		auto customMemoryController = IControllerPtr(new CustomMemoryController());
-
-		// Load the controller with a program via a custom controller method
-		static_cast<CustomMemoryController*>(customMemoryController.get())->LoadProgram("myProgram.com");
-
-		// Create a custom IO Controller and attach it to the machine (See tests for examples)
+		// Create a custom IO Controller and attach it to the machine (See unit tests for examples)
 		machine->AttachIOController(IControllerPtr(new CustomIOController()));
 
-		// Attach the custom memory controller with a loaded program to the machine
-		machine->AttachMemoryController(std::move(customMemoryController));
+		// Create a custom memory controller and attach it to the machine (See unit tests for examples)
+		machine->AttachMemoryController(IControllerPtr(new customMemoryController()));
 
+		// Can be called from a different thread if the runAsync/loadAsync options are specifed
 		machine->OnLoad([](char* json, int* jsonLength)
 		{
-			// Return the json state to load, could be read from disk for example
-  			if(json == nullptr)
-  			{
-    			*jsonLen = JsonToLoadLength;
-  			}
-  			else
- 			{
-    			memcpy(json, jsonToLoad, *jsonLength);
-  			}
+			// The machine state to load in json format: load all bytes from the rom `myProgram.com` from
+			// the current directory into memory at address 0x0000 and start executing the rom from address 256.
+			constexpr auto jsonToLoad = R"({"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
+			json == nullptr ?  *jsonLen = jsonToLoad.size() : memcpy(json, jsonToLoad.data(), *jsonLength);
+			return errc::no_error;
+
+			// "myProgram.json" save file as written to by the OnSave handler can be read from and written to the
+			// json buffer.
+			// NOTE: this will fail if the save file does not match "myProgram.com".
 		});
 
 		// Can be called from a different thread if the runAsync/saveAsync options are specifed
 		machine->OnSave([](const char* json)
 		{
-			// Handle the machines current state, for example, writing it to disk
-			std::cout << json << std::endl;
-		});		
-		
-		// Set the ram/rom sizes (0x2000 and 0x4000) and offsets (0x0000, 0x2000) for this custom memory controller
-		// These values are used for load and save requests
-		machine_->SetOptions(R"({"romOffset":0,"romSize":8192,"ramOffset":8192,"ramSize":16384})");
+			// Write the save state to disk
+			FILE* fout = fopen("myProgram.json", "w");
+			fwrite(json, 1, strlen(json), fin);
+			fclose(fout);
+			return errc::no_error;
+		});
 
 		// Set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
@@ -90,8 +84,7 @@ namespace meen
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt
 		auto runTime = machine->Run();
 
-		// Run the machine asychronously - this can be done by setting the following json config
-		// option either in the MakeMachine factory method or via IMachine::SetOptions
+		// Run the machine asychronously - this can be done by setting the following json config option
 		machine->SetOptions(R"({"runAsync":true})");
 		machine->Run();
 

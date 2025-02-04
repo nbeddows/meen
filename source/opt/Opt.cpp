@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -79,7 +79,7 @@ namespace meen
 #else
 								"none"
 #endif // ENABLE_BASE64
-								R"(","loadAsync":false,"rom":{"file":[{"offset":0,"size":0}]},"ram":{"block":[{"offset":0,"size":0}]},"saveAsync":false)"
+								R"(","loadAsync":false,"saveAsync":false)"
 #endif // ENABLE_MEEN_SAVE
 								R"(,"isrFreq":0,"runAsync":false})";
 		return defaults;
@@ -242,50 +242,6 @@ namespace meen
 #else
 		return json_["loadAsync"].as<bool>();
 #endif // ENABLE_NLOHMANN_JSON
-	}
-
-	std::vector<std::pair<uint16_t, uint16_t>> Opt::Ram() const
-	{
-		std::vector<std::pair<uint16_t, uint16_t>> ram;
-#ifdef ENABLE_NLOHMANN_JSON
-		auto blocks = json_["ram"]["block"];
-
-		for (const auto& block : blocks)
-		{
-			ram.emplace_back(std::pair(block["offset"].get<uint16_t>(), block["size"].get<uint16_t>()));
-		}
-#else
-		auto r = json_["ram"].as<JsonObjectConst>();
-		auto blocks = r["block"].as<JsonArrayConst>();
-
-		for (const auto& block : blocks)
-		{
-			ram.emplace_back(std::pair(block["offset"].as<uint16_t>(), block["size"].as<uint16_t>()));
-		}
-#endif // ENABLE_NLOHMANN_JSON
-		return ram;
-	}
-
-	std::vector<std::pair<uint16_t, uint16_t>> Opt::Rom() const
-	{
-		std::vector<std::pair<uint16_t, uint16_t>> rom;
-#ifdef ENABLE_NLOHMANN_JSON
-		auto files = json_["rom"]["file"];
-
-		for(const auto& file : files)
-		{
-			rom.emplace_back(std::pair(file["offset"].get<uint16_t>(), file["size"].get<uint16_t>()));
-		}
-#else
-		auto r = json_["rom"].as<JsonObjectConst>();
-		auto files = r["file"].as<JsonArrayConst>();
-
-		for(const auto& file : files)
-		{
-			rom.emplace_back(std::pair(file["offset"].as<uint16_t>(), file["size"].as<uint16_t>()));
-		}
-#endif // ENABLE_NLOHMANN_JSON
-		return rom;
 	}
 
 	bool Opt::SaveAsync() const
