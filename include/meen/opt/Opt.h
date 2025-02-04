@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -118,24 +118,6 @@ namespace meen
 				True for asynchronous, false for synchronous.
 			*/
 			bool LoadAsync() const;
-
-			/** Ram metadata
-
-				This vector defines blocks of ram.
-
-				The first pair entry is the offset from the start of memory to the start of the ram block.
-				The second pair entry is the size of the ram block.
-			*/
-			std::vector<std::pair<uint16_t, uint16_t>> Ram() const;
-
-			/** Rom metadata
-
-				This vector defines blocks of rom.
-
-				The first pair entry is the offset from the start of memory to the start of the rom block.
-				The second pair entry is the size of the rom block.
-			*/
-			std::vector<std::pair<uint16_t, uint16_t>> Rom() const;
 
 			/** Machine state save mode
 

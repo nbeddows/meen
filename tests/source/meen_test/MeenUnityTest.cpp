@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -232,11 +232,6 @@ namespace meen::tests
         auto cpm = static_cast<CpmIoController*>(cpmIoController.get());
         // Trigger a save when the 3000th cycle has executed.
         cpm->SaveStateOn(3000);
-        // Set the rom/ram offsets for tst8080, note that tst8080 uses 256 bytes of stack space
-        // located at the end of the program so this will make up the ram size since the program
-        // never writes beyond this.
-        err = machine->SetOptions(R"({"rom":{"file":[{"offset":0,"size":1727}]},"ram":{"block":[{"offset":1727,"size":256}]}})");
-        TEST_ASSERT_FALSE(err);
 
         err = machine->AttachIoController(std::move(cpmIoController));
         TEST_ASSERT_FALSE(err);

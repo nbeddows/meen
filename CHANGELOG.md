@@ -7,7 +7,7 @@
   load/save support. 
 * Added support for ArduinoJson for baremetal.
 * Added RP2040 support.
-* Code refactor for a 2x performace boost.
+* Code refactor for a minimum 2x performace boost.
 * The ISR frequency is now honoured when no clock resolution
   is set.
 * Compiler Id and version are now incorporated
@@ -22,7 +22,7 @@
   Save, GetState.
 * Factory methods are based on cpu type (removed MakeMachine
   in favour of Make8080Machine) and take no options.
-* Unit test memory controller Load method returns a std::error_code
+* Removed the Load method from the unit test memory controller.
 * The `IMachine::OnLoad` callback signature has changed.
 * Removed superfluous pybind machine holder.
 * Replaced `IMachine` api methods `SetIoController` and
@@ -33,6 +33,7 @@
 * Added support for the i8080 halt instruction.
 * Removed the pc (program counter) parameter from
   `IMachine::Run`.
+* Removed IMachine::SetOptions support for ram/rom.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
