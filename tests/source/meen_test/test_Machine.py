@@ -42,6 +42,7 @@ from TestControllersPy import MemoryController
 
 class MachineTest(unittest.TestCase):
     def setUp(self):
+        self.loadIndex = 0
         self.programsDir = MachineTestDeps.programsDir
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController()
@@ -84,7 +85,7 @@ class MachineTest(unittest.TestCase):
         err = self.machine.OnSave(None)
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
         
-        err = self.machine.Run(0x0000)
+        err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
 
         err = self.machine.SetOptions(r'{"isrFreq":1}')
@@ -109,11 +110,11 @@ class MachineTest(unittest.TestCase):
             err = self.machine.SetOptions(r'{"runAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
-        # 60Hz clock
-        err = self.machine.SetOptions(r'{"clockResolution":16666667}')
+        # 25 millisecond resolution, service interrupts every 6.25 milliseconds
+        err = self.machine.SetOptions(r'{"clockResolution":25000000,"isrFreq":0.25}')
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.Run(0x0000)
+        err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
         nanos = self.machine.WaitForCompletion()
 
@@ -128,6 +129,7 @@ class MachineTest(unittest.TestCase):
 
     def Load(self, runAsync):
         saveStates = []
+        self.loadIndex = 0
 
         def saveJson(json):
             saveStates.append(json.rstrip('\0'))
@@ -139,7 +141,18 @@ class MachineTest(unittest.TestCase):
             self.skipTest("Machine.OnSave is not supported")
 
         def loadJson():
-            return saveStates[0]
+            jsonToLoad = ''
+
+            match self.loadIndex:
+                case 0:
+                    jsonToLoad = r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/bdosMsg.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
+                case 1:
+                    jsonToLoad = saveStates[0]
+                case _:
+                    pass
+
+            self.loadIndex += 1
+            return jsonToLoad
 
         err = self.machine.OnLoad(loadJson)
 
@@ -150,41 +163,45 @@ class MachineTest(unittest.TestCase):
             err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":false,"saveAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
+        # Need to set to 0 to catch all save interrupts
+        err = self.machine.SetOptions(r'{"isrFreq":0.0}')
+
+        self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(3000)
-        self.memoryController.Write(0x00FE, 0xD3, None)
-        self.memoryController.Write(0x00FF, 0xFD, None)
-        err = self.memoryController.Load(self.programsDir + 'TST8080.COM', 0x0100)
-        self.assertEqual(err, ErrorCode.NoError)
+        
         err = self.machine.AttachIoController(self.cpmIoController)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.Run(0x0100)
+        err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
 
-        if runAsync == True:
-            self.machine.WaitForCompletion()
+        time = self.machine.WaitForCompletion()
+        self.assertNotEqual(time, 0)
 
+        self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
+
+        self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(-1)
-        err = self.machine.Run(0x00FE)
+        err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
 
-        if runAsync == True:
-            self.machine.WaitForCompletion()
+        time = self.machine.WaitForCompletion()
+        self.assertNotEqual(time, 0)
 
         self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
         self.assertTrue(len(saveStates) == 2 or len(saveStates) == 3)
-        self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJwLZRhJQJqZn5mZ+TvTa6b7TJeZjjIxMAAAfY0E7w=="}}}')
-        self.assertEqual(saveStates[1], r'{"cpu":{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"zRjYZ92/TaqtWroc666wMQ==","rom":"JXg8/M+WvmCGVMmH7xr/0g==","ram":{"encoder":"base64","compressor":"zlib","size":256,"bytes":"eJw7w2ZczrCXnWFkAGlmfmZm5u9MYauCGFet2sXGwAAAYNgG1w=="}}}')
+        self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzlENgDAQBbDlnQAETBeSpwABCEDAfnHBktEqaGt/ca4OfKrXUVUzT+5cGVn9AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBXL4n+BO8="}}}')
+        self.assertEqual(saveStates[1], r'{"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzkENgDAQALDBJeOJAGTghAdW8HQSSHAwP3xxwRJoFbSUv2h1Pco19W68ZIk5Iu5xz23IPGvvDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf9QDDAAbX"}}}')
 
         if len(saveStates) == 3:
-            self.assertEqual(saveStates[1], saveStates[2])
+            self.assertEqual(saveStates[2], r'{"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzkENgDAQALDBJeOJAGTghAdW8HQSSHAwP3xxwRJoFbSUv2h1Pco19W68ZIk5Iu5xz23IPGvvDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf9QDDAAbX"}}}')
 
-#    def test_OnLoad(self):
-#        for i in range(50):
-#            self.Load(False)
+    def test_OnLoad(self):
+        for i in range(10):
+            self.Load(False)
 
-#    def test_OnLoadAsync(self):
-#        for i in range(50):
-#            self.Load(True)
+    def test_OnLoadAsync(self):
+        for i in range(10):
+            self.Load(True)
 
 class i8080Test(unittest.TestCase):
     def setUp(self):
@@ -212,7 +229,7 @@ class i8080Test(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.OnSave(lambda actualState: self.CheckMachineState(expectedState, actualState))
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
-        err = self.machine.Run(0x00)
+        err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
         self.assertTrue(self.saveTriggered)
 
@@ -222,16 +239,16 @@ class i8080Test(unittest.TestCase):
             self.assertIn(expectedMsg, self.cpmIoController.Message())
 
     def test_8080Pre(self):
-        self.RunTestSuite('8080PRE.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280}', '8080 Preliminary tests complete')
+        self.RunTestSuite('8080PRE.COM', r'{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280}', '8080 Preliminary tests complete')
 
     def test_Tst8080(self):
-        self.RunTestSuite('TST8080.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981}', 'CPU IS OPERATIONAL')
+        self.RunTestSuite('TST8080.COM', r'{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981}', 'CPU IS OPERATIONAL')
 
     def test_CpuTest(self):
-        self.RunTestSuite('CPUTEST.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283}', 'CPU TESTS OK')
+        self.RunTestSuite('CPUTEST.COM', r'{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283}', 'CPU TESTS OK')
 
     def test_8080Exm(self):
-        self.RunTestSuite('8080EXM.COM', r'{"uuid":"O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137}', 'ERROR')
+        self.RunTestSuite('8080EXM.COM', r'{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137}', 'ERROR')
 
 if __name__ == '__main__':
     unittest.main()
