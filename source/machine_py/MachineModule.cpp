@@ -32,7 +32,7 @@ namespace py = pybind11;
 
 //cppcheck-suppress unusedFunction
 PYBIND11_MODULE(meenPy, meen)
-{        
+{
     meen.attr("__version__") = meen::Version();
 
     py::enum_<meen::errc>(meen, "ErrorCode")
@@ -74,7 +74,8 @@ PYBIND11_MODULE(meenPy, meen)
         {
             return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen)
             {
-                auto str = ol();
+                // This static needs to be addressed ..... we could use a wrapper class for meen to store this ... don't really want to. :(
+                static std::string jsonToLoad_;
 
                 if(jsonLen == nullptr)
                 {
@@ -83,16 +84,17 @@ PYBIND11_MODULE(meenPy, meen)
 
                 if (json == nullptr)
                 {
-                    *jsonLen = str.length();
+                    jsonToLoad_ = ol();
+                    *jsonLen = jsonToLoad_.length();
                 }
                 else
                 {
-                    if (str.length() > *jsonLen)
+                    if (jsonToLoad_.length() != *jsonLen - 1)
                     {
                         return meen::errc::invalid_argument;
                     }
 
-                    strncpy(json, str.c_str(), *jsonLen);
+                    strncpy(json, jsonToLoad_.c_str(), *jsonLen);
                 }
                 
                 return meen::errc::no_error;
