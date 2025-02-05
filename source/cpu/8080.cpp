@@ -25,6 +25,7 @@ SOFTWARE.
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
+#define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
@@ -377,7 +378,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 			sv.remove_prefix(strlen("base64://"));
 			
 			// The cpus must be the same
-			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv.begin(), sv.end()));
+			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv));
 
 			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
 			{
@@ -395,18 +396,18 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 		auto registers = json["registers"];
 
 		// Restore the state of the cpu
-		a_ = registers["a"] ? registers["a"].as<uint8_t>() : value(a_);
-		b_ = registers["b"] ? registers["b"].as<uint8_t>() : value(b_);
-		c_ = registers["c"] ? registers["c"].as<uint8_t>() : value(c_);
-		d_ = registers["d"] ? registers["d"].as<uint8_t>() : value(d_);
-		e_ = registers["e"] ? registers["e"].as<uint8_t>() : value(e_);
-		h_ = registers["h"] ? registers["h"].as<uint8_t>() : value(h_);
-		l_ = registers["l"] ? registers["l"].as<uint8_t>() : value(l_);
-		status_ = (registers["s"] ? registers["s"].as<uint8_t>() : value(status_)) | 0x02;
+		a_ = registers["a"] ? registers["a"].as<uint8_t>() : Value(a_);
+		b_ = registers["b"] ? registers["b"].as<uint8_t>() : Value(b_);
+		c_ = registers["c"] ? registers["c"].as<uint8_t>() : Value(c_);
+		d_ = registers["d"] ? registers["d"].as<uint8_t>() : Value(d_);
+		e_ = registers["e"] ? registers["e"].as<uint8_t>() : Value(e_);
+		h_ = registers["h"] ? registers["h"].as<uint8_t>() : Value(h_);
+		l_ = registers["l"] ? registers["l"].as<uint8_t>() : Value(l_);
+		status_ = (registers["s"] ? registers["s"].as<uint8_t>() : Value(status_)) | 0x02;
 	}
 
-	pc_ = json["pc"] ? json["pc"].as<uint16_t>() : value(pc_);
-	sp_ = json["sp"] ? json["sp"].as<uint16_t>() : value(sp_);
+	pc_ = json["pc"] ? json["pc"].as<uint16_t>() : Value(pc_);
+	sp_ = json["sp"] ? json["sp"].as<uint16_t>() : Value(sp_);
 #endif
 	return make_error_code(errc::no_error);
 }

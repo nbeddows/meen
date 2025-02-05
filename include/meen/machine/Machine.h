@@ -28,6 +28,7 @@ SOFTWARE.
 #else
 #include <future>
 #endif
+#include <map>
 
 #include "meen/IController.h"
 #include "meen/cpu/ICpu.h"

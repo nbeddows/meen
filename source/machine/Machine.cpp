@@ -31,6 +31,7 @@ SOFTWARE.
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
+#define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
@@ -142,7 +143,7 @@ namespace meen
 				{
 					auto sv = memory["uuid"].get<std::string_view>();
 #else
-				if (memory["uuid"] == nullptr)
+				if (memory["uuid"])
 				{
 					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
@@ -166,32 +167,52 @@ namespace meen
 
 				bool clear = true;
 
-				// NEED TO HANDLE THE ARDUINO JSON CASE!!
+#ifdef ENABLE_NLOHMANN_JSON
 				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const nlohmann::json& block)
 				{
 					if (!block.contains("bytes"))
+#else
+				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const JsonVariantConst& block)
+				{
+					if(!block["bytes"])
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_config);
 					}
 
+#ifdef ENABLE_NLOHMANN_JSON
 					auto bytes = block["bytes"].get<std::string_view>();
+#else
+					auto bytes = block["bytes"].as<std::string_view>();
+#endif //ENABLE_NLOHMANN_JSON
 					int offset = 0;
 					int size = 0;
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if (block.contains("offset"))
 					{
 						offset = block["offset"].get<int>();
+#else
+					if (block["offset"])
+					{
+						offset = block["offset"].as<int>();
 
+#endif // ENABLE_NLOHMANN_JSON
 						if (offset < 0)
 						{
 							return make_error_code(errc::json_config);
 						}
 					}
 
+#ifdef ENABLE_NLOHMANN_JSON
 					if (block.contains("size"))
 					{
 						size = block["size"].get<int>();
-
+#else
+					if (block["size"])
+					{
+						size = block["size"].as<int>();
+#endif // ENABLE_NLOHMANN_JSON
 						if (size < 0)
 						{
 							return make_error_code(errc::json_config);
@@ -201,7 +222,7 @@ namespace meen
 					if (bytes.starts_with("file://") == true)
 					{
 						bytes.remove_prefix(strlen("file://"));
-						FILE* fin = fopen(std::string(bytes.begin(), bytes.end()).c_str(), "rb");
+						FILE* fin = fopen(std::string(bytes).c_str(), "rb");
 
 						if(fin == nullptr)
 						{
@@ -360,13 +381,15 @@ namespace meen
 
 #ifdef ENABLE_NLOHMANN_JSON
 				if (memory["rom"].contains("block"))
+				{
+					for (const auto& block : memory["rom"]["block"])
 #else
 				if (memory["rom"]["block"])
-#endif // ENABLE_NLOHMANN_JSON
 				{
-					for (auto it = memory["rom"]["block"].begin(); it < memory["rom"]["block"].end(); it++)
+					for (const auto& block : memory["rom"]["block"].as<JsonArrayConst>())
+#endif // ENABLE_NLOHMANN_JSON
 					{
-						auto err = loadRom(it.value());
+						auto err = loadRom(block);
 
 						if (err)
 						{
@@ -384,7 +407,6 @@ namespace meen
 					}
 				}
 
-#ifdef ENABLE_NLOHMANN_JSON
 				offset = 0;
 				ramMetadata.clear();
 
@@ -448,7 +470,7 @@ namespace meen
 						ram = Utils::TxtToBin("base64",
 							compressor,
 							size,
-							std::string(bytes.begin(), bytes.end()));
+							std::string(bytes));
 
 						// if ram is empty, return no_zlib ... TxtToBin, BinToTxt need to return std::expected
 						if (ram.empty() == true || ram.size() != size)
@@ -490,11 +512,24 @@ namespace meen
 					}
 				}
 
+#ifdef ENABLE_NLOHMANN_JSON
 				if (json.contains("cpu"))
 				{
 					// if ram exists we need to check for cpu uuid compatibility
 					auto err = cpu_->Load(json["cpu"].dump(), memory.contains("ram"));
+#else
+				if (json["cpu"])
+				{
+					std::string cpuStr;
+					serializeJson(json["cpu"], cpuStr);
 
+					if(cpuStr.empty() == true)
+					{
+						return make_error_code(errc::json_parse);
+					}
+
+					auto err = cpu_->Load(std::move(cpuStr), memory["ram"]);
+#endif // ENABLE_NLOHMANN_JSON
 					if (err)
 					{
 						return err;
@@ -503,9 +538,6 @@ namespace meen
 			}
 
 			return std::error_code{};
-#else
-
-#endif // ENABLE_NLOHMANN_JSON
 		};
 
 		auto checkHandler = [](std::future<std::string>& fut)
