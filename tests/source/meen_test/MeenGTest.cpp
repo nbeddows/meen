@@ -115,7 +115,7 @@ namespace meen::Tests
 	{
 		bool saveTriggered = false;
 
-		auto err = machine_->OnSave([st = &saveTriggered, expected](const char* actual)
+		auto err = machine_->OnSave([&saveTriggered, expected](const char* actual)
 		{
 			std::string actualStr;
 			std::string expectedStr;
@@ -137,11 +137,10 @@ namespace meen::Tests
 			serializeJson(expectedJson, expectedStr);
 #endif
 			EXPECT_STREQ(expectedStr.c_str(), actualStr.c_str());
-			*st = true;
+			saveTriggered = true;
 			return errc::no_error;
 		});
 		EXPECT_FALSE(err);
-
 
 		err = machine_->OnLoad([progDir = programsDir_.c_str(), progName = std::move(name), ex = std::move(extra), off = offset](char* json, int* jsonLen)
 		{
