@@ -433,7 +433,7 @@ namespace meen::tests
         }
     }
 
-    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, int pos)
+    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
     {
         // Write to the 'load device', the value doesn't matter (use 0)
         cpmIoController->Write(0xFD, 0, nullptr);
