@@ -59,7 +59,7 @@ namespace meen
 		assert(json_.is_discarded() == false);
 #else
 		auto e = deserializeJson(json_, Opt::DefaultOpts());
-		assert(e);
+		assert(!e);
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
@@ -106,7 +106,7 @@ namespace meen
 			}
 #else
 			auto e = deserializeJson(json, Opt::DefaultOpts());
-			assert(e);
+			assert(!e);
 
 			if(e)
 			{
@@ -151,7 +151,7 @@ namespace meen
 				}
 #else
 				auto e = deserializeJson(json, jsonStr.data(), jsonStr.length());
-				assert(e);
+				assert(!e);
 
 				if(e)
 				{
