@@ -42,7 +42,7 @@ namespace meen
 		return{ 0xCD, 0x18, 0xD8, 0x67, 0xDD, 0xBF, 0x4D, 0xAA, 0xAD, 0x5A, 0xBA, 0x1C, 0xEB, 0xAE, 0xB0, 0x31 };
 	}
 
-	uint8_t MemoryController::Read(uint16_t addr, [[maybe_unusued]] IController* controller)
+	uint8_t MemoryController::Read(uint16_t addr, [[maybe_unused]] IController* controller)
 	{
 		return memory_[addr];
 	}
