@@ -128,7 +128,7 @@ namespace meen
 
 				auto memory = json["memory"];
 #ifdef ENABLE_NLOHMANN_JSON
-				// We must contain at least rom, if we hve ram we need a uuid to match against
+				// We must contain at least rom, if we have ram we need a uuid to match against
 				if (!memory.contains("rom") || (memory.contains("ram") && !memory.contains("uuid")))
 #else
 				if(memory["rom"] == nullptr || (memory["ram"] != nullptr && memory["uuid"] == nullptr))
@@ -308,58 +308,46 @@ namespace meen
 								return make_error_code(errc::incompatible_rom);
 							}
 						}
-						else if (bytes.starts_with("zlib://") == true)
+						else
 						{
-							if (size <= 0 || offset + size > 0xFFFF)
-							{
-								return make_error_code(errc::json_config);
-							}
+							const char* compressor;
 
-							if (clear == true)
+							if (bytes.starts_with("zlib://") == true)
 							{
-								romMetadata.clear();
-								clear = false;
-							}
+								compressor = "zlib";
 
-							bytes.remove_prefix(strlen("zlib://"));
+								if (size <= 0)
+								{
+									return make_error_code(errc::json_config);
+								}
+
+								bytes.remove_prefix(strlen("zlib://"));
+							}
+							else
+							{
+								compressor = "none";
+
+								if (size <= 0)
+								{
+									size = bytes.length();
+								}
+							}
 
 							// decompress bytes and write to memory
-							auto unzip = Utils::TxtToBin("base64",
-								"zlib",
+							auto romBytes = Utils::TxtToBin("base64",
+								compressor,
 								size,
 								std::string(bytes.begin(), bytes.end()));
 
-							// assert(size == unzip.length());
-
-							for (int i = 0; i < unzip.size(); i++)
-							{
-								memoryController->Write(offset + i, unzip[i], ioController);
-							}
-
-							if (clear == true)
-							{
-								romMetadata.clear();
-								clear = false;
-							}
-
-							romMetadata.emplace(offset, size);
-						}
-						else
-						{
-							if (size == 0)
-							{
-								size = bytes.length();
-							}
-
-							// Check to see if we will overrun the source or detination memmory
-							if (offset + size > 0xFFFF || size > bytes.length())
+							// only support a max of 16 bit addressing
+							if (offset + romBytes.size() > 0xFFFF)
 							{
 								return make_error_code(errc::json_config);
 							}
 
-							for (int i = 0; i < size; i++)
+							for (int i = 0; i < romBytes.size(); i++)
 							{
-								memoryController->Write(offset + i, bytes[i], ioController);
+								memoryController->Write(offset + i, romBytes[i], ioController);
 							}
 
 							if (clear == true)
@@ -368,7 +356,7 @@ namespace meen
 								clear = false;
 							}
 
-							romMetadata.emplace(offset, size);
+							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 						}
 					}
 					else
