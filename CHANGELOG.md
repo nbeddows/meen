@@ -34,6 +34,8 @@
 * Removed the pc (program counter) parameter from
   `IMachine::Run`.
 * Removed IMachine::SetOptions support for ram/rom.
+* Tidied up the unit tests by removing the i8080 test
+  files and using base64 encoded versions instead.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

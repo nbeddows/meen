@@ -55,6 +55,14 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.SetOptions(r'{"isrFreq":0.02}')
         self.assertEqual(err, ErrorCode.NoError)
+        # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
+        self.saveAndExit = 'base64://0/7T/3Y'
+        # A base64 encoded code fragment that initialises the 'a' register to 10 and is loaded at address 0x0005. Used in conjunction with nopEnd to run the timing test
+        self.nopStart = 'base64://Pgo='
+        # A base64 encoded code fragment that decrements the 'a' register by 1, jumps to address 0x0005 if 'a' is non-zero else address 0x0000.
+        self.nopEnd = 'base64://PcIHAMMAAA'
+        # A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
+        self.bdosMsg = 'base64://9XnTAP4CyhEAetMBe9MC8ck='
 
     def test_Version(self):
         self.assertTrue(re.match(r'^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)(?:-(?P<prerelease>(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*)(?:\.(?:0|[1-9]\d*|\d*[a-zA-Z-][0-9a-zA-Z-]*))*))?(?:\+(?P<buildmetadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$', __version__))
@@ -75,7 +83,8 @@ class MachineTest(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/nopStart.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/nopEnd.bin","offset":50004}]}}}')
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+
         self.assertEqual(err, ErrorCode.NoError)
 
         err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
@@ -103,7 +112,7 @@ class MachineTest(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/nopStart.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/nopEnd.bin","offset":50004}]}}}')
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
 
         if runAsync == True:
@@ -145,7 +154,7 @@ class MachineTest(unittest.TestCase):
 
             match self.loadIndex:
                 case 0:
-                    jsonToLoad = r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/bdosMsg.bin","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
+                    jsonToLoad = r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
                 case 1:
                     jsonToLoad = saveStates[0]
                 case _:
@@ -214,6 +223,10 @@ class i8080Test(unittest.TestCase):
         err = self.machine.SetOptions(r'{"isrFreq":0.02}')
         self.assertEqual(err, ErrorCode.NoError)
         self.saveTriggered = False
+        # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
+        self.saveAndExit = 'base64://0/7T/3Y'
+        # A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
+        self.bdosMsg = 'base64://9XnTAP4CyhEAetMBe9MC8ck='
 
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)
@@ -225,7 +238,7 @@ class i8080Test(unittest.TestCase):
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://' + self.programsDir + r'/exitTest.bin","offset":0},{"bytes":"file://' + self.programsDir + r'/bdosMsg.bin","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
+        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.OnSave(lambda actualState: self.CheckMachineState(expectedState, actualState))
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
