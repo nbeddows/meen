@@ -229,16 +229,19 @@ namespace meen
 		/** Machine save state completion handler
 		
 			Registers a method which will be called when the ISR::Save interrupt is triggered. The register
-			method accepts a const char* which is the machine save state in json format. 
+			method accepts a const char* which is the machine save state in json format with a return type
+			of meen::errc. 
 		
-			The json layout of an example save state is specifed in the json snippet below:
+			The format of the save state is not overly relevant from a user perspective.
+			
+			An example json save state is specified below:
 
 			@code{.json}
 
 			{
 				"cpu":
 				{
-					"uuid":"O+hPH516S3ClRdnzSRL8rQ==",	// The base64 unique identifier of the cpu
+					"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==",		// The cpu UUID encoded in base64
 					"registers":
 					{
 						"a":0,							// The a register
@@ -255,14 +258,14 @@ namespace meen
 				},
 				"memory":
 				{
-					"uuid":"zRjYZ92/TaqtWroc666wMQ==",		// The base64 unique identifier for the memory controller
-					"rom":"FkgjfhUYrudiMj7y65789Io=",		// The base64 MD5 hash of the rom
+					"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==",				// The memory controller UUID encoded in base64
+					"rom":{
+						"bytes":"base64://md5://FkgjfhUYrudiMj7y65789Io=",	// The rom md5 hash encoded in base64
+					},
 					"ram":
 					{
-						"encoder":"base64",					// The binary to text encoding for the ram
-						"compressor":"zlib",				// The compressor to use for the ram
-						"size":57343,						// The size of the uncompressed ram
-						"bytes":"... the ram bytes ..."		// The compressed and encoded ram bytes
+						"size":57343,										// The size of the uncompressed ram
+						"bytes":"base64://zlib://... the ram bytes ..."		// The zlib compressed and base64 encoded ram bytes
 					}
 				}
 			}
@@ -290,10 +293,63 @@ namespace meen
 
 		/** Machine load state initiation handler
 		
-			Registers a method that will be called when the ISR::Load interrupt is triggered. The register
-			method returns a std:error_code and accepts two parameters: json - the char array to write the
-			machine state json, jsonLen - the length of the json state array. When the json array is nullptr
-			the length of the json state array must be written to jsonLen.
+			Registers a method that will be called when the ISR::Load interrupt is triggered. The registered
+			method shall return a meen::errc and accepts two parameters: json - a char* array to write the
+			machine state json to, jsonLen - an int* to write the length of the json state array to.
+			
+			The registered handler may be called twice. The first time with the json parameter
+			as nullptr. In this case the length of the json load state array must be written to the jsonLen
+			parameter. The second call will contain a valid char* json array of length jsonLen that can be safely
+			written to with the json state to load.
+
+			The json layout of an example load state is specifed in the json snippet below:
+
+			@code{.json}
+
+			{
+				// Cpu registers can also be be set, any registers unassigned will remain unchanged. Generally speaking,
+				// only the program counter (pc) needs to be set (defaults to 0) 
+				"cpu":{
+					"pc":256					// Start executing the loaded program from address 256 (0x100)
+				},
+				"memory": {
+					"rom":{
+						"block":[
+							{"bytes":"file://ram0.bin"},						// Load from local disk all bytes from the file ram0.bin starting at the memory address 0x0000.
+							{"bytes":"file://ram1","offset":256, "size":128}	// Load from local disk the first 128 bytes from the file ram1.bin starting at the memory address 256 (0x100). 
+						]
+					}
+				}
+			}
+
+			@endcode{.json}
+
+			The memory:rom:block array can be omitted if loading from a single file:
+			
+			@code{.json}
+			
+			{
+				"memory": {
+					"rom":{
+							{"bytes":"file://ram0.bin"}							// Load from local disk all bytes from the file ram0.bin starting at the memory address 0x0000.
+					}
+				}
+			}
+
+			See the unit tests for further examples.
+
+			@endcode{.json}
+
+			Note that a uri scheme like method is used to determine the content type of the bytes property.
+
+			Supported uris:
+
+			memory:rom:["block":]bytes:file://... 			- load a resource located at the path specifed by the remainder of the bytes property into memory.
+			memory:rom:["block":]bytes:base64://... 		- base64 decode the remaining bytes and load them into memory.
+			memory:rom:["block":]bytes:base64://zlib://...	- decompress the remaining bytes, base64 decode them and load them into memory.
+
+			The size and offset parameters of memory:rom:[block] are optional and will default to 0 for the offset and the length of the remaining bytes in the bytes parameter for size.
+			NOTE: the size parameter is mandatory for "zlib://" and MUST be the length of the uncompressed bytes.
 
 			@param	onLoad				The method to call to get the json machine state to load when the ISR::Load
 										interrupt is triggered. Is mutually exclusive with the OnSave completion handler.
