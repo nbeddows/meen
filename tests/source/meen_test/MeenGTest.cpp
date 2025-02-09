@@ -44,6 +44,14 @@ namespace meen::Tests
 	protected:
 		static IControllerPtr cpmIoController_;
 		static std::unique_ptr<IMachine> machine_;
+		// A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
+		static inline const char* saveAndExit = "base64://0/7T/3Y";
+		// A base64 encoded code fragment that initialises the 'a' register to 10 and is loaded at address 0x0005. Used in conjunction with nopEnd to run the timing test
+		static inline const char* nopStart = "base64://Pgo=";
+		// A base64 encoded code fragment that decrements the 'a' register by 1, jumps to address 0x0005 if 'a' is non-zero else address 0x0000.
+		static inline const char* nopEnd = "base64://PcIHAMMAAA";
+		// A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
+		static inline const char* bdosMsg = "base64://9XnTAP4CyhEAetMBe9MC8ck=";
 
 		static void LoadAndRun(const char* name, const char* expected, const char* extra = nullptr, uint16_t extraOffset = 0);
 		static void Run(bool runAsync);
@@ -142,15 +150,15 @@ namespace meen::Tests
 		});
 		EXPECT_FALSE(err);
 
-		err = machine_->OnLoad([progDir = programsDir_.c_str(), progName = std::move(name), ex = std::move(extra), off = offset](char* json, int* jsonLen)
+		err = machine_->OnLoad([name, extra, offset](char* json, int* jsonLen)
 		{
-			if (ex == nullptr)
+			if (extra == nullptr)
 			{
-				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/%s","offset":256}]}}})", progDir, progDir, progName);
+				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256}]}}})", saveAndExit, name);
 			}
 			else
 			{
-				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/%s","offset":256},{"bytes":"file://%s/%s","offset":%d}]}}})", progDir, progDir, progName, progDir, ex, off);
+				return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256},{"bytes":"%s","offset":%d}]}}})", saveAndExit, name, extra, offset);
 			}
 		});
 		EXPECT_FALSE(err);
@@ -174,7 +182,7 @@ namespace meen::Tests
 		EXPECT_FALSE(err);
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
-		LoadAndRun(suiteName, expectedState, "bdosMsg.bin", 0x05);
+		LoadAndRun((std::string("file://") + programsDir_ + "./" + suiteName).c_str(), expectedState, bdosMsg, 0x05);
 		cpmIoController_ = std::move(machine_->DetachIoController().value());
 		ASSERT_TRUE(cpmIoController_);
 		auto cpm = static_cast<CpmIoController*>(cpmIoController_.get());
@@ -219,7 +227,7 @@ namespace meen::Tests
 		(
 			auto err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
 			{
-				return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/nopStart.bin","offset":5},{"bytes":"file://%s/nopEnd.bin","offset":50004}]}}})", progDir, progDir, progDir);
+				return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
 			});
 			EXPECT_FALSE(err);
 
@@ -265,7 +273,7 @@ namespace meen::Tests
 
 		err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
 		{
-			return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/nopStart.bin","offset":5},{"bytes":"file://%s/nopEnd.bin","offset":50004}]}}})", progDir, progDir, progDir);
+			return LoadProgram (json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
 		});
 		EXPECT_FALSE(err);
 
@@ -335,7 +343,7 @@ namespace meen::Tests
 					// be subtracted from the total size of the file,
 					// hence an explicit setting of the test file size.
 					case 0:
-						err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"file://%s/exitTest.bin","offset":0},{"bytes":"file://%s/bdosMsg.bin","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", progDir, progDir, progDir);
+						err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, progDir);
 						break;
 					case 1:
 						// 0 - mid program save state, 1 and 2 - end of program save states
