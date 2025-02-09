@@ -454,7 +454,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
         //CP/M BDOS print message system call is at memory address 0x05,
         //this will be emulated with the bdosMsg subroutine.
-        LoadAndRun((std::string("file://") + programsDir + "./" + suiteName).c_str(), expectedState, bdosMsg, 0x05);
+        LoadAndRun((std::string("file://") + programsDir + "/" + suiteName).c_str(), expectedState, bdosMsg, 0x05);
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
         auto cpm = static_cast<CpmIoController*>(cpmIoController.get());
