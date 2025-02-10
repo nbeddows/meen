@@ -100,7 +100,6 @@ namespace meen
 			*/
 			bool RunAsync() const;
 
-#ifdef ENABLE_MEEN_SAVE
 			/** Compressor
 
 				Supported compressors, currently only zlib is supported.
@@ -119,6 +118,7 @@ namespace meen
 			*/
 			bool LoadAsync() const;
 
+#ifdef ENABLE_MEEN_SAVE
 			/** Machine state save mode
 
 				True for asynchronous, false for synchronous.

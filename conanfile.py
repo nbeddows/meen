@@ -1,3 +1,23 @@
+# Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+
 from conan import ConanFile
 from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout, CMakeDeps
 from conan.tools.build import can_run
@@ -37,8 +57,9 @@ class MeenRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
+        self.requires("base64/0.5.2")
+ 
         if self.options.get_safe("with_save", False):
-            self.requires("base64/0.5.2")
             self.requires("hash-library/8.0")
 
         if(self.settings.os == "baremetal"):
@@ -103,7 +124,7 @@ class MeenRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
-        tc.cache_variables["enable_base64"] = self.options.get_safe("with_save", False)
+        tc.cache_variables["enable_base64"] = True
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
         tc.variables["build_os"] = self.settings.os

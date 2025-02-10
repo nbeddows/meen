@@ -66,7 +66,6 @@ namespace meen
 	constexpr std::string Opt::DefaultOpts()
 	{
 		std::string defaults =	R"({"clockResolution":-1)"
-#ifdef ENABLE_MEEN_SAVE
 								R"(,"compressor":")"
 #ifdef ENABLE_ZLIB
 								"zlib"
@@ -79,7 +78,10 @@ namespace meen
 #else
 								"none"
 #endif // ENABLE_BASE64
+#ifdef ENABLE_MEEN_SAVE
 								R"(","loadAsync":false,"saveAsync":false)"
+#else
+								R"(")"
 #endif // ENABLE_MEEN_SAVE
 								R"(,"isrFreq":0,"runAsync":false})";
 		return defaults;
@@ -167,7 +169,6 @@ namespace meen
 			{
 				return make_error_code(errc::json_config);
 			}
-#ifdef ENABLE_MEEN_SAVE
 #ifndef ENABLE_ZLIB
 #ifdef ENABLE_NLOHMANN_JSON
 			if (json.contains("compressor") == true && json["compressor"].get<std::string_view>() == "zlib")
@@ -178,7 +179,6 @@ namespace meen
 				return make_error_code(errc::no_zlib);
 			}
 #endif // ENABLE_ZLIB
-#endif // ENABLE_MEEN_SAVE
 		}
 
 #ifdef ENABLE_NLOHMANN_JSON
@@ -216,7 +216,6 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
-#ifdef ENABLE_MEEN_SAVE
 	std::string Opt::Compressor() const
 	{
 #ifdef ENABLE_NLOHMANN_JSON
@@ -237,13 +236,18 @@ namespace meen
 
 	bool Opt::LoadAsync() const
 	{
+#ifdef ENABLE_MEEN_SAVE
 #ifdef ENABLE_NLOHMANN_JSON
 		return json_["loadAsync"].get<bool>();
 #else
 		return json_["loadAsync"].as<bool>();
 #endif // ENABLE_NLOHMANN_JSON
+#else
+		return false;
+#endif // ENABLE_MEEN_SAVE
 	}
 
+#ifdef ENABLE_MEEN_SAVE
 	bool Opt::SaveAsync() const
 	{
 #ifdef ENABLE_NLOHMANN_JSON
