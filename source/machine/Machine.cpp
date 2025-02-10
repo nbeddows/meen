@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <assert.h>
 #include <bit>
+#include <charconv>
 #include <cinttypes>
 #include <stdio.h>
 #ifdef ENABLE_MEEN_RP2040
@@ -359,6 +360,45 @@ namespace meen
 
 							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 						}
+					}
+					else if (bytes.starts_with("mem://") == true)
+					{
+						bytes.remove_prefix(strlen("mem://"));
+
+						if (size <= 0)
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						int64_t value = 0;
+
+						auto [ptr, ec] = std::from_chars (bytes.data(), bytes.data() + bytes.size(), value, 16);
+					
+						if (ec != std::errc() || ptr != bytes.data() + bytes.size())
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						uint8_t* romBytes = std::bit_cast<uint8_t*>(value);
+
+						// only support a max of 16 bit addressing
+						if (offset + size > 0xFFFF)
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						for (int i = 0; i < size; i++)
+						{
+							memoryController->Write(offset + i, romBytes[i], ioController);
+						}
+
+						if (clear == true)
+						{
+							romMetadata.clear();
+							clear = false;
+						}
+
+						romMetadata.emplace(offset, static_cast<uint16_t>(size));
 					}
 					else
 					{
