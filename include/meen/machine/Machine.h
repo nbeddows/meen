@@ -67,8 +67,8 @@ namespace meen
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
-#ifdef ENABLE_MEEN_SAVE
 		std::function<std::error_code(char* json, int* jsonLen)> onLoad_{};
+#ifdef ENABLE_MEEN_SAVE
 		std::function<std::error_code(const char* json)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
 		friend void RunMachine(Machine* machine);

@@ -27,7 +27,6 @@ SOFTWARE.
 #ifdef ENABLE_MEEN_RP2040
 #include <pico/multicore.h>
 #endif // ENABLE_MEEN_RP2040
-#ifdef ENABLE_MEEN_SAVE
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
@@ -35,7 +34,6 @@ SOFTWARE.
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
-#endif // ENABLE_MEEN_SAVE
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
 #include "meen/machine/Machine.h"
@@ -83,28 +81,15 @@ namespace meen
 		auto ticksPerIsr_ = m->ticksPerIsr_;
 		auto& romMetadata = m->romMetadata_;
 		auto& ramMetadata = m->ramMetadata_;
-#ifdef ENABLE_MEEN_SAVE
-		auto memoryController = m->memoryController_.get();
-		auto& opt_ = m->opt_;
 		auto& onLoad_ = m->onLoad_;
-		auto& onSave_ = m->onSave_;
+		auto& opt_ = m->opt_;
 		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
-		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
-		std::future<std::string> onSave;
-
+		auto memoryController = m->memoryController_.get();
 		auto loadMachineState = [&](std::string&& str)
 		{
 			if (str.empty() == false)
 			{
-				// perform checks to make sure that this machine load state is compatible with this machine
-				int offset = 0;
-				auto memUuid = memoryController->Uuid();
-
-				if (memUuid == std::array<uint8_t, 16>{})
-				{
-					return make_error_code(errc::incompatible_uuid);
-				}
 #ifdef ENABLE_NLOHMANN_JSON
 				auto json = nlohmann::json::parse(str, nullptr, false);
 
@@ -129,14 +114,23 @@ namespace meen
 				auto memory = json["memory"];
 #ifdef ENABLE_NLOHMANN_JSON
 				// We must contain at least rom, if we have ram we need a uuid to match against
-				if (!memory.contains("rom") || (memory.contains("ram") && !memory.contains("uuid")))
+				if (!memory.contains("rom") 
+#ifdef ENABLE_MEEN_SAVE
+				|| (memory.contains("ram") && !memory.contains("uuid"))
+#endif // ENABLE_MEEN_SAVE
+				)
 #else
-				if(memory["rom"] == nullptr || (memory["ram"] != nullptr && memory["uuid"] == nullptr))
+				if(memory["rom"] == nullptr
+#ifdef ENABLE_MEEN_SAVE				
+				|| (memory["ram"] != nullptr && memory["uuid"] == nullptr)
+#endif // ENABLE_MEEN_SAVE			
+				)
 #endif // ENABLE_NLOHMANN_JSON
 				{
 					return make_error_code(errc::json_parse);
 				}
 
+#ifdef ENABLE_MEEN_SAVE
 				// The memory controllers must be the same
 #ifdef ENABLE_NLOHMANN_JSON
 				if (memory.contains("uuid"))
@@ -147,7 +141,8 @@ namespace meen
 				{
 					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
-
+					auto memUuid = memoryController->Uuid();
+	
 					if (sv.starts_with("base64://"))
 					{
 						sv.remove_prefix(strlen("base64://"));
@@ -164,6 +159,7 @@ namespace meen
 						return make_error_code(errc::incompatible_uuid);
 					}
 				}
+#endif // ENABLE_MEEN_SAVE
 
 				bool clear = true;
 
@@ -276,7 +272,7 @@ namespace meen
 					else if (bytes.starts_with("base64://") == true)
 					{
 						bytes.remove_prefix(strlen("base64://"));
-
+#ifdef ENABLE_MEEN_SAVE
 						if (bytes.starts_with("md5://") == true)
 						{
 							bytes.remove_prefix(strlen("md5://"));
@@ -309,11 +305,13 @@ namespace meen
 							}
 						}
 						else
+#endif // ENABLE_MEEN_SAVE
 						{
 							const char* compressor;
 
 							if (bytes.starts_with("zlib://") == true)
 							{
+#ifdef ENABLE_ZLIB
 								compressor = "zlib";
 
 								if (size <= 0)
@@ -322,6 +320,9 @@ namespace meen
 								}
 
 								bytes.remove_prefix(strlen("zlib://"));
+#else
+								return make_error_code(errc::no_zlib);
+#endif // ENABLE_ZLIB
 							}
 							else
 							{
@@ -395,7 +396,7 @@ namespace meen
 					}
 				}
 
-				offset = 0;
+				int offset = 0;
 				ramMetadata.clear();
 
 				// store an ascending sorted ram map with offset as the key (derived from the rom)
@@ -415,6 +416,7 @@ namespace meen
 					ramMetadata.emplace(offset, 0xFFFF - offset);
 				}
 
+#ifdef ENABLE_MEEN_SAVE
 #ifdef ENABLE_NLOHMANN_JSON
 				if (memory.contains("ram"))
 #else
@@ -451,8 +453,12 @@ namespace meen
 
 						if (bytes.starts_with("zlib://") == true)
 						{
+#ifdef ENABLE_ZLIB
 							compressor = "zlib";
 							bytes.remove_prefix(strlen("zlib://"));
+#else
+							return make_error_code(errc::no_zlib);
+#endif // ENABLE_ZLIB
 						}
 
 						ram = Utils::TxtToBin("base64",
@@ -489,6 +495,7 @@ namespace meen
 					}
 				}
 				else
+#endif // ENABLE_MEEN_SAVE
 				{
 					// make sure the ram is clear
 					for (const auto& rm : ramMetadata)
@@ -504,7 +511,13 @@ namespace meen
 				if (json.contains("cpu"))
 				{
 					// if ram exists we need to check for cpu uuid compatibility
-					auto err = cpu_->Load(json["cpu"].dump(), memory.contains("ram"));
+					auto err = cpu_->Load(json["cpu"].dump(), 
+#ifdef ENABLE_MEEN_SAVE
+					memory.contains("ram")
+#else
+					false
+#endif // ENABLE_MEEN_SAVE
+					);
 #else
 				if (json["cpu"])
 				{
@@ -516,7 +529,13 @@ namespace meen
 						return make_error_code(errc::json_parse);
 					}
 
-					auto err = cpu_->Load(std::move(cpuStr), memory["ram"]);
+					auto err = cpu_->Load(std::move(cpuStr),
+#ifdef ENABLE_MEEN_SAVE
+					memory["ram"]
+#else
+					false
+#endif // ENABLE_MEEN_SAVE
+					);
 #endif // ENABLE_NLOHMANN_JSON
 					if (err)
 					{
@@ -544,6 +563,10 @@ namespace meen
 
 			return str;
 		};
+#ifdef ENABLE_MEEN_SAVE
+		auto& onSave_ = m->onSave_;
+		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
+		std::future<std::string> onSave;
 #endif // ENABLE_MEEN_SAVE
 		int ticks = 0;
 
@@ -574,9 +597,12 @@ namespace meen
 					}
 					case ISR::Load:
 					{
-#ifdef ENABLE_MEEN_SAVE
 						// If a user defined callback is set and we are not processing a load or save request
-						if (onLoad_ != nullptr && onLoad.valid() == false && onSave.valid() == false)
+						if (onLoad_ != nullptr && onLoad.valid() == false 
+#ifdef ENABLE_MEEN_SAVE						
+						&& onSave.valid() == false
+#endif // ENABLE_MEEN_SAVE
+						)
 						{
 							onLoad = std::async(loadLaunchPolicy, [onLoad_]
 							{
@@ -608,7 +634,6 @@ namespace meen
 								printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
 							}
 						}
-#endif // ENABLE_MEEN_SAVE
 						break;
 					}
 					case ISR::Save:
@@ -623,12 +648,6 @@ namespace meen
 							if (opt_.Encoder() != "base64")
 							{
 								err = make_error_code(errc::json_config);
-							}
-
-							// This check needs to be removed for 2,0
-							if (memUuid == std::array<uint8_t, 16>{})
-							{
-								err = make_error_code(errc::incompatible_uuid);
 							}
 
 							if(!err)
@@ -701,7 +720,6 @@ namespace meen
 					}
 					case ISR::Quit:
 					{
-#ifdef ENABLE_MEEN_SAVE
 						// Wait for any outstanding load/save requests to complete
 
 						if (onLoad.valid() == true)
@@ -715,6 +733,7 @@ namespace meen
 							}
 						}
 
+#ifdef ENABLE_MEEN_SAVE
 						if (onSave.valid() == true)
 						{
 							// we are quitting, wait for the onSave handler to complete
@@ -726,7 +745,6 @@ namespace meen
 					}
 					case ISR::NoInterrupt:
 					{
-#ifdef ENABLE_MEEN_SAVE
 						// no interrupts pending, do any work that is outstanding
 						auto errc = loadMachineState(checkHandler(onLoad));
 
@@ -734,7 +752,7 @@ namespace meen
 						{
 							printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
 						}
-
+#ifdef ENABLE_MEEN_SAVE
 						checkHandler(onSave);
 #endif // ENABLE_MEEN_SAVE
 						break;
@@ -950,7 +968,6 @@ namespace meen
 
 	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad)
 	{
-#ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
 		{
 			return make_error_code(errc::busy);
@@ -958,9 +975,6 @@ namespace meen
 
 		onLoad_ = std::move(onLoad);
 		return std::error_code{};
-#else
-		return make_error_code(errc::not_implemented);
-#endif // ENABLE_MEEN_SAVE
 	}
 
 	ControllerDeleter::ControllerDeleter(bool del)

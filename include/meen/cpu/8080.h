@@ -204,8 +204,8 @@ namespace meen
 		/* I8080 overrides */
 		uint8_t Execute() final;
 		uint8_t Interrupt(ISR isr);
-#ifdef ENABLE_MEEN_SAVE
 		std::error_code Load(const std::string&& json, bool checkUuid) final;
+#ifdef ENABLE_MEEN_SAVE
 		std::string Save() const final;
 #endif // ENABLE_MEEN_SAVE
 		void Reset() final;

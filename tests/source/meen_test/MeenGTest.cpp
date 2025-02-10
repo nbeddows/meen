@@ -148,7 +148,7 @@ namespace meen::Tests
 			saveTriggered = true;
 			return errc::no_error;
 		});
-		EXPECT_FALSE(err);
+		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
 		err = machine_->OnLoad([name, extra, offset](char* json, int* jsonLen)
 		{
@@ -165,7 +165,7 @@ namespace meen::Tests
 
 		err = machine_->Run();
 		EXPECT_FALSE(err);
-		EXPECT_TRUE(saveTriggered);
+		EXPECT_TRUE(saveTriggered || machine_->OnSave(nullptr).value() == errc::not_implemented);
 	}
 
     void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
@@ -253,7 +253,7 @@ namespace meen::Tests
 			err = machine_->OnLoad([](char*, int*){ return errc::no_error; });
 			EXPECT_EQ(errc::busy, err.value());
 			err = machine_->OnSave([](const char*){ return errc::no_error; });
-			EXPECT_EQ(errc::busy, err.value());
+			EXPECT_TRUE(err.value() == errc::busy || err.value() == errc::not_implemented);
 
 			// Since we are running async we need to wait for completion
 			machine_->WaitForCompletion();
@@ -326,7 +326,7 @@ namespace meen::Tests
 				return errc::no_error;
 			});
 
-			if(err.value() == errc::json_config)
+			if(err.value() == errc::not_implemented)
 			{
 				// not implemented, skip the test
 				GTEST_SKIP() << "Machine::OnSave not supported";

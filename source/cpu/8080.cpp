@@ -21,7 +21,6 @@ SOFTWARE.
 */
 
 #include <assert.h>
-#ifdef ENABLE_MEEN_SAVE
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
@@ -29,7 +28,6 @@ SOFTWARE.
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
 #include "meen/utils/Utils.h"
-#endif // ENABLE_MEEN_SAVE
 #include "meen/cpu/8080.h"
 #include "meen/utils/ErrorCode.h"
 
@@ -298,10 +296,9 @@ Intel8080::Intel8080()
 		[&] { return Cmp(++pc_, "CPI"); },
 		[&] { return Rst(); },
 	});
-#endif
+#endif // ENABLE_OPCODE_TABLE
 }
 
-#ifdef ENABLE_MEEN_SAVE
 std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 {
 #ifdef ENABLE_NLOHMANN_JSON
@@ -412,6 +409,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 	return make_error_code(errc::no_error);
 }
 
+#ifdef ENABLE_MEEN_SAVE
 std::string Intel8080::Save() const
 {
 	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
