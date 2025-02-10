@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -67,9 +67,8 @@ namespace meen
 								load/save is requested the controller must implement this
 								method and a non-empty uuid returned otherwise no load/save
 								operation will be performed and an error will be logged.
-			@remark				This method will be made pure in 2.0.0
 		*/
-		virtual std::array<uint8_t, 16> Uuid() const { return {}; }
+		virtual std::array<uint8_t, 16> Uuid() const = 0;
 
 		/** Read from a device
 		
