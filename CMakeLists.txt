@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+# Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -343,6 +343,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   set(${test_controllers}_source_files
     tests/${source_dir}/${test_controllers}/BaseIoController.cpp
     tests/${source_dir}/${test_controllers}/CpmIoController.cpp
+    tests/${source_dir}/${test_controllers}/MemoryController.cpp
     tests/${source_dir}/${test_controllers}/TestIoController.cpp
   )
 
@@ -350,15 +351,9 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     if(${enable_rp2040} STREQUAL ON)
       set(${test_controllers}_source_files
         ${${test_controllers}_source_files}
-        tests/${source_dir}/${test_controllers}/RP2040MemoryController.cpp
         tests/${source_dir}/${test_controllers}/TestPrograms.S
       )
     endif()
-  else()
-    set(${test_controllers}_source_files
-      ${${test_controllers}_source_files}
-      tests/${source_dir}/${test_controllers}/MemoryController.cpp
-    )
   endif()
 
   SOURCE_GROUP(${include_dir} FILES ${${test_controllers}_include_files})
