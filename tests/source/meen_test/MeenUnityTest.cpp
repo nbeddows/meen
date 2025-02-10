@@ -28,6 +28,14 @@ SOFTWARE.
 #endif
 #ifdef ENABLE_MEEN_RP2040
 #include <pico/stdlib.h>
+extern uint8_t cpuTestStart;
+extern uint8_t cpuTestEnd;
+extern uint8_t pre8080Start;
+extern uint8_t pre8080End;
+extern uint8_t exm8080Start;
+extern uint8_t exm8080End;
+extern uint8_t tst8080Start;
+extern uint8_t tst8080End;
 #endif
 #include <stdarg.h>
 #include <unity/unity.h>
@@ -185,7 +193,18 @@ namespace meen::tests
                 // be subtracted from the total size of the file,
                 // hence an explicit setting of the test file size.
             case 0:
+#ifdef ENABLE_MEEN_RP2040
+                if (&tst8080End - &tst8080Start >= 1471)
+                {
+                    err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"mem://%p","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, &tst8080Start);
+                }
+                else
+                {
+                    err = errc::incompatible_rom;
+                }
+#else
                 err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, progDir);
+#endif // ENABLE_MEEN_RP2040
                 break;
             case 1:
                 // 0 - mid program save state, 1 and 2 - end of program save states
@@ -307,7 +326,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
     }
 
-    static void LoadAndRun(const char* name, const char* expected, const char* extra = nullptr, uint16_t offset = 0)
+    static void LoadAndRun(const char* name, int progSize, const char* expected)
     {
         bool saveTriggered = false;
 
@@ -338,16 +357,9 @@ namespace meen::tests
         });
         TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-        err = machine->OnLoad([name, extra, offset](char* json, int* jsonLen)
+        err = machine->OnLoad([name, progSize](char* json, int* jsonLen)
         {
-            if (extra == nullptr)
-            {
-                return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256}]}}})", saveAndExit, name);
-            }
-            else
-            {
-                return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256},{"bytes":"%s","offset":%d}]}}})", saveAndExit, name, extra, offset);
-            }
+            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256,"size":%d},{"bytes":"%s","offset":5}]}}})", saveAndExit, name, progSize, bdosMsg);
         });
         TEST_ASSERT_FALSE(err);
 
@@ -441,7 +453,7 @@ namespace meen::tests
         }
     }
 
-    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
+    static void RunTestSuite(const char* suiteName, int suiteLen, const char* expectedState, const char* expectedMsg, size_t pos)
     {
         // Write to the 'load device', the value doesn't matter (use 0)
         cpmIoController->Write(0xFD, 0, nullptr);
@@ -454,7 +466,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
         //CP/M BDOS print message system call is at memory address 0x05,
         //this will be emulated with the bdosMsg subroutine.
-        LoadAndRun((std::string("file://") + programsDir + "/" + suiteName).c_str(), expectedState, bdosMsg, 0x05);
+        LoadAndRun(suiteName, suiteLen, expectedState);
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
         auto cpm = static_cast<CpmIoController*>(cpmIoController.get());
@@ -465,22 +477,82 @@ namespace meen::tests
 
     static void test_Tst8080()
     {
-        RunTestSuite("TST8080.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})", "CPU IS OPERATIONAL", 74);
+        char src[128]{};
+#ifdef ENABLE_MEEN_RP2040
+        snprinf(src, 128, "mem://%p", &tst8080Start);
+#else
+        snprintf(src, 128, "file://%s/TST8080.COM", programsDir.c_str());
+#endif // ENABLE_MEEN_RP2040
+
+        RunTestSuite(src,
+#ifdef ENABLE_MEEN_RP2040
+        &tst8080End - &tst8080Start,
+#else
+        0,
+#endif // ENABLE_MEEN_RP2040
+        R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})",
+        "CPU IS OPERATIONAL",
+        74);
     }
 
     static void test_8080Pre()
     {
-        RunTestSuite("8080PRE.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})", "8080 Preliminary tests complete", 0);
+        char src[128]{};
+#ifdef ENABLE_MEEN_RP2040
+        snprinf(src, 128, "mem://%p", &pre8080Start);
+#else
+        snprintf(src, 128, "file://%s/8080PRE.COM", programsDir.c_str());
+#endif // ENABLE_MEEN_RP2040
+
+        RunTestSuite(src,
+#ifdef ENABLE_MEEN_RP2040
+        &pre8080End - &pre8080Start,
+#else
+        0,
+#endif // ENABLE_MEEN_RP2040
+        R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})",
+        "8080 Preliminary tests complete",
+        0);
     }
 
     static void test_CpuTest()
     {
-        RunTestSuite("CPUTEST.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})", "CPU TESTS OK", 168);
+        char src[128]{};
+#ifdef ENABLE_MEEN_RP2040
+        snprinf(src, 128, "mem://%p", &cpuTestStart);
+#else
+        snprintf(src, 128, "file://%s/CPUTEST.COM", programsDir.c_str());
+#endif // ENABLE_MEEN_RP2040
+
+        RunTestSuite(src,
+#ifdef ENABLE_MEEN_RP2040
+        &cpuTestEnd - &cpuTestStart,
+#else
+        0,
+#endif // ENABLE_MEEN_RP2040
+        R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})",
+        "CPU TESTS OK",
+        168);
     }
 
     static void test_8080Exm()
     {
-        RunTestSuite("8080EXM.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})", "ERROR", std::string::npos);
+        char src[128]{};
+#ifdef ENABLE_MEEN_RP2040
+        snprinf(src, 128, "mem://%p", &exm8080Start);
+#else
+        snprintf(src, 128, "file://%s/8080EXM.COM", programsDir.c_str());
+#endif // ENABLE_MEEN_RP2040
+
+        RunTestSuite(src,
+#ifdef ENABLE_MEEN_RP2040
+        &exm8080tEnd - &exm8080Start,
+#else
+        0,
+#endif // ENABLE_MEEN_RP2040
+        R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})",
+        "ERROR",
+        std::string::npos);
     }
 } // namespace meen::tests
 
