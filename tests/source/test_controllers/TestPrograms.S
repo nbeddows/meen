@@ -1,24 +1,4 @@
 .section .rodata
-.global bdosMsgStart
-bdosMsgStart:
-.incbin "bdosMsg.bin"
-.global bdosMsgEnd
-bdosMsgEnd:
-.global exitTestStart
-exitTestStart:
-.incbin "exitTest.bin"
-.global exitTestEnd
-exitTestEnd:
-.global nopStartStart
-nopStartStart:
-.incbin "nopStart.bin"
-.global nopStartEnd
-nopStartEnd:
-.global nopEndStart
-nopEndStart:
-.incbin "nopEnd.bin"
-.global nopEndEnd
-nopEndEnd:
 .global pre8080Start
 pre8080Start:
 .incbin "8080PRE.COM"
