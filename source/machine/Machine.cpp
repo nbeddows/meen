@@ -99,8 +99,8 @@ namespace meen
 				if(json.is_discarded() == true)
 #else
 				JsonDocument json;
-				auto err = deserializeJson(json, str);
-				if(err)
+				auto je = deserializeJson(json, str);
+				if(je)
 #endif // ENABLE_NLOHMANN_JSON
 				{
 					return make_error_code(errc::json_parse);
@@ -117,16 +117,16 @@ namespace meen
 				auto memory = json["memory"];
 #ifdef ENABLE_NLOHMANN_JSON
 				// We must contain at least rom, if we have ram we need a uuid to match against
-				if (!memory.contains("rom") 
+				if (!memory.contains("rom")
 #ifdef ENABLE_MEEN_SAVE
 				|| (memory.contains("ram") && !memory.contains("uuid"))
 #endif // ENABLE_MEEN_SAVE
 				)
 #else
 				if(memory["rom"] == nullptr
-#ifdef ENABLE_MEEN_SAVE				
+#ifdef ENABLE_MEEN_SAVE
 				|| (memory["ram"] != nullptr && memory["uuid"] == nullptr)
-#endif // ENABLE_MEEN_SAVE			
+#endif // ENABLE_MEEN_SAVE
 				)
 #endif // ENABLE_NLOHMANN_JSON
 				{
@@ -556,7 +556,7 @@ namespace meen
 				if (json.contains("cpu"))
 				{
 					// if ram exists we need to check for cpu uuid compatibility
-					auto err = cpu_->Load(json["cpu"].dump(), 
+					auto err = cpu_->Load(json["cpu"].dump(),
 #ifdef ENABLE_MEEN_SAVE
 					memory.contains("ram")
 #else
@@ -646,10 +646,10 @@ namespace meen
 					{
 						// If a user defined callback is set and we are not processing a load or save request
 						if (onLoad_ != nullptr
-#ifndef ENABLE_MEEN_RP2040						
+#ifndef ENABLE_MEEN_RP2040
 						&& onLoad.valid() == false
-#endif // ENABLE_MEEN_RP2040 
-#ifdef ENABLE_MEEN_SAVE						
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_MEEN_SAVE
 						&& onSave.valid() == false
 #endif // ENABLE_MEEN_SAVE
 						)
@@ -753,7 +753,7 @@ namespace meen
 								};
 
 								writeState();
-								
+
 								onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
 								{
 									// TODO: this method needs to be marked as nothrow
@@ -926,7 +926,7 @@ namespace meen
 			}
 			else
 			{
-				return std::unexpected(make_error_code(errc::async));		
+				return std::unexpected(make_error_code(errc::async));
 			}
 #endif // ENABLE_MEEN_RP2040
 
@@ -953,7 +953,7 @@ namespace meen
 		// controller = nullptr;
 		return std::error_code{};
 	}
-		
+
 	std::expected<IControllerPtr, std::error_code> Machine::DetachMemoryController()
 	{
 		if (running_ == true)
@@ -989,7 +989,7 @@ namespace meen
 		// controller = nullptr;
 		return std::error_code{};
 	}
-		
+
 	std::expected<IControllerPtr, std::error_code> Machine::DetachIoController()
 	{
 		if (running_ == true)
@@ -1038,7 +1038,7 @@ namespace meen
 	{
 		delete_ = del;
 	}
-	
+
 	void ControllerDeleter::operator()(IController* controller)
 	{
 		if(delete_ == true)
