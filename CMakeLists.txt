@@ -127,7 +127,7 @@ if(${build_os} STREQUAL "baremetal")
 else()
   find_package(nlohmann_json REQUIRED)
 
-  if(NOT BUILD_TESTING STREQUAL OFF)  
+  if(NOT BUILD_TESTING STREQUAL OFF)
     find_package(GTest REQUIRED)
   endif()
 endif()
@@ -513,8 +513,8 @@ while [[ \$# -gt 0 ]]; do\n\
   esac\n\
   shift\n\
 done\n\
-echo Adding `pwd`/${runtime_dir} to LD_LIBRARY_PATH\n\
-export LD_LIBRARY_PATH=`pwd`/${runtime_dir}:\${LD_LIBRARY_PATH}\n\
+echo Adding `pwd`/${archive_dir} to LD_LIBRARY_PATH\n\
+export LD_LIBRARY_PATH=`pwd`/${archive_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
 ${runtime_dir}/${meen}_test \"\${gtest_filter}\" tests/programs/\n\
 ${pythonExecute}"
