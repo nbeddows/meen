@@ -485,12 +485,10 @@ namespace meen
 					auto bytes = memory["ram"]["bytes"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
 					std::vector<uint8_t> ram;
-					int size = 0;
-
-					for (const auto& rm : ramMetadata)
+					auto size = std::accumulate (ramMetadata.begin(), ramMetadata.end(), 0, [](int accumulator, const std::pair<uint16_t, uint16_t>& metadata)
 					{
-						size += rm.second;
-					}
+						return accumulator + metadata.second;
+					});
 #ifdef ENABLE_BASE64
 					if (bytes.starts_with("base64://") == true)
 					{
