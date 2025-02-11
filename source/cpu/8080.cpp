@@ -318,6 +318,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 
 		auto sv = json["uuid"].get<std::string_view>();
 
+#ifdef ENABLE_BASE64
 		if(sv.starts_with("base64://") == true)
 		{
 			sv.remove_prefix(strlen("base64://"));
@@ -330,6 +331,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 			}
 		}
 		else
+#endif // ENABLE_BASE64
 		{
 			return make_error_code(errc::json_config);
 		}
@@ -370,6 +372,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 
 		auto sv = json["uuid"].as<std::string_view>();
 
+#ifdef ENABLE_BASE64
 		if (sv.starts_with("base64://") == true)
 		{
 			sv.remove_prefix(strlen("base64://"));
@@ -383,6 +386,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 			}
 		}
 		else
+#endif // ENABLE_BASE64
 		{
 			return make_error_code(errc::json_config);
 		}
