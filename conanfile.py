@@ -57,9 +57,8 @@ class MeenRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
-        self.requires("base64/0.5.2")
- 
         if self.options.get_safe("with_save", False):
+            self.requires("base64/0.5.2")
             self.requires("hash-library/8.0")
 
         if(self.settings.os == "baremetal"):
