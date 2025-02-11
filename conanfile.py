@@ -124,7 +124,7 @@ class MeenRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
-        tc.cache_variables["enable_base64"] = True
+        tc.cache_variables["enable_base64"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
         tc.variables["build_os"] = self.settings.os
