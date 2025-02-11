@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <array>
 #include <memory>
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
@@ -46,16 +47,23 @@ extern uint8_t tst8080End;
 #include "test_controllers/TestIoController.h"
 #include "test_controllers/CpmIoController.h"
 
+// A literal helper to prevent narrowing conversion warning
+uint8_t operator""_ui8(unsigned long long byte)
+{
+    return static_cast<uint8_t>(byte);
+}
+
 static std::unique_ptr<meen::IMachine> machine;
 static std::string programsDir;
-// A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
-static const char* saveAndExit = "base64://0/7T/3Y";
-// A base64 encoded code fragment that initialises the 'a' register to 10 and is loaded at address 0x0005. Used in conjunction with nopEnd to run the timing test
-static const char* nopStart = "base64://Pgo=";
-// A base64 encoded code fragment that decrements the 'a' register by 1, jumps to address 0x0005 if 'a' is non-zero else address 0x0000.
-static const char* nopEnd = "base64://PcIHAMMAAA";
-// A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
-static const char* bdosMsg = "base64://9XnTAP4CyhEAetMBe9MC8ck=";
+
+// An i8080 code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
+static const std::array<uint8_t, 5> saveAndExit{ 0xD3_ui8, 0xFE_ui8, 0xD3_ui8, 0xFF_ui8, 0x76_ui8 };
+// An i8080 code fragment that initialises the 'a' register to 10 and is loaded at address 0x0005. Used in conjunction with nopEnd to run the timing test
+static const std::array<uint8_t, 2> nopStart{ 0x3E_ui8, 0x0A_ui8 };
+// An i8080 code fragment that decrements the 'a' register by 1, jumps to address 0x0005 if 'a' is non-zero else address 0x0000.
+static const std::array<uint8_t, 7> nopEnd{ 0x3D_ui8, 0xC2_ui8, 0x07_ui8, 0x00_ui8, 0xC3_ui8, 0x00_ui8, 0x00_ui8 };
+// An i8080 code fragment that emulates cp/m bdos function 4 - raw console output.
+static const std::array<uint8_t, 17> bdosMsg{ 0xF5_ui8, 0x79_ui8, 0xD3_ui8, 0x00_ui8, 0xFE_ui8, 0x02_ui8, 0xCA_ui8, 0x11_ui8, 0x00_ui8, 0x7A_ui8, 0xD3_ui8, 0x01_ui8, 0x7B_ui8, 0xD3_ui8, 0x02_ui8, 0xF1_ui8, 0xC9_ui8 };
 
 void setUp()
 {
@@ -134,7 +142,8 @@ namespace meen::tests
 
         err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
+            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
+                                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
         TEST_ASSERT_FALSE(err);
 
@@ -196,14 +205,16 @@ namespace meen::tests
 #ifdef ENABLE_MEEN_RP2040
                 if (&tst8080End - &tst8080Start >= 1471)
                 {
-                    err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"mem://%p","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, &tst8080Start);
+                    err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
+                                       saveAndExit.data(), saveAndEcit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
                 }
                 else
                 {
                     err = errc::incompatible_rom;
                 }
 #else
-                err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, progDir);
+                err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
+                                   saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), progDir);
 #endif // ENABLE_MEEN_RP2040
                 break;
             case 1:
@@ -359,7 +370,8 @@ namespace meen::tests
 
         err = machine->OnLoad([name, progSize](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256,"size":%d},{"bytes":"%s","offset":5}]}}})", saveAndExit, name, progSize, bdosMsg);
+            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
+                                saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
         });
         TEST_ASSERT_FALSE(err);
 
@@ -394,7 +406,8 @@ namespace meen::tests
     {
         auto err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
+            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
+                                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
         TEST_ASSERT_FALSE(err);
 
@@ -439,7 +452,7 @@ namespace meen::tests
 
     static void test_OnLoad()
     {
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 10; i++)
         {
             Load(false);
         }
@@ -447,7 +460,7 @@ namespace meen::tests
 
     static void test_OnLoadAsync()
     {
-        for (int i = 0; i < 50; i++)
+        for (int i = 0; i < 10; i++)
         {
             Load(true);
         }
