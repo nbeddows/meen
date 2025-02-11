@@ -145,7 +145,7 @@ namespace meen
 					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
 					auto memUuid = memoryController->Uuid();
-	
+
 					if (sv.starts_with("base64://"))
 					{
 						sv.remove_prefix(strlen("base64://"));
@@ -217,7 +217,7 @@ namespace meen
 							return make_error_code(errc::json_config);
 						}
 					}
-
+#ifndef ENABLE_MEEN_RP2040
 					if (bytes.starts_with("file://") == true)
 					{
 						bytes.remove_prefix(strlen("file://"));
@@ -272,7 +272,10 @@ namespace meen
 
 						romMetadata.emplace(offset, size);
 					}
-					else if (bytes.starts_with("base64://") == true)
+					else
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_BASE64
+					if (bytes.starts_with("base64://") == true)
 					{
 						bytes.remove_prefix(strlen("base64://"));
 #ifdef ENABLE_MEEN_SAVE
@@ -363,7 +366,9 @@ namespace meen
 							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 						}
 					}
-					else if (bytes.starts_with("mem://") == true)
+					else
+#endif // ENABLE_BASE64
+					if (bytes.starts_with("mem://") == true)
 					{
 						bytes.remove_prefix(strlen("mem://"));
 
@@ -469,7 +474,7 @@ namespace meen
 					if (!memory["ram"].contains("bytes"))
 #else
 					if (!memory["ram"]["bytes"])
-#endif
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_config);
 					}
@@ -478,7 +483,7 @@ namespace meen
 					auto bytes = memory["ram"]["bytes"].get<std::string_view>();
 #else
 					auto bytes = memory["ram"]["bytes"].as<std::string_view>();
-#endif
+#endif // ENABLE_NLOHMANN_JSON
 					std::vector<uint8_t> ram;
 					int size = 0;
 
@@ -486,7 +491,7 @@ namespace meen
 					{
 						size += rm.second;
 					}
-
+#ifdef ENABLE_BASE64
 					if (bytes.starts_with("base64://") == true)
 					{
 						std::string compressor = "none";
@@ -514,6 +519,7 @@ namespace meen
 						}
 					}
 					else
+#endif // ENABLE_BASE64
 					{
 						return make_error_code(errc::json_config);
 					}
