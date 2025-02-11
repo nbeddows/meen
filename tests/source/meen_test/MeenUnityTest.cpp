@@ -206,7 +206,7 @@ namespace meen::tests
                 if (&tst8080End - &tst8080Start >= 1471)
                 {
                     err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
-                                       saveAndExit.data(), saveAndEcit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
+                                       saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
                 }
                 else
                 {
