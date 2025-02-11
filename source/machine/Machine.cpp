@@ -656,20 +656,20 @@ namespace meen
 #endif // ENABLE_MEEN_RP2040
 								std::string str;
 								int len = 0;
-								auto err = onLoad_(nullptr, &len);
+								auto e = onLoad_(nullptr, &len);
 
-								if(!err)
+								if(!e)
 								{
 									len++;
 									str.resize(len, '\0');
-									err = onLoad_(str.data(), &len);
+									e = onLoad_(str.data(), &len);
 								}
 
-								if(err)
+								if(e)
 								{
 									str.clear();
 									// todo: need to have proper logging
-									printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
+									printf("ISR::Load failed to load the machine state: %s\n", e.message().c_str());
 								}
 #ifndef ENABLE_MEEN_RP2040
 								return str;
@@ -772,18 +772,18 @@ namespace meen
 					case ISR::Quit:
 					{
 						// Wait for any outstanding load/save requests to complete
-
+#ifndef ENABLE_MEEN_RP2040
 						if (onLoad.valid() == true)
 						{
 							// we are quitting, wait for the onLoad handler to complete
-							auto errc = loadMachineState(onLoad.get());
+							auto err = loadMachineState(onLoad.get());
 
-							if(errc)
+							if(err)
 							{
-								printf("ISR::Quit failed to load the machine state: %s\n", errc.message().c_str());
+								printf("ISR::Quit failed to load the machine state: %s\n", err.message().c_str());
 							}
 						}
-
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 						if (onSave.valid() == true)
 						{
