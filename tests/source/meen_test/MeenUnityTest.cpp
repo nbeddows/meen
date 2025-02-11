@@ -479,7 +479,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprinf(src, 128, "mem://%p", &tst8080Start);
+        snprintf(src, 128, "mem://%p", &tst8080Start);
 #else
         snprintf(src, 128, "file://%s/TST8080.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -499,7 +499,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprinf(src, 128, "mem://%p", &pre8080Start);
+        snprintf(src, 128, "mem://%p", &pre8080Start);
 #else
         snprintf(src, 128, "file://%s/8080PRE.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -519,7 +519,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprinf(src, 128, "mem://%p", &cpuTestStart);
+        snprintf(src, 128, "mem://%p", &cpuTestStart);
 #else
         snprintf(src, 128, "file://%s/CPUTEST.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -539,7 +539,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprinf(src, 128, "mem://%p", &exm8080Start);
+        snprintf(src, 128, "mem://%p", &exm8080Start);
 #else
         snprintf(src, 128, "file://%s/8080EXM.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
