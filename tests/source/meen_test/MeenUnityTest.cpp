@@ -546,7 +546,7 @@ namespace meen::tests
 
         RunTestSuite(src,
 #ifdef ENABLE_MEEN_RP2040
-        &exm8080tEnd - &exm8080Start,
+        &exm8080End - &exm8080Start,
 #else
         0,
 #endif // ENABLE_MEEN_RP2040
