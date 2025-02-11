@@ -84,8 +84,10 @@ namespace meen
 		auto& ramMetadata = m->ramMetadata_;
 		auto& onLoad_ = m->onLoad_;
 		auto& opt_ = m->opt_;
+#ifndef ENABLE_MEEN_RP2040
 		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
+#endif // ENABLE_MEEN_RP2040
 		auto memoryController = m->memoryController_.get();
 		auto loadMachineState = [&](std::string&& str)
 		{
@@ -371,15 +373,14 @@ namespace meen
 						}
 
 						int64_t value = 0;
-
 						auto [ptr, ec] = std::from_chars (bytes.data(), bytes.data() + bytes.size(), value, 16);
-					
+
 						if (ec != std::errc() || ptr != bytes.data() + bytes.size())
 						{
 							return make_error_code(errc::json_config);
 						}
 
-						uint8_t* romBytes = std::bit_cast<uint8_t*>(value);
+						auto romBytes = reinterpret_cast<uint8_t*>(value);
 
 						// only support a max of 16 bit addressing
 						if (offset + size > 0xFFFF)
@@ -587,6 +588,7 @@ namespace meen
 			return std::error_code{};
 		};
 
+#ifndef ENABLE_MEEN_RP2040
 		auto checkHandler = [](std::future<std::string>& fut)
 		{
 			std::string str;
@@ -603,6 +605,7 @@ namespace meen
 
 			return str;
 		};
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 		auto& onSave_ = m->onSave_;
 		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
@@ -638,14 +641,19 @@ namespace meen
 					case ISR::Load:
 					{
 						// If a user defined callback is set and we are not processing a load or save request
-						if (onLoad_ != nullptr && onLoad.valid() == false 
+						if (onLoad_ != nullptr
+#ifndef ENABLE_MEEN_RP2040						
+						&& onLoad.valid() == false
+#endif // ENABLE_MEEN_RP2040 
 #ifdef ENABLE_MEEN_SAVE						
 						&& onSave.valid() == false
 #endif // ENABLE_MEEN_SAVE
 						)
 						{
+#ifndef ENABLE_MEEN_RP2040
 							onLoad = std::async(loadLaunchPolicy, [onLoad_]
 							{
+#endif // ENABLE_MEEN_RP2040
 								std::string str;
 								int len = 0;
 								auto err = onLoad_(nullptr, &len);
@@ -663,11 +671,14 @@ namespace meen
 									// todo: need to have proper logging
 									printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
 								}
-
+#ifndef ENABLE_MEEN_RP2040
 								return str;
 							});
 
 							auto err = loadMachineState(checkHandler(onLoad));
+#else
+							auto err = loadMachineState(std::move(str));
+#endif // ENABLE_MEEN_RP2040
 
 							if(err)
 							{
@@ -785,6 +796,7 @@ namespace meen
 					}
 					case ISR::NoInterrupt:
 					{
+#ifndef ENABLE_MEEN_RP2040
 						// no interrupts pending, do any work that is outstanding
 						auto errc = loadMachineState(checkHandler(onLoad));
 
@@ -792,6 +804,7 @@ namespace meen
 						{
 							printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
 						}
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 						checkHandler(onSave);
 #endif // ENABLE_MEEN_SAVE
