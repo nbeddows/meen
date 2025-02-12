@@ -84,8 +84,10 @@ namespace meen
 		auto& ramMetadata = m->ramMetadata_;
 		auto& onLoad_ = m->onLoad_;
 		auto& opt_ = m->opt_;
+#ifndef ENABLE_MEEN_RP2040
 		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
+#endif // ENABLE_MEEN_RP2040
 		auto memoryController = m->memoryController_.get();
 		auto loadMachineState = [&](std::string&& str)
 		{
@@ -97,8 +99,8 @@ namespace meen
 				if(json.is_discarded() == true)
 #else
 				JsonDocument json;
-				auto err = deserializeJson(json, str);
-				if(err)
+				auto je = deserializeJson(json, str);
+				if(je)
 #endif // ENABLE_NLOHMANN_JSON
 				{
 					return make_error_code(errc::json_parse);
@@ -115,16 +117,16 @@ namespace meen
 				auto memory = json["memory"];
 #ifdef ENABLE_NLOHMANN_JSON
 				// We must contain at least rom, if we have ram we need a uuid to match against
-				if (!memory.contains("rom") 
+				if (!memory.contains("rom")
 #ifdef ENABLE_MEEN_SAVE
 				|| (memory.contains("ram") && !memory.contains("uuid"))
 #endif // ENABLE_MEEN_SAVE
 				)
 #else
 				if(memory["rom"] == nullptr
-#ifdef ENABLE_MEEN_SAVE				
+#ifdef ENABLE_MEEN_SAVE
 				|| (memory["ram"] != nullptr && memory["uuid"] == nullptr)
-#endif // ENABLE_MEEN_SAVE			
+#endif // ENABLE_MEEN_SAVE
 				)
 #endif // ENABLE_NLOHMANN_JSON
 				{
@@ -143,7 +145,7 @@ namespace meen
 					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
 					auto memUuid = memoryController->Uuid();
-	
+
 					if (sv.starts_with("base64://"))
 					{
 						sv.remove_prefix(strlen("base64://"));
@@ -215,7 +217,7 @@ namespace meen
 							return make_error_code(errc::json_config);
 						}
 					}
-
+#ifndef ENABLE_MEEN_RP2040
 					if (bytes.starts_with("file://") == true)
 					{
 						bytes.remove_prefix(strlen("file://"));
@@ -270,7 +272,10 @@ namespace meen
 
 						romMetadata.emplace(offset, size);
 					}
-					else if (bytes.starts_with("base64://") == true)
+					else
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_BASE64
+					if (bytes.starts_with("base64://") == true)
 					{
 						bytes.remove_prefix(strlen("base64://"));
 #ifdef ENABLE_MEEN_SAVE
@@ -361,7 +366,9 @@ namespace meen
 							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 						}
 					}
-					else if (bytes.starts_with("mem://") == true)
+					else
+#endif // ENABLE_BASE64
+					if (bytes.starts_with("mem://") == true)
 					{
 						bytes.remove_prefix(strlen("mem://"));
 
@@ -371,15 +378,14 @@ namespace meen
 						}
 
 						int64_t value = 0;
-
 						auto [ptr, ec] = std::from_chars (bytes.data(), bytes.data() + bytes.size(), value, 16);
-					
+
 						if (ec != std::errc() || ptr != bytes.data() + bytes.size())
 						{
 							return make_error_code(errc::json_config);
 						}
 
-						uint8_t* romBytes = std::bit_cast<uint8_t*>(value);
+						auto romBytes = reinterpret_cast<uint8_t*>(value);
 
 						// only support a max of 16 bit addressing
 						if (offset + size > 0xFFFF)
@@ -468,7 +474,7 @@ namespace meen
 					if (!memory["ram"].contains("bytes"))
 #else
 					if (!memory["ram"]["bytes"])
-#endif
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_config);
 					}
@@ -477,15 +483,13 @@ namespace meen
 					auto bytes = memory["ram"]["bytes"].get<std::string_view>();
 #else
 					auto bytes = memory["ram"]["bytes"].as<std::string_view>();
-#endif
+#endif // ENABLE_NLOHMANN_JSON
 					std::vector<uint8_t> ram;
-					int size = 0;
-
-					for (const auto& rm : ramMetadata)
+					auto size = std::accumulate (ramMetadata.begin(), ramMetadata.end(), 0, [](int accumulator, const std::pair<uint16_t, uint16_t>& metadata)
 					{
-						size += rm.second;
-					}
-
+						return accumulator + metadata.second;
+					});
+#ifdef ENABLE_BASE64
 					if (bytes.starts_with("base64://") == true)
 					{
 						std::string compressor = "none";
@@ -513,6 +517,7 @@ namespace meen
 						}
 					}
 					else
+#endif // ENABLE_BASE64
 					{
 						return make_error_code(errc::json_config);
 					}
@@ -551,7 +556,7 @@ namespace meen
 				if (json.contains("cpu"))
 				{
 					// if ram exists we need to check for cpu uuid compatibility
-					auto err = cpu_->Load(json["cpu"].dump(), 
+					auto err = cpu_->Load(json["cpu"].dump(),
 #ifdef ENABLE_MEEN_SAVE
 					memory.contains("ram")
 #else
@@ -587,6 +592,7 @@ namespace meen
 			return std::error_code{};
 		};
 
+#ifndef ENABLE_MEEN_RP2040
 		auto checkHandler = [](std::future<std::string>& fut)
 		{
 			std::string str;
@@ -603,6 +609,7 @@ namespace meen
 
 			return str;
 		};
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 		auto& onSave_ = m->onSave_;
 		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
@@ -638,36 +645,44 @@ namespace meen
 					case ISR::Load:
 					{
 						// If a user defined callback is set and we are not processing a load or save request
-						if (onLoad_ != nullptr && onLoad.valid() == false 
-#ifdef ENABLE_MEEN_SAVE						
+						if (onLoad_ != nullptr
+#ifndef ENABLE_MEEN_RP2040
+						&& onLoad.valid() == false
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_MEEN_SAVE
 						&& onSave.valid() == false
 #endif // ENABLE_MEEN_SAVE
 						)
 						{
+#ifndef ENABLE_MEEN_RP2040
 							onLoad = std::async(loadLaunchPolicy, [onLoad_]
 							{
+#endif // ENABLE_MEEN_RP2040
 								std::string str;
 								int len = 0;
-								auto err = onLoad_(nullptr, &len);
+								auto e = onLoad_(nullptr, &len);
 
-								if(!err)
+								if(!e)
 								{
 									len++;
 									str.resize(len, '\0');
-									err = onLoad_(str.data(), &len);
+									e = onLoad_(str.data(), &len);
 								}
 
-								if(err)
+								if(e)
 								{
 									str.clear();
 									// todo: need to have proper logging
-									printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
+									printf("ISR::Load failed to load the machine state: %s\n", e.message().c_str());
 								}
-
+#ifndef ENABLE_MEEN_RP2040
 								return str;
 							});
 
 							auto err = loadMachineState(checkHandler(onLoad));
+#else
+							auto err = loadMachineState(std::move(str));
+#endif // ENABLE_MEEN_RP2040
 
 							if(err)
 							{
@@ -738,7 +753,7 @@ namespace meen
 								};
 
 								writeState();
-								
+
 								onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
 								{
 									// TODO: this method needs to be marked as nothrow
@@ -761,18 +776,18 @@ namespace meen
 					case ISR::Quit:
 					{
 						// Wait for any outstanding load/save requests to complete
-
+#ifndef ENABLE_MEEN_RP2040
 						if (onLoad.valid() == true)
 						{
 							// we are quitting, wait for the onLoad handler to complete
-							auto errc = loadMachineState(onLoad.get());
+							auto err = loadMachineState(onLoad.get());
 
-							if(errc)
+							if(err)
 							{
-								printf("ISR::Quit failed to load the machine state: %s\n", errc.message().c_str());
+								printf("ISR::Quit failed to load the machine state: %s\n", err.message().c_str());
 							}
 						}
-
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 						if (onSave.valid() == true)
 						{
@@ -785,6 +800,7 @@ namespace meen
 					}
 					case ISR::NoInterrupt:
 					{
+#ifndef ENABLE_MEEN_RP2040
 						// no interrupts pending, do any work that is outstanding
 						auto errc = loadMachineState(checkHandler(onLoad));
 
@@ -792,6 +808,7 @@ namespace meen
 						{
 							printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
 						}
+#endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 						checkHandler(onSave);
 #endif // ENABLE_MEEN_SAVE
@@ -909,7 +926,7 @@ namespace meen
 			}
 			else
 			{
-				return std::unexpected(make_error_code(errc::async));		
+				return std::unexpected(make_error_code(errc::async));
 			}
 #endif // ENABLE_MEEN_RP2040
 
@@ -936,7 +953,7 @@ namespace meen
 		// controller = nullptr;
 		return std::error_code{};
 	}
-		
+
 	std::expected<IControllerPtr, std::error_code> Machine::DetachMemoryController()
 	{
 		if (running_ == true)
@@ -972,7 +989,7 @@ namespace meen
 		// controller = nullptr;
 		return std::error_code{};
 	}
-		
+
 	std::expected<IControllerPtr, std::error_code> Machine::DetachIoController()
 	{
 		if (running_ == true)
@@ -1021,7 +1038,7 @@ namespace meen
 	{
 		delete_ = del;
 	}
-	
+
 	void ControllerDeleter::operator()(IController* controller)
 	{
 		if(delete_ == true)

@@ -1,4 +1,4 @@
-# Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+# Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -127,7 +127,7 @@ if(${build_os} STREQUAL "baremetal")
 else()
   find_package(nlohmann_json REQUIRED)
 
-  if(NOT BUILD_TESTING STREQUAL OFF)  
+  if(NOT BUILD_TESTING STREQUAL OFF)
     find_package(GTest REQUIRED)
   endif()
 endif()
@@ -343,6 +343,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   set(${test_controllers}_source_files
     tests/${source_dir}/${test_controllers}/BaseIoController.cpp
     tests/${source_dir}/${test_controllers}/CpmIoController.cpp
+    tests/${source_dir}/${test_controllers}/MemoryController.cpp
     tests/${source_dir}/${test_controllers}/TestIoController.cpp
   )
 
@@ -350,15 +351,9 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     if(${enable_rp2040} STREQUAL ON)
       set(${test_controllers}_source_files
         ${${test_controllers}_source_files}
-        tests/${source_dir}/${test_controllers}/RP2040MemoryController.cpp
         tests/${source_dir}/${test_controllers}/TestPrograms.S
       )
     endif()
-  else()
-    set(${test_controllers}_source_files
-      ${${test_controllers}_source_files}
-      tests/${source_dir}/${test_controllers}/MemoryController.cpp
-    )
   endif()
 
   SOURCE_GROUP(${include_dir} FILES ${${test_controllers}_include_files})
@@ -455,10 +450,6 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   install(TARGETS ${meen}_test RUNTIME DESTINATION ${runtime_dir})
 
   if(${build_os} STREQUAL "baremetal")
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/bdosMsg.bin DESTINATION tests/programs)
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/exitTest.bin DESTINATION tests/programs)
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/nopStart.bin DESTINATION tests/programs)
-    install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/nopEnd.bin DESTINATION tests/programs)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080EXM.COM DESTINATION tests/programs)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080PRE.COM DESTINATION tests/programs)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/CPUTEST.COM DESTINATION tests/programs)
@@ -522,8 +513,8 @@ while [[ \$# -gt 0 ]]; do\n\
   esac\n\
   shift\n\
 done\n\
-echo Adding `pwd`/${runtime_dir} to LD_LIBRARY_PATH\n\
-export LD_LIBRARY_PATH=`pwd`/${runtime_dir}:\${LD_LIBRARY_PATH}\n\
+echo Adding `pwd`/${archive_dir} to LD_LIBRARY_PATH\n\
+export LD_LIBRARY_PATH=`pwd`/${archive_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
 ${runtime_dir}/${meen}_test \"\${gtest_filter}\" tests/programs/\n\
 ${pythonExecute}"

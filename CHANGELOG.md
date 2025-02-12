@@ -6,7 +6,7 @@
 * Added Conan option `with_save` to enable/disable 
   load/save support. 
 * Added support for ArduinoJson for baremetal.
-* Added RP2040 support.
+* Added RP2040 microcontroller support.
 * Code refactor for a minimum 2x performace boost.
 * The ISR frequency is now honoured when no clock resolution
   is set.
@@ -36,6 +36,8 @@
 * Removed IMachine::SetOptions support for ram/rom.
 * Tidied up the unit tests by removing the i8080 test
   files and using base64 encoded versions instead.
+* More flexibility for the `IMachine::OnLoad` callback json
+  allowing for more methods of loading program roms.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

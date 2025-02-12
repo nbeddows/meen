@@ -57,9 +57,8 @@ class MeenRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
-        self.requires("base64/0.5.2")
- 
         if self.options.get_safe("with_save", False):
+            self.requires("base64/0.5.2")
             self.requires("hash-library/8.0")
 
         if(self.settings.os == "baremetal"):
@@ -89,7 +88,7 @@ class MeenRecipe(ConanFile):
             if self.settings_build.os == "Linux" or self.settings_build == "baremetal":
                 self.output.error("Cross compiling from Linux or baremetal to Windows is not supported")
         elif self.settings.os == "baremetal":
-            self.output.info("Load/Save not supported, removing option with_save")
+            self.output.info("Save not supported, removing option with_save")
             self.options.rm_safe("with_save")
 
         if "arm" in self.settings.arch:
@@ -124,7 +123,7 @@ class MeenRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
-        tc.cache_variables["enable_base64"] = True
+        tc.cache_variables["enable_base64"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
         tc.variables["build_os"] = self.settings.os
