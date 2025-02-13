@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,22 +25,23 @@ SOFTWARE.
 
 namespace meen
 {
-	std::string CpmIoController::Message()
-	{
-		auto str = std::move(message_);
-		message_.clear();
-		return str;
-	}
-
 	std::array<uint8_t, 16> CpmIoController::Uuid() const
 	{
 		return{ 0x32, 0x8C, 0xCF, 0x78, 0x76, 0x1B, 0x48, 0xA4, 0x98, 0x2C, 0x1A, 0xAA, 0x5F, 0x14, 0x31, 0x24 };
 	}
 
-	//Not used, just return 0;
 	uint8_t CpmIoController::Read([[maybe_unused]] uint16_t deviceNumber, [[maybe_unused]] IController* controller)
 	{
-		return 0;
+		if (output_.empty() == true)
+		{
+			return 0x04; // ascii end of transmission
+		}
+		else
+		{
+			auto byte = output_.front();
+			output_.pop_front();
+			return byte;
+		}
 	}
 
 	void CpmIoController::Write(uint16_t deviceNumber, uint8_t value, IController* memoryController)
@@ -49,13 +50,11 @@ namespace meen
 		{
 			case 0:
 			{
-				//printf("Print Mode: %d\n", value);
 				printMode_ = value;
 				break;
 			}
 			case 1:
 			{
-				//printf("Addr Hi: %d\n", value);
 				addrHi_ = value;
 				break;
 			}
@@ -70,16 +69,14 @@ namespace meen
 
 						while (aChar != '$')
 						{
-							//printf("%c", aChar);
-							message_.push_back(aChar);
+							output_.push_back(aChar);
 							aChar = memoryController->Read(++addr, nullptr);
 						}
 						break;
 					}
 					case 2:
 					{
-						//printf ("%c", value);
-						message_.push_back(value);
+						output_.push_back(value);
 						break;
 					}
 					default:

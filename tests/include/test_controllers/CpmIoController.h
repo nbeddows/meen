@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,8 +24,8 @@ SOFTWARE.
 #define CPMIOCONTROLLER_H
 
 #include <array>
+#include <list>
 #include <memory>
-#include <string>
 
 #include "test_controllers/BaseIoController.h"
 
@@ -52,10 +52,10 @@ namespace meen
 		
 		/** Output message buffer
 
-			A character buffer where program output messages are printed to.
+			A list of bytes where program output messages are printed to.
 		*/
 		//cppcheck-suppress unusedStructMember
-		std::string message_;
+		std::list<uint8_t> output_;
 
 		/** Printing mode
 
@@ -80,18 +80,6 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		uint8_t addrHi_{};
 	public:
-		/** Output message buffer
-
-			The output message generated from one of the print modes.
-			
-			@return		A copy of the internal message buffer as a std::string.
-
-			@remark		When this method returns the internal message buffer will be cleared.
-
-			@see		CpmIoController::message_
-		*/
-		std::string Message();
-
 		/**	Uuid
 
 			Unique universal identifier for this controller.

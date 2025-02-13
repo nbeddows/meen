@@ -1,6 +1,6 @@
 2.0.0
 * Updated the project layout for improved workflow.
-* Added std::error_code support.
+* Added `std::error_code` support.
 * Removed the use of exceptions (methods return std::error_code).
 * Binary package now built with cpack.
 * Added Conan option `with_save` to enable/disable 
@@ -13,15 +13,15 @@
 * Compiler Id and version are now incorporated
   into the package name.
 * Changed top level namespace from MachEmu to meen.
-* IMachine::Run now returns a std::error_code.
-* IMachine::WaitForCompletion now returns a std::expected.
+* `IMachine::Run` now returns a `std::error_code`.
+* `IMachine::WaitForCompletion` now returns a `std::expected`.
 * Updated the minimum msvc version required in the README to 1706.
 * Added Error.h with errc enum to compare meen error_code values.
 * Clang is no longer officially supported.
-* Removed the following IMachine API methods: SetClockResolution,
-  Save, GetState.
-* Factory methods are based on cpu type (removed MakeMachine
-  in favour of Make8080Machine) and take no options.
+* Removed the following IMachine API methods: `SetClockResolution`,
+  `Save`, `GetState`.
+* Factory methods are based on cpu type (removed `MakeMachine`
+  in favour of `Make8080Machine`) and take no options.
 * Removed the Load method from the unit test memory controller.
 * The `IMachine::OnLoad` callback signature has changed.
 * Removed superfluous pybind machine holder.
@@ -33,11 +33,13 @@
 * Added support for the i8080 halt instruction.
 * Removed the pc (program counter) parameter from
   `IMachine::Run`.
-* Removed IMachine::SetOptions support for ram/rom.
+* Removed `IMachine::SetOptions` support for ram/rom.
 * Tidied up the unit tests by removing the i8080 test
   files and using base64 encoded versions instead.
 * More flexibility for the `IMachine::OnLoad` callback json
   allowing for more methods of loading program roms.
+* Cpm test io controller's `Read` method has been implemented
+  and it's `Message` method removed.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

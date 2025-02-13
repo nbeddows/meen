@@ -136,6 +136,18 @@ class MachineTest(unittest.TestCase):
     def test_RunTimedAsync(self):
         self.RunTimed(True)
 
+    def ReadCpmIoControllerBuffer(self):
+        message = ''
+        byte = 0x00; 
+
+        while byte != 0x04: # ascii end of transmission
+            byte = self.cpmIoController.Read(0, None)
+		
+            if byte != 0x04:
+                message += chr(byte)
+
+        return message
+
     def Load(self, runAsync):
         saveStates = []
         self.loadIndex = 0
@@ -186,7 +198,7 @@ class MachineTest(unittest.TestCase):
         time = self.machine.WaitForCompletion()
         self.assertNotEqual(time, 0)
 
-        self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
+        self.assertIn('CPU IS OPERATIONAL', self.ReadCpmIoControllerBuffer())
 
         self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(-1)
@@ -196,7 +208,7 @@ class MachineTest(unittest.TestCase):
         time = self.machine.WaitForCompletion()
         self.assertNotEqual(time, 0)
 
-        self.assertIn('CPU IS OPERATIONAL', self.cpmIoController.Message())
+        self.assertIn('CPU IS OPERATIONAL', self.ReadCpmIoControllerBuffer())
         self.assertTrue(len(saveStates) == 2 or len(saveStates) == 3)
         self.assertEqual(saveStates[0], r'{"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":19,"b":19,"c":0,"d":19,"e":0,"h":19,"l":0,"s":86},"pc":1236,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzlENgDAQBbDlnQAETBeSpwABCEDAfnHBktEqaGt/ca4OfKrXUVUzT+5cGVn9AQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGBXL4n+BO8="}}}')
         self.assertEqual(saveStates[1], r'{"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzkENgDAQALDBJeOJAGTghAdW8HQSSHAwP3xxwRJoFbSUv2h1Pco19W68ZIk5Iu5xz23IPGvvDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf9QDDAAbX"}}}')
@@ -228,6 +240,18 @@ class i8080Test(unittest.TestCase):
         # A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
         self.bdosMsg = 'base64://9XnTAP4CyhEAetMBe9MC8ck='
 
+    def ReadCpmIoControllerBuffer(self):
+        message = ''
+        byte = 0x00; 
+
+        while byte != 0x04: # ascii end of transmission
+            byte = self.cpmIoController.Read(0, None)
+		
+            if byte != 0x04:
+                message += chr(byte)
+
+        return message
+
     def CheckMachineState(self, expected, actual):
         e = json.loads(expected)
         a = json.loads(actual.rstrip('\0'))
@@ -247,9 +271,9 @@ class i8080Test(unittest.TestCase):
         self.assertTrue(self.saveTriggered or self.machine.OnSave(None) == ErrorCode.NotImplemented)
 
         if suiteName == '8080EXM.COM':
-            self.assertNotIn(expectedMsg, self.cpmIoController.Message())
+            self.assertNotIn(expectedMsg, self.ReadCpmIoControllerBuffer())
         else:
-            self.assertIn(expectedMsg, self.cpmIoController.Message())
+            self.assertIn(expectedMsg, self.ReadCpmIoControllerBuffer())
 
     def test_8080Pre(self):
         self.RunTestSuite('8080PRE.COM', r'{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280}', '8080 Preliminary tests complete')
