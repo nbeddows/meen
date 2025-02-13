@@ -174,6 +174,25 @@ namespace meen::tests
         TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
     }
 
+    static std::string ReadCpmIoControllerBuffer()
+	{
+		std::string message;
+		uint8_t byte = 0x04; // ascii end of transmission
+
+		do
+		{
+			byte = cpmIoController->Read(0, nullptr);
+		
+			if (byte != 0x04)
+			{
+				message.push_back(byte);
+			}
+		}
+		while (byte != 0x04);
+
+		return message;
+	}
+
     static void Load(bool runAsync)
     {
         int loadIndex = 0;
@@ -275,9 +294,9 @@ namespace meen::tests
         // Write to the 'load device', the value doesn't matter (use 0)
         cpmIoController->Write(0xFD, 0, nullptr);
 
-        cpm = static_cast<CpmIoController*>(cpmIoController.get());
+        TEST_ASSERT_EQUAL_INT(74, ReadCpmIoControllerBuffer().find("CPU IS OPERATIONAL"));
 
-        TEST_ASSERT_EQUAL_INT(74, cpm->Message().find("CPU IS OPERATIONAL"));
+        cpm = static_cast<CpmIoController*>(cpmIoController.get());
 
         // Disable triggering a save from this controller so the other cpm tests will pass.
         // Needs to be done before the next Run call so the async version of this test won't
@@ -298,12 +317,9 @@ namespace meen::tests
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
 
-        cpm = static_cast<CpmIoController*>(cpmIoController.get());
-        TEST_ASSERT_TRUE(cpm);
-
         // Since we are not saving/loading the io state the contents of the message buffer can
         // be in one of two states depending on how long the OnLoad initiation handler took to complete.
-        auto pos = cpm->Message().find("CPU IS OPERATIONAL");
+        auto pos = ReadCpmIoControllerBuffer().find("CPU IS OPERATIONAL");
 
         // Currently we are not saving the state of the io (do we need to?????)
         // This can cause variable output as discussed below
@@ -482,8 +498,7 @@ namespace meen::tests
         LoadAndRun(suiteName, suiteLen, expectedState);
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
-        auto cpm = static_cast<CpmIoController*>(cpmIoController.get());
-        TEST_ASSERT_EQUAL_INT(cpm->Message().find(expectedMsg), pos);
+        TEST_ASSERT_EQUAL_INT(ReadCpmIoControllerBuffer().find(expectedMsg), pos);
         err = machine->AttachIoController(std::move(controller.value()));
         TEST_ASSERT_FALSE(err);
     }

@@ -58,6 +58,7 @@ namespace meen::Tests
 		static void Load(bool runAsync);
 	    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos);
 		static errc LoadProgram (char* json, int* jsonLen, const char* fmt, ...);
+		static std::string ReadCpmIoControllerBuffer();
 
 	public:
 		static std::string programsDir_;
@@ -168,6 +169,25 @@ namespace meen::Tests
 		EXPECT_TRUE(saveTriggered || machine_->OnSave(nullptr).value() == errc::not_implemented);
 	}
 
+	std::string MachineTest::ReadCpmIoControllerBuffer()
+	{
+		std::string message;
+		uint8_t byte = 0x04; // ascii end of transmission
+
+		do
+		{
+			byte = cpmIoController_->Read(0, nullptr);
+		
+			if (byte != 0x04)
+			{
+				message.push_back(byte);
+			}
+		}
+		while (byte != 0x04);
+
+		return message;
+	}
+
     void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
     {
 		// Write to the 'load device', the value doesn't matter (use 0)
@@ -185,8 +205,7 @@ namespace meen::Tests
 		LoadAndRun((std::string("file://") + programsDir_ + "/" + suiteName).c_str(), expectedState, bdosMsg, 0x05);
 		cpmIoController_ = std::move(machine_->DetachIoController().value());
 		ASSERT_TRUE(cpmIoController_);
-		auto cpm = static_cast<CpmIoController*>(cpmIoController_.get());
-		EXPECT_EQ(cpm->Message().find(expectedMsg), pos);
+		EXPECT_EQ(ReadCpmIoControllerBuffer().find(expectedMsg), pos);
 		// Restore the defacto test io controller
 		err = machine_->AttachIoController(std::move(controller.value()));
 		EXPECT_FALSE(err);
@@ -395,13 +414,13 @@ namespace meen::Tests
 			cpmIoController_  = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
 
+			EXPECT_EQ(74, ReadCpmIoControllerBuffer().find("CPU IS OPERATIONAL"));
+
 			// Write to the 'load device', the value doesn't matter (use 0)
 			cpmIoController_->Write(0xFD, 0, nullptr);
 
 			cpmIoController = static_cast<CpmIoController*>(cpmIoController_.get());
 			ASSERT_TRUE(cpmIoController);
-
-			EXPECT_EQ(74, cpmIoController->Message().find("CPU IS OPERATIONAL"));
 
 			// Disable triggering a save from this controller so the other cpm tests will pass.
 			// Needs to be done before the next Run call so the async version of this test won't
@@ -422,12 +441,9 @@ namespace meen::Tests
 			cpmIoController_ = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
 
-			cpmIoController = static_cast<CpmIoController*>(cpmIoController_.get());
-			ASSERT_TRUE(cpmIoController);
-
 			// Since we are not saving/loading the io state the contents of the message buffer can
 			// be in one of two states depending on how long the OnLoad initiation handler took to complete.
-			auto pos = cpmIoController->Message().find("CPU IS OPERATIONAL");
+			auto pos = ReadCpmIoControllerBuffer().find("CPU IS OPERATIONAL");
 
 			// Currently we are not saving the state of the io (do we need to?????)
 			// This can cause variable output as discussed below
