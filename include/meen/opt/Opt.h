@@ -83,9 +83,9 @@ namespace meen
 
 			/**	Clock resolution
 
-				The frequency at which the internal clock ticks.
+				The frequency in Hertz at which the host clock is sampled.
 			*/
-			int64_t ClockResolution() const;
+			double ClockSamplingFreq() const;
 
 			/** Interrupt service routine frequency
 
