@@ -333,13 +333,13 @@ runTime = machine->WaitForCompletion();
 
 ### Configuration Options
 
-A number of configuration options are available that can be used to control the behaviour of the machine. The options must be supplied as a string in json format or the location of the json configuration file preceded with a recognised protocol.
+A number of configuration options are available that can be used to control the behaviour of the machine.<br>
+The options must be supplied in json format defined by one of the following protocols:
 
-Supported protocols:
-
-| Protocol | Remarks                                   |
-|:---------|:------------------------------------------|
-| file://  | Load a json file from local disk storage  |
+| Protocol | Remarks                                                               |
+|:---------|:--------------------------------------------------------------------- |
+| file://  | Load json from a file on local disk specified in the remaining string |
+| json://  | Load json from the remaining string                                   |
 
 The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
 
@@ -363,8 +363,8 @@ The following table describes the supported options (note, when no option is spe
 
 Configuration options can be supplied to MEEN via the IMachine::SetOptions api method:
 
-C++ - `machine->SetOptions(R"({"isrFreq":1})")`<br>
-Python - `self.machine.SetOptions(r'{"isrFreq":1.0}')`
+C++ - `machine->SetOptions(R"(json://{"isrFreq":1})")`<br>
+Python - `self.machine.SetOptions(r'file://myConfig.json')`
 
 See `IMachine::SetOptions` for further details.
 

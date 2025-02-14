@@ -55,7 +55,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
         # Using the default isrFreq setting of -1 (service interrupts at the end of each instruction) causes noticible performance issues, set it
         # to a number where on an i8080 running at 2Mhz, interrupts will be serviced every 40000 ticks.
-        err = self.machine.SetOptions(r'{"isrFreq":60}')
+        err = self.machine.SetOptions(r'json://{"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
         # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
         self.saveAndExit = 'base64://0/7T/3Y'
@@ -78,7 +78,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.InvalidArgument)
 
     def test_NegativeISRFrequency(self):
-        err = self.machine.SetOptions(r'{"isrFreq":-1.0}')
+        err = self.machine.SetOptions(r'json://{"isrFreq":-1.0}')
         self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_MethodsErrorAfterRunCalled(self):
@@ -90,7 +90,7 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
 
 		#Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-        err = self.machine.SetOptions(r'{"clockSamplingFreq":40,"runAsync":true}')
+        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40,"runAsync":true}')
         self.assertEqual(err, ErrorCode.NoError)
 
         # We aren't interested in saving, clear the onSave callback
@@ -100,7 +100,7 @@ class MachineTest(unittest.TestCase):
         err = self.machine.Run()
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.SetOptions(r'{"isrFreq":1}')
+        err = self.machine.SetOptions(r'json://{"isrFreq":1}')
         self.assertEqual(err, ErrorCode.Busy)
         err = self.machine.AttachMemoryController(self.memoryController)
         self.assertEqual(err, ErrorCode.Busy)
@@ -119,12 +119,12 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
 
         if runAsync == True:
-            err = self.machine.SetOptions(r'{"runAsync":true}')
+            err = self.machine.SetOptions(r'json://{"runAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
         # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
 		# Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-        err = self.machine.SetOptions(r'{"clockSamplingFreq":40,"isrFreq":60}')
+        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40,"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
 
         err = self.machine.Run()
@@ -185,11 +185,11 @@ class MachineTest(unittest.TestCase):
             self.skipTest("Machine.OnLoad is not supported")
 
         if runAsync == True:
-            err = self.machine.SetOptions(r'{"runAsync":true,"loadAsync":false,"saveAsync":true}')
+            err = self.machine.SetOptions(r'json://{"runAsync":true,"loadAsync":false,"saveAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
         # Need to set to 0 to catch all save interrupts
-        err = self.machine.SetOptions(r'{"isrFreq":0}')
+        err = self.machine.SetOptions(r'json://{"isrFreq":0}')
         self.assertEqual(err, ErrorCode.NoError)
 
         self.cpmIoController.Write(0xFD, 0, None)
@@ -239,7 +239,7 @@ class i8080Test(unittest.TestCase):
         self.machine.AttachMemoryController(self.memoryController)
         # Using the default isrFreq setting of -1 (service interrupts at the end of each instruction) causes noticible performance issues, set it
         # to a number where on an i8080 running at 2Mhz, interrupts will be serviced evey 40000 ticks.
-        err = self.machine.SetOptions(r'{"isrFreq":60}')
+        err = self.machine.SetOptions(r'json://{"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
         self.saveTriggered = False
         # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
