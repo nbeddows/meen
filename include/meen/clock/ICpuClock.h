@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -59,29 +59,35 @@ namespace meen
 
 		/** Set the resolution of the ticking clock.
 		
-			@param	resolution			The frequency in nanoseconds at which the clock will sync
-										The target cpu to the correct rate.
+			@param	samplingFrequency	The frequency in Hertz at which the clock will sync the target cpu to the correct rate.
 
-										A frequency of 0 will sync the cpu at every call to Tick() (this will spin the
+										A frequency of 0 will sync the cpu at every call to Tick() (this will spin the host
 										cpu 100% of the time to maintain sync (most accurate, high cpu usage)).
 										A frequency of -1 will not perform any synchronisation (run as fast as possible).
 
-										The lower the frequency the higher the resolution of the clock (0 being the highest, ie;
-										sync the cpu after every instruction).
-										Low correlation frequencies (above 0) can yield inaccurate clock speeds when a high
-										resolution clock is not available (anything below 30-50 milliseconds). When a high resolution
-										clock is available the best resolution attainable is at most 1 millisecond.
+										The higher the frequency the higher the resolution of the clock (disregarding the
+										0 and -1 cases diascussed above).
+
+										High frequencies can yield inaccurate clock speeds when a high
+										resolution clock is not available (anything that causes sync to occur less than 30-50 milliseconds).
+										When a high resolution clock is available this value would be anything that causes sync to occur
+										at intervals of less than 1 millisecond.
 
 										@see ICpuClock::Tick
-
-			@param	resolutionInTicks	A optional parameter that will be set to the number of ticks that the input parameter
-										`resolution` represents. 
 
 			@return						no_error			The resolution was set successfully.
 										clock_resolution	The resolution was set, however, the host does not support
 															a high enough resolution timer for this resolution.
 		*/
-		virtual std::error_code SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks = nullptr) = 0;
+		virtual std::error_code SetSamplingFrequency(double samplingFrequency) = 0;
+
+		/** Get the speed of the Clock in Hertz
+		
+			This will be the equal to the speed parameter that was passed to the relevant MakeCpuClock factory method.
+
+			@return 					The speed of the clock in Hertz as a uint64_t.
+		*/
+		virtual uint64_t GetSpeed() const = 0;
 
 		/** Reset.
 

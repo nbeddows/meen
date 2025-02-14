@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -41,6 +41,8 @@ namespace meen
 	class CpuClock final : public ICpuClock
 	{
 	private:
+		// The speed of the clock in Hertz.
+		uint64_t speed_{};
 		//Since sleep only guarantees a minimim sleep time, asking for
 		//what we really want will more than likley mean that we will
 		//over sleep, so we only ask for a percentage of what we want,
@@ -96,8 +98,8 @@ namespace meen
 		~CpuClock() = default;
 
 		void Reset() final;
-		std::error_code SetTickResolution(std::chrono::nanoseconds resolution, int64_t* resolutionInTicks) final;
-
+		std::error_code SetSamplingFrequency(double samplingFrequency) final;
+		uint64_t GetSpeed() const final;
 		//Returns the host CPU time.
 		std::chrono::nanoseconds Tick(uint64_t ticks) final;
 	};
