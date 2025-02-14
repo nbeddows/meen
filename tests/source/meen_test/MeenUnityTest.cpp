@@ -136,7 +136,7 @@ namespace meen::tests
 
         if (runAsync == true)
         {
-            err = machine->SetOptions(R"({"runAsync":true})");
+            err = machine->SetOptions(R"(json://{"runAsync":true})");
             TEST_ASSERT_FALSE(err);
         }
 
@@ -149,7 +149,7 @@ namespace meen::tests
 
    		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
 		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-        err = machine->SetOptions(R"({"clockSamplingFreq":40, "isrFreq":60})");
+        err = machine->SetOptions(R"(json://{"clockSamplingFreq":40, "isrFreq":60})");
         TEST_ASSERT_FALSE(err);
 
         err = machine->Run();
@@ -259,7 +259,7 @@ namespace meen::tests
 
         if (runAsync == true)
         {
-            err = machine->SetOptions(R"({"runAsync":true,"loadAsync":false,"saveAsync":true})");
+            err = machine->SetOptions(R"(json://{"runAsync":true,"loadAsync":false,"saveAsync":true})");
 
             if(err.value() == errc::json_config)
             {
@@ -415,7 +415,7 @@ namespace meen::tests
     static void test_NegativeISRFrequency()
     {
         //cppcheck-suppress unknownMacro
-        auto err = machine->SetOptions(R"({"isrFreq":-1.0})");
+        auto err = machine->SetOptions(R"(json://{"isrFreq":-1.0})");
         TEST_ASSERT_TRUE(err);
     }
 
@@ -431,7 +431,7 @@ namespace meen::tests
 		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
 		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
         //cppcheck-suppress unknownMacro
-        err = machine->SetOptions(R"({"clockSampleFreq":40,"runAsync":true,"isrFreq":60})"); // must be async so the Run method returns immediately
+        err = machine->SetOptions(R"(json://{"clockSampleFreq":40,"runAsync":true,"isrFreq":60})"); // must be async so the Run method returns immediately
         TEST_ASSERT_FALSE(err);
 
         // We aren't interested in saving, clear the onSave callback
@@ -442,7 +442,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
 
         // All these methods should return errc::busy
-        err = machine->SetOptions(R"({"isrFreq":1})");
+        err = machine->SetOptions(R"(json://{"isrFreq":1})");
         TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
         err = machine->AttachMemoryController(nullptr);
         TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
@@ -493,7 +493,7 @@ namespace meen::tests
         // use the cpm io controller for cpm based tests
         auto err = machine->AttachIoController(std::move(cpmIoController));
         TEST_ASSERT_FALSE(err);
-        err = machine->SetOptions(R"({"isrFreq":60})");
+        err = machine->SetOptions(R"(json://{"isrFreq":60})");
         TEST_ASSERT_FALSE(err);
         //CP/M BDOS print message system call is at memory address 0x05,
         //this will be emulated with the bdosMsg subroutine.

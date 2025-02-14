@@ -1282,7 +1282,7 @@ TEST_F(MachineTest, CPI0)
 
 TEST_F(MachineTest, ISR_1)
 {
-	auto err = machine_->SetOptions(R"({"clockSamplingFreq":40})");
+	auto err = machine_->SetOptions(R"(json://{"clockSamplingFreq":40})");
 	EXPECT_FALSE(err);
 
 	// There is a chance for an infinite spin if the test fails.
