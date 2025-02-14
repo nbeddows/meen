@@ -79,11 +79,11 @@ namespace meen
 		auto cpu_ = m->cpu_.get();
 		auto clock_ = m->clock_.get();
 		auto ioController = m->ioController_.get();
-		auto ticksPerIsr_ = m->ticksPerIsr_;
 		auto& romMetadata = m->romMetadata_;
 		auto& ramMetadata = m->ramMetadata_;
 		auto& onLoad_ = m->onLoad_;
 		auto& opt_ = m->opt_;
+		auto ticksPerIsr = 0ull;
 #ifndef ENABLE_MEEN_RP2040
 		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
@@ -616,11 +616,18 @@ namespace meen
 		std::future<std::string> onSave;
 #endif // ENABLE_MEEN_SAVE
 		int ticks = 0;
+		cpu_->Reset();
+		clock_->Reset();
+
+		if (opt_.ISRFreq() > 0)
+		{
+			ticksPerIsr = clock_->GetSpeed() / opt_.ISRFreq();
+		}
 
 		while (quit == false)
 		{
 			// Check if it is time to service interrupts
-			if (totalTicks - lastTicks >= ticksPerIsr_ || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+			if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
 			{
 				lastTicks = totalTicks;
 
@@ -850,7 +857,7 @@ namespace meen
 
 		if(clock_ == nullptr)
 		{
-			return make_error_code(errc::clock_resolution);
+			return make_error_code(errc::clock_sampling_freq);
 		}
 
 		if(cpu_ == nullptr)
@@ -858,19 +865,15 @@ namespace meen
 			return make_error_code(errc::cpu);
 		}
 
-		int64_t resInTicks = 0;
-		auto err = clock_->SetTickResolution(nanoseconds(opt_.ClockResolution()), &resInTicks);
+		auto err = clock_->SetSamplingFrequency(opt_.ClockSamplingFreq());
 
 		if (err)
 		{
-			return make_error_code(errc::clock_resolution);
+			return err;
 		}
 
-		cpu_->Reset();
-		clock_->Reset();
 		runTime_ = 0;
 		running_ = true;
-		ticksPerIsr_ = opt_.ISRFreq() * resInTicks;
 
 #ifdef ENABLE_MEEN_RP2040
 		if(opt_.RunAsync() == true)

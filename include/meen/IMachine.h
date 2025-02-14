@@ -78,7 +78,7 @@ namespace meen
 
 		// Set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
-		machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
+		machine->SetOptions(R"({"clockSamplingFreq":50})"); // 50 Hz - 20 milliseconds intervals
 
 		// Run the machine sychronously, it won't return until the custom IO
 		// controller ServiceInterrupts override generates an ISR::Quit interrupt

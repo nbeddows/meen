@@ -37,7 +37,7 @@ namespace meen
 		no_error,           /**< No error has occurred. */
 		async,				/**< An asynchronous operation failed to complete. */
 		busy,               /**< MEEN is currently running. */
-		clock_resolution,   /**< The resolution can't be set, either it is too high/low or the host clock can't be queried. */
+		clock_sampling_freq,/**< The sampling frequency can't be set, either it is too high/low or the host clock can't be queried. */
 		cpu,				/**< The cpu is invalid. */
 		incompatible_ram,   /**< The ram to load is not compatible with this component. */
 		incompatible_rom,   /**< The rom to load is not compatible with this component. */

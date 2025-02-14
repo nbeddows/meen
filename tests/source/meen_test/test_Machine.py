@@ -53,7 +53,9 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.AttachMemoryController(self.memoryController)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.SetOptions(r'{"isrFreq":0.02}')
+        # Using the default isrFreq setting of -1 (service interrupts at the end of each instruction) causes noticible performance issues, set it
+        # to a number where on an i8080 running at 2Mhz, interrupts will be serviced every 40000 ticks.
+        err = self.machine.SetOptions(r'{"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
         # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
         self.saveAndExit = 'base64://0/7T/3Y'
@@ -87,7 +89,8 @@ class MachineTest(unittest.TestCase):
 
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.SetOptions(r'{"clockResolution":25000000,"runAsync":true}')
+		#Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+        err = self.machine.SetOptions(r'{"clockSamplingFreq":40,"runAsync":true}')
         self.assertEqual(err, ErrorCode.NoError)
 
         # We aren't interested in saving, clear the onSave callback
@@ -119,8 +122,9 @@ class MachineTest(unittest.TestCase):
             err = self.machine.SetOptions(r'{"runAsync":true}')
             self.assertEqual(err, ErrorCode.NoError)
 
-        # 25 millisecond resolution, service interrupts every 6.25 milliseconds
-        err = self.machine.SetOptions(r'{"clockResolution":25000000,"isrFreq":0.25}')
+        # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+		# Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
+        err = self.machine.SetOptions(r'{"clockSamplingFreq":40,"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
 
         err = self.machine.Run()
@@ -185,7 +189,8 @@ class MachineTest(unittest.TestCase):
             self.assertEqual(err, ErrorCode.NoError)
 
         # Need to set to 0 to catch all save interrupts
-        err = self.machine.SetOptions(r'{"isrFreq":0.0}')
+        err = self.machine.SetOptions(r'{"isrFreq":0}')
+        self.assertEqual(err, ErrorCode.NoError)
 
         self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(3000)
@@ -232,7 +237,9 @@ class i8080Test(unittest.TestCase):
         self.machine = Make8080Machine()
         self.machine.AttachIoController(self.cpmIoController)
         self.machine.AttachMemoryController(self.memoryController)
-        err = self.machine.SetOptions(r'{"isrFreq":0.02}')
+        # Using the default isrFreq setting of -1 (service interrupts at the end of each instruction) causes noticible performance issues, set it
+        # to a number where on an i8080 running at 2Mhz, interrupts will be serviced evey 40000 ticks.
+        err = self.machine.SetOptions(r'{"isrFreq":60}')
         self.assertEqual(err, ErrorCode.NoError)
         self.saveTriggered = False
         # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.

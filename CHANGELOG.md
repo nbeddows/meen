@@ -40,6 +40,11 @@
   allowing for more methods of loading program roms.
 * Cpm test io controller's `Read` method has been implemented
   and it's `Message` method removed.
+* Removed the config parameter `clockResolution`.
+* Added the config parameter `clockSamplingFreq` which accepts
+  a double value in Hertz.
+* The meaning of the ISRFreq config parameter has changes,
+  see the readme for further details.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -40,7 +40,8 @@ using namespace std::chrono;
 namespace meen
 {
 	CpuClock::CpuClock(uint64_t speed) :
-		timePeriod_(1000000000 / speed)
+		speed_{ speed },
+		timePeriod_{ 1000000000 / speed }
 	{
 #ifdef ENABLE_MEEN_RP2040
 		maxResolution_ = 1000ns;
@@ -61,7 +62,7 @@ namespace meen
 
 		if (ntdll == nullptr)
 		{
-			errc_ = make_error_code(errc::clock_resolution);
+			errc_ = make_error_code(errc::clock_sampling_freq);
 		}
 		else
 		{
@@ -73,7 +74,7 @@ namespace meen
 
 			if (NtQueryTimerResolution == nullptr || NtSetTimerResolution == nullptr)
 			{
-				errc_ = make_error_code(errc::clock_resolution);
+				errc_ = make_error_code(errc::clock_sampling_freq);
 			}
 			else
 			{
@@ -95,34 +96,31 @@ namespace meen
 #endif
 	}
 
-	std::error_code CpuClock::SetTickResolution(nanoseconds resolution, int64_t* resolutionInTicks)
+	uint64_t CpuClock::GetSpeed() const
+	{
+		return speed_;
+	}
+
+	std::error_code CpuClock::SetSamplingFrequency(double samplingFrequency)
 	{
 		auto errc = errc_;
 
-		if(!errc)
+		if (!errc)
 		{
-			if (resolution > 0ns && timePeriod_ > 0ns)
+			if (samplingFrequency > 0 && timePeriod_ > 0ns)
 			{
+				auto resolution = nanoseconds(static_cast<int64_t>(1000000000 / samplingFrequency));
+
 				if (resolution < maxResolution_)
 				{
-					errc = make_error_code(errc::clock_resolution);
+					errc = make_error_code(errc::clock_sampling_freq);
 				}
 
 				totalTicks_ = resolution / timePeriod_;
-
-				if (resolutionInTicks != nullptr)
-				{
-					*resolutionInTicks = totalTicks_;
-				}
 			}
 			else
 			{
 				totalTicks_ = -1;
-
-				if (resolutionInTicks != nullptr)
-				{
-					*resolutionInTicks = 1000000000 / timePeriod_.count();
-				}
 			}
 		}
 

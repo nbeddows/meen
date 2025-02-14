@@ -65,7 +65,7 @@ namespace meen
 
 	constexpr std::string Opt::DefaultOpts()
 	{
-		std::string defaults =	R"({"clockResolution":-1)"
+		std::string defaults =	R"({"clockSamplingFreq":-1)"
 								R"(,"compressor":")"
 #ifdef ENABLE_ZLIB
 								"zlib"
@@ -189,13 +189,13 @@ namespace meen
 		return err;
 	}
 
-	int64_t Opt::ClockResolution() const
+	double Opt::ClockSamplingFreq() const
 	{
-#ifdef ENABLE_NLOHMANN_JSON
-		return json_["clockResolution"].get<int64_t>();
-#else
-		return json_["clockResolution"].as<int64_t>();
-#endif // ENABLE_NLOHMANN_JSON
+		#ifdef ENABLE_NLOHMANN_JSON
+				return json_["clockSamplingFreq"].get<int64_t>();
+		#else
+				return json_["clockSamplingFreq"].as<int64_t>();
+		#endif // ENABLE_NLOHMANN_JSON
 	}
 
 	double Opt::ISRFreq() const

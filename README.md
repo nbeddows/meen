@@ -29,7 +29,7 @@ Conceptually speaking, MEEN can be represented by the following diagram:
 
 ![](docs/images/MachineDiagram.png)
 
-As can be seen from the diagram above MEEN is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however the resolution of the clock can be externally manipulted, see configuration option `clockResolution`.
+As can be seen from the diagram above MEEN is represented by the inner machine containing a cpu and a clock used to regulate its speed. The speed the clock runs at is dictated by the cpu type, however, the frequency at which it samples the host clock can be externally manipulted, see configuration option `clockSamplingFreq`.
 
 The outer machine represents the inner machine customisation. For example, custom input/output may involve interacting with a keyboard or mouse, or some other proprietary peripheral, whereas custom memory maybe as simple as reading and writing to a block of locally allocated memory, a network socket or some other proprietary memory configuration, this all depends on the machine being built, see `IMachine::AttachIoControlller` and `IMachine::AttachMemoryController`.
 
@@ -310,9 +310,9 @@ machine->OnSave([](const char* json)
   return errc::no_error;
 });
 
-// Set the clock resolution - not setting this will run the
+// Set the host clock sampling frequency - not setting this will run the
 // machine as fast as possible (default)
-machine->SetOptions(R"({"clockResolution":20000000})"); // 20 milliseconds (50Hz)
+machine->SetOptions(R"({"clockSamplingFreq":50})"); // 50Hz - 20 millisecond intervals
 
 // Run the machine sychronously, it won't return until the custom IO
 // controller ServiceInterrupts override generates an ISR::Quit interrupt
@@ -343,30 +343,23 @@ Supported protocols:
 
 The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
 
-| Option                | Type   | Value              | Remarks                                                                            |
-|:----------------------|:-------|:-------------------|:-----------------------------------------------------------------------------------|
-| clockResolution       | int64  | -1 (default)       | Run the machine as fast as possible with the highest possible resolution           |
-|                       |        | 0                  | Run the machine at realtime (or as close to) with the highest possible resolution  |
-|                       |        | 0 - 1000000        | Will always spin the cpu to maintain the clock speed and is not recommended        |
-|                       |        | n                  | A request in nanoseconds as to how frequently the machine clock will tick, note    |
-|                       |        |                    | that this is only a request and while best efforts are made to honour it, the      |
-|                       |        |                    | consistency of the tick rate will not be perfect, especially at higher resolutions |
-|                       |        |                    | when no high resolution clock is available.                                        |
-| compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state             |
-|                       |        | "none"             | No compression will be used when saving the state of the ram                       |
-| encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json        |
-| isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                           |
-|                       |        | 1                  | Service interrupts after each clock tick when the `clockResolution` is >= 0 or each|
-|                       |        |                    | second when the `clockResolution` is -1                                            |
-|                       |        | n                  | Service interrupts frequency: as a ratio of the clockResolution when it is >=0, or |
-|                       |        |                    | the cpu ticks per second when the `clockResolution` is -1, for example: 0.5 - twice|
-|                       |        |                    | per clock tick (clockResolution >= 0) or twice per second (`clockResolution` == -1)|
-| loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                               |
-|                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option |
-| runAsync              | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                |
-|                       |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                  |
-| saveAsync             | bool   | true               | Run the save completion handler on a separate thread                               |
-|                       |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option  |
+| Option                | Type   | Value              | Remarks                                                                             |
+|:----------------------|:-------|:-------------------|:------------------------------------------------------------------------------------|
+| clockSamplingFreq     | double | -1 (default)       | Run meen as fast as possible with the highest possible host clock sampling frequency|
+|                       |        | 0 Hz               | Run meen at realtime with the highest possible host clock sampling frequency        |
+|                       |        | 0, 1000+ Hz        | Will always spin the host cpu to maintain the clock speed and is not recommended    |
+|                       |        | n Hz               | A request in Hertz as to how frequently meen's clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available|
+| compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state              |
+|                       |        | "none"             | No compression will be used when saving the state of the ram                        |
+| encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json         |
+| isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                            |
+|                       |        | n                  | The number of times interrupts will be serviced per emulated cpu clock speed. For example, an i8080 running at 2Mhz with an isrFreq of 50 will service interrupts every 40000 ticks|
+| loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                                |
+|                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option  |
+| runAsync              | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                 |
+|                       |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                   |
+| saveAsync             | bool   | true               | Run the save completion handler on a separate thread                                |
+|                       |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option   |
 
 Configuration options can be supplied to MEEN via the IMachine::SetOptions api method:
 

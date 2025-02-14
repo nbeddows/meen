@@ -198,7 +198,7 @@ namespace meen::Tests
 		// use the cpm io controller for cpm based tests
 		auto err = machine_->AttachIoController(std::move(cpmIoController_));
 		EXPECT_FALSE(err);
-		err = machine_->SetOptions(R"({"isrFreq":0.02})");
+		err = machine_->SetOptions(R"({"isrFreq":60})");
 		EXPECT_FALSE(err);
 		//CP/M BDOS print message system call is at memory address 0x05,
 		//this will be emulated with the bdosMsg subroutine.
@@ -252,7 +252,7 @@ namespace meen::Tests
 
 			// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
 			//cppcheck-suppress unknownMacro
-			err = machine_->SetOptions(R"({"clockResolution":25000000,"runAsync":true, "isrFreq":0.25})"); // must be async so the Run method returns immediately
+			err = machine_->SetOptions(R"({"clockSamplingFreq":40,"runAsync":true, "isrFreq":60})"); // must be async so the Run method returns immediately
 			EXPECT_FALSE(err);
 
 			// We aren't interested in saving, clear the onSave callback
@@ -296,8 +296,9 @@ namespace meen::Tests
 		});
 		EXPECT_FALSE(err);
 
-		// 25 millisecond resolution, service interrupts every 6.25 milliseconds
-		err = machine_->SetOptions(R"({"clockResolution":25000000,"isrFreq":0.25})");
+		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
+		err = machine_->SetOptions(R"({"clockSamplingFreq":40,"isrFreq":60})");
 		EXPECT_FALSE(err);
 
 		err = machine_->Run();
