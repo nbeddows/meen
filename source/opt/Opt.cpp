@@ -141,9 +141,9 @@ namespace meen
 				}
 #endif // ENABLE_NLOHMANN_JSON
 			}
-			else
+			else if (jsonStr.starts_with("json://") == true)
 			{
-				// parse as if raw json
+				jsonStr.remove_prefix(strlen("json://"));
 #ifdef ENABLE_NLOHMANN_JSON
 				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()), nullptr, false);
 
@@ -160,6 +160,10 @@ namespace meen
 					return make_error_code(errc::json_parse);
 				}
 #endif // ENABLE_NLOHMANN_JSON
+			}
+			else
+			{
+				return make_error_code(errc::json_config);
 			}
 #ifdef ENABLE_NLOHMANN_JSON
 			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
