@@ -1282,8 +1282,7 @@ TEST_F(MachineTest, CPI0)
 
 TEST_F(MachineTest, ISR_1)
 {
-	// Set to the resolution to 50Hz
-	auto err = machine_->SetOptions(R"({"clockResolution":25000000})");
+	auto err = machine_->SetOptions(R"({"clockSamplingFreq":40})");
 	EXPECT_FALSE(err);
 
 	// There is a chance for an infinite spin if the test fails.

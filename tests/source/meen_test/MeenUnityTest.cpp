@@ -147,8 +147,9 @@ namespace meen::tests
         });
         TEST_ASSERT_FALSE(err);
 
-        // 25 millisecond resolution, service interrupts every 6.25 milliseconds
-        err = machine->SetOptions(R"({"clockResolution":25000000, "isrFreq":0.25})");
+   		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
+        err = machine->SetOptions(R"({"clockSamplingFreq":40, "isrFreq":60})");
         TEST_ASSERT_FALSE(err);
 
         err = machine->Run();
@@ -427,9 +428,10 @@ namespace meen::tests
         });
         TEST_ASSERT_FALSE(err);
 
-        // Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
+		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
         //cppcheck-suppress unknownMacro
-        err = machine->SetOptions(R"({"clockResolution":25000000,"runAsync":true,"isrFreq":0.25})"); // must be async so the Run method returns immediately
+        err = machine->SetOptions(R"({"clockSampleFreq":40,"runAsync":true,"isrFreq":60})"); // must be async so the Run method returns immediately
         TEST_ASSERT_FALSE(err);
 
         // We aren't interested in saving, clear the onSave callback
@@ -491,7 +493,7 @@ namespace meen::tests
         // use the cpm io controller for cpm based tests
         auto err = machine->AttachIoController(std::move(cpmIoController));
         TEST_ASSERT_FALSE(err);
-        err = machine->SetOptions(R"({"isrFreq":0.02})");
+        err = machine->SetOptions(R"({"isrFreq":60})");
         TEST_ASSERT_FALSE(err);
         //CP/M BDOS print message system call is at memory address 0x05,
         //this will be emulated with the bdosMsg subroutine.
