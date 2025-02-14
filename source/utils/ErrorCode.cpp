@@ -44,8 +44,8 @@ namespace meen
 						return "Success";
 					case errc::busy:
 						return "The engine is running";
-					case errc::clock_resolution:
-						return "The clock resolution can't be set, either it's too high/low or the host clock can't be queried";
+					case errc::clock_sampling_freq:
+						return "The host clock sampling frequency can't be set, either it's too high/low or the host clock can't be queried";
 					case errc::cpu:
 						return "The cpu is invalid";
 					case errc::incompatible_ram:
