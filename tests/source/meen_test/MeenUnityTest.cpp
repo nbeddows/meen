@@ -142,7 +142,7 @@ namespace meen::tests
 
         err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
+            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
         TEST_ASSERT_FALSE(err);
@@ -225,7 +225,7 @@ namespace meen::tests
 #ifdef ENABLE_MEEN_RP2040
                 if (&tst8080End - &tst8080Start >= 1471)
                 {
-                    err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
+                    err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
                                        saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
                 }
                 else
@@ -233,13 +233,13 @@ namespace meen::tests
                     err = errc::incompatible_rom;
                 }
 #else
-                err = LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
+                err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
                                    saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), progDir);
 #endif // ENABLE_MEEN_RP2040
                 break;
             case 1:
                 // 0 - mid program save state, 1 and 2 - end of program save states
-                err = LoadProgram(json, jsonLen, saveStates[0].c_str());
+                err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
                 break;
             default:
                 err = errc::invalid_argument;
@@ -387,7 +387,7 @@ namespace meen::tests
 
         err = machine->OnLoad([name, progSize](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
+            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
         });
         TEST_ASSERT_FALSE(err);
@@ -423,7 +423,7 @@ namespace meen::tests
     {
         auto err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
         {
-            return LoadProgram(json, jsonLen, R"({"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
+            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
         TEST_ASSERT_FALSE(err);

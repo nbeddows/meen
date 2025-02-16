@@ -94,16 +94,56 @@ namespace meen
 			if (str.empty() == false)
 			{
 #ifdef ENABLE_NLOHMANN_JSON
-				auto json = nlohmann::json::parse(str, nullptr, false);
-
-				if(json.is_discarded() == true)
+				nlohmann::json json;
 #else
 				JsonDocument json;
-				auto je = deserializeJson(json, str);
-				if(je)
-#endif // ENABLE_NLOHMANN_JSON
+#endif // ENABLE_NLOHMANN_JSON		
+				if (str.starts_with("file://") == true)
 				{
-					return make_error_code(errc::json_parse);
+					str.erase(0, strlen("file://"));
+					auto fin = fopen(str.c_str(), "r");
+#ifdef ENABLE_NLOHMANN_JSON
+					json = nlohmann::json::parse(fin, nullptr, false);
+
+					if (fin != nullptr)
+					{
+						fclose(fin);
+					}
+
+					if(json.is_discarded() == true)
+#else
+					auto je = deserializeJson(json, fin);
+					
+					if (fin != nullptr)
+					{
+						fclose(fin);
+					}
+
+					if (je)
+#endif // ENABLE_NLOHMANN_JSON	
+					{
+						return make_error_code(errc::json_parse);
+					}
+				}
+				else if (str.starts_with("json://") == true)
+				{
+					str.erase(0, strlen("json://"));
+#ifdef ENABLE_NLOHMANN_JSON
+					json = nlohmann::json::parse(str, nullptr, false);
+
+					if(json.is_discarded() == true)
+#else
+					auto je = deserializeJson(json, str);
+					
+					if(je)
+#endif // ENABLE_NLOHMANN_JSON
+					{
+						return make_error_code(errc::json_parse);
+					}
+				}
+				else
+				{
+					return make_error_code(errc::json_config);
 				}
 #ifdef ENABLE_NLOHMANN_JSON
 				if(!json.contains("memory"))
