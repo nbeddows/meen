@@ -85,7 +85,7 @@ class MachineTest(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
 
         self.assertEqual(err, ErrorCode.NoError)
 
@@ -115,7 +115,7 @@ class MachineTest(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
 
         if runAsync == True:
@@ -170,9 +170,9 @@ class MachineTest(unittest.TestCase):
 
             match self.loadIndex:
                 case 0:
-                    jsonToLoad = r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
+                    jsonToLoad = r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
                 case 1:
-                    jsonToLoad = saveStates[0]
+                    jsonToLoad = 'json://' + saveStates[0]
                 case _:
                     pass
 
@@ -269,7 +269,7 @@ class i8080Test(unittest.TestCase):
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
-        err = self.machine.OnLoad(lambda: r'{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
+        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
         err = self.machine.OnSave(lambda actualState: self.CheckMachineState(expectedState, actualState))
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
