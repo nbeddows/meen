@@ -24,6 +24,7 @@ SOFTWARE.
 #define ICPU_H
 
 #include <cstdint>
+#include <expected>
 #include <memory>
 #include <string>
 #include <system_error>
@@ -49,7 +50,7 @@ namespace meen
 		virtual std::error_code Load(const std::string&& json, bool checkUuid) = 0;
 
 #ifdef ENABLE_MEEN_SAVE
-		virtual std::string Save() const = 0;
+		virtual std::expected<std::string, std::error_code> Save() const = 0;
 #endif // ENABLE_MEEN_SAVE
 		virtual ~ICpu() = default;
 	};
