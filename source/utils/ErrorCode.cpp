@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -48,6 +48,8 @@ namespace meen
 						return "The host clock sampling frequency can't be set, either it's too high/low or the host clock can't be queried";
 					case errc::cpu:
 						return "The cpu is invalid";
+					case errc::encoder:
+						return "The binary to text encoder is unknown";
 					case errc::incompatible_ram:
 						return "The ram to load is incompatible with this component";
 					case errc::incompatible_rom:
@@ -64,8 +66,8 @@ namespace meen
 						return "A JSON parse error occurred while processing the configuration file/string";
 					case errc::memory_controller:
 						return "Invalid memory controller";
-					case errc::no_zlib:
-						return "MEEN compiled without zlib support";
+					case errc::compressor:
+						return "The compressor is unknown";
 					case errc::not_implemented:
 						return "The method is not implemented";
 					case errc::unknown_option:

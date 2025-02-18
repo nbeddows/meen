@@ -180,7 +180,7 @@ namespace meen
 			if (json["compressor"] != nullptr && json["compressor"].as<std::string_view>() == "zlib")
 #endif // ENABLE_NLOHMANN_JSON
 			{
-				return make_error_code(errc::no_zlib);
+				return make_error_code(errc::compressor);
 			}
 #endif // ENABLE_ZLIB
 		}
