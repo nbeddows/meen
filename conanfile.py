@@ -38,8 +38,8 @@ class MeenRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_rp2040": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
-    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
+    options = {"shared": [True, False], "fPIC": [True, False], "with_base64":[True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_rp2040": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
+    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_base64": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     # "tests/CMakeLists.txt",\
@@ -57,8 +57,10 @@ class MeenRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
-        if self.options.get_safe("with_save", False):
+        if self.options.get_safe("with_base64", False):
             self.requires("base64/0.5.2")
+
+        if self.options.get_safe("with_save", False):
             self.requires("hash-library/8.0")
 
         if(self.settings.os == "baremetal"):
@@ -88,8 +90,9 @@ class MeenRecipe(ConanFile):
             if self.settings_build.os == "Linux" or self.settings_build == "baremetal":
                 self.output.error("Cross compiling from Linux or baremetal to Windows is not supported")
         elif self.settings.os == "baremetal":
-            self.output.info("Save not supported, removing option with_save")
+            self.output.info("base64 uri scheme and saving are not supported, removing options with_base64 and with_save")
             self.options.rm_safe("with_save")
+            self.options.rm_safe("with_base64")
 
         if "arm" in self.settings.arch:
             self.output.info("Python ARM module not supported, removing option with_python.")
@@ -123,7 +126,7 @@ class MeenRecipe(ConanFile):
         tc = CMakeToolchain(self)
         tc.cache_variables["enable_python_module"] = self.options.get_safe("with_python", False)
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
-        tc.cache_variables["enable_base64"] = self.options.get_safe("with_save", False)
+        tc.cache_variables["enable_base64"] = self.options.get_safe("with_base64", False)
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
         tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
         tc.variables["build_os"] = self.settings.os
