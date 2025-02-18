@@ -51,7 +51,7 @@ namespace meen
 
 		if (err < 0)
 		{
-			errc_ = make_error_code(errc::clock_resolution);
+			errc_ = make_error_code(errc::clock_sampling_freq);
 		}
 		else
 		{
