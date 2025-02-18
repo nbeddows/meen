@@ -103,7 +103,6 @@ namespace meen::Tests
 		EXPECT_FALSE(err);
 	}
 
-	// todo: the returned 'json' needs to be prefixed with a protcol so it can be read from file:// for example
 	errc MachineTest::LoadProgram(char* json, int* jsonLen, const char* fmt, ...)
 	{
 		va_list args;

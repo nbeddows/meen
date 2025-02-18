@@ -112,7 +112,6 @@ namespace meen::tests
         return numFailures;
     }
 
-    // todo: the returned 'json' needs to be prefixed with a protcol so it can be read from file:// for example
     static errc LoadProgram(char* json, int* jsonLen, const char* fmt, ...)
     {
         va_list args;
