@@ -24,6 +24,7 @@ SOFTWARE.
 #include <bit>
 #include <charconv>
 #include <cinttypes>
+#include <numeric>
 #include <stdio.h>
 #ifdef ENABLE_MEEN_RP2040
 #include <pico/multicore.h>
@@ -34,6 +35,7 @@ SOFTWARE.
 #define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
+
 #include "meen/utils/Utils.h"
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
@@ -97,7 +99,7 @@ namespace meen
 				nlohmann::json json;
 #else
 				JsonDocument json;
-#endif // ENABLE_NLOHMANN_JSON		
+#endif // ENABLE_NLOHMANN_JSON
 				if (str.starts_with("file://") == true)
 				{
 					str.erase(0, strlen("file://"));
@@ -112,15 +114,21 @@ namespace meen
 
 					if(json.is_discarded() == true)
 #else
-					auto je = deserializeJson(json, fin);
-					
-					if (fin != nullptr)
+					if (fin == nullptr)
 					{
-						fclose(fin);
+						return make_error_code(errc::json_config);
 					}
 
+					fseek(fin, 0, SEEK_END);
+					std::string jsonStr(ftell(fin), '\0');
+					fseek(fin, 0, SEEK_SET);
+					fread(jsonStr.data(), 1, jsonStr.size(), fin);
+					fclose(fin);
+
+					auto je = deserializeJson(json, jsonStr);
+
 					if (je)
-#endif // ENABLE_NLOHMANN_JSON	
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
@@ -134,7 +142,7 @@ namespace meen
 					if(json.is_discarded() == true)
 #else
 					auto je = deserializeJson(json, str);
-					
+
 					if(je)
 #endif // ENABLE_NLOHMANN_JSON
 					{
@@ -201,7 +209,7 @@ namespace meen
 					{
 						return jsonUuid.error();
 					}
-		
+
 					if (jsonUuid.value().size() != memUuid.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), memUuid.begin()) == false)
 					{
 						return make_error_code(errc::incompatible_uuid);
@@ -340,7 +348,7 @@ namespace meen
 							if (!jsonMd5)
 							{
 								return jsonMd5.error();
-							}					
+							}
 
 							std::vector<uint8_t> rom;
 
