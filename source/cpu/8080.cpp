@@ -318,20 +318,23 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 
 		auto sv = json["uuid"].get<std::string_view>();
 
-#ifdef ENABLE_BASE64
 		if(sv.starts_with("base64://") == true)
 		{
 			sv.remove_prefix(strlen("base64://"));
 			// The cpus must be the same
 			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv.begin(), sv.end()));
 
-			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+			if (!jsonUuid)
+			{
+				return jsonUuid.error();
+			}
+
+			if (jsonUuid.value().size() != uuid_.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), uuid_.begin()) == false)
 			{
 				return make_error_code(errc::incompatible_uuid);
 			}
 		}
 		else
-#endif // ENABLE_BASE64
 		{
 			return make_error_code(errc::json_config);
 		}
@@ -372,7 +375,6 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 
 		auto sv = json["uuid"].as<std::string_view>();
 
-#ifdef ENABLE_BASE64
 		if (sv.starts_with("base64://") == true)
 		{
 			sv.remove_prefix(strlen("base64://"));
@@ -380,13 +382,17 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 			// The cpus must be the same
 			auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv));
 
-			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+			if (!jsonUuid)
+			{
+				return jsonUuid.error();
+			}
+
+			if (jsonUuid.value().size() != uuid_.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), uuid_.begin()) == false)
 			{
 				return make_error_code(errc::incompatible_uuid);
 			}
 		}
 		else
-#endif // ENABLE_BASE64
 		{
 			return make_error_code(errc::json_config);
 		}
@@ -414,13 +420,19 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 }
 
 #ifdef ENABLE_MEEN_SAVE
-std::string Intel8080::Save() const
+std::expected<std::string, std::error_code> Intel8080::Save() const
 {
 	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
+	
+	if (!b64)
+	{
+		return b64;
+	}
+
 	auto fmtStr = R"({"uuid":"base64://%s","registers":{"a":%d,"b":%d,"c":%d,"d":%d,"e":%d,"h":%d,"l":%d,"s":%d},"pc":%d,"sp":%d})";
-	auto count = snprintf(nullptr, 0, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
+	auto count = snprintf(nullptr, 0, fmtStr, b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	std::string str(count + 1, '\0');
-	snprintf(str.data(), count + 1, fmtStr, b64.c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
+	snprintf(str.data(), count + 1, fmtStr, b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
 	return str;
 }
 #endif // ENABLE_MEEN_SAVE

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,7 +25,9 @@ SOFTWARE.
 
 #include <array>
 #include <cstdint>
+#include <expected>
 #include <string>
+#include <system_error>
 #include <vector>
 
 /**	Utility functions
@@ -34,7 +36,6 @@ SOFTWARE.
 */
 namespace meen::Utils
 {
-#ifdef ENABLE_BASE64	
 	/** Binary to text encoding with optional compression
 
 		@param	encoder					The name of the encoder to use as a string, currently, the only supported encoder is "base64".
@@ -43,10 +44,11 @@ namespace meen::Utils
 		@param	bin						The binary data to (compress and) encode.
 		@param	binLen					The length in bytes of the binary data.
 
-		@return							The encoded text representation of the given binary data as a std::string using the specified encoder.
-										An empty string is returned if the binary data failed to compress and/or encode.
+		@return							The encoded text representation of the given binary data using the specified encoder with an
+										expected value of std::string. An unexpected value of std::error_code is returned if the binary
+										data failed to compress and/or encode.
 	*/
-	std::string BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, const uint32_t binLen);
+	std::expected<std::string, std::error_code> BinToTxt(const std::string& encoder, const std::string& compressor, const uint8_t* bin, const uint32_t binLen);
 
 	/** Text to binary decoding with optional decompression
 
@@ -58,13 +60,11 @@ namespace meen::Utils
 										is ignored if the compressor is "none".
 		@param	txt						The encoded binary data as a std::string which must be in the format specified by the decoder parameter.
 
-		@return							The (decompressed and) decoded binary data obtained from the specified text.
-										An empty vector is retuned if the txt failed to decompress and/or decode.
+		@return							The (decompressed and) decoded binary data obtained from the specified text with an expected value of
+										std::vector. An unexpected value of std::error_code is returned if the txt failed to decompress and/or decode.
 	*/
-	std::vector<uint8_t> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& txt);
-#endif // ENABLE_BASE64
+	std::expected<std::vector<uint8_t>, std::error_code> TxtToBin(const std::string& decoder, const std::string& decompressor, uint32_t dstSize, const std::string& txt);
 
-#ifdef ENABLE_HASH_LIBRARY
 	/** MD5 hash
 	
 		Currently used for ROM hashing, but may have other uses moving forward.
@@ -76,7 +76,6 @@ namespace meen::Utils
 		@return							The 128 bit hash as a std::array of 16 bytes.
 	*/
 	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len);
-#endif // ENABLE_HASH_LIBRARY
 } // namespace meen::Utils
 
 #endif // UTILS_H

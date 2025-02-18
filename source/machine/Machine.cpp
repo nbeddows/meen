@@ -24,6 +24,7 @@ SOFTWARE.
 #include <bit>
 #include <charconv>
 #include <cinttypes>
+#include <numeric>
 #include <stdio.h>
 #ifdef ENABLE_MEEN_RP2040
 #include <pico/multicore.h>
@@ -34,6 +35,7 @@ SOFTWARE.
 #define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
+
 #include "meen/utils/Utils.h"
 #include "meen/clock/CpuClockFactory.h"
 #include "meen/cpu/CpuFactory.h"
@@ -97,7 +99,7 @@ namespace meen
 				nlohmann::json json;
 #else
 				JsonDocument json;
-#endif // ENABLE_NLOHMANN_JSON		
+#endif // ENABLE_NLOHMANN_JSON
 				if (str.starts_with("file://") == true)
 				{
 					str.erase(0, strlen("file://"));
@@ -112,15 +114,21 @@ namespace meen
 
 					if(json.is_discarded() == true)
 #else
-					auto je = deserializeJson(json, fin);
-					
-					if (fin != nullptr)
+					if (fin == nullptr)
 					{
-						fclose(fin);
+						return make_error_code(errc::json_config);
 					}
 
+					fseek(fin, 0, SEEK_END);
+					std::string jsonStr(ftell(fin), '\0');
+					fseek(fin, 0, SEEK_SET);
+					fread(jsonStr.data(), 1, jsonStr.size(), fin);
+					fclose(fin);
+
+					auto je = deserializeJson(json, jsonStr);
+
 					if (je)
-#endif // ENABLE_NLOHMANN_JSON	
+#endif // ENABLE_NLOHMANN_JSON
 					{
 						return make_error_code(errc::json_parse);
 					}
@@ -134,7 +142,7 @@ namespace meen
 					if(json.is_discarded() == true)
 #else
 					auto je = deserializeJson(json, str);
-					
+
 					if(je)
 #endif // ENABLE_NLOHMANN_JSON
 					{
@@ -197,7 +205,12 @@ namespace meen
 
 					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv));
 
-					if (jsonUuid.size() != memUuid.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), memUuid.begin()) == false)
+					if (!jsonUuid)
+					{
+						return jsonUuid.error();
+					}
+
+					if (jsonUuid.value().size() != memUuid.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), memUuid.begin()) == false)
 					{
 						return make_error_code(errc::incompatible_uuid);
 					}
@@ -314,7 +327,6 @@ namespace meen
 					}
 					else
 #endif // ENABLE_MEEN_RP2040
-#ifdef ENABLE_BASE64
 					if (bytes.starts_with("base64://") == true)
 					{
 						bytes.remove_prefix(strlen("base64://"));
@@ -333,6 +345,11 @@ namespace meen
 								size,
 								std::string(bytes.begin(), bytes.end()));
 
+							if (!jsonMd5)
+							{
+								return jsonMd5.error();
+							}
+
 							std::vector<uint8_t> rom;
 
 							for (const auto& rm : romMetadata)
@@ -345,7 +362,7 @@ namespace meen
 
 							auto romMd5 = Utils::Md5(rom.data(), rom.size());
 
-							if (jsonMd5.size() != romMd5.size() || std::equal(jsonMd5.begin(), jsonMd5.end(), romMd5.begin()) == false)
+							if (jsonMd5.value().size() != romMd5.size() || std::equal(jsonMd5.value().begin(), jsonMd5.value().end(), romMd5.begin()) == false)
 							{
 								return make_error_code(errc::incompatible_rom);
 							}
@@ -357,7 +374,6 @@ namespace meen
 
 							if (bytes.starts_with("zlib://") == true)
 							{
-#ifdef ENABLE_ZLIB
 								compressor = "zlib";
 
 								if (size <= 0)
@@ -366,9 +382,6 @@ namespace meen
 								}
 
 								bytes.remove_prefix(strlen("zlib://"));
-#else
-								return make_error_code(errc::no_zlib);
-#endif // ENABLE_ZLIB
 							}
 							else
 							{
@@ -381,10 +394,17 @@ namespace meen
 							}
 
 							// decompress bytes and write to memory
-							auto romBytes = Utils::TxtToBin("base64",
+							auto romBytesEx = Utils::TxtToBin("base64",
 								compressor,
 								size,
 								std::string(bytes.begin(), bytes.end()));
+
+							if (!romBytesEx)
+							{
+								return romBytesEx.error();
+							}
+
+							auto romBytes = std::move(romBytesEx.value());
 
 							// only support a max of 16 bit addressing
 							if (offset + romBytes.size() > 0xFFFF)
@@ -406,9 +426,7 @@ namespace meen
 							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 						}
 					}
-					else
-#endif // ENABLE_BASE64
-					if (bytes.starts_with("mem://") == true)
+					else if (bytes.starts_with("mem://") == true)
 					{
 						bytes.remove_prefix(strlen("mem://"));
 
@@ -529,7 +547,7 @@ namespace meen
 					{
 						return accumulator + metadata.second;
 					});
-#ifdef ENABLE_BASE64
+
 					if (bytes.starts_with("base64://") == true)
 					{
 						std::string compressor = "none";
@@ -537,27 +555,28 @@ namespace meen
 
 						if (bytes.starts_with("zlib://") == true)
 						{
-#ifdef ENABLE_ZLIB
 							compressor = "zlib";
 							bytes.remove_prefix(strlen("zlib://"));
-#else
-							return make_error_code(errc::no_zlib);
-#endif // ENABLE_ZLIB
 						}
 
-						ram = Utils::TxtToBin("base64",
+						auto ramEx = Utils::TxtToBin("base64",
 							compressor,
 							size,
 							std::string(bytes));
 
-						// if ram is empty, return no_zlib ... TxtToBin, BinToTxt need to return std::expected
-						if (ram.empty() == true || ram.size() != size)
+						if (!ramEx)
+						{
+							return ramEx.error();
+						}
+
+						ram = std::move(ramEx.value());
+
+						if (ram.size() != size)
 						{
 							return make_error_code(errc::incompatible_ram);
 						}
 					}
 					else
-#endif // ENABLE_BASE64
 					{
 						return make_error_code(errc::json_config);
 					}
@@ -744,15 +763,10 @@ namespace meen
 						// If a user defined callback is set and we are not processing a save or load request
 						if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 						{
-							auto err = std::error_code{};
 							auto memUuid = memoryController->Uuid();
+							auto memUuidTxt = Utils::BinToTxt(opt_.Encoder(), "none", memUuid.data(), memUuid.size());
 
-							if (opt_.Encoder() != "base64")
-							{
-								err = make_error_code(errc::json_config);
-							}
-
-							if(!err)
+							if (memUuidTxt)
 							{
 								auto rm = [memoryController](const std::map<uint16_t, uint16_t>& metadata)
 								{
@@ -769,52 +783,80 @@ namespace meen
 									return mem;
 								};
 
-								auto ram = rm(ramMetadata);
 								auto rom = rm(romMetadata);
-								auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
 								auto romMd5 = Utils::Md5(rom.data(), rom.size());
-								size_t dataSize = 0;
+								auto romMd5Txt = Utils::BinToTxt(opt_.Encoder(), "none", romMd5.data(), romMd5.size());
 
-								// todo - replace snprintf with std::format
-								auto writeState = [&]()
+								if (romMd5Txt)
 								{
-									std::string str;
-									char* data = nullptr;
+									auto ram = rm(ramMetadata);
+									auto ramTxt = Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size());
 
-									if (dataSize > 0)
+									if (ramTxt)
 									{
-										str.resize(dataSize);
-										data = str.data();
+										auto cpuStateTxt = cpu_->Save();
+
+										if (cpuStateTxt)
+										{
+											size_t dataSize = 0;
+											auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
+
+											// todo - replace snprintf with std::format
+											auto writeState = [&]()
+											{
+												std::string str;
+												char* data = nullptr;
+
+												if (dataSize > 0)
+												{
+													str.resize(dataSize);
+													data = str.data();
+												}
+
+												//cppcheck-suppress nullPointer
+												dataSize = snprintf(data, dataSize, fmtStr,
+													cpuStateTxt.value().c_str(),
+													opt_.Encoder().c_str(),
+													memUuidTxt.value().c_str(),
+													opt_.Encoder().c_str(),
+													romMd5Txt.value().c_str(),
+													ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
+													ramTxt.value().c_str()) + 1;
+
+												return str;
+											};
+
+											writeState();
+
+											onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
+											{
+												// TODO: this method needs to be marked as nothrow
+												onSave_(state.c_str());
+												// handle return error_code
+
+												return std::string("");
+											});
+
+											checkHandler(onSave);
+										}
+										else
+										{
+											printf("ISR::Save failed: %s\n", cpuStateTxt.error().message().c_str());
+										}
 									}
-
-									//cppcheck-suppress nullPointer
-									dataSize = snprintf(data, dataSize, fmtStr,
-										cpu_->Save().c_str(),
-										opt_.Encoder().c_str(),
-										Utils::BinToTxt("base64", "none", memUuid.data(), memUuid.size()).c_str(),
-										opt_.Encoder().c_str(),
-										Utils::BinToTxt("base64", "none", romMd5.data(), romMd5.size()).c_str(),
-										ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
-										Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size()).c_str()) + 1;
-									return str;
-								};
-
-								writeState();
-
-								onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
+									else
+									{
+										printf("ISR::Save failed: %s\n", ramTxt.error().message().c_str());
+									}
+								}
+								else
 								{
-									// TODO: this method needs to be marked as nothrow
-									onSave_(state.c_str());
-									// handle return error_code
-
-									return std::string("");
-								});
-
-								checkHandler(onSave);
+									printf("ISR::Save failed: %s\n", romMd5Txt.error().message().c_str());
+								}
 							}
 							else
 							{
-								printf("ISR::Save failed: %s\n", err.message().c_str());
+								printf("ISR::Save failed: %s\n", memUuidTxt.error().message().c_str());
 							}
 						}
 #endif // ENABLE_MEEN_SAVE

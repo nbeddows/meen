@@ -3,8 +3,8 @@
 * Added `std::error_code` support.
 * Removed the use of exceptions (methods return std::error_code).
 * Binary package now built with cpack.
-* Added Conan option `with_save` to enable/disable 
-  load/save support. 
+* Added the Conan config option `with_save` to enable/disable
+  save support. 
 * Added support for ArduinoJson for baremetal.
 * Added RP2040 microcontroller support.
 * Code refactor for a minimum 2x performace boost.
@@ -43,8 +43,10 @@
 * Removed the config parameter `clockResolution`.
 * Added the config parameter `clockSamplingFreq` which accepts
   a double value in Hertz.
-* The meaning of the ISRFreq config parameter has changes,
+* The meaning of the ISRFreq config parameter has changed,
   see the readme for further details.
+* Added the Conan config option `with_base64` to enable/disable
+  `base64://` uri scheme support.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

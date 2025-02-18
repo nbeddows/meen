@@ -238,6 +238,7 @@ namespace meen::tests
 #endif // ENABLE_MEEN_RP2040
                 break;
             case 1:
+                TEST_ASSERT_FALSE(saveStates.empty());
                 // 0 - mid program save state, 1 and 2 - end of program save states
                 err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
                 break;

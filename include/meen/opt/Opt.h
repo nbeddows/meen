@@ -77,7 +77,7 @@ namespace meen
 				@return		no_error: all options were set successfully.<br>
 							json_parse: the json input is malformed.<br>
 							json_config: the isr frequency is negative.<br>
-							no_zlib: zib option was specifed but zlib has been disabled.
+							compressor: a compressor option was specifed but that compressor has been disabled.
 			*/
 			std::error_code SetOptions(const char* json);
 

@@ -300,8 +300,8 @@ if(${enable_hash_library} STREQUAL ON)
   target_link_libraries(${meen} PRIVATE hash-library::hash-library)
 endif()
 
-# check all the features required for save support, if the are enabled, then enable save support
-if(${enable_base64} STREQUAL ON AND ${enable_hash_library} STREQUAL ON)
+# check all the features required for save support, if they are enabled, then enable save support
+if(${enable_hash_library} STREQUAL ON)
   target_compile_definitions(${meen} PRIVATE ENABLE_MEEN_SAVE)
 endif()
 

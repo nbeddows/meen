@@ -366,8 +366,13 @@ namespace meen::Tests
 						err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, progDir);
 						break;
 					case 1:
-						// 0 - mid program save state, 1 and 2 - end of program save states
-						err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
+						EXPECT_FALSE(saveStates.empty());
+						
+						if (saveStates.empty() == false)
+						{
+							// 0 - mid program save state, 1 and 2 - end of program save states
+							err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
+						}
 						break;
 					default:
 						err = errc::invalid_argument;

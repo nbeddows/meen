@@ -172,6 +172,7 @@ class MachineTest(unittest.TestCase):
                 case 0:
                     jsonToLoad = r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + r'/TST8080.COM","offset":256,"size":1471}]}}}'
                 case 1:
+                    self.assertGreater(len(saveStates), 0)
                     jsonToLoad = 'json://' + saveStates[0]
                 case _:
                     pass
