@@ -387,7 +387,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 				return jsonUuid.error();
 			}
 
-			if (jsonUuid.size() != uuid_.size() || std::equal(jsonUuid.begin(), jsonUuid.end(), uuid_.begin()) == false)
+			if (jsonUuid.value().size() != uuid_.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), uuid_.begin()) == false)
 			{
 				return make_error_code(errc::incompatible_uuid);
 			}
