@@ -52,7 +52,8 @@ PYBIND11_MODULE(meenPy, meen)
         .value("MemoryController", meen::errc::memory_controller)
         .value("Compressor", meen::errc::compressor)
         .value("NotImplemented", meen::errc::not_implemented)
-        .value("UnknownOption", meen::errc::unknown_option);
+        .value("UnknownOption", meen::errc::unknown_option)
+        .value("UriScheme", meen::errc::uri_scheme);
 
     py::enum_<meen::ISR>(meen, "ISR")
         .value("Zero", meen::ISR::Zero)

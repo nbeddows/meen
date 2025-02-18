@@ -50,7 +50,8 @@ namespace meen
 		memory_controller,	/**< The supplied memory controller is invalid. */
 		compressor,         /**< The compressor scheme is unknown. */
 		not_implemented,    /**< The method is not implemented. */
-		unknown_option      /**< An unknown JSON option was encountered and ignored. */
+		unknown_option,     /**< An unknown JSON option was encountered and ignored. */
+		uri_scheme			/**< A supplied uri scheme is unknown. */
 	};
 } // namespace meen
 

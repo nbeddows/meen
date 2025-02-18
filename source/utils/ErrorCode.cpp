@@ -72,6 +72,8 @@ namespace meen
 						return "The method is not implemented";
 					case errc::unknown_option:
 						return "An unknown JSON option was encountered and ignored";
+					case errc::uri_scheme:
+						return "The uri scheme is not supported";
 					default:
 						return "Unknown error code";
 				}

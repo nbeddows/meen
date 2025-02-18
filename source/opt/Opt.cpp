@@ -163,7 +163,7 @@ namespace meen
 			}
 			else
 			{
-				return make_error_code(errc::json_config);
+				return make_error_code(errc::uri_scheme);
 			}
 #ifdef ENABLE_NLOHMANN_JSON
 			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
