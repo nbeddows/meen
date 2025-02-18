@@ -151,7 +151,7 @@ namespace meen
 				}
 				else
 				{
-					return make_error_code(errc::json_config);
+					return make_error_code(errc::uri_scheme);
 				}
 #ifdef ENABLE_NLOHMANN_JSON
 				if(!json.contains("memory"))
@@ -194,15 +194,12 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 					auto memUuid = memoryController->Uuid();
 
-					if (sv.starts_with("base64://"))
+					if (sv.starts_with("base64://") == false)
 					{
-						sv.remove_prefix(strlen("base64://"));
-					}
-					else
-					{
-						return make_error_code(errc::json_config);
+						return make_error_code(errc::uri_scheme);
 					}
 
+					sv.remove_prefix(strlen("base64://"));
 					auto jsonUuid = Utils::TxtToBin("base64", "none", 16, std::string(sv));
 
 					if (!jsonUuid)
@@ -270,7 +267,7 @@ namespace meen
 							return make_error_code(errc::json_config);
 						}
 					}
-#ifndef ENABLE_MEEN_RP2040
+
 					if (bytes.starts_with("file://") == true)
 					{
 						bytes.remove_prefix(strlen("file://"));
@@ -325,12 +322,10 @@ namespace meen
 
 						romMetadata.emplace(offset, size);
 					}
-					else
-#endif // ENABLE_MEEN_RP2040
-					if (bytes.starts_with("base64://") == true)
+					else if (bytes.starts_with("base64://") == true)
 					{
 						bytes.remove_prefix(strlen("base64://"));
-#ifdef ENABLE_MEEN_SAVE
+
 						if (bytes.starts_with("md5://") == true)
 						{
 							bytes.remove_prefix(strlen("md5://"));
@@ -368,7 +363,6 @@ namespace meen
 							}
 						}
 						else
-#endif // ENABLE_MEEN_SAVE
 						{
 							const char* compressor;
 
@@ -466,7 +460,7 @@ namespace meen
 					}
 					else
 					{
-						return make_error_code(errc::json_config);
+						return make_error_code(errc::uri_scheme);
 					}
 
 					return std::error_code{};
@@ -578,7 +572,7 @@ namespace meen
 					}
 					else
 					{
-						return make_error_code(errc::json_config);
+						return make_error_code(errc::uri_scheme);
 					}
 
 					auto ramIt = ram.begin();
