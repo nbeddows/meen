@@ -57,13 +57,15 @@ namespace meen
 		{
 			// The machine state to load in json format: load all bytes from the rom `myProgram.com` from
 			// the current directory into memory at address 0x0000 and start executing the rom from address 256.
-			constexpr auto jsonToLoad = R"({"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
+			// Note the use of uri schemes to determine the type of resource to load.
+			constexpr auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
 			json == nullptr ?  *jsonLen = jsonToLoad.size() : memcpy(json, jsonToLoad.data(), *jsonLength);
-			return errc::no_error;
 
-			// "myProgram.json" save file as written to by the OnSave handler can be read from and written to the
-			// json buffer.
-			// NOTE: this will fail if the save file does not match "myProgram.com".
+			// "myProgram.json" save file as written to by the OnSave handler can also be used on supported platforms.
+			// Note that the path must be preceeded by the uri scheme file://.
+			// json == nullptr ?  *jsonLen = strlen("file://myProgram.json") : strncpy(json, "file://myProgram.json", *jsonLength);
+
+			return errc::no_error;
 		});
 
 		// Can be called from a different thread if the runAsync/saveAsync options are specifed
