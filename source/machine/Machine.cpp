@@ -236,11 +236,11 @@ namespace meen
 				bool clear = true;
 
 #ifdef ENABLE_NLOHMANN_JSON
-				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const nlohmann::json& block)
+				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const nlohmann::json& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if (!block.contains("bytes"))
 #else
-				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const JsonVariantConst& block)
+				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const JsonVariantConst& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if(!block["bytes"])
 #endif // ENABLE_NLOHMANN_JSON
@@ -255,6 +255,7 @@ namespace meen
 #endif //ENABLE_NLOHMANN_JSON
 					int offset = 0;
 					int size = 0;
+					auto err = std::error_code{};
 
 #ifdef ENABLE_NLOHMANN_JSON
 					if (block.contains("offset"))
@@ -287,10 +288,9 @@ namespace meen
 						}
 					}
 
-					if (bytes.starts_with("file://") == true)
+					auto loadFromFile = [ioController, memoryController, &romMetadata, &clear, offset, &size](std::string_view&& resource)
 					{
-						bytes.remove_prefix(strlen("file://"));
-						FILE* fin = fopen(std::string(bytes).c_str(), "rb");
+						FILE* fin = fopen(std::string(resource).c_str(), "rb");
 
 						if(fin == nullptr)
 						{
@@ -340,6 +340,91 @@ namespace meen
 						}
 
 						romMetadata.emplace(offset, size);
+
+						return std::error_code{};
+					};
+
+					auto loadFromBase64 = [ioController, memoryController, &romMetadata, &clear, offset](std::string_view&& resource, const char* compressor, int size)
+					{
+						// decompress bytes and write to memory
+						auto romBytesEx = Utils::TxtToBin("base64",
+							compressor,
+							size,
+							std::string(resource.begin(), resource.end()));
+
+						if (!romBytesEx)
+						{
+							return romBytesEx.error();
+						}
+
+						auto romBytes = std::move(romBytesEx.value());
+
+						// only support a max of 16 bit addressing
+						if (offset + romBytes.size() > 0xFFFF)
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						for (int i = 0; i < romBytes.size(); i++)
+						{
+							memoryController->Write(offset + i, romBytes[i], ioController);
+						}
+
+						if (clear == true)
+						{
+							romMetadata.clear();
+							clear = false;
+						}
+
+						romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
+
+						return std::error_code{};
+					};
+
+					auto loadFromMem = [ioController, memoryController, &romMetadata, &clear, offset, size](std::string_view&& resource)
+					{
+						if (size <= 0)
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						int64_t value = 0;
+						auto [ptr, ec] = std::from_chars (resource.data(), resource.data() + resource.size(), value, 16);
+
+						if (ec != std::errc() || ptr != resource.data() + resource.size())
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						auto romBytes = reinterpret_cast<uint8_t*>(value);
+
+						// only support a max of 16 bit addressing
+						if (offset + size > 0xFFFF)
+						{
+							return make_error_code(errc::json_config);
+						}
+
+						for (int i = 0; i < size; i++)
+						{
+							memoryController->Write(offset + i, romBytes[i], ioController);
+						}
+
+						if (clear == true)
+						{
+							romMetadata.clear();
+							clear = false;
+						}
+
+						romMetadata.emplace(offset, static_cast<uint16_t>(size));
+
+						return std::error_code{};
+					};
+
+					if (bytes.starts_with("file://") == true)
+					{
+						bytes.remove_prefix(strlen("file://"));
+
+						loadFromFile(std::move(bytes));
 					}
 					else if (bytes.starts_with("base64://") == true)
 					{
@@ -406,96 +491,86 @@ namespace meen
 								}
 							}
 
-							// decompress bytes and write to memory
-							auto romBytesEx = Utils::TxtToBin("base64",
-								compressor,
-								size,
-								std::string(bytes.begin(), bytes.end()));
-
-							if (!romBytesEx)
-							{
-								return romBytesEx.error();
-							}
-
-							auto romBytes = std::move(romBytesEx.value());
-
-							// only support a max of 16 bit addressing
-							if (offset + romBytes.size() > 0xFFFF)
-							{
-								return make_error_code(errc::json_config);
-							}
-
-							for (int i = 0; i < romBytes.size(); i++)
-							{
-								memoryController->Write(offset + i, romBytes[i], ioController);
-							}
-
-							if (clear == true)
-							{
-								romMetadata.clear();
-								clear = false;
-							}
-
-							romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
+							loadFromBase64(std::move(bytes), compressor, size);
 						}
 					}
 					else if (bytes.starts_with("mem://") == true)
 					{
 						bytes.remove_prefix(strlen("mem://"));
 
-						if (size <= 0)
-						{
-							return make_error_code(errc::json_config);
-						}
-
-						int64_t value = 0;
-						auto [ptr, ec] = std::from_chars (bytes.data(), bytes.data() + bytes.size(), value, 16);
-
-						if (ec != std::errc() || ptr != bytes.data() + bytes.size())
-						{
-							return make_error_code(errc::json_config);
-						}
-
-						auto romBytes = reinterpret_cast<uint8_t*>(value);
-
-						// only support a max of 16 bit addressing
-						if (offset + size > 0xFFFF)
-						{
-							return make_error_code(errc::json_config);
-						}
-
-						for (int i = 0; i < size; i++)
-						{
-							memoryController->Write(offset + i, romBytes[i], ioController);
-						}
-
-						if (clear == true)
-						{
-							romMetadata.clear();
-							clear = false;
-						}
-
-						romMetadata.emplace(offset, static_cast<uint16_t>(size));
+						err = loadFromMem(std::move(bytes));				
 					}
 					else
 					{
-						return make_error_code(errc::uri_scheme);
+						if (scheme == "file://")
+						{
+							if(directory.empty() == false)
+							{
+								err = loadFromFile(std::string(directory) + "/" + std::string(bytes));
+							}
+							else
+							{
+								err = loadFromFile(std::move(bytes));
+							}
+						}
+						else if (scheme == "base64://")
+						{
+							if (size <= 0)
+							{
+								size = bytes.length();
+							}
+
+							err = loadFromBase64(std::move(bytes), "none", size);						
+						}
+						else if (scheme == "mem://")
+						{
+							err = loadFromMem(std::move(bytes));
+						}
+						else
+						{
+							return make_error_code(errc::uri_scheme);
+						}
 					}
 
-					return std::error_code{};
+					return err;
 				};
 
 #ifdef ENABLE_NLOHMANN_JSON
 				if (memory["rom"].contains("block"))
 				{
 					for (const auto& block : memory["rom"]["block"])
+					{
+						std::string_view scheme = "";
+						std::string_view directory = "";
+
+						if (memory["rom"].contains("scheme"))
+						{
+							scheme = memory["rom"]["scheme"].get<std::string_view>();
+						}
+				
+						if (memory["rom"].contains("directory"))
+						{
+							directory = memory["rom"]["directory"].get<std::string_view>();
+						}
 #else
 				if (memory["rom"]["block"])
 				{
 					for (const auto& block : memory["rom"]["block"].as<JsonArrayConst>())
-#endif // ENABLE_NLOHMANN_JSON
 					{
-						auto err = loadRom(block);
+						std::string_view scheme = "";
+						std::string_view directory = "";
+
+						if (memory["rom"]["scheme"])
+						{
+							scheme = memory["rom"]["scheme"].as<std::string_view>();
+						}
+
+						if (memory["rom"]["directory"])
+						{
+							directory = memory["rom"]["directory"].as<std::string_view>();
+						}
+#endif // ENABLE_NLOHMANN_JSON
+						auto err = loadRom(block, std::move(scheme), std::move(directory));
 
 						if (err)
 						{
@@ -505,7 +580,7 @@ namespace meen
 				}
 				else
 				{
-					auto err = loadRom(memory["rom"]);
+					auto err = loadRom(memory["rom"], "", "");
 
 					if (err)
 					{
