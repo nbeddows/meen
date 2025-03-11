@@ -54,18 +54,15 @@ namespace meen
 
 	Opt::Opt()
 	{
-#ifdef ENABLE_NLOHMANN_JSON
-		json_ = nlohmann::json::parse(Opt::DefaultOpts(), nullptr, false);
-		assert(json_.is_discarded() == false);
-#else
-		auto e = deserializeJson(json_, Opt::DefaultOpts());
-		assert(!e);
-#endif // ENABLE_NLOHMANN_JSON
+		auto err = ParseJsonSv(Opt::DefaultOpts(), json_);
+		assert(!err);
 	}
 
-	constexpr std::string Opt::DefaultOpts()
+	constexpr std::string_view Opt::DefaultOpts()
 	{
-		std::string defaults =	R"({"clockSamplingFreq":-1)"
+		using namespace std::literals;
+
+		return					R"({"clockSamplingFreq":-1)"
 								R"(,"compressor":")"
 #ifdef ENABLE_ZLIB
 								"zlib"
@@ -83,13 +80,42 @@ namespace meen
 #else
 								R"(")"
 #endif // ENABLE_MEEN_SAVE
-								R"(,"isrFreq":0,"runAsync":false})";
-		return defaults;
+								R"(,"isrFreq":0,"runAsync":false})"sv;
 	}
+
+#ifdef ENABLE_NLOHMANN_JSON
+	std::error_code Opt::ParseJsonSv(std::string_view jsonSv, nlohmann::json& json)
+	{
+		std::error_code err{};
+
+		json = nlohmann::json::parse(jsonSv.begin(), jsonSv.end(), nullptr, false);
+
+		if(json.is_discarded() == true)
+		{
+			err = make_error_code(errc::json_parse);
+		}
+
+		return err;
+	}
+#else
+	std::error_code Opt::ParseJsonSv(std::string_view jsonSv, JsonDocument& json)
+	{
+		std::error_code err{};
+
+		auto e = deserializeJson(json, jsonSv.data(), jsonSv.length());
+
+		if(e)
+		{
+			err = make_error_code(errc::json_parse);
+		}
+
+		return err;
+	}
+#endif // ENABLE_NLOHMANN_JSON
 
 	std::error_code Opt::SetOptions(const char* opts)
 	{
-		auto err = make_error_code(errc::no_error);
+		auto err = std::error_code{};
 #ifdef ENABLE_NLOHMANN_JSON
 		nlohmann::json json;
 #else
@@ -98,108 +124,95 @@ namespace meen
 
 		if(opts == nullptr)
 		{
-#ifdef ENABLE_NLOHMANN_JSON
-			json = nlohmann::json::parse(Opt::DefaultOpts(), nullptr, false);
-			assert(json.is_discarded() == false);
-
-			if(json.is_discarded() == true)
-			{
-				return make_error_code(errc::json_parse);
-			}
-#else
-			auto e = deserializeJson(json, Opt::DefaultOpts());
-			assert(!e);
-
-			if(e)
-			{
-				return make_error_code(errc::json_parse);
-			}
-#endif // ENABLE_NLOHMANN_JSON
+			err = ParseJsonSv(Opt::DefaultOpts(), json);
 		}
 		else
 		{
-			std::string_view jsonStr(opts);
+			std::string_view jsonSv(opts);
 
-			if (jsonStr.starts_with("file://") == true)
+			if (jsonSv.starts_with("file://") == true)
 			{
-				jsonStr.remove_prefix(strlen("file://"));
-				//todo: use FILE* here, test wih nullptr, make sure it doesn't throw
-				std::ifstream fin(std::string(jsonStr.data(), jsonStr.size()));
-#ifdef ENABLE_NLOHMANN_JSON
-				json = nlohmann::json::parse(fin, nullptr, false);
-				if(json.is_discarded() == true)
-				{
-					return make_error_code(errc::json_parse);
-				}
-#else
-				auto e = deserializeJson(json, fin);
-				assert(e);
+				jsonSv.remove_prefix(strlen("file://"));
+				auto fin = fopen(std::string(jsonSv.data(), jsonSv.size()).c_str(), "r");
 
-				if(e)
+				if (fin != nullptr)
 				{
-					return make_error_code(errc::json_parse);
-				}
+#ifdef ENABLE_NLOHMANN_JSON
+					json = nlohmann::json::parse(fin, nullptr, false);
+					if(json.is_discarded() == true)
+					{
+						err = make_error_code(errc::json_parse);
+					}
+#else
+					auto e = deserializeJson(json, fin);
+
+					if(e)
+					{
+						err = make_error_code(errc::json_parse);
+					}
 #endif // ENABLE_NLOHMANN_JSON
+				}
+				else
+				{
+					err = make_error_code(errc::json_config);
+				}
 			}
-			else if (jsonStr.starts_with("json://") == true)
+			else if (jsonSv.starts_with("json://") == true)
 			{
-				jsonStr.remove_prefix(strlen("json://"));
-#ifdef ENABLE_NLOHMANN_JSON
-				json = nlohmann::json::parse(std::string(jsonStr.data(), jsonStr.length()), nullptr, false);
-
-				if(json.is_discarded() == true)
-				{
-					return make_error_code(errc::json_parse);
-				}
-#else
-				auto e = deserializeJson(json, jsonStr.data(), jsonStr.length());
-				assert(!e);
-
-				if(e)
-				{
-					return make_error_code(errc::json_parse);
-				}
-#endif // ENABLE_NLOHMANN_JSON
+				jsonSv.remove_prefix(strlen("json://"));
+				err = ParseJsonSv(jsonSv, json);
 			}
 			else
 			{
-				return make_error_code(errc::uri_scheme);
+				err = ParseJsonSv(jsonSv, json);
 			}
-#ifdef ENABLE_NLOHMANN_JSON
-			if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
-#else
-			if (json["isrFreq"] != nullptr && json["isrFreq"].as<double>() < 0)
-#endif // ENABLE_NLOHMANN_JSON
+
+			if (!err)
 			{
-				return make_error_code(errc::json_config);
+#ifdef ENABLE_NLOHMANN_JSON
+				if (json.contains("isrFreq") == true && json["isrFreq"].get<double>() < 0)
+#else
+				if (json["isrFreq"] != nullptr && json["isrFreq"].as<double>() < 0)
+#endif // ENABLE_NLOHMANN_JSON
+				{
+					err = make_error_code(errc::json_config);
+				}
 			}
+
 #ifndef ENABLE_ZLIB
-#ifdef ENABLE_NLOHMANN_JSON
-			if (json.contains("compressor") == true && json["compressor"].get<std::string_view>() == "zlib")
-#else
-			if (json["compressor"] != nullptr && json["compressor"].as<std::string_view>() == "zlib")
-#endif // ENABLE_NLOHMANN_JSON
+			if (!err)
 			{
-				return make_error_code(errc::compressor);
+#ifdef ENABLE_NLOHMANN_JSON
+				if (json.contains("compressor") == true && json["compressor"].get<std::string_view>() == "zlib")
+#else
+				if (json["compressor"] != nullptr && json["compressor"].as<std::string_view>() == "zlib")
+#endif // ENABLE_NLOHMANN_JSON
+				{
+					err = make_error_code(errc::compressor);
+				}
 			}
 #endif // ENABLE_ZLIB
 		}
 
+		if (!err)
+		{
 #ifdef ENABLE_NLOHMANN_JSON
-		json_.update(json);
+			json_.update(json);
 #else
-		Opt::Merge(json_, json);
+			Opt::Merge(json_, json);
 #endif // ENABLE_NLOHMANN_JSON
+		}
+
 		return err;
 	}
 
 	double Opt::ClockSamplingFreq() const
 	{
-		#ifdef ENABLE_NLOHMANN_JSON
-				return json_["clockSamplingFreq"].get<int64_t>();
-		#else
-				return json_["clockSamplingFreq"].as<int64_t>();
-		#endif // ENABLE_NLOHMANN_JSON
+#ifdef ENABLE_NLOHMANN_JSON
+		return json_["clockSamplingFreq"].get<double>();
+#else
+		return json_["clockSamplingFreq"].as<double>();
+#endif // ENABLE_NLOHMANN_JSON
 	}
 
 	double Opt::ISRFreq() const

@@ -100,42 +100,10 @@ namespace meen
 #else
 				JsonDocument json;
 #endif // ENABLE_NLOHMANN_JSON
-				if (str.starts_with("file://") == true)
+
+				auto parseJsonStr = [&json](std::string&& str)
 				{
-					str.erase(0, strlen("file://"));
-					auto fin = fopen(str.c_str(), "r");
-#ifdef ENABLE_NLOHMANN_JSON
-					json = nlohmann::json::parse(fin, nullptr, false);
-
-					if (fin != nullptr)
-					{
-						fclose(fin);
-					}
-
-					if(json.is_discarded() == true)
-#else
-					if (fin == nullptr)
-					{
-						return make_error_code(errc::json_config);
-					}
-
-					fseek(fin, 0, SEEK_END);
-					std::string jsonStr(ftell(fin), '\0');
-					fseek(fin, 0, SEEK_SET);
-					fread(jsonStr.data(), 1, jsonStr.size(), fin);
-					fclose(fin);
-
-					auto je = deserializeJson(json, jsonStr);
-
-					if (je)
-#endif // ENABLE_NLOHMANN_JSON
-					{
-						return make_error_code(errc::json_parse);
-					}
-				}
-				else if (str.starts_with("json://") == true)
-				{
-					str.erase(0, strlen("json://"));
+					auto err = std::error_code{};
 #ifdef ENABLE_NLOHMANN_JSON
 					json = nlohmann::json::parse(str, nullptr, false);
 
@@ -146,12 +114,63 @@ namespace meen
 					if(je)
 #endif // ENABLE_NLOHMANN_JSON
 					{
-						return make_error_code(errc::json_parse);
+						err = make_error_code(errc::json_parse);
+					}
+
+					return err;
+				};
+
+				if (str.starts_with("file://") == true)
+				{
+					str.erase(0, strlen("file://"));
+					auto fin = fopen(str.c_str(), "r");
+
+					if (fin != nullptr)
+					{
+#ifdef ENABLE_NLOHMANN_JSON
+						json = nlohmann::json::parse(fin, nullptr, false);
+						fclose(fin);
+
+						if(json.is_discarded() == true)
+#else
+						fseek(fin, 0, SEEK_END);
+						std::string jsonStr(ftell(fin), '\0');
+						fseek(fin, 0, SEEK_SET);
+						fread(jsonStr.data(), 1, jsonStr.size(), fin);
+						fclose(fin);
+
+						auto je = deserializeJson(json, jsonStr);
+
+						if (je)
+#endif // ENABLE_NLOHMANN_JSON
+						{
+							return make_error_code(errc::json_parse);
+						}
+					}
+					else
+					{
+						return make_error_code(errc::json_config);
+					}	
+				}
+				else if (str.starts_with("json://") == true)
+				{
+					str.erase(0, strlen("json://"));
+
+					auto err = parseJsonStr(std::move(str));
+
+					if (err)
+					{
+						return err;
 					}
 				}
 				else
 				{
-					return make_error_code(errc::uri_scheme);
+					auto err = parseJsonStr(std::move(str));
+
+					if (err)
+					{
+						return err;
+					}
 				}
 #ifdef ENABLE_NLOHMANN_JSON
 				if(!json.contains("memory"))

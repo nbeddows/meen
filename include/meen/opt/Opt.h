@@ -60,10 +60,20 @@ namespace meen
 			/**
 				Default options
 
-				The default options to use when nullptr is passed to SetOptions
+				The default options to use when nullptr is passed to SetOptions.
 			*/
-			static constexpr std::string DefaultOpts();
+			static constexpr std::string_view DefaultOpts();
 
+			/*
+				Parse a json string view
+				
+				Helper methods to parse json strings.
+			*/
+#ifdef ENABLE_NLOHMANN_JSON
+			std::error_code ParseJsonSv(std::string_view jsonSv, nlohmann::json& json);
+#else
+			std::error_code ParseJsonSv(std::string_view jsonSv, JsonDocument& json);
+#endif // ENABLE_NLOHMANN_JSON
 		public:
 			Opt();
 			~Opt() = default;
