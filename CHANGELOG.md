@@ -47,6 +47,8 @@
   see the readme for further details.
 * Added the Conan config option `with_base64` to enable/disable
   `base64://` uri scheme support.
+* Added support for `scheme` and `directory` parameters to the
+  memory["rom"] section of the machine load state format.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
