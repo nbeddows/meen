@@ -133,29 +133,22 @@ namespace meen
 			if (jsonSv.starts_with("file://") == true)
 			{
 				jsonSv.remove_prefix(strlen("file://"));
-				auto fin = fopen(std::string(jsonSv.data(), jsonSv.size()).c_str(), "r");
+				std::ifstream fin(std::string(jsonSv.data(), jsonSv.size()));
 
-				if (fin != nullptr)
-				{
 #ifdef ENABLE_NLOHMANN_JSON
-					json = nlohmann::json::parse(fin, nullptr, false);
-					if(json.is_discarded() == true)
-					{
-						err = make_error_code(errc::json_parse);
-					}
-#else
-					auto e = deserializeJson(json, fin);
-
-					if(e)
-					{
-						err = make_error_code(errc::json_parse);
-					}
-#endif // ENABLE_NLOHMANN_JSON
-				}
-				else
+				json = nlohmann::json::parse(fin, nullptr, false);
+				if(json.is_discarded() == true)
 				{
-					err = make_error_code(errc::json_config);
+					err = make_error_code(errc::json_parse);
 				}
+#else
+				auto e = deserializeJson(json, fin);
+
+				if(e)
+				{
+					err = make_error_code(errc::json_parse);
+				}
+#endif // ENABLE_NLOHMANN_JSON
 			}
 			else if (jsonSv.starts_with("json://") == true)
 			{
