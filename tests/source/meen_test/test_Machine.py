@@ -85,37 +85,43 @@ class MachineTest(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
-
-        self.assertEqual(err, ErrorCode.NoError)
-
-		#Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40,"runAsync":true}')
+        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
 
         # We aren't interested in saving, clear the onSave callback
         err = self.machine.OnSave(None)
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
-        
-        err = self.machine.Run()
+
+        def CheckBusy(ioController):
+            err = self.machine.SetOptions(r'json://{"isrFreq":1}')
+            self.assertEqual(err, ErrorCode.Busy)
+            err = self.machine.AttachMemoryController(self.memoryController)
+            self.assertEqual(err, ErrorCode.Busy)
+            err = self.machine.AttachIoController(self.testIoController)
+            self.assertEqual(err, ErrorCode.Busy)
+            err = self.machine.OnIdle(lambda ioc: None)
+            self.assertEqual(err, ErrorCode.Busy)
+            err = self.machine.OnLoad(lambda ioc: None)
+            self.assertEqual(err, ErrorCode.Busy)
+            err = self.machine.OnSave(lambda json, ioc: None)
+            self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
+            return False
+
+        err = self.machine.OnIdle(CheckBusy)
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.SetOptions(r'json://{"isrFreq":1}')
-        self.assertEqual(err, ErrorCode.Busy)
-        err = self.machine.AttachMemoryController(self.memoryController)
-        self.assertEqual(err, ErrorCode.Busy)
-        err = self.machine.AttachIoController(self.testIoController)
-        self.assertEqual(err, ErrorCode.Busy)
-        err = self.machine.OnSave(lambda json: None)
-        self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
-
-        self.machine.WaitForCompletion()
+        # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40}')
+        self.assertEqual(err, ErrorCode.NoError)
+        
+        runTime = self.machine.Run()
+        self.assertGreater(runTime, 0)
 
     def RunTimed(self, runAsync):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
 
         if runAsync == True:
@@ -123,13 +129,11 @@ class MachineTest(unittest.TestCase):
             self.assertEqual(err, ErrorCode.NoError)
 
         # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-		# Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40,"isrFreq":60}')
+        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40}')
         self.assertEqual(err, ErrorCode.NoError)
 
-        err = self.machine.Run()
-        self.assertEqual(err, ErrorCode.NoError)
-        nanos = self.machine.WaitForCompletion()
+        nanos = self.machine.Run()
+        self.assertGreater(nanos, 0)
 
         error = nanos - 1000000000
         self.assertTrue(error >= 0 and error <= 500000)
@@ -156,7 +160,7 @@ class MachineTest(unittest.TestCase):
         saveStates = []
         self.loadIndex = 0
 
-        def saveJson(json):
+        def saveJson(json, ioc):
             saveStates.append(json.rstrip('\0'))
             return ErrorCode.NoError
 
@@ -165,7 +169,7 @@ class MachineTest(unittest.TestCase):
         if err == ErrorCode.NotImplemented:
             self.skipTest("Machine.OnSave is not supported")
 
-        def loadJson():
+        def loadJson(ioc):
             jsonToLoad = ''
 
             match self.loadIndex:
@@ -198,21 +202,15 @@ class MachineTest(unittest.TestCase):
         
         err = self.machine.AttachIoController(self.cpmIoController)
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.Run()
-        self.assertEqual(err, ErrorCode.NoError)
-
-        time = self.machine.WaitForCompletion()
-        self.assertNotEqual(time, 0)
+        time = self.machine.Run()
+        self.assertGreater(time, 0)
 
         self.assertIn('CPU IS OPERATIONAL', self.ReadCpmIoControllerBuffer())
 
         self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(-1)
-        err = self.machine.Run()
-        self.assertEqual(err, ErrorCode.NoError)
-
-        time = self.machine.WaitForCompletion()
-        self.assertNotEqual(time, 0)
+        time = self.machine.Run()
+        self.assertGreater(time, 0)
 
         self.assertIn('CPU IS OPERATIONAL', self.ReadCpmIoControllerBuffer())
         self.assertTrue(len(saveStates) == 2 or len(saveStates) == 3)
@@ -270,12 +268,12 @@ class i8080Test(unittest.TestCase):
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
-        err = self.machine.OnLoad(lambda: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
+        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
         self.assertEqual(err, ErrorCode.NoError)
-        err = self.machine.OnSave(lambda actualState: self.CheckMachineState(expectedState, actualState))
+        err = self.machine.OnSave(lambda actualState, ioc: self.CheckMachineState(expectedState, actualState))
         self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
-        err = self.machine.Run()
-        self.assertEqual(err, ErrorCode.NoError)
+        runTime = self.machine.Run()
+        self.assertGreater(runTime, 0)
         self.assertTrue(self.saveTriggered or self.machine.OnSave(None) == ErrorCode.NotImplemented)
 
         if suiteName == '8080EXM.COM':

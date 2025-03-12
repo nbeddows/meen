@@ -74,6 +74,16 @@ void setUp()
     auto err = machine->AttachIoController(std::move(controller.value()));
     TEST_ASSERT_FALSE(err);
 
+	// Clear the handlers
+    err = machine->OnSave(nullptr);
+	TEST_ASSERT_TRUE(err.value() == meen::errc::no_error || err.value() == meen::errc::not_implemented);
+
+	err = machine->OnIdle(nullptr);
+	TEST_ASSERT_FALSE(err);
+
+	err = machine->OnLoad(nullptr);
+	TEST_ASSERT_FALSE(err);
+
     // Set default options
     err = machine->SetOptions(nullptr);
     TEST_ASSERT_FALSE(err);
@@ -139,7 +149,7 @@ namespace meen::tests
             TEST_ASSERT_FALSE(err);
         }
 
-        err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
+        err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
@@ -151,12 +161,9 @@ namespace meen::tests
         err = machine->SetOptions(R"(json://{"clockSamplingFreq":40, "isrFreq":60})");
         TEST_ASSERT_FALSE(err);
 
-        err = machine->Run();
-        TEST_ASSERT_FALSE(err);
-
 // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-        nanos += machine->WaitForCompletion().or_else([](std::error_code ec)
+        nanos += machine->Run().or_else([](std::error_code ec)
         {
             // We want to force a failure here, ec should be non zero
             TEST_ASSERT_FALSE(ec);
@@ -164,7 +171,7 @@ namespace meen::tests
             return std::expected<uint64_t, std::error_code>(0);
         }).value();
 #else
-        auto ex = machine->WaitForCompletion();
+        auto ex = machine->Run();
         TEST_ASSERT_TRUE(ex);
 
         nanos += ex.value();
@@ -197,7 +204,7 @@ namespace meen::tests
     {
         int loadIndex = 0;
         std::vector<std::string> saveStates;
-        auto err = machine->OnSave([&](const char* json)
+        auto err = machine->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
         {
             saveStates.emplace_back(json);
             return errc::no_error;
@@ -210,7 +217,7 @@ namespace meen::tests
         }
 
         // 0 - mid program save state, 1 and 2 - end of program save states
-        err = machine->OnLoad([&saveStates, &loadIndex, progDir = programsDir.c_str()](char* json, int* jsonLen)
+        err = machine->OnLoad([&saveStates, &loadIndex, progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             auto err = errc::no_error;
 
@@ -283,10 +290,7 @@ namespace meen::tests
         err = machine->AttachIoController(std::move(cpmIoController));
         TEST_ASSERT_FALSE(err);
 
-        err = machine->Run();
-        TEST_ASSERT_FALSE(err);
-
-        auto expected = machine->WaitForCompletion();
+        auto expected = machine->Run();
         TEST_ASSERT_TRUE(expected);
 
         cpmIoController = std::move(machine->DetachIoController().value());
@@ -309,10 +313,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
 
         // run it again, but this time trigger the load interrupt
-        err = machine->Run();
-        TEST_ASSERT_FALSE(err);
-
-        expected = machine->WaitForCompletion();
+        expected = machine->Run();
         TEST_ASSERT_TRUE(expected);
 
         cpmIoController = std::move(machine->DetachIoController().value());
@@ -358,7 +359,7 @@ namespace meen::tests
     {
         bool saveTriggered = false;
 
-        auto err = machine->OnSave([&saveTriggered, expected](const char* actual)
+        auto err = machine->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
         {
             std::string actualStr;
             std::string expectedStr;
@@ -385,15 +386,15 @@ namespace meen::tests
         });
         TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-        err = machine->OnLoad([name, progSize](char* json, int* jsonLen)
+        err = machine->OnLoad([name, progSize](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
         });
         TEST_ASSERT_FALSE(err);
 
-        err = machine->Run();
-        TEST_ASSERT_FALSE(err);
+        auto ex = machine->Run();
+        TEST_ASSERT_TRUE(ex);
         TEST_ASSERT_TRUE(saveTriggered || machine->OnSave(nullptr).value() == errc::not_implemented);
     }
 
@@ -421,41 +422,36 @@ namespace meen::tests
 
     static void test_MethodsErrorAfterRunCalled()
     {
-        auto err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen)
+        auto err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
         TEST_ASSERT_FALSE(err);
-
-		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-        //cppcheck-suppress unknownMacro
-        err = machine->SetOptions(R"(json://{"clockSampleFreq":40,"runAsync":true,"isrFreq":60})"); // must be async so the Run method returns immediately
-        TEST_ASSERT_FALSE(err);
-
-        // We aren't interested in saving, clear the onSave callback
-        err = machine->OnSave(nullptr);
-        TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
  
-        err = machine->Run();
+		// It's possible to capture the machine and wreak havoc, make sure that does not happen.
+		err = machine->OnIdle([m = machine.get()]([[maybe_unused]] IController* ioController)
+		{
+            // All these methods should return errc::busy
+            auto e = machine->SetOptions(R"(json://{"isrFreq":1})");
+            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
+            e = machine->AttachMemoryController(nullptr);
+            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
+            e = machine->AttachIoController(nullptr);
+            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
+            e = machine->OnIdle([](IController*){ return true; });
+            TEST_ASSERT_EQUAL_INT(errc::busy, e.value());
+            e = machine->OnLoad([](char*, int*, IController*){ return errc::no_error; });
+            TEST_ASSERT_EQUAL_INT(errc::busy, e.value());
+            e = machine->OnSave([](const char*, IController*){ return errc::no_error; });
+            TEST_ASSERT_TRUE(e.value() == static_cast<int>(errc::busy) || e.value() == static_cast<int>(errc::not_implemented));
+
+            return true;
+        });
         TEST_ASSERT_FALSE(err);
 
-        // All these methods should return errc::busy
-        err = machine->SetOptions(R"(json://{"isrFreq":1})");
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
-        err = machine->AttachMemoryController(nullptr);
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
-        err = machine->AttachIoController(nullptr);
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
-        err = machine->OnLoad([](char*, int*){return errc::no_error;});
-        TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), err.value());
-        err = machine->OnSave([](const char*){ return errc::no_error; });
-        TEST_ASSERT_TRUE(err.value() == static_cast<int>(errc::busy) || err.value() == static_cast<int>(errc::not_implemented));
-
-        // Since we are running async we need to wait for completion
-        auto expected = machine->WaitForCompletion();
-        TEST_ASSERT_TRUE(expected);
+        auto ex = machine->Run();
+        TEST_ASSERT_TRUE(ex);
     }
 
     static void test_RunTimed()
