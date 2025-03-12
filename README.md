@@ -280,15 +280,12 @@ Error handling has been ommitted for simplicity.
 // Create a synchronous i8080 machine running as fast as possible
 auto machine = Make8080Machine();
 
-// Create a custom IO Controller and attach it to the machine (See unit tests for examples)
-machine->AttachIOController(IControllerPtr(new CustomIOController()));
-
-// Create a custom memory controller and attach it to the machine (See unit tests for examples)
-machine->AttachMemoryController(IControllerPtr(new customMemoryController()));
-
 // Can be called from a different thread if the runAsync/loadAsync options are specifed
-machine->OnLoad([](char* json, int* jsonLength)
+machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
 {
+  // Typically, the on load logic would be handled by your custom io controller:
+  // ioController->LoadRom(json, jsonLen), but is left here for simplicity.
+
   // The machine state to load in json format: load all bytes from the rom `myProgram.com` from
   // the current directory into memory at address 0x0000 and start executing the rom from address 256.
   // Note the use of uri schemes to determine the type of resource to load.
@@ -296,41 +293,60 @@ machine->OnLoad([](char* json, int* jsonLength)
   json == nullptr ?  *jsonLen = jsonToLoad.size() : memcpy(json, jsonToLoad.data(), *jsonLength);
 
   // "myProgram.json" save file as written to by the OnSave handler can also be used on supported platforms.
-  // Note that the path must be preceeded by the uri scheme file://.
+  // Note that the path must be preceeded by the uri scheme file:// (unless it is raw json).
   // json == nullptr ?  *jsonLen = strlen("file://myProgram.json") : strncpy(json, "file://myProgram.json", *jsonLength);
 
- return errc::no_error;
+  return errc::no_error;
 });
 
 // Can be called from a different thread if the runAsync/saveAsync options are specifed
-machine->OnSave([](const char* json)
+machine->OnSave([](const char* json, IController* ioController)
 {
-	// Write the save state to disk
-	FILE* fout = fopen("myProgram.json", "w");
-	fwrite(json, 1, strlen(json), fin);
+  // Typically, the on save logic would be handled by your custom io controller:
+  // ioController->SaveRom(json), but is left here for simplicity.
+
+  // Write the save state to disk
+  FILE* fout = fopen("myProgram.json", "w");
+  fwrite(json, 1, strlen(json), fin);
   fclose(fout);
   return errc::no_error;
 });
 
-// Set the host clock sampling frequency - not setting this will run the
-// machine as fast as possible (default)
-machine->SetOptions(R"({"clockSamplingFreq":50})"); // 50Hz - 20 millisecond intervals
+// Will always be called from the same thread from which IMachine::Run was invoked.
+// Continually call this method when possible until it returns true, at which time
+// the machine will exit.
+machine->OnIdle([](IController* ioController)
+{
+  // Typically, this method will be used to handle the processing of information
+  // that is not related to the running of the engine, this may involve interaction
+  // with other io devices for example, ie; handling io events.
 
-// Run the machine sychronously, it won't return until the custom IO
-// controller ServiceInterrupts override generates an ISR::Quit interrupt
+  return ioController->ProcessIoEvent();
+});
+
+// Set the clock resolution - not setting this will run the
+// machine as fast as possible (default)
+machine->SetOptions(R"({"clockSamplingFreq":50})"); // 50 Hz - 20 milliseconds intervals
+
+// Create a custom IO Controller and attach it to the machine (See unit tests for examples)
+machine->AttachIOController(IControllerPtr(new CustomIOController()));
+
+// Create a custom memory controller and attach it to the machine (See unit tests for examples)
+machine->AttachMemoryController(IControllerPtr(new CustomMemoryController()));
+
+// Run the machine sychronously with the registered on idle handler.
 auto runTime = machine->Run();
+
+// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+// interrupt or the registered IMachine::OnIdle handler returns true.
 
 // Run the machine asychronously - this can be done by setting the following json config option
 machine->SetOptions(R"({"runAsync":true})");
-machine->Run();
+// The engine will run on a separate thread to the registered on idle handler
+runTime = machine->Run();
 
-// ...
-// Do additional work here while the machine is running
-// ...
-
-// Will not return until the custom IO
-// controller ServiceInterrupts override generates an ISR::Quit interrupt
-runTime = machine->WaitForCompletion();
+// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+// interrupt or the registered IMachine::OnIdle handler returns true.
 ```
 
 ### Configuration Options
