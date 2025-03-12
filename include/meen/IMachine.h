@@ -46,15 +46,12 @@ namespace meen
 		// Create a synchronous i8080 machine running as fast as possible
 		auto machine = Make8080Machine();
 
-		// Create a custom IO Controller and attach it to the machine (See unit tests for examples)
-		machine->AttachIOController(IControllerPtr(new CustomIOController()));
-
-		// Create a custom memory controller and attach it to the machine (See unit tests for examples)
-		machine->AttachMemoryController(IControllerPtr(new customMemoryController()));
-
 		// Can be called from a different thread if the runAsync/loadAsync options are specifed
-		machine->OnLoad([](char* json, int* jsonLength)
+		machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
 		{
+			// Typically, the on load logic would be handled by your custom io controller:
+			// ioController->LoadRom(json, jsonLen), but is left here for simplicity.
+
 			// The machine state to load in json format: load all bytes from the rom `myProgram.com` from
 			// the current directory into memory at address 0x0000 and start executing the rom from address 256.
 			// Note the use of uri schemes to determine the type of resource to load.
@@ -62,15 +59,18 @@ namespace meen
 			json == nullptr ?  *jsonLen = jsonToLoad.size() : memcpy(json, jsonToLoad.data(), *jsonLength);
 
 			// "myProgram.json" save file as written to by the OnSave handler can also be used on supported platforms.
-			// Note that the path must be preceeded by the uri scheme file://.
+			// Note that the path must be preceeded by the uri scheme file:// (unless it is raw json).
 			// json == nullptr ?  *jsonLen = strlen("file://myProgram.json") : strncpy(json, "file://myProgram.json", *jsonLength);
 
 			return errc::no_error;
 		});
 
 		// Can be called from a different thread if the runAsync/saveAsync options are specifed
-		machine->OnSave([](const char* json)
+		machine->OnSave([](const char* json, IController* ioController)
 		{
+			// Typically, the on save logic would be handled by your custom io controller:
+			// ioController->SaveRom(json), but is left here for simplicity.
+
 			// Write the save state to disk
 			FILE* fout = fopen("myProgram.json", "w");
 			fwrite(json, 1, strlen(json), fin);
@@ -78,25 +78,41 @@ namespace meen
 			return errc::no_error;
 		});
 
+		// Will always be called from the same thread from which IMachine::Run was invoked.
+		// Continually call this method when possible until it returns true, at which time
+		// the machine will exit.
+		machine->OnIdle([](IController* ioController)
+		{
+			// Typically, this method will be used to handle the processing of information
+			// that is not related to the running of the engine, this may involve interaction
+			// with other io devices for example, ie; handling io events.
+
+			return ioController->ProcessIoEvent();
+		});
+
 		// Set the clock resolution - not setting this will run the
 		// machine as fast as possible (default)
 		machine->SetOptions(R"({"clockSamplingFreq":50})"); // 50 Hz - 20 milliseconds intervals
 
-		// Run the machine sychronously, it won't return until the custom IO
-		// controller ServiceInterrupts override generates an ISR::Quit interrupt
+		// Create a custom IO Controller and attach it to the machine (See unit tests for examples)
+		machine->AttachIOController(IControllerPtr(new CustomIOController()));
+
+		// Create a custom memory controller and attach it to the machine (See unit tests for examples)
+		machine->AttachMemoryController(IControllerPtr(new CustomMemoryController()));
+
+		// Run the machine sychronously with the registered on idle handler.
 		auto runTime = machine->Run();
+
+		// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+		// interrupt or the registered IMachine::OnIdle handler returns true.
 
 		// Run the machine asychronously - this can be done by setting the following json config option
 		machine->SetOptions(R"({"runAsync":true})");
-		machine->Run();
+		// The engine will run on a separate thread to the registered on idle handler
+		runTime = machine->Run();
 
-		// ...
-		// Do additional work here while the machine is running
-		// ...
-
-		// Will not return until the custom IO
-		// controller ServiceInterrupts override generates an ISR::Quit interrupt
-		runTime = machine->WaitForCompletion();
+		// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+		// interrupt or the registered IMachine::OnIdle handler returns true.
 
 		@endcode
 	*/
@@ -107,13 +123,15 @@ namespace meen
 			Start executing the instructions that reside in the currently loaded
 			memory controller.
 
-			@remark						Before a program has been loaded, current existing memory will continue ti be executed.
+			@remark						Before a program has been loaded, current existing memory will continue to be executed.
 										This is relevant when no inital program has been loaded. In this case, current existing
 										memory will be executed from address 0x0000. The memory controller's internal memory
 										should be initialised to 0x00 before the first call to IMachine::Run is made. Failure
 										to initialise the memory to a known state will result in undefined behaviour.
 
-			@return						A std::error_code:
+			@return						A std::expected with an expected value of the duration of the
+										run time of the machine as a uint64_t in nanoseconds and an
+										unexpected value of one of the following std::error_codes:
 
 										errc::memory_controller: no memory controller has been attached.
 										errc::io_controller: no io controller has been attached.
@@ -121,22 +139,9 @@ namespace meen
 										errc::cpu: the machine cpu is invalid.
 										errc::clock_resolution: the clock is invalid or the supplied clock resolution is too high.
 
-			@sa							OnLoad
-			@sa							meen::errc
+			@since						version 0.2.0
 		*/
-		virtual std::error_code Run() = 0;
-
-		/** Wait for the machine to finish running
-
-			Block the current thread until the machine execution loop has completed.
-
-			@return						A std::expected with an expected value of the duration of the
-										run time of the machine as a uint64_t in nanoseconds and an
-										unexpected value as a std::error_code.
-
-			@remark						Repeated calls to this method will return the last valid meen run time. 
-		*/
-		virtual std::expected<uint64_t, std::error_code> WaitForCompletion() = 0;
+		virtual std::expected<uint64_t, std::error_code> Run() = 0;
 
 		/** Attach a custom memory controller
 
@@ -149,16 +154,12 @@ namespace meen
 
 									errc::busy: meen is running.
 
-			@remark					The controller must be stopped, otherwise errc::busy will be returned. This
-									will be returned when the runAsync option has been set and Run has been called
-									and is not complete. WaitForCompletion must be called to ensure meen is finished.
-
 			@remark					Attaching a controller transfers ownership of the controller to meen.
 									The only way to transfer ownership back to the caller is via DetachMemoryController.
 									Consecutive different controller attachments will result in the destruction
 									of the currently attached controller.
 
-			@sa						See Tests/TestControllers/MemoryController.cpp
+			@since					version 2.0.0
 		*/
 		virtual std::error_code AttachMemoryController (IControllerPtr&& controller) = 0;
 		
@@ -171,7 +172,9 @@ namespace meen
 
 			@return					A std::expected with an expected value of a unique_ptr to the detached controller
 									and an unexpected value of a std::error_code (errc::busy when meen is in a running state).
-		 */
+
+			@since					version 2.0.0
+		*/
 		virtual std::expected<IControllerPtr, std::error_code> DetachMemoryController() = 0;
 
 		/** Attach a custom io controller
@@ -185,16 +188,12 @@ namespace meen
 
 									errc::busy: meen is running.
 
-			@remark					The controller must be stopped, otherwise errc::busy will be returned. This
-									will be returned when the runAsync option has been set and Run has been called
-									and is not complete. WaitForCompletion must be called to ensure meen is finished.
-
 			@remark					Attaching a controller transfers ownership of the controller to meen.
 									The only way to transfer ownership back to the caller is via DetachIoController.
 									Consecutive different controller attachments will result in the destruction
 									of the currently attached controller.
 
-			@sa						See Tests/TestControllers/MemoryController.cpp
+			@since					version 2.0.0
 		*/
 		virtual std::error_code AttachIoController (IControllerPtr&& controller) = 0;
 		
@@ -207,7 +206,9 @@ namespace meen
 
 			@return					A std::expected with an expected value of a unique_ptr to the detached controller
 									and an unexpected value of a std::error_code (errc::busy when meen is in a running state).
-		 */
+
+			@since					version 2.0.0
+		*/
 		virtual std::expected<IControllerPtr, std::error_code> DetachIoController() = 0;
 		
 		/** Set machine options
@@ -223,20 +224,19 @@ namespace meen
 									errc::json_config: one of the option values are illegal.<br>
 									errc::json_parse: the json input parameter options is malformed.<br>
 									errc::busy: meen is running.
-
-			@see					MakeMachine factory methods for supported configuration options.
 		*/
 		virtual std::error_code SetOptions(const char* options) = 0;
 
 		/** Machine save state completion handler
 		
-			Registers a method which will be called when the ISR::Save interrupt is triggered. The register
-			method accepts a const char* which is the machine save state in json format with a return type
-			of meen::errc. 
+			Registers a method which will be called when the ISR::Save interrupt is triggered. The registered
+			method shall return a meen::errc and accept 2 arguments, json - a const char* which is the machine
+			save state in json format, the contents of which can be read back in via the method registered with
+			IMachine::OnLoad to restore the machine state and ioController - a pointer to the io controller that
+			was attached via the IMachine::AttachIoController method.
 		
-			The format of the save state is not overly relevant from a user perspective.
-			
-			An example json save state is specified below:
+			The format of the save state is not overly relevant from a user perspective. An example json save
+			state is documented below:
 
 			@code{.json}
 
@@ -285,19 +285,21 @@ namespace meen
 										errc::not_implemented: save support has been disabled.
 
 			@remark						The function parameter onSave will be called from a different thread from which this
-										method was called if the runAsync or saveAsync config options have been specified.
+										method was called if the runAsync and/or saveAsync config options have been specified.
 
 			@remark						Save requests are not queued. When a save is in progress, additional save interrupts
 										will be ignored.
-			@since	version 1.5.0
+			
+			@since						version 1.5.0
 		*/
-		virtual std::error_code OnSave(std::function<errc(const char* json)>&& onSave) = 0;
+		virtual std::error_code OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave) = 0;
 
 		/** Machine load state initiation handler
 		
 			Registers a method that will be called when the ISR::Load interrupt is triggered. The registered
-			method shall return a meen::errc and accepts two parameters: json - a char* array to write the
-			machine state json to, jsonLen - an int* to write the length of the json state array to.
+			method shall return a meen::errc and accepts 3 arguments: json - a char* array to write the
+			machine state json to, jsonLen - an int* to write the length of the json state array to, ioController -
+			a pointer to the io controller that was attached via the IMachine::AttachIoController method.
 			
 			The registered handler may be called twice. The first time with the json parameter
 			as nullptr. In this case the length of the json load state array must be written to the jsonLen
@@ -382,9 +384,28 @@ namespace meen
 
 			@todo						Log when errors occur.
 
-			@since	version 1.5.0
+			@since						version 1.5.0
 		*/
-		virtual std::error_code OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad) = 0;
+		virtual std::error_code OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad) = 0;
+
+		/** Machine on idle handler
+
+			The registered handler will always be called from the same thread from which IMachine::Run was invoked.
+			When the configuration option 'runAsync' is true, any data that is shared between this handler and the
+			OnLoad and OnSave handlers needs to be protected as they will be invoked from a separate thread to this
+			handler. When the configuration option 'runAsync' is false, this method should be lightweight and
+			non-blocking as superfluous delays here can have an impact on overall performace.
+
+			@param		onIdle			The on idle handler to register. The method accepts an IController* argument
+										which is a pointer to the io controller that was attached with the AttachIoController
+										method. The return value is a bool, true to quit the machine, false to call the
+										on idle method again.
+
+			@return						One of the meen std error codes, see meen/Error.h for further details.
+
+			@since						version 2.0.0
+		*/
+		virtual std::error_code OnIdle(std::function<bool(IController* ioController)>&& onIdle) = 0;
 
 		/** Destruct the machine
 

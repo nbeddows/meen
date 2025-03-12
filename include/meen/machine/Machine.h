@@ -23,6 +23,7 @@ SOFTWARE.
 #ifndef MACHINE_H
 #define MACHINE_H
 
+#include <atomic>
 #ifdef EMABLE_MEEN_RP2040
 
 #else
@@ -58,6 +59,7 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		int64_t ticksPerIsr_{};
 		uint64_t runTime_{};
+		std::atomic_bool quit_{};
 #ifdef ENABLE_MEEN_RP2040
 
 #else
@@ -67,9 +69,10 @@ namespace meen
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
-		std::function<std::error_code(char* json, int* jsonLen)> onLoad_{};
+		std::function<bool(IController* ioController)>&& onIdle_{};
+		std::function<std::error_code(char* json, int* jsonLen, IController* ioController)> onLoad_{};
 #ifdef ENABLE_MEEN_SAVE
-		std::function<std::error_code(const char* json)> onSave_{};
+		std::function<std::error_code(const char* json, IController* ioController)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
 		friend void RunMachine(Machine* machine);
 	public:
@@ -80,13 +83,7 @@ namespace meen
 
 			@see IMachine::Run
 		*/
-		std::error_code Run() final;
-
-		/** WaitForCompletion
-
-			@see IMachine::WaitForCompletion
-		*/
-		std::expected<uint64_t, std::error_code> WaitForCompletion() final;
+		std::expected<uint64_t, std::error_code> Run() final;
 
 		/** AttachMemoryController
 
@@ -122,13 +119,19 @@ namespace meen
 
 			@see IMachine::OnLoad
 		*/
-		std::error_code OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad) final;
+		std::error_code OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad) final;
 
 		/** OnSave
 
 			@see IMachine::OnSave
 		*/
-		std::error_code OnSave(std::function<errc(const char* json)>&& onSave) final;
+		std::error_code OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave) final;
+
+		/** OnIdle
+		
+			@see IMachine::OnIdle
+		*/
+		std::error_code OnIdle(std::function<bool(IController* ioController)>&& onIdle) final;
 	};
 } // namespace meen
 
