@@ -13,8 +13,8 @@
 * Compiler Id and version are now incorporated
   into the package name.
 * Changed top level namespace from MachEmu to meen.
-* `IMachine::Run` now returns a `std::error_code`.
-* `IMachine::WaitForCompletion` now returns a `std::expected`.
+* `IMachine::Run` now returns `std::expected`.
+* Removed WaitForCompletion from the public API`.
 * Updated the minimum msvc version required in the README to 1706.
 * Added Error.h with errc enum to compare meen error_code values.
 * Clang is no longer officially supported.
@@ -49,6 +49,7 @@
   `base64://` uri scheme support.
 * Added support for `scheme` and `directory` parameters to the
   memory["rom"] section of the machine load state format.
+* Added Machine interface method `OnLoad`.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
