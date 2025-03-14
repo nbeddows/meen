@@ -147,7 +147,7 @@ class MeenRecipe(ConanFile):
             if not self.options.with_i8080_test_suites:
                 testFilter += ":-*8080*:*CpuTest*"
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
-            self.run(os.path.join(testsDir, "meen_test " + testFilter + " " + os.path.join(self.source_folder + "/tests/programs/")))
+            self.run(os.path.join(testsDir, "meen_test " + testFilter + " " + os.path.join(self.source_folder.replace("\\" ,"/") + "/tests/programs")))
             if self.options.get_safe("with_python", False):
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:
