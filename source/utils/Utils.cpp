@@ -141,7 +141,7 @@ namespace meen::Utils
 		}
 	}
 
-	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len)
+	std::array<uint8_t, 16> Md5(const uint8_t* input, uint32_t len)
 	{
 #ifdef ENABLE_HASH_LIBRARY
 		std::array<uint8_t, MD5::HashBytes> hash;

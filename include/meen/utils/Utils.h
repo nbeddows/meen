@@ -75,7 +75,7 @@ namespace meen::Utils
 
 		@return							The 128 bit hash as a std::array of 16 bytes.
 	*/
-	std::array<uint8_t, 16> Md5(uint8_t* input, uint32_t len);
+	std::array<uint8_t, 16> Md5(const uint8_t* input, uint32_t len);
 } // namespace meen::Utils
 
 #endif // UTILS_H
