@@ -102,14 +102,13 @@ PYBIND11_MODULE(meenPy, meen)
                 return meen::errc::no_error;
             }).value());            
         })
-        .def("OnSave", [](meen::IMachine& machine, std::function<void(std::string&& json, meen::IController* ioController)>&& onSave)
+        .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json, meen::IController* ioController)>&& onSave)
         {
             if (onSave)
-            {    
+            {
                 return static_cast<meen::errc>(machine.OnSave([os = std::move(onSave)](const char* json, meen::IController* ioController)
                 {
-                    os(std::move(json), ioController);
-                    return meen::errc::no_error;
+                    return os(std::move(json), ioController);
                 }).value());
             }
             else

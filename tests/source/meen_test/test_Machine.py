@@ -103,7 +103,7 @@ class MachineTest(unittest.TestCase):
             self.assertEqual(err, ErrorCode.Busy)
             err = self.machine.OnLoad(lambda ioc: None)
             self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.OnSave(lambda json, ioc: None)
+            err = self.machine.OnSave(lambda json, ioc: ErrorCode.NoError)
             self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
             return False
 
@@ -263,7 +263,7 @@ class i8080Test(unittest.TestCase):
         a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
         self.saveTriggered = True
-#        ErrorCode.NoError
+        return ErrorCode.NoError
 
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
