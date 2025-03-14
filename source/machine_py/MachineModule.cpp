@@ -40,6 +40,7 @@ PYBIND11_MODULE(meenPy, meen)
         .value("Async", meen::errc::async)
         .value("Busy", meen::errc::busy)
         .value("ClockSamplingFreq", meen::errc::clock_sampling_freq)
+        .value("Compressor", meen::errc::compressor)
         .value("Cpu", meen::errc::cpu)
         .value("Encoder", meen::errc::encoder)
         .value("IncompatibleRam", meen::errc::incompatible_ram)
@@ -50,7 +51,6 @@ PYBIND11_MODULE(meenPy, meen)
         .value("JsonConfig", meen::errc::json_config)
         .value("JsonParse", meen::errc::json_parse)
         .value("MemoryController", meen::errc::memory_controller)
-        .value("Compressor", meen::errc::compressor)
         .value("NotImplemented", meen::errc::not_implemented)
         .value("UnknownOption", meen::errc::unknown_option)
         .value("UriScheme", meen::errc::uri_scheme);
@@ -72,9 +72,9 @@ PYBIND11_MODULE(meenPy, meen)
     meen.def("Make8080Machine", &meen::Make8080Machine);
     
     py::class_<meen::IMachine>(meen, "IMachine")
-        .def("OnLoad", [](meen::IMachine& machine, std::function<std::string()>&& onLoad)
+        .def("OnLoad", [](meen::IMachine& machine, std::function<std::string(meen::IController* ioController)>&& onLoad)
         {
-            return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen)
+            return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen, meen::IController* ioController)
             {
                 // This static needs to be addressed ..... we could use a wrapper class for meen to store this ... don't really want to. :(
                 static std::string jsonToLoad_;
@@ -86,7 +86,7 @@ PYBIND11_MODULE(meenPy, meen)
 
                 if (json == nullptr)
                 {
-                    jsonToLoad_ = ol();
+                    jsonToLoad_ = ol(ioController);
                     *jsonLen = jsonToLoad_.length();
                 }
                 else
@@ -102,14 +102,13 @@ PYBIND11_MODULE(meenPy, meen)
                 return meen::errc::no_error;
             }).value());            
         })
-        .def("OnSave", [](meen::IMachine& machine, std::function<void(std::string&& json)>&& onSave)
+        .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json, meen::IController* ioController)>&& onSave)
         {
             if (onSave)
-            {    
-                return static_cast<meen::errc>(machine.OnSave([os = std::move(onSave)](const char* json)
+            {
+                return static_cast<meen::errc>(machine.OnSave([os = std::move(onSave)](const char* json, meen::IController* ioController)
                 {
-                    os(std::move(json));
-                    return meen::errc::no_error;
+                    return os(std::move(json), ioController);
                 }).value());
             }
             else
@@ -117,9 +116,27 @@ PYBIND11_MODULE(meenPy, meen)
                 return static_cast<meen::errc>(machine.OnSave(nullptr).value());
             }
         })
+        .def("OnIdle", [](meen::IMachine& machine, std::function<bool(meen::IController* ioController)>&& onIdle)
+        {
+            if (onIdle)
+            {
+                return static_cast<meen::errc>(machine.OnIdle([oi = std::move(onIdle)](meen::IController* ioController)
+                {
+                    pybind11::gil_scoped_acquire gil{};
+                    auto ret = oi(ioController);
+                    pybind11::gil_scoped_release nogil{};
+                    return ret;
+                }).value());
+            }
+            else
+            {
+                return static_cast<meen::errc>(machine.OnIdle(nullptr).value());
+            }
+        })
         .def("Run", [](meen::IMachine& machine)
         {
-            return static_cast<meen::errc>(machine.Run().value());
+            pybind11::gil_scoped_release nogil{};
+            return machine.Run().value_or(0);
         })
         .def("AttachIoController", [](meen::IMachine& machine, meen::IController* controller)
         {
@@ -132,11 +149,6 @@ PYBIND11_MODULE(meenPy, meen)
         .def("SetOptions", [](meen::IMachine& machine, const char* options)
         {
             return static_cast<meen::errc>(machine.SetOptions(options).value());
-        })
-        .def("WaitForCompletion", [](meen::IMachine& machine)
-        {
-            pybind11::gil_scoped_release nogil{};
-		    return machine.WaitForCompletion().value_or(0);
         });
 
     py::class_<meen::IController, meen::ControllerPy>(meen, "Controller")

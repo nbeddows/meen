@@ -77,12 +77,12 @@ namespace meen
 		auto currTime = nanoseconds::zero();
 		int64_t totalTicks = 0;
 		int64_t lastTicks = 0;
-		bool quit = false;
 		auto cpu_ = m->cpu_.get();
 		auto clock_ = m->clock_.get();
 		auto ioController = m->ioController_.get();
 		auto& romMetadata = m->romMetadata_;
 		auto& ramMetadata = m->ramMetadata_;
+		auto& onIdle = m->onIdle_;
 		auto& onLoad_ = m->onLoad_;
 		auto& opt_ = m->opt_;
 		auto ticksPerIsr = 0ull;
@@ -100,7 +100,6 @@ namespace meen
 #else
 				JsonDocument json;
 #endif // ENABLE_NLOHMANN_JSON
-
 				auto parseJsonStr = [&json](std::string&& str)
 				{
 					auto err = std::error_code{};
@@ -150,7 +149,7 @@ namespace meen
 					else
 					{
 						return make_error_code(errc::json_config);
-					}	
+					}
 				}
 				else if (str.starts_with("json://") == true)
 				{
@@ -763,6 +762,252 @@ namespace meen
 		std::future<std::string> onSave;
 #endif // ENABLE_MEEN_SAVE
 		int ticks = 0;
+		auto serviceInterrupts = [&]
+		{
+			bool quit = false;
+			auto isr = ioController->ServiceInterrupts(currTime.count(), totalTicks, memoryController);
+
+			switch (isr)
+			{
+				case ISR::Zero:
+				case ISR::One:
+				case ISR::Two:
+				case ISR::Three:
+				case ISR::Four:
+				case ISR::Five:
+				case ISR::Six:
+				case ISR::Seven:
+				{
+					ticks = cpu_->Interrupt(isr);
+					currTime = clock_->Tick(ticks);
+					totalTicks += ticks;
+					break;
+				}
+				case ISR::Load:
+				{
+					// If a user defined callback is set and we are not processing a load or save request
+					if (onLoad_ != nullptr
+#ifndef ENABLE_MEEN_RP2040
+						&& onLoad.valid() == false
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_MEEN_SAVE
+						&& onSave.valid() == false
+#endif // ENABLE_MEEN_SAVE
+					)
+					{
+#ifndef ENABLE_MEEN_RP2040
+						onLoad = std::async(loadLaunchPolicy, [onLoad_, ioController]
+						{
+#endif // ENABLE_MEEN_RP2040
+							std::string str;
+							int len = 0;
+							auto e = onLoad_(nullptr, &len, ioController);
+
+							if(!e)
+							{
+								len++;
+								str.resize(len, '\0');
+								e = onLoad_(str.data(), &len, ioController);
+							}
+
+							if(e)
+							{
+								str.clear();
+								// todo: need to have proper logging
+								printf("ISR::Load failed to load the machine state: %s\n", e.message().c_str());
+							}
+#ifndef ENABLE_MEEN_RP2040
+							return str;
+						});
+
+						auto err = loadMachineState(checkHandler(onLoad));
+#else
+						auto err = loadMachineState(std::move(str));
+#endif // ENABLE_MEEN_RP2040
+
+						if(err)
+						{
+							printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
+						}
+					}
+					break;
+				}
+				case ISR::Save:
+				{
+#ifdef ENABLE_MEEN_SAVE
+					// If a user defined callback is set and we are not processing a save or load request
+					if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
+					{
+						auto memUuid = memoryController->Uuid();
+						auto memUuidTxt = Utils::BinToTxt(opt_.Encoder(), "none", memUuid.data(), memUuid.size());
+
+						if (memUuidTxt)
+						{
+							auto rm = [memoryController](const std::map<uint16_t, uint16_t>& metadata)
+							{
+								std::vector<uint8_t> mem;
+
+								for (const auto& m : metadata)
+								{
+									for (auto addr = m.first; addr < m.first + m.second; addr++)
+									{
+										mem.push_back(memoryController->Read(addr, nullptr));
+									}
+								}
+
+								return mem;
+							};
+
+							auto rom = rm(romMetadata);
+							auto romMd5 = Utils::Md5(rom.data(), rom.size());
+							auto romMd5Txt = Utils::BinToTxt(opt_.Encoder(), "none", romMd5.data(), romMd5.size());
+
+							if (romMd5Txt)
+							{
+								auto ram = rm(ramMetadata);
+								auto ramTxt = Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size());
+
+								if (ramTxt)
+								{
+									auto cpuStateTxt = cpu_->Save();
+
+									if (cpuStateTxt)
+									{
+										size_t dataSize = 0;
+										auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
+
+										// todo - replace snprintf with std::format
+										auto writeState = [&]()
+										{
+											std::string str;
+											char* data = nullptr;
+
+											if (dataSize > 0)
+											{
+												str.resize(dataSize);
+												data = str.data();
+											}
+
+											//cppcheck-suppress nullPointer
+											dataSize = snprintf(data, dataSize, fmtStr,
+												cpuStateTxt.value().c_str(),
+												opt_.Encoder().c_str(),
+												memUuidTxt.value().c_str(),
+												opt_.Encoder().c_str(),
+												romMd5Txt.value().c_str(),
+												ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
+												ramTxt.value().c_str()) + 1;
+
+											return str;
+										};
+
+										writeState();
+
+										onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState(), ioController]
+										{
+											// TODO: this method needs to be marked as nothrow
+											onSave_(state.c_str(), ioController);
+											// handle return error_code
+
+											return std::string("");
+										});
+
+										checkHandler(onSave);
+									}
+									else
+									{
+										printf("ISR::Save failed: %s\n", cpuStateTxt.error().message().c_str());
+									}
+								}
+								else
+								{
+									printf("ISR::Save failed: %s\n", ramTxt.error().message().c_str());
+								}
+							}
+							else
+							{
+								printf("ISR::Save failed: %s\n", romMd5Txt.error().message().c_str());
+							}
+						}
+						else
+						{
+							printf("ISR::Save failed: %s\n", memUuidTxt.error().message().c_str());
+						}
+					}
+#endif // ENABLE_MEEN_SAVE
+					break;
+				}
+				case ISR::Quit:
+				{
+					// Wait for any outstanding load/save requests to complete
+#ifndef ENABLE_MEEN_RP2040
+					if (onLoad.valid() == true)
+					{
+						// we are quitting, wait for the onLoad handler to complete
+						auto err = loadMachineState(onLoad.get());
+
+						if(err)
+						{
+							printf("ISR::Quit failed to load the machine state: %s\n", err.message().c_str());
+						}
+					}
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_MEEN_SAVE
+					if (onSave.valid() == true)
+					{
+						// we are quitting, wait for the onSave handler to complete
+						onSave.get();
+					}
+#endif // ENABLE_MEEN_SAVE
+					quit = true;
+					
+					if (opt_.RunAsync() == true)
+					{
+						m->quit_ = true;
+					}
+					break;
+				}
+				case ISR::NoInterrupt:
+				{
+					// no interrupts pending, do any work that is outstanding
+
+					if (opt_.RunAsync() == true)
+					{
+						if (m->quit_ == true)
+						{
+							quit = true;
+						}
+					}
+					else
+					{
+						if (onIdle)
+						{
+							quit = onIdle(ioController);
+						}
+					}
+#ifndef ENABLE_MEEN_RP2040
+					auto errc = loadMachineState(checkHandler(onLoad));
+
+					if(errc)
+					{
+						printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
+					}
+#endif // ENABLE_MEEN_RP2040
+#ifdef ENABLE_MEEN_SAVE
+					checkHandler(onSave);
+#endif // ENABLE_MEEN_SAVE
+					break;
+				}
+				default:
+				{
+					//assert(0);
+					break;
+				}
+			}
+
+			return quit;
+		};
+
 		cpu_->Reset();
 		clock_->Reset();
 
@@ -771,279 +1016,105 @@ namespace meen
 			ticksPerIsr = clock_->GetSpeed() / opt_.ISRFreq();
 		}
 
+		auto quit = serviceInterrupts();
+
 		while (quit == false)
 		{
-			// Check if it is time to service interrupts
-			if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
-			{
-				lastTicks = totalTicks;
-
-				auto isr = ioController->ServiceInterrupts(currTime.count(), totalTicks, memoryController);
-
-				switch (isr)
-				{
-					case ISR::Zero:
-					case ISR::One:
-					case ISR::Two:
-					case ISR::Three:
-					case ISR::Four:
-					case ISR::Five:
-					case ISR::Six:
-					case ISR::Seven:
-					{
-						ticks = cpu_->Interrupt(isr);
-						currTime = clock_->Tick(ticks);
-						totalTicks += ticks;
-						break;
-					}
-					case ISR::Load:
-					{
-						// If a user defined callback is set and we are not processing a load or save request
-						if (onLoad_ != nullptr
-#ifndef ENABLE_MEEN_RP2040
-						&& onLoad.valid() == false
-#endif // ENABLE_MEEN_RP2040
-#ifdef ENABLE_MEEN_SAVE
-						&& onSave.valid() == false
-#endif // ENABLE_MEEN_SAVE
-						)
-						{
-#ifndef ENABLE_MEEN_RP2040
-							onLoad = std::async(loadLaunchPolicy, [onLoad_]
-							{
-#endif // ENABLE_MEEN_RP2040
-								std::string str;
-								int len = 0;
-								auto e = onLoad_(nullptr, &len);
-
-								if(!e)
-								{
-									len++;
-									str.resize(len, '\0');
-									e = onLoad_(str.data(), &len);
-								}
-
-								if(e)
-								{
-									str.clear();
-									// todo: need to have proper logging
-									printf("ISR::Load failed to load the machine state: %s\n", e.message().c_str());
-								}
-#ifndef ENABLE_MEEN_RP2040
-								return str;
-							});
-
-							auto err = loadMachineState(checkHandler(onLoad));
-#else
-							auto err = loadMachineState(std::move(str));
-#endif // ENABLE_MEEN_RP2040
-
-							if(err)
-							{
-								printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
-							}
-						}
-						break;
-					}
-					case ISR::Save:
-					{
-#ifdef ENABLE_MEEN_SAVE
-						// If a user defined callback is set and we are not processing a save or load request
-						if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
-						{
-							auto memUuid = memoryController->Uuid();
-							auto memUuidTxt = Utils::BinToTxt(opt_.Encoder(), "none", memUuid.data(), memUuid.size());
-
-							if (memUuidTxt)
-							{
-								auto rm = [memoryController](const std::map<uint16_t, uint16_t>& metadata)
-								{
-									std::vector<uint8_t> mem;
-
-									for (const auto& m : metadata)
-									{
-										for (auto addr = m.first; addr < m.first + m.second; addr++)
-										{
-											mem.push_back(memoryController->Read(addr, nullptr));
-										}
-									}
-
-									return mem;
-								};
-
-								auto rom = rm(romMetadata);
-								auto romMd5 = Utils::Md5(rom.data(), rom.size());
-								auto romMd5Txt = Utils::BinToTxt(opt_.Encoder(), "none", romMd5.data(), romMd5.size());
-
-								if (romMd5Txt)
-								{
-									auto ram = rm(ramMetadata);
-									auto ramTxt = Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size());
-
-									if (ramTxt)
-									{
-										auto cpuStateTxt = cpu_->Save();
-
-										if (cpuStateTxt)
-										{
-											size_t dataSize = 0;
-											auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
-
-											// todo - replace snprintf with std::format
-											auto writeState = [&]()
-											{
-												std::string str;
-												char* data = nullptr;
-
-												if (dataSize > 0)
-												{
-													str.resize(dataSize);
-													data = str.data();
-												}
-
-												//cppcheck-suppress nullPointer
-												dataSize = snprintf(data, dataSize, fmtStr,
-													cpuStateTxt.value().c_str(),
-													opt_.Encoder().c_str(),
-													memUuidTxt.value().c_str(),
-													opt_.Encoder().c_str(),
-													romMd5Txt.value().c_str(),
-													ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
-													ramTxt.value().c_str()) + 1;
-
-												return str;
-											};
-
-											writeState();
-
-											onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState()]
-											{
-												// TODO: this method needs to be marked as nothrow
-												onSave_(state.c_str());
-												// handle return error_code
-
-												return std::string("");
-											});
-
-											checkHandler(onSave);
-										}
-										else
-										{
-											printf("ISR::Save failed: %s\n", cpuStateTxt.error().message().c_str());
-										}
-									}
-									else
-									{
-										printf("ISR::Save failed: %s\n", ramTxt.error().message().c_str());
-									}
-								}
-								else
-								{
-									printf("ISR::Save failed: %s\n", romMd5Txt.error().message().c_str());
-								}
-							}
-							else
-							{
-								printf("ISR::Save failed: %s\n", memUuidTxt.error().message().c_str());
-							}
-						}
-#endif // ENABLE_MEEN_SAVE
-						break;
-					}
-					case ISR::Quit:
-					{
-						// Wait for any outstanding load/save requests to complete
-#ifndef ENABLE_MEEN_RP2040
-						if (onLoad.valid() == true)
-						{
-							// we are quitting, wait for the onLoad handler to complete
-							auto err = loadMachineState(onLoad.get());
-
-							if(err)
-							{
-								printf("ISR::Quit failed to load the machine state: %s\n", err.message().c_str());
-							}
-						}
-#endif // ENABLE_MEEN_RP2040
-#ifdef ENABLE_MEEN_SAVE
-						if (onSave.valid() == true)
-						{
-							// we are quitting, wait for the onSave handler to complete
-							onSave.get();
-						}
-#endif // ENABLE_MEEN_SAVE
-						quit = true;
-						break;
-					}
-					case ISR::NoInterrupt:
-					{
-#ifndef ENABLE_MEEN_RP2040
-						// no interrupts pending, do any work that is outstanding
-						auto errc = loadMachineState(checkHandler(onLoad));
-
-						if(errc)
-						{
-							printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
-						}
-#endif // ENABLE_MEEN_RP2040
-#ifdef ENABLE_MEEN_SAVE
-						checkHandler(onSave);
-#endif // ENABLE_MEEN_SAVE
-						break;
-					}
-					default:
-					{
-						//assert(0);
-						break;
-					}
-				}
-			}
-
 			//Execute the next instruction
 			ticks = cpu_->Execute();
 			currTime = clock_->Tick(ticks);
 			totalTicks += ticks;
+
+			// Check if it is time to service interrupts
+			if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+			{
+				quit = serviceInterrupts();
+				lastTicks = totalTicks;
+			}
 		}
 
 		m->runTime_ = currTime.count();
 	}
 
-	std::error_code Machine::Run()
+	std::expected<uint64_t, std::error_code> Machine::Run()
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return std::unexpected(make_error_code(errc::busy));
 		}
 
 		if (memoryController_ == nullptr)
 		{
-			return make_error_code(errc::memory_controller);
+			return std::unexpected(make_error_code(errc::memory_controller));
 		}
 
 		if (ioController_ == nullptr)
 		{
-			return make_error_code(errc::io_controller);
+			return std::unexpected(make_error_code(errc::io_controller));
 		}
 
 		if(clock_ == nullptr)
 		{
-			return make_error_code(errc::clock_sampling_freq);
+			return std::unexpected(make_error_code(errc::clock_sampling_freq));
 		}
 
 		if(cpu_ == nullptr)
 		{
-			return make_error_code(errc::cpu);
+			return std::unexpected(make_error_code(errc::cpu));
 		}
 
 		auto err = clock_->SetSamplingFrequency(opt_.ClockSamplingFreq());
 
 		if (err)
 		{
-			return err;
+			return std::unexpected(err);
 		}
 
 		runTime_ = 0;
 		running_ = true;
+		quit_ = false;
+
+		auto waitForCompletion = [this]
+		{
+			if(running_ == true)
+			{
+#ifdef ENABLE_MEEN_RP2040
+				auto core1Ret = multicore_fifo_pop_blocking();
+	
+				if(core1Ret != 0xFFFFFFFF)
+				{
+					return make_error_code(errc::async);
+				}
+#else
+				if (fut_.valid() == true)
+				{
+					fut_.get();
+				}
+				else
+				{
+					return make_error_code(errc::async);
+				}
+#endif // ENABLE_MEEN_RP2040
+				running_ = false;
+			}
+	
+			return std::error_code{};
+		};
+
+		auto idleLoop = [this, ioc = ioController_.get()]
+		{
+			if (onIdle_)
+			{
+				while (quit_ == false)
+				{
+					if (onIdle_(ioc) == true)
+					{
+						// atomic_bool shared with RunMachine thread
+						quit_ = true;
+					}
+				}
+			}
+		};
 
 #ifdef ENABLE_MEEN_RP2040
 		if(opt_.RunAsync() == true)
@@ -1058,6 +1129,16 @@ namespace meen
 			multicore_reset_core1();
 			multicore_launch_core1(runMachineAsync);
 			multicore_fifo_push_blocking(std::bit_cast<uint32_t>(this));
+
+			// Run an idle loop if an onIdle handler has been registered.
+			idleLoop();
+			// Wait for the machine to finish
+			err = waitForCompletion();
+
+			if (err)
+			{
+				return std::unexpected(err);
+			}
 		}
 		else
 		{
@@ -1077,35 +1158,19 @@ namespace meen
 			fut_.get();
 			running_ = false;
 		}
-#endif // ENABLE_MEEN_RP2040
-		return std::error_code{};
-	}
-
-	std::expected<uint64_t, std::error_code> Machine::WaitForCompletion()
-	{
-		if(running_ == true)
+		else
 		{
-#ifdef ENABLE_MEEN_RP2040
-			auto core1Ret = multicore_fifo_pop_blocking();
+			// Run an idle loop if an onIdle handler has been registered.
+			idleLoop();
+			// Wait for the machine to finish
+			err = waitForCompletion();
 
-			if(core1Ret != 0xFFFFFFFF)
+			if (err)
 			{
-				return std::unexpected(make_error_code(errc::async));
+				return std::unexpected(err);
 			}
-#else
-			if (fut_.valid() == true)
-			{
-				fut_.get();
-			}
-			else
-			{
-				return std::unexpected(make_error_code(errc::async));
-			}
-#endif // ENABLE_MEEN_RP2040
-
-			running_ = false;
 		}
-
+#endif // ENABLE_MEEN_RP2040
 		return runTime_;
 	}
 
@@ -1181,7 +1246,7 @@ namespace meen
 		return controller;
 	}
 
-	std::error_code Machine::OnSave(std::function<errc(const char* json)>&& onSave)
+	std::error_code Machine::OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave)
 	{
 #ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
@@ -1196,7 +1261,7 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 	}
 
-	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen)>&& onLoad)
+	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad)
 	{
 		if (running_ == true)
 		{
@@ -1206,6 +1271,18 @@ namespace meen
 		onLoad_ = std::move(onLoad);
 		return std::error_code{};
 	}
+
+	std::error_code Machine::OnIdle(std::function<bool(IController* ioController)>&& onIdle)
+	{
+		if (running_ == true)
+		{
+			return make_error_code(errc::busy);
+		}
+
+		onIdle_ = std::move(onIdle);
+		return std::error_code{};
+	}
+
 
 	ControllerDeleter::ControllerDeleter(bool del)
 	{

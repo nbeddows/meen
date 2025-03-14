@@ -1,5 +1,6 @@
 cmake_minimum_required(VERSION 3.25)
 project(MeenPackageTest CXX)
+set(CMAKE_CXX_STANDARD 23)
 
 if(NOT BUILD_SHARED_LIBS STREQUAL ON)
   if(DEFINED WIN32)

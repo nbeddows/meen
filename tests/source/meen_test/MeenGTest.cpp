@@ -98,6 +98,16 @@ namespace meen::Tests
 		auto err = machine_->AttachIoController(std::move(controller.value()));
 		EXPECT_FALSE(err);
 
+		// Clear the handlers
+		err = machine_->OnSave(nullptr);
+		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
+
+		err = machine_->OnIdle(nullptr);
+		EXPECT_FALSE(err);
+
+		err = machine_->OnLoad(nullptr);
+		EXPECT_FALSE(err);
+
 		// Set default options
 		err = machine_->SetOptions(nullptr);
 		EXPECT_FALSE(err);
@@ -123,7 +133,7 @@ namespace meen::Tests
 	{
 		bool saveTriggered = false;
 
-		auto err = machine_->OnSave([&saveTriggered, expected](const char* actual)
+		auto err = machine_->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
 		{
 			std::string actualStr;
 			std::string expectedStr;
@@ -150,7 +160,7 @@ namespace meen::Tests
 		});
 		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-		err = machine_->OnLoad([name, extra, offset](char* json, int* jsonLen)
+		err = machine_->OnLoad([name, extra, offset](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
 			if (extra == nullptr)
 			{
@@ -163,8 +173,8 @@ namespace meen::Tests
 		});
 		EXPECT_FALSE(err);
 
-		err = machine_->Run();
-		EXPECT_FALSE(err);
+		auto ex = machine_->Run();
+		EXPECT_TRUE(ex);
 		EXPECT_TRUE(saveTriggered || machine_->OnSave(nullptr).value() == errc::not_implemented);
 	}
 
@@ -243,38 +253,37 @@ namespace meen::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			auto err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
+			auto err = machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 			{
 				return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
 			});
 			EXPECT_FALSE(err);
 
-			// Set the resolution so the Run method takes about 1 second to complete therefore allowing subsequent IMachine method calls to return errors
-			//cppcheck-suppress unknownMacro
-			err = machine_->SetOptions(R"(json://{"clockSamplingFreq":40,"runAsync":true, "isrFreq":60})"); // must be async so the Run method returns immediately
+			// It's possible to capture the machine and wreak havoc, make sure that does not happen.
+			err = machine_->OnIdle([m = machine_.get()]([[maybe_unused]] IController* ioController)
+			{
+				// All these methods should return busy
+				auto e = machine_->SetOptions(R"(json://{"isrFreq":1})");
+				EXPECT_EQ(errc::busy, e.value());
+				e = machine_->AttachMemoryController(nullptr);
+				EXPECT_EQ(errc::busy, e.value());
+				e = machine_->AttachIoController(nullptr);
+				EXPECT_EQ(errc::busy, e.value());
+				e = machine_->OnIdle([](IController*){ return true; });
+				EXPECT_EQ(errc::busy, e.value());
+				e = machine_->OnLoad([](char*, int*, IController*){ return errc::no_error; });
+				EXPECT_EQ(errc::busy, e.value());
+				e = machine_->OnSave([](const char*, IController*){ return errc::no_error; });
+				EXPECT_TRUE(e.value() == errc::busy || e.value() == errc::not_implemented);
+
+				// true: stop calling the idle function and exit.
+				// false: keep calling the idle function and wait for the ISR:Quit interrupt to be triggered.
+				return true;
+			});
 			EXPECT_FALSE(err);
 
-			// We aren't interested in saving, clear the onSave callback
-			err = machine_->OnSave(nullptr);
-			EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
-
-			err = machine_->Run();
-			EXPECT_FALSE(err);
-
-			// All these methods should return busy
-			err = machine_->SetOptions(R"(json://{"isrFreq":1})");
-			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->AttachMemoryController(nullptr);
-			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->AttachIoController(nullptr);
-			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->OnLoad([](char*, int*){ return errc::no_error; });
-			EXPECT_EQ(errc::busy, err.value());
-			err = machine_->OnSave([](const char*){ return errc::no_error; });
-			EXPECT_TRUE(err.value() == errc::busy || err.value() == errc::not_implemented);
-
-			// Since we are running async we need to wait for completion
-			machine_->WaitForCompletion();
+			auto ex = machine_->Run();
+			EXPECT_TRUE(ex);
 		);
 	}
 
@@ -289,7 +298,7 @@ namespace meen::Tests
 			EXPECT_FALSE(err);
 		}
 
-		err = machine_->OnLoad([progDir = programsDir_.c_str()](char* json, int* jsonLen)
+		err = machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
 			return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
 		});
@@ -300,12 +309,9 @@ namespace meen::Tests
 		err = machine_->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
 		EXPECT_FALSE(err);
 
-		err = machine_->Run();
-		EXPECT_FALSE(err);
-
 // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-		nanos += machine_->WaitForCompletion().or_else([](std::error_code ec)
+		nanos += machine_->Run().or_else([](std::error_code ec)
 		{
 			// We want to force a failure here, ec should be non zero
 			EXPECT_FALSE(ec);
@@ -313,10 +319,10 @@ namespace meen::Tests
 			return std::expected<uint64_t, std::error_code>(0);
 		}).value();
 #else
-		auto ex = machine_->WaitForCompletion();
+		auto ex = machine_->Run();
 		EXPECT_TRUE(ex);
 
-		nanos += ex.value();
+		nanos += ex.value_or(0);
 #endif
 		auto error = nanos - 1000000000;
 		// Allow an average 500 micros of over sleep error
@@ -339,7 +345,7 @@ namespace meen::Tests
 		(
 			int loadIndex = 0;
 			std::vector<std::string> saveStates;
-			auto err = machine_->OnSave([&](const char* json)
+			auto err = machine_->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
 			{
 				saveStates.emplace_back(json);
 				return errc::no_error;
@@ -351,7 +357,7 @@ namespace meen::Tests
 				GTEST_SKIP() << "Machine::OnSave not supported";
 			}
 
-			err = machine_->OnLoad([&saveStates, &loadIndex, progDir = programsDir_.c_str()](char* json, int* jsonLen)
+			err = machine_->OnLoad([&saveStates, &loadIndex, progDir = programsDir_.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 			{
 				auto err = errc::no_error;
 
@@ -410,10 +416,7 @@ namespace meen::Tests
 			err = machine_->AttachIoController(std::move(cpmIoController_));
 			EXPECT_FALSE(err);
 
-			err = machine_->Run();
-			EXPECT_FALSE(err);
-
-			auto ex = machine_->WaitForCompletion();
+			auto ex = machine_->Run();
 			EXPECT_TRUE(ex);
 
 			cpmIoController_  = std::move(machine_->DetachIoController().value());
@@ -437,10 +440,7 @@ namespace meen::Tests
 			EXPECT_FALSE(err);
 
 			// run it again, but this time trigger the load interrupt
-			err = machine_->Run();
-			EXPECT_FALSE(err);
-
-			ex = machine_->WaitForCompletion();
+			ex = machine_->Run();
 			EXPECT_TRUE(ex);
 
 			cpmIoController_ = std::move(machine_->DetachIoController().value());

@@ -29,7 +29,7 @@ namespace meen
 {
 	MemoryController::MemoryController()
 	{
-		memory_.resize(memorySize_);
+		memory_.resize(memorySize_, 0x00);
 	}
 
 	size_t MemoryController::Size() const
