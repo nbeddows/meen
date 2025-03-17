@@ -796,19 +796,13 @@ namespace meen
 					)
 					{
 #ifndef ENABLE_MEEN_RP2040
-						onLoad = std::async(loadLaunchPolicy, [onLoad_, ioController]
+						onLoad = std::async(loadLaunchPolicy, [onLoad_, ioController, loadSize = opt_.MaxLoadStateLength()]
 						{
 #endif // ENABLE_MEEN_RP2040
-							std::string str;
-							int len = 0;
-							auto e = onLoad_(nullptr, &len, ioController);
+							int len = loadSize;
+							std::string str(len, '\0');
 
-							if(!e)
-							{
-								len++;
-								str.resize(len, '\0');
-								e = onLoad_(str.data(), &len, ioController);
-							}
+							auto e = onLoad_(str.data(), &len, ioController);
 
 							if(e)
 							{
@@ -816,6 +810,8 @@ namespace meen
 								// todo: need to have proper logging
 								printf("ISR::Load failed to load the machine state: %s\n", make_error_code(e).message().c_str());
 							}
+
+							str.resize(len);
 #ifndef ENABLE_MEEN_RP2040
 							return str;
 						});

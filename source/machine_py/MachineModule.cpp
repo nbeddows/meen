@@ -76,29 +76,15 @@ PYBIND11_MODULE(meenPy, meen)
         {
             return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen, meen::IController* ioController)
             {
-                // This static needs to be addressed ..... we could use a wrapper class for meen to store this ... don't really want to. :(
-                static std::string jsonToLoad_;
+                auto loadState = ol(ioController);
 
-                if(jsonLen == nullptr)
+                if (loadState.size() > *jsonLen)
                 {
                     return meen::errc::invalid_argument;
                 }
 
-                if (json == nullptr)
-                {
-                    jsonToLoad_ = ol(ioController);
-                    *jsonLen = jsonToLoad_.length();
-                }
-                else
-                {
-                    if (jsonToLoad_.length() != *jsonLen - 1)
-                    {
-                        return meen::errc::invalid_argument;
-                    }
-
-                    strncpy(json, jsonToLoad_.c_str(), *jsonLen);
-                }
-                
+                *jsonLen = loadState.length();
+                strncpy(json, loadState.c_str(), *jsonLen);
                 return meen::errc::no_error;
             }).value());            
         })
