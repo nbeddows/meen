@@ -135,6 +135,12 @@ namespace meen
 			*/
 			bool SaveAsync() const;
 #endif
+			/**	The maximum length of the json machine state asset
+
+				This is the length of the buffer passed to the OnLoad
+				registration handler.
+			*/
+			int MaxLoadStateLength() const;
 	};
 } // namespace meen
 
