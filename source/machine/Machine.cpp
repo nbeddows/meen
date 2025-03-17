@@ -814,7 +814,7 @@ namespace meen
 							{
 								str.clear();
 								// todo: need to have proper logging
-								printf("ISR::Load failed to load the machine state: %s\n", e.message().c_str());
+								printf("ISR::Load failed to load the machine state: %s\n", make_error_code(e).message().c_str());
 							}
 #ifndef ENABLE_MEEN_RP2040
 							return str;
@@ -906,8 +906,12 @@ namespace meen
 										onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState(), ioController]
 										{
 											// TODO: this method needs to be marked as nothrow
-											onSave_(state.c_str(), ioController);
-											// handle return error_code
+											auto e = onSave_(state.c_str(), ioController);
+											
+											if (e)
+											{
+												printf("ISR::Save failed to save the machine state: %s\n", make_error_code(e).message().c_str());
+											}
 
 											return std::string("");
 										});

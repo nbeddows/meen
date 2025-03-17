@@ -70,9 +70,9 @@ namespace meen
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
 		std::function<bool(IController* ioController)>&& onIdle_{};
-		std::function<std::error_code(char* json, int* jsonLen, IController* ioController)> onLoad_{};
+		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_{};
 #ifdef ENABLE_MEEN_SAVE
-		std::function<std::error_code(const char* json, IController* ioController)> onSave_{};
+		std::function<errc(const char* json, IController* ioController)> onSave_{};
 #endif // ENABLE_MEEN_SAVE
 		friend void RunMachine(Machine* machine);
 	public:
