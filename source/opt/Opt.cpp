@@ -80,7 +80,7 @@ namespace meen
 #else
 								R"(")"
 #endif // ENABLE_MEEN_SAVE
-								R"(,"isrFreq":0,"runAsync":false})"sv;
+								R"(,"isrFreq":0,"maxLoadStateLen":512,"runAsync":false})"sv;
 	}
 
 #ifdef ENABLE_NLOHMANN_JSON
@@ -267,4 +267,13 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 	}
 #endif // ENABLE_MEEN_SAVE
+
+	int Opt::MaxLoadStateLength() const
+	{
+#ifdef ENABLE_NLOHMANN_JSON
+	return json_["maxLoadStateLen"].get<int>();
+#else
+	return json_["maxLoadStateLen"].as<int>();
+#endif // ENABLE_NLOHMANN_JSON
+	}
 } // namespace meen

@@ -127,15 +127,18 @@ namespace meen::tests
         va_list args;
         va_start(args, fmt);
 
-        if (json == nullptr)
+        auto len = vsnprintf(json, *jsonLen, fmt, args);
+
+        // A write error occurred while executing the function, odds are that one of our parameters are incorrect.
+        // When len == *jsonLen, the config option `maxLoadStateLen` needs to be increased
+        if (len < 0 || len == *jsonLen)
         {
-            *jsonLen = vsnprintf(nullptr, 0, fmt, args);
-            return *jsonLen == -1 ? errc::invalid_argument : errc::no_error;
+            return errc::invalid_argument;
         }
-        else
-        {
-            return vsnprintf(json, *jsonLen, fmt, args) != *jsonLen - 1 ? errc::invalid_argument : errc::no_error;
-        }
+
+        // Write the final length of the loaded program
+        *jsonLen = len;
+        return errc::no_error;
     }
 
     static void Run(bool runAsync)

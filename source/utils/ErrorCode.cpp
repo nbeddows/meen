@@ -42,6 +42,8 @@ namespace meen
 				{
 					case errc::no_error:
 						return "Success";
+					case errc::async:
+						return "An asynchronous operation failed to complete";
 					case errc::busy:
 						return "The engine is running";
 					case errc::clock_sampling_freq:
