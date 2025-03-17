@@ -232,11 +232,11 @@ namespace meen
 			Registers a method which will be called when the ISR::Save interrupt is triggered. The registered
 			method shall return a meen::errc and accept 2 arguments, json - a const char* which is the machine
 			save state in json format, the contents of which can be read back in via the method registered with
-			IMachine::OnLoad to restore the machine state and ioController - a pointer to the io controller that
+			IMachine::OnLoad to restore the machine state, and ioController - a pointer to the io controller that
 			was attached via the IMachine::AttachIoController method.
 		
-			The format of the save state is not overly relevant from a user perspective. An example json save
-			state is documented below:
+			The format of the save state is not overly relevant from a user perspective.The json save state is
+			documented below:
 
 			@code{.json}
 
@@ -301,10 +301,12 @@ namespace meen
 			machine state json to, jsonLen - an int* to write the length of the json state array to, ioController -
 			a pointer to the io controller that was attached via the IMachine::AttachIoController method.
 			
-			The registered handler may be called twice. The first time with the json parameter
-			as nullptr. In this case the length of the json load state array must be written to the jsonLen
-			parameter. The second call will contain a valid char* json array of length jsonLen that can be safely
-			written to with the json state to load.
+			The method will be called once with a char array of the size specified by the maxLoadStateLen
+			configuration option (or the default value of 512 if not specified). When the computed json asset
+			size (file:// or json:// for example) is larger than the jsonLen parameter an errc::invalid_argument
+			shall be returned and the user must set the maxLoadStateLen configuration option with a larger
+			value before invoking this method again. Upon successfully copying out the load state buffer to the
+			supplied json array, the jsonLen parameter must be set to the actual size of the load state buffer.
 
 			The json layout of an example load state is specifed in the json snippet below:
 
@@ -335,7 +337,7 @@ namespace meen
 			{
 				"memory": {
 					"rom":{
-							{"bytes":"file://ram0.bin"}							// Load from local disk all bytes from the file ram0.bin starting at the memory address 0x0000.
+						{"bytes":"file://ram0.bin"}							// Load from local disk all bytes from the file ram0.bin starting at the memory address 0x0000.
 					}
 				}
 			}
@@ -368,7 +370,7 @@ namespace meen
 										method was called if the runAsync or loadAsync config options have been specified.
 
 			@remark						The function parameter onLoad should return errc::invalid argument if it's jsonLen
-										parameter is nullptr or if it's jsonLen parameter is too small.
+										parameter is too small to hold the generated buffer.
 
 			@remark						The machine state can fail to load for numerous reasons:
 										- when the machine cpu does not match the load state cpu.
@@ -377,7 +379,7 @@ namespace meen
 										- invalid json file.
 			
 			@remark						When the format of the returned json string is invalid or a load error occurs the state
-										of the machine shall remain unchanged.
+										of the machine is undefined and should be re-loaded.
 
 			@remark						Load requests are not queued. When a load is in progress, additional load interrupts
 										will be ignored.
