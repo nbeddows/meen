@@ -43,7 +43,7 @@ namespace meen
 	{
 		i8080
 	};
-	
+
 	/** Machine
 
 		@see IMachine.h
@@ -69,7 +69,7 @@ namespace meen
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
-		std::function<bool(IController* ioController)>&& onIdle_{};
+		std::function<bool(IController* ioController)> onIdle_{};
 		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_{};
 #ifdef ENABLE_MEEN_SAVE
 		std::function<errc(const char* json, IController* ioController)> onSave_{};
@@ -90,7 +90,7 @@ namespace meen
 			@see IMachine::AttachMemoryController
 		*/
 		std::error_code AttachMemoryController (IControllerPtr&& controller) final;
-		
+
 		/** DetachMemoryController
 
 			@see IMachine::DetachMemoryController
@@ -128,7 +128,7 @@ namespace meen
 		std::error_code OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave) final;
 
 		/** OnIdle
-		
+
 			@see IMachine::OnIdle
 		*/
 		std::error_code OnIdle(std::function<bool(IController* ioController)>&& onIdle) final;
