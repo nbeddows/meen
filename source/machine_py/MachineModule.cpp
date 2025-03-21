@@ -74,19 +74,26 @@ PYBIND11_MODULE(meenPy, meen)
     py::class_<meen::IMachine>(meen, "IMachine")
         .def("OnLoad", [](meen::IMachine& machine, std::function<std::string(meen::IController* ioController)>&& onLoad)
         {
-            return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen, meen::IController* ioController)
+            if (onLoad)
             {
-                auto loadState = ol(ioController);
+                return static_cast<meen::errc>(machine.OnLoad([ol = std::move(onLoad)](char* json, int* jsonLen, meen::IController* ioController)
+                {   
+                    auto loadState = ol(ioController);
 
-                if (loadState.size() > *jsonLen)
-                {
-                    return meen::errc::invalid_argument;
-                }
+                    if (loadState.size() > *jsonLen)
+                    {
+                        return meen::errc::invalid_argument;
+                    }
 
-                *jsonLen = loadState.length();
-                strncpy(json, loadState.c_str(), *jsonLen);
-                return meen::errc::no_error;
-            }).value());            
+                    *jsonLen = loadState.length();
+                    strncpy(json, loadState.c_str(), *jsonLen);
+                    return meen::errc::no_error;
+                }).value());
+            }
+            else
+            {
+                return static_cast<meen::errc>(machine.OnLoad(nullptr).value());
+            }
         })
         .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json, meen::IController* ioController)>&& onSave)
         {
@@ -117,6 +124,20 @@ PYBIND11_MODULE(meenPy, meen)
             else
             {
                 return static_cast<meen::errc>(machine.OnIdle(nullptr).value());
+            }
+        })
+        .def("OnError", [](meen::IMachine& machine, std::function<void(meen::errc ec, const char* fileName, uint32_t line, uint32_t column, meen::IController* ioController)>&& onError)
+        {
+            if (onError)
+            {
+                return static_cast<meen::errc>(machine.OnError([oe = std::move(onError)](std::error_code ec, const char* fileName, uint32_t line, uint32_t column, meen::IController* ioController)
+                {
+                    oe(static_cast<meen::errc>(ec.value()), fileName, line, column, ioController);
+                }).value());
+            }
+            else
+            {
+                return static_cast<meen::errc>(machine.OnError(nullptr).value());
             }
         })
         .def("Run", [](meen::IMachine& machine)
