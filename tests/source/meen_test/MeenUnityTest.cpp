@@ -73,8 +73,14 @@ void setUp()
     controller.value()->Write(0xFD, 0, nullptr);
     auto err = machine->AttachIoController(std::move(controller.value()));
     TEST_ASSERT_FALSE(err);
+}
 
-	// Clear the handlers
+void tearDown()
+{
+    // Clear the handlers - always clear OnError first
+	auto err = machine->OnError(nullptr);
+	TEST_ASSERT_FALSE(err);
+
     err = machine->OnSave(nullptr);
 	TEST_ASSERT_TRUE(err.value() == meen::errc::no_error || err.value() == meen::errc::not_implemented);
 
@@ -87,11 +93,6 @@ void setUp()
     // Set default options
     err = machine->SetOptions(nullptr);
     TEST_ASSERT_FALSE(err);
-}
-
-void tearDown()
-{
-    // Unused
 }
 
 namespace meen::tests
@@ -143,45 +144,47 @@ namespace meen::tests
 
     static void Run(bool runAsync)
     {
-        int64_t nanos = 0;
-        std::error_code err;
+		int64_t nanos = 0;
+		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+		{
+			TEST_ASSERT_FALSE(ec.value());
+			// Signal the machine to shutdown due to the reason stated above
+            ioController->Write(0xFF, 0, nullptr);
+		});
+		//Need to manually check this one as it can fail before the method is registered
+		TEST_ASSERT_FALSE(err);
 
-        if (runAsync == true)
-        {
-            err = machine->SetOptions(R"(json://{"runAsync":true})");
-            TEST_ASSERT_FALSE(err);
-        }
-
-        err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
-        {
+		machine->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+		{
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
-                                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
-        });
-        TEST_ASSERT_FALSE(err);
+                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
+		});
 
-   		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+		if (runAsync == true)
+		{
+			machine->SetOptions(R"(json://{"runAsync":true})");
+		}
+
+		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
 		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-        err = machine->SetOptions(R"(json://{"clockSamplingFreq":40, "isrFreq":60})");
-        TEST_ASSERT_FALSE(err);
+		machine->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
 
 // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-        nanos += machine->Run().or_else([](std::error_code ec)
-        {
-            // We want to force a failure here, ec should be non zero
-            TEST_ASSERT_FALSE(ec);
-            // The machine didn't run, return a run time of zero
-            return std::expected<uint64_t, std::error_code>(0);
-        }).value();
+       nanos = machine->Run().or_else([](std::error_code ec)
+		{
+			// We failed, return back a 0 run time
+			return std::expected<uint64_t, std::error_code>(0);
+		}).value();
 #else
-        auto ex = machine->Run();
-        TEST_ASSERT_TRUE(ex);
-
-        nanos += ex.value();
+		auto ex = machine->Run();
+		nanos = ex.value_or(0);
 #endif
-        auto error = nanos - 1000000000;
-        // Allow an average 500 micros of over sleep error
-        TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
+		auto error = nanos - 1000000000;
+		// Allow an average 500 micros of over sleep error
+		TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
     }
 
     static std::string ReadCpmIoControllerBuffer()
@@ -207,20 +210,40 @@ namespace meen::tests
     {
         int loadIndex = 0;
         std::vector<std::string> saveStates;
-        auto err = machine->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
+        
+		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+        auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+        {
+            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+            // this scenario for example
+            if (ec.value() != errc::not_implemented)
+            {
+                TEST_ASSERT_FALSE(ec.value());
+
+                if (ioController)
+                {
+                    // Signal the machine to shutdown due to the reason stated above
+                    ioController->Write(0xFF, 0, nullptr);
+                }
+            }
+        });
+        //Need to manually check this one as it can fail before the method is registered
+        TEST_ASSERT_FALSE(err);
+        
+        err = machine->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
         {
             saveStates.emplace_back(json);
             return errc::no_error;
         });
 
-        if(err.value() == errc::not_implemented)
+        if (err.value() == errc::not_implemented)
         {
-            // not implemented, skip the test
-            TEST_IGNORE_MESSAGE("Machine::OnSave not supported");
+            TEST_IGNORE_MESSAGE("IMachine::OnSave not supported");
         }
 
         // 0 - mid program save state, 1 and 2 - end of program save states
-        err = machine->OnLoad([&saveStates, &loadIndex, progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        machine->OnLoad([&saveStates, &loadIndex, progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             auto err = errc::no_error;
 
@@ -230,54 +253,39 @@ namespace meen::tests
                 // located at the end of the program. This ram needs to
                 // be subtracted from the total size of the file,
                 // hence an explicit setting of the test file size.
-            case 0:
+                case 0:
 #ifdef ENABLE_MEEN_RP2040
-                if (&tst8080End - &tst8080Start >= 1471)
-                {
-                    err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
-                                       saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
-                }
-                else
-                {
-                    err = errc::incompatible_rom;
-                }
+                    if (&tst8080End - &tst8080Start >= 1471)
+                    {
+                        err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
+                                           saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
+                    }
+                    else
+                    {
+                        err = errc::incompatible_rom;
+                    }
 #else
-                err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
+                    err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
                                    saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), progDir);
 #endif // ENABLE_MEEN_RP2040
-                break;
-            case 1:
-                TEST_ASSERT_FALSE(saveStates.empty());
-                // 0 - mid program save state, 1 and 2 - end of program save states
-                err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
-                break;
-            default:
-                err = errc::invalid_argument;
-                break;
+                    break;
+                case 1:
+                    TEST_ASSERT_FALSE(saveStates.empty());
+                    // 0 - mid program save state, 1 and 2 - end of program save states
+                    err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
+                    break;
+                default:
+                    err = errc::invalid_argument;
+                    break;
             }
 
-            loadIndex += json != nullptr;
-
+            loadIndex++;
             return err;
         });
 
-        if(err.value() == errc::json_config)
-        {
-            // not implemented, skip the test
-            TEST_IGNORE_MESSAGE("Machine::OnLoad not supported");
-        }
-
         if (runAsync == true)
         {
-            err = machine->SetOptions(R"(json://{"runAsync":true,"loadAsync":false,"saveAsync":true})");
-
-            if(err.value() == errc::json_config)
-            {
-                // not implemented, skip the test
-                TEST_IGNORE_MESSAGE("runAsync:true not supported");
-            }
-
-            TEST_ASSERT_FALSE(err);
+            machine->SetOptions(R"(json://{"runAsync":true,"loadAsync":false,"saveAsync":true})");
         }
 
         // Write to the 'load device', the value doesn't matter (use 0)
@@ -290,12 +298,9 @@ namespace meen::tests
         auto controller = machine->DetachIoController();
         TEST_ASSERT_TRUE(controller);
 
-        err = machine->AttachIoController(std::move(cpmIoController));
-        TEST_ASSERT_FALSE(err);
-
-        auto expected = machine->Run();
-        TEST_ASSERT_TRUE(expected);
-
+        machine->AttachIoController(std::move(cpmIoController));
+        machine->Run();
+        
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
 
@@ -311,13 +316,9 @@ namespace meen::tests
         // trigger a spurious ISR::Save interurpt if the ISR::Load interrupt takes too long
         // to process
         cpm->SaveStateOn(-1);
-
-        err = machine->AttachIoController(std::move(cpmIoController));
-        TEST_ASSERT_FALSE(err);
-
+        machine->AttachIoController(std::move(cpmIoController));
         // run it again, but this time trigger the load interrupt
-        expected = machine->Run();
-        TEST_ASSERT_TRUE(expected);
+        machine->Run();
 
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
@@ -354,15 +355,30 @@ namespace meen::tests
             TEST_ASSERT_EQUAL_STRING(R"({"cpu":{"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":2,"sp":1981},"memory":{"uuid":"base64://zRjYZ92/TaqtWroc666wMQ==","rom":{"bytes":"base64://md5://BVt1f9Z97W/m34J/iH68cQ=="},"ram":{"size":64042,"bytes":"base64://zlib://eJztzkENgDAQALDBJeOJAGTghAdW8HQSSHAwP3xxwRJoFbSUv2h1Pco19W68ZIk5Iu5xz23IPGvvDwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABf9QDDAAbX"}}})", saveStates[2].c_str());
         }
 
-        err = machine->AttachIoController(std::move(controller.value()));
-        TEST_ASSERT_FALSE(err);
+        machine->AttachIoController(std::move(controller.value()));
     }
 
     static void LoadAndRun(const char* name, int progSize, const char* expected)
     {
         bool saveTriggered = false;
 
-        auto err = machine->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
+   		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+		{
+            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+            // this scenario for example
+			if (ec.value() != errc::not_implemented)
+			{
+				TEST_ASSERT_FALSE(ec.value());
+				// Signal the machine to shutdown due to the reason stated above
+				ioController->Write(0xFF, 0, nullptr);	
+			}
+		});
+		//Need to manually check this one as it can fail before the method is registered
+		TEST_ASSERT_FALSE(err);
+
+        err = machine->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
         {
             std::string actualStr;
             std::string expectedStr;
@@ -387,25 +403,22 @@ namespace meen::tests
             saveTriggered = true;
             return errc::no_error;
         });
-        TEST_ASSERT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-        err = machine->OnLoad([name, progSize](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        machine->OnLoad([name, progSize](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
                                 saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
         });
-        TEST_ASSERT_FALSE(err);
 
-        auto ex = machine->Run();
-        TEST_ASSERT_TRUE(ex);
-        TEST_ASSERT_TRUE(saveTriggered || machine->OnSave(nullptr).value() == errc::not_implemented);
+        machine->Run();
+        TEST_ASSERT_TRUE(saveTriggered || err.value() == errc::not_implemented);
     }
 
     static void test_SetNullptrMemoryController()
     {
         auto err = machine->AttachMemoryController(nullptr);
 	    TEST_ASSERT_TRUE(err);
-        TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", err.message().c_str());
+        TEST_ASSERT_EQUAL_STRING("an argument supplied to the method is invalid", err.message().c_str());
     }
 
     static void test_SetNullptrIoController()
@@ -413,7 +426,7 @@ namespace meen::tests
         //cppcheck-suppress unknownMacro
         auto err = machine->AttachIoController(nullptr);
         TEST_ASSERT_TRUE(err);
-        TEST_ASSERT_EQUAL_STRING("An argument supplied to the method is invalid", err.message().c_str());
+        TEST_ASSERT_EQUAL_STRING("an argument supplied to the method is invalid", err.message().c_str());
     }
 
     static void test_NegativeISRFrequency()
@@ -425,36 +438,39 @@ namespace meen::tests
 
     static void test_MethodsErrorAfterRunCalled()
     {
-        auto err = machine->OnLoad([progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        int errCount = 0;
+        // Register an on error handler to simplify the error checking
+        auto err = machine->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
         {
-            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
-                                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
+            TEST_ASSERT_TRUE((ec.value() == errc::busy) || (ec.value() == errc::not_implemented));
+            errCount++;
         });
+        //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
- 
-		// It's possible to capture the machine and wreak havoc, make sure that does not happen.
-		err = machine->OnIdle([m = machine.get()]([[maybe_unused]] IController* ioController)
-		{
-            // All these methods should return errc::busy
-            auto e = machine->SetOptions(R"(json://{"isrFreq":1})");
-            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
-            e = machine->AttachMemoryController(nullptr);
-            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
-            e = machine->AttachIoController(nullptr);
-            TEST_ASSERT_EQUAL_INT(static_cast<int>(errc::busy), e.value());
-            e = machine->OnIdle([](IController*){ return true; });
-            TEST_ASSERT_EQUAL_INT(errc::busy, e.value());
-            e = machine->OnLoad([](char*, int*, IController*){ return errc::no_error; });
-            TEST_ASSERT_EQUAL_INT(errc::busy, e.value());
-            e = machine->OnSave([](const char*, IController*){ return errc::no_error; });
-            TEST_ASSERT_TRUE(e.value() == static_cast<int>(errc::busy) || e.value() == static_cast<int>(errc::not_implemented));
 
+        // It's possible to capture the machine and wreak havoc, make sure that does not happen.
+        machine->OnIdle([]([[maybe_unused]] IController* ioController)
+        {
+            // All these methods should return busy
+            machine->SetOptions(R"(json://bad-json})");
+            machine->AttachMemoryController(nullptr);
+            machine->DetachMemoryController();
+            machine->AttachIoController(nullptr);
+            machine->DetachIoController();
+            machine->OnIdle(nullptr);
+            machine->OnLoad(nullptr);
+            machine->OnSave(nullptr);
+            machine->OnError(nullptr);
+            machine->Run();
+
+            // true: stop calling the idle function and exit.
+            // false: keep calling the idle function and wait for the ISR:Quit interrupt to be triggered.
+            // Since we are not loading any rom we must return true here to quit immediately
             return true;
         });
-        TEST_ASSERT_FALSE(err);
 
-        auto ex = machine->Run();
-        TEST_ASSERT_TRUE(ex);
+        machine->Run();
+        TEST_ASSERT_EQUAL_INT(10, errCount);
     }
 
     static void test_RunTimed()
@@ -623,8 +639,10 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
 // These may take a little while to run on embedded platforms, disabled by default
-//        RUN_TEST(meen::tests::test_CpuTest);
+#ifndef ENABLE_MEEN_RP2040
+        RUN_TEST(meen::tests::test_CpuTest);
 //        RUN_TEST(meen::tests::test_8080Exm);
+#endif
         RUN_TEST(meen::tests::test_MethodsErrorAfterRunCalled);
         RUN_TEST(meen::tests::test_RunTimed);
         RUN_TEST(meen::tests::test_RunTimedAsync);

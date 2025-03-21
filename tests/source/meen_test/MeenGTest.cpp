@@ -65,6 +65,7 @@ namespace meen::Tests
 
 		static void SetUpTestCase();
 		void SetUp();
+		void TearDown();
 	};
 
 	IControllerPtr MachineTest::cpmIoController_;
@@ -97,8 +98,14 @@ namespace meen::Tests
 		controller.value()->Write(0xFD, 0, nullptr);
 		auto err = machine_->AttachIoController(std::move(controller.value()));
 		EXPECT_FALSE(err);
+	}
 
-		// Clear the handlers
+	void MachineTest::TearDown()
+	{
+		// Clear the handlers - always clear OnError first
+		auto err = machine_->OnError(nullptr);
+		EXPECT_FALSE(err);
+
 		err = machine_->OnSave(nullptr);
 		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
@@ -135,8 +142,23 @@ namespace meen::Tests
 	void MachineTest::LoadAndRun(const char* name, const char* expected, const char* extra, uint16_t offset)
 	{
 		bool saveTriggered = false;
-
-		auto err = machine_->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
+		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+		auto err = machine_->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+		{
+            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+            // this scenario for example
+			if (ec.value() != errc::not_implemented)
+			{
+				EXPECT_FALSE(ec.value());
+				// Signal the machine to shutdown due to the reason stated above
+				ioController->Write(0xFF, 0, nullptr);	
+			}
+		});
+		//Need to manually check this one as it can fail before the method is registered
+		EXPECT_FALSE(err);
+		
+		err = machine_->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
 		{
 			std::string actualStr;
 			std::string expectedStr;
@@ -161,9 +183,8 @@ namespace meen::Tests
 			saveTriggered = true;
 			return errc::no_error;
 		});
-		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
-		err = machine_->OnLoad([name, extra, offset](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+		machine_->OnLoad([name, extra, offset](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
 			if (extra == nullptr)
 			{
@@ -174,11 +195,10 @@ namespace meen::Tests
 				return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256},{"bytes":"%s","offset":%d}]}}})", saveAndExit, name, extra, offset);
 			}
 		});
-		EXPECT_FALSE(err);
 
-		auto ex = machine_->Run();
-		EXPECT_TRUE(ex);
-		EXPECT_TRUE(saveTriggered || machine_->OnSave(nullptr).value() == errc::not_implemented);
+		machine_->Run();
+		// When the OnSave method is implemented it MUST be triggered
+		EXPECT_TRUE(saveTriggered || err.value() == errc::not_implemented);
 	}
 
 	std::string MachineTest::ReadCpmIoControllerBuffer()
@@ -256,80 +276,84 @@ namespace meen::Tests
 	{
 		EXPECT_NO_THROW
 		(
-			auto err = machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+			int errCount = 0;
+			// Register an on error handler to simplify the error checking
+			auto err = machine_->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 			{
-				return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
+				EXPECT_TRUE((ec.value() == errc::busy) || (ec.value() == errc::not_implemented));
+				errCount++;
 			});
+			//Need to manually check this one as it can fail before the method is registered
 			EXPECT_FALSE(err);
 
 			// It's possible to capture the machine and wreak havoc, make sure that does not happen.
-			err = machine_->OnIdle([m = machine_.get()]([[maybe_unused]] IController* ioController)
+			machine_->OnIdle([]([[maybe_unused]] IController* ioController)
 			{
 				// All these methods should return busy
-				auto e = machine_->SetOptions(R"(json://{"isrFreq":1})");
-				EXPECT_EQ(errc::busy, e.value());
-				e = machine_->AttachMemoryController(nullptr);
-				EXPECT_EQ(errc::busy, e.value());
-				e = machine_->AttachIoController(nullptr);
-				EXPECT_EQ(errc::busy, e.value());
-				e = machine_->OnIdle([](IController*){ return true; });
-				EXPECT_EQ(errc::busy, e.value());
-				e = machine_->OnLoad([](char*, int*, IController*){ return errc::no_error; });
-				EXPECT_EQ(errc::busy, e.value());
-				e = machine_->OnSave([](const char*, IController*){ return errc::no_error; });
-				EXPECT_TRUE(e.value() == errc::busy || e.value() == errc::not_implemented);
+				machine_->SetOptions(R"(json://bad-json})");
+				machine_->AttachMemoryController(nullptr);
+				machine_->DetachMemoryController();
+				machine_->AttachIoController(nullptr);
+				machine_->DetachIoController();
+				machine_->OnIdle(nullptr);
+				machine_->OnLoad(nullptr);
+				machine_->OnSave(nullptr);
+				machine_->OnError(nullptr);
+				machine_->Run();
 
 				// true: stop calling the idle function and exit.
 				// false: keep calling the idle function and wait for the ISR:Quit interrupt to be triggered.
+				// Since we are not loading any rom we must return true here to quit immediately
 				return true;
 			});
-			EXPECT_FALSE(err);
 
-			auto ex = machine_->Run();
-			EXPECT_TRUE(ex);
+			machine_->Run();
+			EXPECT_EQ(10, errCount);
 		);
 	}
 
 	void MachineTest::Run(bool runAsync)
 	{
-		std::error_code err;
 		int64_t nanos = 0;
-
-		if (runAsync == true)
+		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+		auto err = machine_->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 		{
-			err = machine_->SetOptions(R"(json://{"runAsync":true})");
-			EXPECT_FALSE(err);
-		}
+			EXPECT_EQ(errc::no_error, ec.value());
+			// Signal the machine to shutdown due to the reason stated above
+			ioController->Write(0xFF, 0, nullptr);
+		});
+		//Need to manually check this one as it can fail before the method is registered
+		EXPECT_FALSE(err);
 
-		err = machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+		machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
 			return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
 		});
-		EXPECT_FALSE(err);
+
+		if (runAsync == true)
+		{
+			machine_->SetOptions(R"(json://{"runAsync":true})");
+		}
 
 		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
 		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-		err = machine_->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
-		EXPECT_FALSE(err);
+		machine_->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
 
 // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-		nanos += machine_->Run().or_else([](std::error_code ec)
+		nanos = machine_->Run().or_else([](std::error_code ec)
 		{
-			// We want to force a failure here, ec should be non zero
-			EXPECT_FALSE(ec);
 			// We failed, return back a 0 run time
 			return std::expected<uint64_t, std::error_code>(0);
 		}).value();
 #else
 		auto ex = machine_->Run();
-		EXPECT_TRUE(ex);
-
-		nanos += ex.value_or(0);
+		nanos = ex.value_or(0);
 #endif
 		auto error = nanos - 1000000000;
 		// Allow an average 500 micros of over sleep error
-		EXPECT_EQ(true, error >= 0 && error <= 500000);
+		EXPECT_TRUE(error >= 0 && error <= 500000);
 	}
 
 	TEST_F(MachineTest, RunTimed)
@@ -348,19 +372,39 @@ namespace meen::Tests
 		(
 			int loadIndex = 0;
 			std::vector<std::string> saveStates;
-			auto err = machine_->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
+
+			// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+			// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+			auto err = machine_->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+			{
+	            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+    	        // this scenario for example
+				if (ec.value() != errc::not_implemented)
+				{
+					EXPECT_FALSE(ec.value());
+
+					if (ioController)
+					{
+						// Signal the machine to shutdown due to the reason stated above
+						ioController->Write(0xFF, 0, nullptr);
+					}
+				}
+			});
+			//Need to manually check this one as it can fail before the method is registered
+			EXPECT_FALSE(err);
+
+			err = machine_->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
 			{
 				saveStates.emplace_back(json);
 				return errc::no_error;
 			});
 
-			if(err.value() == errc::not_implemented)
+			if (err.value() == errc::not_implemented)
 			{
-				// not implemented, skip the test
-				GTEST_SKIP() << "Machine::OnSave not supported";
+				GTEST_SKIP() << "IMachine::OnSave not supported";
 			}
 
-			err = machine_->OnLoad([&saveStates, &loadIndex, progDir = programsDir_.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+			machine_->OnLoad([&saveStates, &loadIndex, progDir = programsDir_.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 			{
 				auto err = errc::no_error;
 
@@ -387,21 +431,13 @@ namespace meen::Tests
 						break;
 				}
 
-				loadIndex += json != nullptr;
-
+				loadIndex++;
 				return err;
 			});
 
-			if(err.value() == errc::json_config)
-			{
-				// not implemented, skip the test
-				GTEST_SKIP() << "Machine::OnLoad not supported";
-			}
-
 			if (runAsync == true)
 			{
-				err = machine_->SetOptions(R"(json://{"runAsync":true,"loadAsync":false,"saveAsync":true})");
-				EXPECT_FALSE(err);
+				machine_->SetOptions(R"(json://{"runAsync":true,"loadAsync":false,"saveAsync":true})");
 			}
 
 			// Write to the 'load device', the value doesn't matter (use 0)
@@ -416,13 +452,10 @@ namespace meen::Tests
 			ASSERT_TRUE(controller);
 
 			// Attach the cpm io controller
-			err = machine_->AttachIoController(std::move(cpmIoController_));
-			EXPECT_FALSE(err);
+			machine_->AttachIoController(std::move(cpmIoController_));
+			machine_->Run();
 
-			auto ex = machine_->Run();
-			EXPECT_TRUE(ex);
-
-			cpmIoController_  = std::move(machine_->DetachIoController().value());
+			cpmIoController_ = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
 
 			EXPECT_EQ(74, ReadCpmIoControllerBuffer().find("CPU IS OPERATIONAL"));
@@ -439,12 +472,9 @@ namespace meen::Tests
 			// to process
 			cpmIoController->SaveStateOn(-1);
 
-			err = machine_->AttachIoController(std::move(cpmIoController_));
-			EXPECT_FALSE(err);
-
+			machine_->AttachIoController(std::move(cpmIoController_));
 			// run it again, but this time trigger the load interrupt
-			ex = machine_->Run();
-			EXPECT_TRUE(ex);
+			machine_->Run();
 
 			cpmIoController_ = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
@@ -482,8 +512,7 @@ namespace meen::Tests
 			}
 
 			// re-attach the defacto test io controller
-			err = machine_->AttachIoController(std::move(controller.value()));
-			EXPECT_FALSE(err);
+			machine_->AttachIoController(std::move(controller.value()));
 		);
 	}
 

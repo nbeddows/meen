@@ -82,55 +82,50 @@ class MachineTest(unittest.TestCase):
         self.assertEqual(err, ErrorCode.JsonConfig)
 
     def test_MethodsErrorAfterRunCalled(self):
-        # Write to the 'load device', the value doesn't matter (use 0)
-        self.testIoController.Write(0xFD, 0, None)
+        self.errCount = 0        
+        # Register an on error handler to simplify the error checking
+        def CheckError(err, fileName, line, column, ioController):
+            self.assertTrue((err == ErrorCode.Busy) or (err == ErrorCode.NotImplemented))
+            self.errCount += 1
 
-        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+        err = self.machine.OnError(CheckError)
+        # Need to manually check this one as it can fail before the method is registered
         self.assertEqual(err, ErrorCode.NoError)
-
-        # We aren't interested in saving, clear the onSave callback
-        err = self.machine.OnSave(None)
-        self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
 
         def CheckBusy(ioController):
-            err = self.machine.SetOptions(r'json://{"isrFreq":1}')
-            self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.AttachMemoryController(self.memoryController)
-            self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.AttachIoController(self.testIoController)
-            self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.OnIdle(lambda ioc: None)
-            self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.OnLoad(lambda ioc: None)
-            self.assertEqual(err, ErrorCode.Busy)
-            err = self.machine.OnSave(lambda json, ioc: ErrorCode.NoError)
-            self.assertIn(err, [ErrorCode.Busy, ErrorCode.NotImplemented])
-            return False
+            self.machine.SetOptions(r'json://bad-json')
+            self.machine.AttachMemoryController(self.memoryController)
+            self.machine.AttachIoController(self.testIoController)
+            self.machine.OnIdle(None)
+            self.machine.OnLoad(None)
+            self.machine.OnSave(None)
+            self.machine.OnError(None)
+            self.machine.Run()
+            return True
 
-        err = self.machine.OnIdle(CheckBusy)
-        self.assertEqual(err, ErrorCode.NoError)
-
-        # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40}')
-        self.assertEqual(err, ErrorCode.NoError)
-        
-        runTime = self.machine.Run()
-        self.assertGreater(runTime, 0)
+        self.machine.OnIdle(CheckBusy)
+        self.machine.Run()
+        self.assertEqual(8, self.errCount)
 
     def RunTimed(self, runAsync):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.testIoController.Write(0xFD, 0, None)
 
-        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
-        self.assertEqual(err, ErrorCode.NoError)
-
-        if runAsync == True:
-            err = self.machine.SetOptions(r'json://{"runAsync":true}')
+        # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+        def CheckError(err, fileName, line, column, ioController):
             self.assertEqual(err, ErrorCode.NoError)
 
-        # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-        err = self.machine.SetOptions(r'json://{"clockSamplingFreq":40}')
+        err = self.machine.OnError(CheckError)
+        # Need to manually check this one as it can fail before the method is registered
         self.assertEqual(err, ErrorCode.NoError)
+        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+
+        if runAsync == True:
+            self.machine.SetOptions(r'json://{"runAsync":true}')
+
+        # Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+        self.machine.SetOptions(r'json://{"clockSamplingFreq":40}')
 
         nanos = self.machine.Run()
         self.assertGreater(nanos, 0)
@@ -160,6 +155,18 @@ class MachineTest(unittest.TestCase):
         saveStates = []
         self.loadIndex = 0
 
+        # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+        def CheckError(err, fileName, line, column, ioController):
+            # Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+            # this scenario for example
+            if err != ErrorCode.NotImplemented:
+                self.assertEqual(err, ErrorCode.NoError)
+
+        err = self.machine.OnError(CheckError)
+        # Need to manually check this one as it can fail before the method is registered
+        self.assertEqual(err, ErrorCode.NoError)
+
         def saveJson(json, ioc):
             saveStates.append(json.rstrip('\0'))
             return ErrorCode.NoError
@@ -184,24 +191,16 @@ class MachineTest(unittest.TestCase):
             self.loadIndex += 1
             return jsonToLoad
 
-        err = self.machine.OnLoad(loadJson)
-
-        if err == ErrorCode.NotImplemented:
-            self.skipTest("Machine.OnLoad is not supported")
+        self.machine.OnLoad(loadJson)
 
         if runAsync == True:
-            err = self.machine.SetOptions(r'json://{"runAsync":true,"loadAsync":false,"saveAsync":true}')
-            self.assertEqual(err, ErrorCode.NoError)
+            self.machine.SetOptions(r'json://{"runAsync":true,"loadAsync":false,"saveAsync":true}')
 
         # Need to set to 0 to catch all save interrupts
-        err = self.machine.SetOptions(r'json://{"isrFreq":0}')
-        self.assertEqual(err, ErrorCode.NoError)
-
+        self.machine.SetOptions(r'json://{"isrFreq":0}')
         self.cpmIoController.Write(0xFD, 0, None)
         self.cpmIoController.SaveStateOn(3000)
-        
-        err = self.machine.AttachIoController(self.cpmIoController)
-        self.assertEqual(err, ErrorCode.NoError)
+        self.machine.AttachIoController(self.cpmIoController)
         time = self.machine.Run()
         self.assertGreater(time, 0)
 
@@ -234,12 +233,20 @@ class i8080Test(unittest.TestCase):
         self.memoryController = MemoryController()
         self.cpmIoController = CpmIoController()
         self.machine = Make8080Machine()
+
+        # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+        def CheckError(err, fileName, line, column, ioController):
+            # Not implemented is treated as success since this aspect of the test can not be tested
+            if err != ErrorCode.NotImplemented:
+                self.assertEqual(err, ErrorCode.NoError)
+
+        self.machine.OnError(CheckError)
         self.machine.AttachIoController(self.cpmIoController)
         self.machine.AttachMemoryController(self.memoryController)
         # Using the default isrFreq setting of -1 (service interrupts at the end of each instruction) causes noticible performance issues, set it
         # to a number where on an i8080 running at 2Mhz, interrupts will be serviced evey 40000 ticks.
-        err = self.machine.SetOptions(r'json://{"isrFreq":60}')
-        self.assertEqual(err, ErrorCode.NoError)
+        self.machine.SetOptions(r'json://{"isrFreq":60}')
         self.saveTriggered = False
         # A base64 encoded code fragment that is loaded at address 0x0000 (for test suite compatibility) which saves the current machine state, powers off the machine, then halts the cpu.
         self.saveAndExit = 'base64://0/7T/3Y'
@@ -268,13 +275,11 @@ class i8080Test(unittest.TestCase):
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
-        err = self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
-        self.assertEqual(err, ErrorCode.NoError)
+        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
         err = self.machine.OnSave(lambda actualState, ioc: self.CheckMachineState(expectedState, actualState))
-        self.assertIn(err, [ErrorCode.NoError, ErrorCode.NotImplemented])
         runTime = self.machine.Run()
         self.assertGreater(runTime, 0)
-        self.assertTrue(self.saveTriggered or self.machine.OnSave(None) == ErrorCode.NotImplemented)
+        self.assertTrue(self.saveTriggered or err == ErrorCode.NotImplemented)
 
         if suiteName == '8080EXM.COM':
             self.assertNotIn(expectedMsg, self.ReadCpmIoControllerBuffer())
