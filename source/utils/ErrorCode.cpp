@@ -41,43 +41,43 @@ namespace meen
 				switch(ec)
 				{
 					case errc::no_error:
-						return "Success";
+						return "success";
 					case errc::async:
-						return "An asynchronous operation failed to complete";
+						return "an asynchronous operation failed to complete";
 					case errc::busy:
-						return "The engine is running";
+						return "the engine is running";
 					case errc::clock_sampling_freq:
-						return "The host clock sampling frequency can't be set, either it's too high/low or the host clock can't be queried";
+						return "the host clock sampling frequency can't be set, either it's too high/low or the host clock can't be queried";
 					case errc::cpu:
-						return "The cpu is invalid";
+						return "the cpu is invalid";
 					case errc::encoder:
-						return "The binary to text encoder is unknown";
+						return "the binary to text encoder is unknown";
 					case errc::incompatible_ram:
-						return "The ram to load is incompatible with this component";
+						return "the ram to load is incompatible with this component";
 					case errc::incompatible_rom:
-						return "The rom to load is incompatible with this component";
+						return "the rom to load is incompatible with this component";
 					case errc::incompatible_uuid:
-						return "The uuid to load does not match this component";
+						return "the uuid to load does not match this component";
 					case errc::invalid_argument:
-						return "An argument supplied to the method is invalid";
+						return "an argument supplied to the method is invalid";
 					case errc::io_controller:
-						return "Invalid io controller";
+						return "invalid io controller";
 					case errc::json_config:
-						return "A JSON configuration parameter is invalid";
+						return "a JSON configuration parameter is invalid";
 					case errc::json_parse:
-						return "A JSON parse error occurred while processing the configuration file/string";
+						return "a JSON parse error occurred while processing the configuration file/string";
 					case errc::memory_controller:
-						return "Invalid memory controller";
+						return "invalid memory controller";
 					case errc::compressor:
-						return "The compressor is unknown";
+						return "the compressor is unknown";
 					case errc::not_implemented:
-						return "The method is not implemented";
+						return "the method is not implemented";
 					case errc::unknown_option:
-						return "An unknown JSON option was encountered and ignored";
+						return "an unknown JSON option was encountered and ignored";
 					case errc::uri_scheme:
-						return "The uri scheme is not supported";
+						return "the uri scheme is not supported";
 					default:
-						return "Unknown error code";
+						return "unknown error code";
 				}
 			}
 		};
