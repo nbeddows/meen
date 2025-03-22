@@ -30,6 +30,7 @@ SOFTWARE.
 #include <future>
 #endif
 #include <map>
+#include <source_location>
 
 #include "meen/IController.h"
 #include "meen/cpu/ICpu.h"
@@ -69,11 +70,15 @@ namespace meen
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
-		std::function<bool(IController* ioController)> onIdle_{};
-		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_{};
+		std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)> onError_;
+		std::function<bool(IController* ioController)> onIdle_;
+		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_;
 #ifdef ENABLE_MEEN_SAVE
-		std::function<errc(const char* json, IController* ioController)> onSave_{};
+		std::function<errc(const char* json, IController* ioController)> onSave_;
 #endif // ENABLE_MEEN_SAVE
+		std::error_code HandleError(std::error_code err, std::source_location&& sl);
+		std::error_code HandleError(errc ec, std::source_location&& sl);
+		//std::error_code HandleUnexpected(std::unexpected<std::error_code> unexpected, std::source_location&& sl);
 		friend void RunMachine(Machine* machine);
 	public:
 		Machine(Cpu cpu);
@@ -132,6 +137,12 @@ namespace meen
 			@see IMachine::OnIdle
 		*/
 		std::error_code OnIdle(std::function<bool(IController* ioController)>&& onIdle) final;
+
+		/** OnError
+
+			@see IMachine::OnError
+		*/
+		std::error_code OnError(std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)>&& onError) final;
 	};
 } // namespace meen
 

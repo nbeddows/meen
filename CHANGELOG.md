@@ -50,6 +50,7 @@
 * Added support for `scheme` and `directory` parameters to the
   memory["rom"] section of the machine load state format.
 * Added Machine interface method `OnIdle`.
+* Added Machine interface method `OnError`.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,

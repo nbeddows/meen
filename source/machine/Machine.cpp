@@ -66,10 +66,32 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
+		}
+	
+		auto err = opt_.SetOptions(options);
+
+		if (err)
+		{
+			HandleError(err, std::source_location::current());		
 		}
 
-		return opt_.SetOptions(options);
+		return err;
+	}
+
+	std::error_code Machine::HandleError(std::error_code err, std::source_location&& sl)
+	{
+		if (onError_)
+		{
+			onError_(err, sl.file_name(), sl.function_name(), sl.line(), sl.column(), ioController_.get());
+		}
+
+		return err;
+	}
+
+	std::error_code Machine::HandleError(errc ec, std::source_location&& sl)
+	{
+		return HandleError(make_error_code(ec), std::move(sl));
 	}
 
 	void RunMachine(meen::Machine* m)
@@ -77,20 +99,11 @@ namespace meen
 		auto currTime = nanoseconds::zero();
 		int64_t totalTicks = 0;
 		int64_t lastTicks = 0;
-		auto cpu_ = m->cpu_.get();
-		auto clock_ = m->clock_.get();
-		auto ioController = m->ioController_.get();
-		auto& romMetadata = m->romMetadata_;
-		auto& ramMetadata = m->ramMetadata_;
-		auto& onIdle = m->onIdle_;
-		auto& onLoad_ = m->onLoad_;
-		auto& opt_ = m->opt_;
 		auto ticksPerIsr = 0ull;
 #ifndef ENABLE_MEEN_RP2040
-		auto loadLaunchPolicy = opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
+		auto loadLaunchPolicy = m->opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
 #endif // ENABLE_MEEN_RP2040
-		auto memoryController = m->memoryController_.get();
 		auto loadMachineState = [&](std::string&& str)
 		{
 			if (str.empty() == false)
@@ -100,7 +113,7 @@ namespace meen
 #else
 				JsonDocument json;
 #endif // ENABLE_NLOHMANN_JSON
-				auto parseJsonStr = [&json](std::string&& str)
+				auto parseJsonStr = [&json, m](std::string&& str)
 				{
 					auto err = std::error_code{};
 #ifdef ENABLE_NLOHMANN_JSON
@@ -113,7 +126,7 @@ namespace meen
 					if(je)
 #endif // ENABLE_NLOHMANN_JSON
 					{
-						err = make_error_code(errc::json_parse);
+						err = m->HandleError(errc::json_parse, std::source_location::current());
 					}
 
 					return err;
@@ -143,12 +156,12 @@ namespace meen
 						if (je)
 #endif // ENABLE_NLOHMANN_JSON
 						{
-							return make_error_code(errc::json_parse);
+							return m->HandleError(errc::json_parse, std::source_location::current());
 						}
 					}
 					else
 					{
-						return make_error_code(errc::json_config);
+						return m->HandleError(errc::incompatible_rom, std::source_location::current());
 					}
 				}
 				else if (str.starts_with("json://") == true)
@@ -177,7 +190,7 @@ namespace meen
 				if(json["memory"] == nullptr)
 #endif // ENABLE_NLOHMANN_JSON
 				{
-					return make_error_code(errc::json_parse);
+					return m->HandleError(errc::json_parse, std::source_location::current());
 				}
 
 				auto memory = json["memory"];
@@ -196,7 +209,7 @@ namespace meen
 				)
 #endif // ENABLE_NLOHMANN_JSON
 				{
-					return make_error_code(errc::json_parse);
+					return m->HandleError(errc::json_parse, std::source_location::current());
 				}
 
 #ifdef ENABLE_MEEN_SAVE
@@ -210,11 +223,11 @@ namespace meen
 				{
 					auto sv = memory["uuid"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
-					auto memUuid = memoryController->Uuid();
+					auto memUuid = m->memoryController_->Uuid();
 
 					if (sv.starts_with("base64://") == false)
 					{
-						return make_error_code(errc::uri_scheme);
+						return m->HandleError(errc::uri_scheme, std::source_location::current());
 					}
 
 					sv.remove_prefix(strlen("base64://"));
@@ -222,12 +235,12 @@ namespace meen
 
 					if (!jsonUuid)
 					{
-						return jsonUuid.error();
+						return m->HandleError(jsonUuid.error(), std::source_location::current());
 					}
 
 					if (jsonUuid.value().size() != memUuid.size() || std::equal(jsonUuid.value().begin(), jsonUuid.value().end(), memUuid.begin()) == false)
 					{
-						return make_error_code(errc::incompatible_uuid);
+						return m->HandleError(errc::incompatible_uuid, std::source_location::current());
 					}
 				}
 #endif // ENABLE_MEEN_SAVE
@@ -235,16 +248,16 @@ namespace meen
 				bool clear = true;
 
 #ifdef ENABLE_NLOHMANN_JSON
-				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const nlohmann::json& block, std::string_view&& scheme, std::string_view&& directory)
+				auto loadRom = [&clear, m/*memoryController, ioController, &romMetadata*/](const nlohmann::json& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if (!block.contains("bytes"))
 #else
-				auto loadRom = [&clear, memoryController, ioController, &romMetadata](const JsonVariantConst& block, std::string_view&& scheme, std::string_view&& directory)
+				auto loadRom = [&clear, m/*memoryController, ioController, &romMetadata*/](const JsonVariantConst& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if(!block["bytes"])
 #endif // ENABLE_NLOHMANN_JSON
 					{
-						return make_error_code(errc::json_config);
+						return m->HandleError(errc::json_config, std::source_location::current());
 					}
 
 #ifdef ENABLE_NLOHMANN_JSON
@@ -268,7 +281,7 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 						if (offset < 0)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 					}
 
@@ -283,17 +296,17 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 						if (size < 0)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 					}
 
-					auto loadFromFile = [ioController, memoryController, &romMetadata, &clear, offset, &size](std::string_view&& resource)
+					auto loadFromFile = [m,/*ioController, memoryController, &romMetadata,*/ &clear, offset, &size](std::string_view&& resource)
 					{
 						FILE* fin = fopen(std::string(resource).c_str(), "rb");
 
 						if(fin == nullptr)
 						{
-							return make_error_code(errc::incompatible_rom);
+							return m->HandleError(errc::incompatible_rom, std::source_location::current());
 						}
 
 						// read the entire file if the size is ommitted
@@ -308,7 +321,7 @@ namespace meen
 						if(offset + size > 0xFFFF)
 						{
 							fclose(fin);
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						for (int i = offset; ftell(fin) < size; i++)
@@ -321,7 +334,7 @@ namespace meen
 								break;
 							}
 
-							memoryController->Write(i, byte, ioController);
+							m->memoryController_->Write(i, byte, m->ioController_.get());
 						}
 
 						auto err = ferror(fin);
@@ -329,21 +342,21 @@ namespace meen
 
 						if(err != 0)
 						{
-							return make_error_code(errc::incompatible_rom);
+							return m->HandleError(errc::incompatible_rom, std::source_location::current());
 						}
 
 						if (clear == true)
 						{
-							romMetadata.clear();
+							m->romMetadata_.clear();
 							clear = false;
 						}
 
-						romMetadata.emplace(offset, size);
+						m->romMetadata_.emplace(offset, size);
 
 						return std::error_code{};
 					};
 
-					auto loadFromBase64 = [ioController, memoryController, &romMetadata, &clear, offset](std::string_view&& resource, const char* compressor, int size)
+					auto loadFromBase64 = [m,/*ioController, memoryController, &romMetadata,*/ &clear, offset](std::string_view&& resource, const char* compressor, int size)
 					{
 						// decompress bytes and write to memory
 						auto romBytesEx = Utils::TxtToBin("base64",
@@ -353,7 +366,7 @@ namespace meen
 
 						if (!romBytesEx)
 						{
-							return romBytesEx.error();
+							return m->HandleError(romBytesEx.error(), std::source_location::current());
 						}
 
 						auto romBytes = std::move(romBytesEx.value());
@@ -361,30 +374,30 @@ namespace meen
 						// only support a max of 16 bit addressing
 						if (offset + romBytes.size() > 0xFFFF)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						for (int i = 0; i < romBytes.size(); i++)
 						{
-							memoryController->Write(offset + i, romBytes[i], ioController);
+							m->memoryController_->Write(offset + i, romBytes[i], m->ioController_.get());
 						}
 
 						if (clear == true)
 						{
-							romMetadata.clear();
+							m->romMetadata_.clear();
 							clear = false;
 						}
 
-						romMetadata.emplace(offset, static_cast<uint16_t>(romBytes.size()));
+						m->romMetadata_.emplace(offset, static_cast<uint16_t>(romBytes.size()));
 
 						return std::error_code{};
 					};
 
-					auto loadFromMem = [ioController, memoryController, &romMetadata, &clear, offset, size](std::string_view&& resource)
+					auto loadFromMem = [m,/*ioController, memoryController, &romMetadata, */&clear, offset, size](std::string_view&& resource)
 					{
 						if (size <= 0)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						int64_t value = 0;
@@ -392,7 +405,7 @@ namespace meen
 
 						if (ec != std::errc() || ptr != resource.data() + resource.size())
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						auto romBytes = reinterpret_cast<uint8_t*>(value);
@@ -400,21 +413,21 @@ namespace meen
 						// only support a max of 16 bit addressing
 						if (offset + size > 0xFFFF)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						for (int i = 0; i < size; i++)
 						{
-							memoryController->Write(offset + i, romBytes[i], ioController);
+							m->memoryController_->Write(offset + i, romBytes[i], m->ioController_.get());
 						}
 
 						if (clear == true)
 						{
-							romMetadata.clear();
+							m->romMetadata_.clear();
 							clear = false;
 						}
 
-						romMetadata.emplace(offset, static_cast<uint16_t>(size));
+						m->romMetadata_.emplace(offset, static_cast<uint16_t>(size));
 
 						return std::error_code{};
 					};
@@ -423,7 +436,7 @@ namespace meen
 					{
 						bytes.remove_prefix(strlen("file://"));
 
-						loadFromFile(std::move(bytes));
+						err = loadFromFile(std::move(bytes));
 					}
 					else if (bytes.starts_with("base64://") == true)
 					{
@@ -445,16 +458,16 @@ namespace meen
 
 							if (!jsonMd5)
 							{
-								return jsonMd5.error();
+								return m->HandleError(jsonMd5.error(), std::source_location::current());
 							}
 
 							std::vector<uint8_t> rom;
 
-							for (const auto& rm : romMetadata)
+							for (const auto& rm : m->romMetadata_)
 							{
 								for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 								{
-									rom.push_back(memoryController->Read(addr, ioController));
+									rom.push_back(m->memoryController_->Read(addr, m->ioController_.get()));
 								}
 							}
 
@@ -462,7 +475,7 @@ namespace meen
 
 							if (jsonMd5.value().size() != romMd5.size() || std::equal(jsonMd5.value().begin(), jsonMd5.value().end(), romMd5.begin()) == false)
 							{
-								return make_error_code(errc::incompatible_rom);
+								return m->HandleError(errc::incompatible_rom, std::source_location::current());
 							}
 						}
 						else
@@ -475,7 +488,7 @@ namespace meen
 
 								if (size <= 0)
 								{
-									return make_error_code(errc::json_config);
+									return m->HandleError(errc::json_config, std::source_location::current());
 								}
 
 								bytes.remove_prefix(strlen("zlib://"));
@@ -490,14 +503,14 @@ namespace meen
 								}
 							}
 
-							loadFromBase64(std::move(bytes), compressor, size);
+							err = loadFromBase64(std::move(bytes), compressor, size);
 						}
 					}
 					else if (bytes.starts_with("mem://") == true)
 					{
 						bytes.remove_prefix(strlen("mem://"));
 
-						err = loadFromMem(std::move(bytes));				
+						err = loadFromMem(std::move(bytes));
 					}
 					else
 					{
@@ -519,7 +532,7 @@ namespace meen
 								size = bytes.length();
 							}
 
-							err = loadFromBase64(std::move(bytes), "none", size);						
+							err = loadFromBase64(std::move(bytes), "none", size);
 						}
 						else if (scheme == "mem://")
 						{
@@ -527,7 +540,7 @@ namespace meen
 						}
 						else
 						{
-							return make_error_code(errc::uri_scheme);
+							return m->HandleError(errc::uri_scheme, std::source_location::current());
 						}
 					}
 
@@ -588,14 +601,14 @@ namespace meen
 				}
 
 				int offset = 0;
-				ramMetadata.clear();
+				m->ramMetadata_.clear();
 
 				// store an ascending sorted ram map with offset as the key (derived from the rom)
-				for (const auto& r : romMetadata)
+				for (const auto& r : m->romMetadata_)
 				{
 					if (offset < r.first)
 					{
-						ramMetadata.emplace(offset, r.first - offset);
+						m->ramMetadata_.emplace(offset, r.first - offset);
 					}
 
 					offset = r.first + r.second;
@@ -604,7 +617,7 @@ namespace meen
 				// add the last ram block
 				if (offset < 0xFFFF)
 				{
-					ramMetadata.emplace(offset, 0xFFFF - offset);
+					m->ramMetadata_.emplace(offset, 0xFFFF - offset);
 				}
 
 #ifdef ENABLE_MEEN_SAVE
@@ -621,7 +634,7 @@ namespace meen
 					if (!memory["ram"]["bytes"])
 #endif // ENABLE_NLOHMANN_JSON
 					{
-						return make_error_code(errc::json_config);
+						return m->HandleError(errc::json_config, std::source_location::current());
 					}
 
 #ifdef ENABLE_NLOHMANN_JSON
@@ -630,7 +643,7 @@ namespace meen
 					auto bytes = memory["ram"]["bytes"].as<std::string_view>();
 #endif // ENABLE_NLOHMANN_JSON
 					std::vector<uint8_t> ram;
-					auto size = std::accumulate (ramMetadata.begin(), ramMetadata.end(), 0, [](int accumulator, const std::pair<uint16_t, uint16_t>& metadata)
+					auto size = std::accumulate (m->ramMetadata_.begin(), m->ramMetadata_.end(), 0, [](int accumulator, const std::pair<uint16_t, uint16_t>& metadata)
 					{
 						return accumulator + metadata.second;
 					});
@@ -653,35 +666,35 @@ namespace meen
 
 						if (!ramEx)
 						{
-							return ramEx.error();
+							return m->HandleError(ramEx.error(), std::source_location::current());
 						}
 
 						ram = std::move(ramEx.value());
 
 						if (ram.size() != size)
 						{
-							return make_error_code(errc::incompatible_ram);
+							return m->HandleError(errc::incompatible_ram, std::source_location::current());							
 						}
 					}
 					else
 					{
-						return make_error_code(errc::uri_scheme);
+						return m->HandleError(errc::uri_scheme, std::source_location::current());
 					}
 
 					auto ramIt = ram.begin();
 
 					// loop ramMetadata writing the size bytes from decompressed ram to memory at offset
-					for (const auto& rm : ramMetadata)
+					for (const auto& rm : m->ramMetadata_)
 					{
 						// only support a max of 16 bit addressing
 						if (rm.first + rm.second > 0xFFFF)
 						{
-							return make_error_code(errc::json_config);
+							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
 						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 						{
-							memoryController->Write(addr, *ramIt++, ioController);
+							m->memoryController_->Write(addr, *ramIt++, m->ioController_.get());
 						}
 					}
 				}
@@ -689,11 +702,11 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 				{
 					// make sure the ram is clear
-					for (const auto& rm : ramMetadata)
+					for (const auto& rm : m->ramMetadata_)
 					{
 						for (int addr = rm.first; addr < rm.first + rm.second; addr++)
 						{
-							memoryController->Write(addr, 0x00, ioController);
+							m->memoryController_->Write(addr, 0x00, m->ioController_.get());
 						}
 					}
 				}
@@ -702,7 +715,7 @@ namespace meen
 				if (json.contains("cpu"))
 				{
 					// if ram exists we need to check for cpu uuid compatibility
-					auto err = cpu_->Load(json["cpu"].dump(),
+					auto err = m->cpu_->Load(json["cpu"].dump(),
 #ifdef ENABLE_MEEN_SAVE
 					memory.contains("ram")
 #else
@@ -717,10 +730,10 @@ namespace meen
 
 					if(cpuStr.empty() == true)
 					{
-						return make_error_code(errc::json_parse);
+						return m->HandleError(errc::json_parse, std::source_location::current());
 					}
 
-					auto err = cpu_->Load(std::move(cpuStr),
+					auto err = m->cpu_->Load(std::move(cpuStr),
 #ifdef ENABLE_MEEN_SAVE
 					memory["ram"]
 #else
@@ -757,15 +770,14 @@ namespace meen
 		};
 #endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
-		auto& onSave_ = m->onSave_;
-		auto saveLaunchPolicy = opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
+		auto saveLaunchPolicy = m->opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onSave;
 #endif // ENABLE_MEEN_SAVE
 		int ticks = 0;
 		auto serviceInterrupts = [&]
 		{
 			bool quit = false;
-			auto isr = ioController->ServiceInterrupts(currTime.count(), totalTicks, memoryController);
+			auto isr = m->ioController_->ServiceInterrupts(currTime.count(), totalTicks, m->memoryController_.get());
 
 			switch (isr)
 			{
@@ -778,15 +790,15 @@ namespace meen
 				case ISR::Six:
 				case ISR::Seven:
 				{
-					ticks = cpu_->Interrupt(isr);
-					currTime = clock_->Tick(ticks);
+					ticks = m->cpu_->Interrupt(isr);
+					currTime = m->clock_->Tick(ticks);
 					totalTicks += ticks;
 					break;
 				}
 				case ISR::Load:
 				{
 					// If a user defined callback is set and we are not processing a load or save request
-					if (onLoad_ != nullptr
+					if (m->onLoad_ != nullptr
 #ifndef ENABLE_MEEN_RP2040
 						&& onLoad.valid() == false
 #endif // ENABLE_MEEN_RP2040
@@ -796,19 +808,18 @@ namespace meen
 					)
 					{
 #ifndef ENABLE_MEEN_RP2040
-						onLoad = std::async(loadLaunchPolicy, [onLoad_, ioController, loadSize = opt_.MaxLoadStateLength()]
+						onLoad = std::async(loadLaunchPolicy, [m]
 						{
 #endif // ENABLE_MEEN_RP2040
-							int len = loadSize;
+							int len = m->opt_.MaxLoadStateLength();
 							std::string str(len, '\0');
 
-							auto e = onLoad_(str.data(), &len, ioController);
+							auto e = m->onLoad_(str.data(), &len, m->ioController_.get());
 
 							if(e)
 							{
 								str.clear();
-								// todo: need to have proper logging
-								printf("ISR::Load failed to load the machine state: %s\n", make_error_code(e).message().c_str());
+								m->HandleError(e, std::source_location::current());
 							}
 
 							str.resize(len);
@@ -816,15 +827,10 @@ namespace meen
 							return str;
 						});
 
-						auto err = loadMachineState(checkHandler(onLoad));
+						loadMachineState(checkHandler(onLoad));
 #else
-						auto err = loadMachineState(std::move(str));
+						loadMachineState(std::move(str));
 #endif // ENABLE_MEEN_RP2040
-
-						if(err)
-						{
-							printf("ISR::Load failed to load the machine state: %s\n", err.message().c_str());
-						}
 					}
 					break;
 				}
@@ -832,14 +838,14 @@ namespace meen
 				{
 #ifdef ENABLE_MEEN_SAVE
 					// If a user defined callback is set and we are not processing a save or load request
-					if (onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
+					if (m->onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 					{
-						auto memUuid = memoryController->Uuid();
-						auto memUuidTxt = Utils::BinToTxt(opt_.Encoder(), "none", memUuid.data(), memUuid.size());
+						auto memUuid = m->memoryController_->Uuid();
+						auto memUuidTxt = Utils::BinToTxt(m->opt_.Encoder(), "none", memUuid.data(), memUuid.size());
 
 						if (memUuidTxt)
 						{
-							auto rm = [memoryController](const std::map<uint16_t, uint16_t>& metadata)
+							auto rm = [memoryController = m->memoryController_.get()](const std::map<uint16_t, uint16_t>& metadata)
 							{
 								std::vector<uint8_t> mem;
 
@@ -854,18 +860,18 @@ namespace meen
 								return mem;
 							};
 
-							auto rom = rm(romMetadata);
+							auto rom = rm(m->romMetadata_);
 							auto romMd5 = Utils::Md5(rom.data(), rom.size());
-							auto romMd5Txt = Utils::BinToTxt(opt_.Encoder(), "none", romMd5.data(), romMd5.size());
+							auto romMd5Txt = Utils::BinToTxt(m->opt_.Encoder(), "none", romMd5.data(), romMd5.size());
 
 							if (romMd5Txt)
 							{
-								auto ram = rm(ramMetadata);
-								auto ramTxt = Utils::BinToTxt(opt_.Encoder(), opt_.Compressor(), ram.data(), ram.size());
+								auto ram = rm(m->ramMetadata_);
+								auto ramTxt = Utils::BinToTxt(m->opt_.Encoder(), m->opt_.Compressor(), ram.data(), ram.size());
 
 								if (ramTxt)
 								{
-									auto cpuStateTxt = cpu_->Save();
+									auto cpuStateTxt = m->cpu_->Save();
 
 									if (cpuStateTxt)
 									{
@@ -887,11 +893,11 @@ namespace meen
 											//cppcheck-suppress nullPointer
 											dataSize = snprintf(data, dataSize, fmtStr,
 												cpuStateTxt.value().c_str(),
-												opt_.Encoder().c_str(),
+												m->opt_.Encoder().c_str(),
 												memUuidTxt.value().c_str(),
-												opt_.Encoder().c_str(),
+												m->opt_.Encoder().c_str(),
 												romMd5Txt.value().c_str(),
-												ram.size(), opt_.Encoder().c_str(), opt_.Compressor().c_str(),
+												ram.size(), m->opt_.Encoder().c_str(), m->opt_.Compressor().c_str(),
 												ramTxt.value().c_str()) + 1;
 
 											return str;
@@ -899,14 +905,14 @@ namespace meen
 
 										writeState();
 
-										onSave = std::async(saveLaunchPolicy, [onSave_, state = writeState(), ioController]
+										onSave = std::async(saveLaunchPolicy, [m, state = writeState()]
 										{
 											// TODO: this method needs to be marked as nothrow
-											auto e = onSave_(state.c_str(), ioController);
+											auto e = m->onSave_(state.c_str(), m->ioController_.get());
 											
 											if (e)
 											{
-												printf("ISR::Save failed to save the machine state: %s\n", make_error_code(e).message().c_str());
+												m->HandleError(e, std::source_location::current());
 											}
 
 											return std::string("");
@@ -916,22 +922,22 @@ namespace meen
 									}
 									else
 									{
-										printf("ISR::Save failed: %s\n", cpuStateTxt.error().message().c_str());
+										m->HandleError(cpuStateTxt.error(), std::source_location::current());
 									}
 								}
 								else
 								{
-									printf("ISR::Save failed: %s\n", ramTxt.error().message().c_str());
+									m->HandleError(ramTxt.error(), std::source_location::current());
 								}
 							}
 							else
 							{
-								printf("ISR::Save failed: %s\n", romMd5Txt.error().message().c_str());
+								m->HandleError(romMd5Txt.error(), std::source_location::current());
 							}
 						}
 						else
 						{
-							printf("ISR::Save failed: %s\n", memUuidTxt.error().message().c_str());
+							m->HandleError(memUuidTxt.error(), std::source_location::current());
 						}
 					}
 #endif // ENABLE_MEEN_SAVE
@@ -944,12 +950,7 @@ namespace meen
 					if (onLoad.valid() == true)
 					{
 						// we are quitting, wait for the onLoad handler to complete
-						auto err = loadMachineState(onLoad.get());
-
-						if(err)
-						{
-							printf("ISR::Quit failed to load the machine state: %s\n", err.message().c_str());
-						}
+						loadMachineState(onLoad.get());
 					}
 #endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
@@ -961,7 +962,7 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 					quit = true;
 					
-					if (opt_.RunAsync() == true)
+					if (m->opt_.RunAsync() == true)
 					{
 						m->quit_ = true;
 					}
@@ -971,7 +972,7 @@ namespace meen
 				{
 					// no interrupts pending, do any work that is outstanding
 
-					if (opt_.RunAsync() == true)
+					if (m->opt_.RunAsync() == true)
 					{
 						if (m->quit_ == true)
 						{
@@ -980,18 +981,13 @@ namespace meen
 					}
 					else
 					{
-						if (onIdle)
+						if (m->onIdle_)
 						{
-							quit = onIdle(ioController);
+							quit = m->onIdle_(m->ioController_.get());
 						}
 					}
 #ifndef ENABLE_MEEN_RP2040
-					auto errc = loadMachineState(checkHandler(onLoad));
-
-					if(errc)
-					{
-						printf("ISR::NoInterrupt failed to load the machine state: %s\n", errc.message().c_str());
-					}
+					loadMachineState(checkHandler(onLoad));
 #endif // ENABLE_MEEN_RP2040
 #ifdef ENABLE_MEEN_SAVE
 					checkHandler(onSave);
@@ -1008,12 +1004,12 @@ namespace meen
 			return quit;
 		};
 
-		cpu_->Reset();
-		clock_->Reset();
+		m->cpu_->Reset();
+		m->clock_->Reset();
 
-		if (opt_.ISRFreq() > 0)
+		if (m->opt_.ISRFreq() > 0)
 		{
-			ticksPerIsr = clock_->GetSpeed() / opt_.ISRFreq();
+			ticksPerIsr = m->clock_->GetSpeed() / m->opt_.ISRFreq();
 		}
 
 		auto quit = serviceInterrupts();
@@ -1021,8 +1017,8 @@ namespace meen
 		while (quit == false)
 		{
 			//Execute the next instruction
-			ticks = cpu_->Execute();
-			currTime = clock_->Tick(ticks);
+			ticks = m->cpu_->Execute();
+			currTime = m->clock_->Tick(ticks);
 			totalTicks += ticks;
 
 			// Check if it is time to service interrupts
@@ -1040,34 +1036,34 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return std::unexpected(make_error_code(errc::busy));
+			return std::unexpected(HandleError(errc::busy, std::source_location::current()));
 		}
 
 		if (memoryController_ == nullptr)
 		{
-			return std::unexpected(make_error_code(errc::memory_controller));
+			return std::unexpected(HandleError(errc::memory_controller, std::source_location::current()));
 		}
 
 		if (ioController_ == nullptr)
 		{
-			return std::unexpected(make_error_code(errc::io_controller));
+			return std::unexpected(HandleError(errc::io_controller, std::source_location::current()));
 		}
 
 		if(clock_ == nullptr)
 		{
-			return std::unexpected(make_error_code(errc::clock_sampling_freq));
+			return std::unexpected(HandleError(errc::clock_sampling_freq, std::source_location::current()));
 		}
 
 		if(cpu_ == nullptr)
 		{
-			return std::unexpected(make_error_code(errc::cpu));
+			return std::unexpected(HandleError(errc::cpu, std::source_location::current()));
 		}
 
 		auto err = clock_->SetSamplingFrequency(opt_.ClockSamplingFreq());
 
 		if (err)
 		{
-			return std::unexpected(err);
+			return std::unexpected(HandleError(err, std::source_location::current()));
 		}
 
 		runTime_ = 0;
@@ -1083,7 +1079,7 @@ namespace meen
 	
 				if(core1Ret != 0xFFFFFFFF)
 				{
-					return make_error_code(errc::async);
+					return HandleError(errc::async, std::source_location::current());
 				}
 #else
 				if (fut_.valid() == true)
@@ -1092,7 +1088,7 @@ namespace meen
 				}
 				else
 				{
-					return make_error_code(errc::async);
+					return HandleError(errc::async, std::source_location::current());
 				}
 #endif // ENABLE_MEEN_RP2040
 				running_ = false;
@@ -1178,12 +1174,12 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
 		}
 
 		if(controller == nullptr)
 		{
-			return make_error_code(errc::invalid_argument);
+			return HandleError(errc::invalid_argument, std::source_location::current());
 		}
 
 		cpu_->SetMemoryController(controller.get());
@@ -1196,12 +1192,12 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return std::unexpected<std::error_code>(make_error_code(errc::busy));
+			return std::unexpected(HandleError(errc::busy, std::source_location::current()));
 		}
 
 		if(memoryController_ == nullptr)
 		{
-			return std::unexpected<std::error_code>(make_error_code(errc::memory_controller));
+			return std::unexpected(HandleError(errc::memory_controller, std::source_location::current()));
 		}
 
 		cpu_->SetMemoryController(nullptr);
@@ -1214,12 +1210,12 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
 		}
 
 		if(controller == nullptr)
 		{
-			return make_error_code(errc::invalid_argument);
+			return HandleError(errc::invalid_argument, std::source_location::current());
 		}
 
 		cpu_->SetIoController(controller.get());
@@ -1232,12 +1228,12 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return std::unexpected<std::error_code>(make_error_code(errc::busy));
+			return std::unexpected(HandleError(errc::busy, std::source_location::current()));
 		}
 
 		if(ioController_ == nullptr)
 		{
-			return std::unexpected<std::error_code>(make_error_code(errc::io_controller));
+			return std::unexpected(HandleError(errc::io_controller, std::source_location::current()));
 		}
 
 		cpu_->SetIoController(nullptr);
@@ -1251,13 +1247,13 @@ namespace meen
 #ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
 		}
 
 		onSave_ = std::move(onSave);
 		return std::error_code{};
 #else
-		return make_error_code(errc::not_implemented);
+		return HandleError(errc::not_implemented, std::source_location::current());
 #endif // ENABLE_MEEN_SAVE
 	}
 
@@ -1265,7 +1261,7 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
 		}
 
 		onLoad_ = std::move(onLoad);
@@ -1276,13 +1272,23 @@ namespace meen
 	{
 		if (running_ == true)
 		{
-			return make_error_code(errc::busy);
+			return HandleError(errc::busy, std::source_location::current());
 		}
 
 		onIdle_ = std::move(onIdle);
 		return std::error_code{};
 	}
 
+	std::error_code Machine::OnError(std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)>&& onError)
+	{
+		if (running_ == true)
+		{
+			return HandleError(errc::busy, std::source_location::current());
+		}
+
+		onError_ = std::move(onError);
+		return std::error_code{};
+	}
 
 	ControllerDeleter::ControllerDeleter(bool del)
 	{
