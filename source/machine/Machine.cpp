@@ -83,7 +83,7 @@ namespace meen
 	{
 		if (onError_)
 		{
-			onError_(err, sl.file_name(), sl.line(), sl.column(), ioController_.get());
+			onError_(err, sl.file_name(), sl.function_name(), sl.line(), sl.column(), ioController_.get());
 		}
 
 		return err;
@@ -1279,7 +1279,7 @@ namespace meen
 		return std::error_code{};
 	}
 
-	std::error_code Machine::OnError(std::function<void(std::error_code ec, const char* fileName, uint32_t line, uint32_t column, IController* ioController)>&& onError)
+	std::error_code Machine::OnError(std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)>&& onError)
 	{
 		if (running_ == true)
 		{

@@ -70,7 +70,7 @@ namespace meen
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
 		bool running_{};
-		std::function<void(std::error_code ec, const char* fileName, uint32_t line, uint32_t column, IController* ioController)> onError_;
+		std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)> onError_;
 		std::function<bool(IController* ioController)> onIdle_;
 		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_;
 #ifdef ENABLE_MEEN_SAVE
@@ -142,7 +142,7 @@ namespace meen
 
 			@see IMachine::OnError
 		*/
-		std::error_code OnError(std::function<void(std::error_code ec, const char* fileName, uint32_t line, uint32_t column, IController* ioController)>&& onError) final;
+		std::error_code OnError(std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)>&& onError) final;
 	};
 } // namespace meen
 

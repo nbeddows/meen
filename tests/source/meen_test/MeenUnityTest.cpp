@@ -147,7 +147,7 @@ namespace meen::tests
 		int64_t nanos = 0;
 		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
         // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 		{
 			TEST_ASSERT_FALSE(ec.value());
 			// Signal the machine to shutdown due to the reason stated above
@@ -213,7 +213,7 @@ namespace meen::tests
         
 		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
         // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-        auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+        auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
         {
             // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
             // this scenario for example
@@ -364,7 +364,7 @@ namespace meen::tests
 
    		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
 		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 		{
             // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
             // this scenario for example
@@ -440,7 +440,7 @@ namespace meen::tests
     {
         int errCount = 0;
         // Register an on error handler to simplify the error checking
-        auto err = machine->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+        auto err = machine->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
         {
             TEST_ASSERT_TRUE((ec.value() == errc::busy) || (ec.value() == errc::not_implemented));
             errCount++;

@@ -282,10 +282,10 @@ auto machine = Make8080Machine();
 // ALL generated errors with more detail.
 // Note that this method may be called from a different thread if the runAsync/loadAsync/saveAsync configuration
 // options have been specified. 
-auto err = machine->OnError([](std::error_code ec, const char* fileName, int line, int column, IController* ioController)
+auto err = machine->OnError([](std::error_code ec, const char* fileName, const char* functionName, int line, int column, IController* ioController)
 {
   // Handle the error, for demonstration purposes, print it to the console.
-  std::cout << std::format("{}({}:{}): {}", fileName, line, column, ec.message()) << std::endl;
+  std::cout << std::format("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
 });
 
 // The return code of the OnError method must be checked as it may fail to register, therefore it won't be picked
@@ -311,17 +311,17 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // to json://).
   auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
   // auto jsonToLoad = "file://myProgramSave.json"sv;
-		
-	// When the length of the json to load is greater than *jsonLen, the config option `maxLoadStateLen` needs to be increased.
-	if (jsonToLoad.length() > *jsonLength)
-	{
-		return errc::invalid_argument;
-	}
+    
+  // When the length of the json to load is greater than *jsonLen, the config option `maxLoadStateLen` needs to be increased.
+  if (jsonToLoad.length() > *jsonLength)
+  {
+    return errc::invalid_argument;
+  }
 
   std::copy_n(json, jsonToLoad.length(), jsonToLoad.begin());
-	// Write the final length of the loaded program
-	*jsonLen = jsonToLoad.length();
-	return errc::no_error;
+  // Write the final length of the loaded program
+  *jsonLen = jsonToLoad.length();
+  return errc::no_error;
 });
 
 // Register a handler that can save the current state of the machine.

@@ -84,7 +84,7 @@ class MachineTest(unittest.TestCase):
     def test_MethodsErrorAfterRunCalled(self):
         self.errCount = 0        
         # Register an on error handler to simplify the error checking
-        def CheckError(err, fileName, line, column, ioController):
+        def CheckError(err, fileName, functionName, line, column, ioController):
             self.assertTrue((err == ErrorCode.Busy) or (err == ErrorCode.NotImplemented))
             self.errCount += 1
 
@@ -113,7 +113,7 @@ class MachineTest(unittest.TestCase):
 
         # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
         # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-        def CheckError(err, fileName, line, column, ioController):
+        def CheckError(err, fileName, functionName, line, column, ioController):
             self.assertEqual(err, ErrorCode.NoError)
 
         err = self.machine.OnError(CheckError)
@@ -157,7 +157,7 @@ class MachineTest(unittest.TestCase):
 
         # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
         # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-        def CheckError(err, fileName, line, column, ioController):
+        def CheckError(err, fileName, functionName, line, column, ioController):
             # Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
             # this scenario for example
             if err != ErrorCode.NotImplemented:
@@ -236,7 +236,7 @@ class i8080Test(unittest.TestCase):
 
         # Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
         # the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-        def CheckError(err, fileName, line, column, ioController):
+        def CheckError(err, fileName, functionName, line, column, ioController):
             # Not implemented is treated as success since this aspect of the test can not be tested
             if err != ErrorCode.NotImplemented:
                 self.assertEqual(err, ErrorCode.NoError)

@@ -126,13 +126,13 @@ PYBIND11_MODULE(meenPy, meen)
                 return static_cast<meen::errc>(machine.OnIdle(nullptr).value());
             }
         })
-        .def("OnError", [](meen::IMachine& machine, std::function<void(meen::errc ec, const char* fileName, uint32_t line, uint32_t column, meen::IController* ioController)>&& onError)
+        .def("OnError", [](meen::IMachine& machine, std::function<void(meen::errc ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, meen::IController* ioController)>&& onError)
         {
             if (onError)
             {
-                return static_cast<meen::errc>(machine.OnError([oe = std::move(onError)](std::error_code ec, const char* fileName, uint32_t line, uint32_t column, meen::IController* ioController)
+                return static_cast<meen::errc>(machine.OnError([oe = std::move(onError)](std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, meen::IController* ioController)
                 {
-                    oe(static_cast<meen::errc>(ec.value()), fileName, line, column, ioController);
+                    oe(static_cast<meen::errc>(ec.value()), fileName, functionName, line, column, ioController);
                 }).value());
             }
             else
