@@ -68,12 +68,12 @@ namespace meen
 		{
 			return HandleError(errc::busy, std::source_location::current());
 		}
-	
+
 		auto err = opt_.SetOptions(options);
 
 		if (err)
 		{
-			HandleError(err, std::source_location::current());		
+			HandleError(err, std::source_location::current());
 		}
 
 		return err;
@@ -248,11 +248,11 @@ namespace meen
 				bool clear = true;
 
 #ifdef ENABLE_NLOHMANN_JSON
-				auto loadRom = [&clear, m/*memoryController, ioController, &romMetadata*/](const nlohmann::json& block, std::string_view&& scheme, std::string_view&& directory)
+				auto loadRom = [&clear, m](const nlohmann::json& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if (!block.contains("bytes"))
 #else
-				auto loadRom = [&clear, m/*memoryController, ioController, &romMetadata*/](const JsonVariantConst& block, std::string_view&& scheme, std::string_view&& directory)
+				auto loadRom = [&clear, m](const JsonVariantConst& block, std::string_view&& scheme, std::string_view&& directory)
 				{
 					if(!block["bytes"])
 #endif // ENABLE_NLOHMANN_JSON
@@ -300,7 +300,7 @@ namespace meen
 						}
 					}
 
-					auto loadFromFile = [m,/*ioController, memoryController, &romMetadata,*/ &clear, offset, &size](std::string_view&& resource)
+					auto loadFromFile = [m, &clear, offset, &size](std::string_view&& resource)
 					{
 						FILE* fin = fopen(std::string(resource).c_str(), "rb");
 
@@ -356,7 +356,7 @@ namespace meen
 						return std::error_code{};
 					};
 
-					auto loadFromBase64 = [m,/*ioController, memoryController, &romMetadata,*/ &clear, offset](std::string_view&& resource, const char* compressor, int size)
+					auto loadFromBase64 = [m, &clear, offset](std::string_view&& resource, const char* compressor, int size)
 					{
 						// decompress bytes and write to memory
 						auto romBytesEx = Utils::TxtToBin("base64",
@@ -393,11 +393,17 @@ namespace meen
 						return std::error_code{};
 					};
 
-					auto loadFromMem = [m,/*ioController, memoryController, &romMetadata, */&clear, offset, size](std::string_view&& resource)
+					auto loadFromMem = [m, &clear, offset, size](std::string_view&& resource)
 					{
 						if (size <= 0)
 						{
 							return m->HandleError(errc::json_config, std::source_location::current());
+						}
+
+						if (resource.starts_with("0x") || resource.starts_with("0X"))
+						{
+							// std::from_chars does not support these prefixes
+							resource.remove_prefix(2);
 						}
 
 						int64_t value = 0;
@@ -673,7 +679,7 @@ namespace meen
 
 						if (ram.size() != size)
 						{
-							return m->HandleError(errc::incompatible_ram, std::source_location::current());							
+							return m->HandleError(errc::incompatible_ram, std::source_location::current());
 						}
 					}
 					else
@@ -909,7 +915,7 @@ namespace meen
 										{
 											// TODO: this method needs to be marked as nothrow
 											auto e = m->onSave_(state.c_str(), m->ioController_.get());
-											
+
 											if (e)
 											{
 												m->HandleError(e, std::source_location::current());
@@ -961,7 +967,7 @@ namespace meen
 					}
 #endif // ENABLE_MEEN_SAVE
 					quit = true;
-					
+
 					if (m->opt_.RunAsync() == true)
 					{
 						m->quit_ = true;
@@ -1076,7 +1082,7 @@ namespace meen
 			{
 #ifdef ENABLE_MEEN_RP2040
 				auto core1Ret = multicore_fifo_pop_blocking();
-	
+
 				if(core1Ret != 0xFFFFFFFF)
 				{
 					return HandleError(errc::async, std::source_location::current());
@@ -1093,7 +1099,7 @@ namespace meen
 #endif // ENABLE_MEEN_RP2040
 				running_ = false;
 			}
-	
+
 			return std::error_code{};
 		};
 
