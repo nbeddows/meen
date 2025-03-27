@@ -150,7 +150,7 @@ namespace meen::Tests
             // this scenario for example
 			if (ec.value() != errc::not_implemented)
 			{
-				EXPECT_FALSE(ec.value());
+				EXPECT_EQUAL(errc::no_error, ec.value());
 				// Signal the machine to shutdown due to the reason stated above
 				ioController->Write(0xFF, 0, nullptr);	
 			}
@@ -381,7 +381,7 @@ namespace meen::Tests
     	        // this scenario for example
 				if (ec.value() != errc::not_implemented)
 				{
-					EXPECT_FALSE(ec.value());
+					EXPECT_EQUAL(errc::no_error, ec.value());
 
 					if (ioController)
 					{

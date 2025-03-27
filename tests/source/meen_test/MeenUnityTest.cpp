@@ -149,7 +149,7 @@ namespace meen::tests
         // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
 		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 		{
-			TEST_ASSERT_FALSE(ec.value());
+			TEST_ASSERT_EQUAL(errc::no_error, ec.value());
 			// Signal the machine to shutdown due to the reason stated above
             ioController->Write(0xFF, 0, nullptr);
 		});
@@ -173,7 +173,7 @@ namespace meen::tests
 
 // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-       nanos = machine->Run().or_else([](std::error_code ec)
+        nanos = machine->Run().or_else([](std::error_code ec)
 		{
 			// We failed, return back a 0 run time
 			return std::expected<uint64_t, std::error_code>(0);
@@ -183,8 +183,8 @@ namespace meen::tests
 		nanos = ex.value_or(0);
 #endif
 		auto error = nanos - 1000000000;
-		// Allow an average 500 micros of over sleep error
-		TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
+        // Allow 0.5 milliseconds or error
+        TEST_ASSERT_INT64_WITHIN(500000, 0, error);
     }
 
     static std::string ReadCpmIoControllerBuffer()
@@ -219,7 +219,7 @@ namespace meen::tests
             // this scenario for example
             if (ec.value() != errc::not_implemented)
             {
-                TEST_ASSERT_FALSE(ec.value());
+                TEST_ASSERT_EQUAL(errc::no_error, ec.value());
 
                 if (ioController)
                 {
@@ -370,7 +370,7 @@ namespace meen::tests
             // this scenario for example
 			if (ec.value() != errc::not_implemented)
 			{
-				TEST_ASSERT_FALSE(ec.value());
+				TEST_ASSERT_EQUAL(errc::no_error, ec.value());
 				// Signal the machine to shutdown due to the reason stated above
 				ioController->Write(0xFF, 0, nullptr);	
 			}
