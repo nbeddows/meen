@@ -50,13 +50,13 @@ namespace meen::Tests
 		static inline const char* nopStart = "base64://Pgo=";
 		// A base64 encoded code fragment that decrements the 'a' register by 1, jumps to address 0x0005 if 'a' is non-zero else address 0x0000.
 		static inline const char* nopEnd = "base64://PcIHAMMAAA";
-		// A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.  
+		// A base64 encoded code fragment that emulates cp/m bdos function 4 - raw console output.
 		static inline const char* bdosMsg = "base64://9XnTAP4CyhEAetMBe9MC8ck=";
 
 		static void LoadAndRun(const char* name, const char* expected, const char* extra = nullptr, uint16_t extraOffset = 0);
 		static void Run(bool runAsync);
 		static void Load(bool runAsync);
-	    static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos);
+		static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos);
 		static errc LoadProgram (char* json, int* jsonLen, const char* fmt, ...);
 		static std::string ReadCpmIoControllerBuffer();
 
@@ -126,7 +126,7 @@ namespace meen::Tests
 		va_start(args, fmt);
 
 		auto len = vsnprintf(json, *jsonLen, fmt, args);
-		
+
 		// A write error occurred while executing the function, odds are that one of our parameters are incorrect.
 		// When len == *jsonLen, the config option `maxLoadStateLen` needs to be increased
 		if (len < 0 || len == *jsonLen)
@@ -143,21 +143,21 @@ namespace meen::Tests
 	{
 		bool saveTriggered = false;
 		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
-		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered)
 		auto err = machine_->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 		{
-            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
-            // this scenario for example
+			// Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+			// this scenario for example
 			if (ec.value() != errc::not_implemented)
 			{
-				EXPECT_EQUAL(errc::no_error, ec.value());
+				EXPECT_EQ(errc::no_error, ec.value());
 				// Signal the machine to shutdown due to the reason stated above
-				ioController->Write(0xFF, 0, nullptr);	
+				ioController->Write(0xFF, 0, nullptr);
 			}
 		});
 		//Need to manually check this one as it can fail before the method is registered
 		EXPECT_FALSE(err);
-		
+
 		err = machine_->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
 		{
 			std::string actualStr;
@@ -209,7 +209,7 @@ namespace meen::Tests
 		do
 		{
 			byte = cpmIoController_->Read(0, nullptr);
-		
+
 			if (byte != 0x04)
 			{
 				message.push_back(byte);
@@ -220,7 +220,7 @@ namespace meen::Tests
 		return message;
 	}
 
-    void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
+	void MachineTest::RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos)
     {
 		// Write to the 'load device', the value doesn't matter (use 0)
 		cpmIoController_->Write(0xFD, 0, nullptr);
@@ -276,6 +276,12 @@ namespace meen::Tests
 	{
 		EXPECT_NO_THROW
 		(
+			// Detach the memory controller and clear it
+			// since we don't load a program in this test.
+			auto mc = machine_->DetachMemoryController();
+			static_cast<MemoryController*>(mc.value().get())->Clear();
+			machine_->AttachMemoryController(std::move(mc.value()));
+
 			int errCount = 0;
 			// Register an on error handler to simplify the error checking
 			auto err = machine_->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
@@ -374,14 +380,14 @@ namespace meen::Tests
 			std::vector<std::string> saveStates;
 
 			// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
-			// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+			// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered)
 			auto err = machine_->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
 			{
-	            // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
-    	        // this scenario for example
+				// Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
+				// this scenario for example
 				if (ec.value() != errc::not_implemented)
 				{
-					EXPECT_EQUAL(errc::no_error, ec.value());
+					EXPECT_EQ(errc::no_error, ec.value());
 
 					if (ioController)
 					{
@@ -419,7 +425,7 @@ namespace meen::Tests
 						break;
 					case 1:
 						EXPECT_FALSE(saveStates.empty());
-						
+
 						if (saveStates.empty() == false)
 						{
 							// 0 - mid program save state, 1 and 2 - end of program save states
