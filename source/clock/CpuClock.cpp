@@ -118,6 +118,10 @@ namespace meen
 
 				totalTicks_ = resolution / timePeriod_;
 			}
+			else if (samplingFrequency == 0)
+			{
+				totalTicks_ = 0;
+			}
 			else
 			{
 				totalTicks_ = -1;
