@@ -78,17 +78,17 @@ void setUp()
 void tearDown()
 {
     // Clear the handlers - always clear OnError first
-	auto err = machine->OnError(nullptr);
-	TEST_ASSERT_FALSE(err);
+    auto err = machine->OnError(nullptr);
+    TEST_ASSERT_FALSE(err);
 
     err = machine->OnSave(nullptr);
-	TEST_ASSERT_TRUE(err.value() == meen::errc::no_error || err.value() == meen::errc::not_implemented);
+    TEST_ASSERT_TRUE(err.value() == meen::errc::no_error || err.value() == meen::errc::not_implemented);
 
-	err = machine->OnIdle(nullptr);
-	TEST_ASSERT_FALSE(err);
+    err = machine->OnIdle(nullptr);
+    TEST_ASSERT_FALSE(err);
 
-	err = machine->OnLoad(nullptr);
-	TEST_ASSERT_FALSE(err);
+    err = machine->OnLoad(nullptr);
+    TEST_ASSERT_FALSE(err);
 
     // Set default options
     err = machine->SetOptions(nullptr);
@@ -144,82 +144,82 @@ namespace meen::tests
 
     static void Run(bool runAsync)
     {
-		int64_t nanos = 0;
-		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
-        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
-		{
-			TEST_ASSERT_FALSE(ec.value());
-			// Signal the machine to shutdown due to the reason stated above
+        int64_t nanos = 0;
+        // Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered)
+        auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+        {
+            TEST_ASSERT_EQUAL(errc::no_error, ec.value());
+            // Signal the machine to shutdown due to the reason stated above
             ioController->Write(0xFF, 0, nullptr);
-		});
-		//Need to manually check this one as it can fail before the method is registered
-		TEST_ASSERT_FALSE(err);
+        });
+        //Need to manually check this one as it can fail before the method is registered
+        TEST_ASSERT_FALSE(err);
 
-		machine->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
-		{
+        machine->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        {
             return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
-                saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
-		});
+            saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
+        });
 
-		if (runAsync == true)
-		{
-			machine->SetOptions(R"(json://{"runAsync":true})");
-		}
+        if (runAsync == true)
+        {
+            machine->SetOptions(R"(json://{"runAsync":true})");
+        }
 
-		// Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
-		// Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
-		machine->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
+        // Sample the host clock 40 times per second, giving a meen clock tick a resolution of 25 milliseconds
+        // Service interrupts 60 times per meen cpu clock rate. For an i8080 running at 2Mhz, this would service interrupts every 40000 ticks.
+        machine->SetOptions(R"(json://{"clockSamplingFreq":40,"isrFreq":60})");
 
-// Use std::expected monadics if they are supported
+        // Use std::expected monadics if they are supported
 #if ((defined __GNUC__ && __GNUC__ >= 13) || (defined _MSC_VER && _MSC_VER >= 1706))
-       nanos = machine->Run().or_else([](std::error_code ec)
-		{
-			// We failed, return back a 0 run time
-			return std::expected<uint64_t, std::error_code>(0);
-		}).value();
+        nanos = machine->Run().or_else([](std::error_code ec)
+        {
+            // We failed, return back a 0 run time
+            return std::expected<uint64_t, std::error_code>(0);
+        }).value();
 #else
-		auto ex = machine->Run();
-		nanos = ex.value_or(0);
+        auto ex = machine->Run();
+        nanos = ex.value_or(0);
 #endif
-		auto error = nanos - 1000000000;
-		// Allow an average 500 micros of over sleep error
-		TEST_ASSERT_TRUE(error >= 0 && error <= 500000);
+        auto error = nanos - 1000000000;
+        // Allow 0.5 milliseconds or error
+        TEST_ASSERT_INT_WITHIN(500000, 0, error);
     }
 
     static std::string ReadCpmIoControllerBuffer()
-	{
-		std::string message;
-		uint8_t byte = 0x04; // ascii end of transmission
+    {
+        std::string message;
+        uint8_t byte = 0x04; // ascii end of transmission
 
-		do
-		{
-			byte = cpmIoController->Read(0, nullptr);
-		
-			if (byte != 0x04)
-			{
-				message.push_back(byte);
-			}
-		}
-		while (byte != 0x04);
+        do
+        {
+            byte = cpmIoController->Read(0, nullptr);
 
-		return message;
-	}
+            if (byte != 0x04)
+            {
+                message.push_back(byte);
+            }
+        }
+        while (byte != 0x04);
+
+        return message;
+    }
 
     static void Load(bool runAsync)
     {
         int loadIndex = 0;
         std::vector<std::string> saveStates;
-        
+
 		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
-        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered)
         auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
         {
             // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
             // this scenario for example
             if (ec.value() != errc::not_implemented)
             {
-                TEST_ASSERT_FALSE(ec.value());
+                TEST_ASSERT_EQUAL(errc::no_error, ec.value());
 
                 if (ioController)
                 {
@@ -230,7 +230,7 @@ namespace meen::tests
         });
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
-        
+
         err = machine->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
         {
             saveStates.emplace_back(json);
@@ -300,7 +300,7 @@ namespace meen::tests
 
         machine->AttachIoController(std::move(cpmIoController));
         machine->Run();
-        
+
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
 
@@ -362,21 +362,21 @@ namespace meen::tests
     {
         bool saveTriggered = false;
 
-   		// Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
-		// the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered) 
-		auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
-		{
+        // Register an on error handler to simplify the error checking, doing it this way also allows us to avoid an infinite spin if the engine fails to load
+        // the returned json from the OnLoad method below (this spin is expected behavior as the machine will execute nops until another on load interrupt is triggered)
+        auto err = machine->OnError([](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
+        {
             // Not implemented is treated as success since this aspect of the test can not be tested, we can manually check it later if we want to skip the test in
             // this scenario for example
-			if (ec.value() != errc::not_implemented)
-			{
-				TEST_ASSERT_FALSE(ec.value());
-				// Signal the machine to shutdown due to the reason stated above
-				ioController->Write(0xFF, 0, nullptr);	
-			}
-		});
-		//Need to manually check this one as it can fail before the method is registered
-		TEST_ASSERT_FALSE(err);
+            if (ec.value() != errc::not_implemented)
+            {
+                TEST_ASSERT_EQUAL(errc::no_error, ec.value());
+                // Signal the machine to shutdown due to the reason stated above
+                ioController->Write(0xFF, 0, nullptr);
+            }
+        });
+        //Need to manually check this one as it can fail before the method is registered
+        TEST_ASSERT_FALSE(err);
 
         err = machine->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
         {
@@ -417,7 +417,7 @@ namespace meen::tests
     static void test_SetNullptrMemoryController()
     {
         auto err = machine->AttachMemoryController(nullptr);
-	    TEST_ASSERT_TRUE(err);
+        TEST_ASSERT_TRUE(err);
         TEST_ASSERT_EQUAL_STRING("an argument supplied to the method is invalid", err.message().c_str());
     }
 
@@ -438,6 +438,12 @@ namespace meen::tests
 
     static void test_MethodsErrorAfterRunCalled()
     {
+        // Detach the memory controller and clear it
+        // since we don't load a program in this test.
+        auto mc = machine->DetachMemoryController();
+        static_cast<MemoryController*>(mc.value().get())->Clear();
+        machine->AttachMemoryController(std::move(mc.value()));
+
         int errCount = 0;
         // Register an on error handler to simplify the error checking
         auto err = machine->OnError([&errCount](std::error_code ec, [[maybe_unused]] const char* fileName, [[maybe_unused]] const char* functionName, [[maybe_unused]] uint32_t line, [[maybe_unused]] uint32_t column, [[maybe_unused]] IController* ioController)
