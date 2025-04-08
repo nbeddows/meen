@@ -65,7 +65,7 @@ namespace meen
 
 #else
 		std::future<void> fut_;
-#endif
+#endif // ENABLE_MEEN_RP2040
 		std::map<uint16_t, uint16_t> romMetadata_;
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
@@ -78,7 +78,6 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 		std::error_code HandleError(std::error_code err, std::source_location&& sl);
 		std::error_code HandleError(errc ec, std::source_location&& sl);
-		//std::error_code HandleUnexpected(std::unexpected<std::error_code> unexpected, std::source_location&& sl);
 		friend void RunMachine(Machine* machine);
 	public:
 		Machine(Cpu cpu);
