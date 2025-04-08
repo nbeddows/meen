@@ -406,8 +406,8 @@ namespace meen
 							resource.remove_prefix(2);
 						}
 
-						int64_t value = 0;
-						auto [ptr, ec] = std::from_chars (resource.data(), resource.data() + resource.size(), value, 16);
+						uintptr_t value = 0;
+						auto [ptr, ec] = std::from_chars (resource.data(), resource.data() + resource.size(), value, 10);
 
 						if (ec != std::errc() || ptr != resource.data() + resource.size())
 						{
@@ -1130,7 +1130,7 @@ namespace meen
 
 			multicore_reset_core1();
 			multicore_launch_core1(runMachineAsync);
-			multicore_fifo_push_blocking(std::bit_cast<uint32_t>(this));
+			multicore_fifo_push_blocking(std::bit_cast<uintptr_t>(this));
 
 			// Run an idle loop if an onIdle handler has been registered.
 			idleLoop();
