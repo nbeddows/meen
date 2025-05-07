@@ -51,6 +51,8 @@
   memory["rom"] section of the machine load state format.
 * Added Machine interface method `OnIdle`.
 * Added Machine interface method `OnError`.
+* The cpu will be reset when no cpu configutation has been
+  specified by the `IMachinw::OnLoad` handler.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
