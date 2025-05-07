@@ -355,8 +355,8 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 		status_ = registers.value<uint8_t>("s", Value(status_)) | 0x02;
 	}
 
-	programCounter_ = pc_ = json.value<uint16_t>("pc", Value(programCounter_));
-	sp_ = json.value<uint16_t>("sp", Value(sp_));
+	programCounter_ = pc_ = json.value<uint16_t>("pc", programCounter_);
+	sp_ = json.value<uint16_t>("sp", sp_);
 #else
 	JsonDocument json;
 	auto e = deserializeJson(json, str);
@@ -413,8 +413,8 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 		status_ = (registers["s"] ? registers["s"].as<uint8_t>() : Value(status_)) | 0x02;
 	}
 
-	pc_ = json["pc"] ? json["pc"].as<uint16_t>() : Value(pc_);
-	sp_ = json["sp"] ? json["sp"].as<uint16_t>() : Value(sp_);
+	pc_ = json["pc"] ? json["pc"].as<uint16_t>() : pc_;
+	sp_ = json["sp"] ? json["sp"].as<uint16_t>() : sp_;
 #endif
 	return make_error_code(errc::no_error);
 }
