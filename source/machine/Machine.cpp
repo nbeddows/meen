@@ -414,7 +414,7 @@ namespace meen
 							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
-						auto romBytes = reinterpret_cast<uint8_t*>(value);
+						auto romBytes = reinterpret_cast<const uint8_t*>(value);
 
 						// only support a max of 16 bit addressing
 						if (offset + size > 0xFFFF)
@@ -751,6 +751,10 @@ namespace meen
 					{
 						return err;
 					}
+				}
+				else
+				{
+					m->cpu_->Reset();
 				}
 			}
 
