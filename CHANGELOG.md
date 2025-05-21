@@ -49,10 +49,10 @@
   `base64://` uri scheme support.
 * Added support for `scheme` and `directory` parameters to the
   memory["rom"] section of the machine load state format.
-* Added Machine interface method `OnIdle`.
-* Added Machine interface method `OnError`.
+* Added the following `IMachine` API methods: `OnError`, `OnIdle`,
+  `OnInit`.
 * The cpu will be reset when no cpu configutation has been
-  specified by the `IMachinw::OnLoad` handler.
+  specified by the `IMachine::OnLoad` handler.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
