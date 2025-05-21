@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 #include <array>
+#include <cinttypes>
 #include <memory>
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
@@ -158,7 +159,7 @@ namespace meen::tests
 
         machine->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
-            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":50004,"size":%d}]}}})",
+            return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":5},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":50004,\"size\":%d}]}}}",
             saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
         });
 
@@ -257,7 +258,7 @@ namespace meen::tests
 #ifdef ENABLE_MEEN_RP2040
                     if (&tst8080End - &tst8080Start >= 1471)
                     {
-                        err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"mem://%p","offset":256,"size":1471}]}}})",
+                        err = LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":256,\"size\":1471}]}}}",
                                            saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
                     }
                     else
@@ -265,7 +266,7 @@ namespace meen::tests
                         err = errc::incompatible_rom;
                     }
 #else
-                    err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})",
+                    err = LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"file://%s/TST8080.COM\",\"offset\":256,\"size\":1471}]}}}",
                                    saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), progDir);
 #endif // ENABLE_MEEN_RP2040
                     break;
@@ -406,7 +407,7 @@ namespace meen::tests
 
         machine->OnLoad([name, progSize](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
-            return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"mem://%p","offset":0,"size":%d},{"bytes":"%s","offset":256,"size":%d},{"bytes":"mem://%p","offset":5,"size":%d}]}}})",
+            return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"%s\",\"offset\":256,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d}]}}}",
                                 saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
         });
 
@@ -530,7 +531,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%p", &tst8080Start);
+        snprintf(src, 128, "mem://%" PRIuPTR, &tst8080Start);
 #else
         snprintf(src, 128, "file://%s/TST8080.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -550,7 +551,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%p", &pre8080Start);
+        snprintf(src, 128, "mem://%" PRIuPTR, &pre8080Start);
 #else
         snprintf(src, 128, "file://%s/8080PRE.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -570,7 +571,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%p", &cpuTestStart);
+        snprintf(src, 128, "mem://%" PRIuPTR, &cpuTestStart);
 #else
         snprintf(src, 128, "file://%s/CPUTEST.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
@@ -590,7 +591,7 @@ namespace meen::tests
     {
         char src[128]{};
 #ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%p", &exm8080Start);
+        snprintf(src, 128, "mem://%" PRIuPTR, &exm8080Start);
 #else
         snprintf(src, 128, "file://%s/8080EXM.COM", programsDir.c_str());
 #endif // ENABLE_MEEN_RP2040
