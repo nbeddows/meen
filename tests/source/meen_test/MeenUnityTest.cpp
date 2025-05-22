@@ -606,6 +606,28 @@ namespace meen::tests
         "ERROR",
         std::string::npos);
     }
+
+    static void test_OnInit()
+    {
+        int initCount = 0;
+            
+        auto err = machine->OnInit([&initCount]([[maybe_unused]] IController* ioController)
+        {
+            initCount++;
+            return meen::errc::no_error;
+        });
+        TEST_ASSERT_FALSE(err);
+    
+        // Run the test more than once (in this case 5 times)
+        for(int i = 0; i < 5; i++)
+        {
+            test_8080Pre();
+        }
+        TEST_ASSERT_EQUAL(1, initCount);
+    
+        err = machine->OnInit(nullptr);
+        TEST_ASSERT_FALSE(err);
+    }
 } // namespace meen::tests
 
 /*
@@ -643,6 +665,7 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_NegativeISRFrequency);
         RUN_TEST(meen::tests::test_OnLoad);
         RUN_TEST(meen::tests::test_OnLoadAsync);
+        RUN_TEST(meen::tests::test_OnInit);
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
 // These may take a little while to run on embedded platforms, disabled by default
