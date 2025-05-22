@@ -227,6 +227,24 @@ class MachineTest(unittest.TestCase):
         for i in range(10):
             self.Load(True)
 
+    def test_OnInit(self):
+        self.initCount = 0
+
+        def OnInit(ioController):
+            self.initCount += 1
+            return ErrorCode.NoError
+
+        err = self.machine.OnInit(OnInit)
+        self.assertEqual(err, ErrorCode.NoError)
+    
+        # Run the test more than once (in this case 2 times)
+        for i in range(2):
+            self.Load(False)
+
+        self.assertEqual(1, self.initCount)    
+        err = self.machine.OnInit(None)
+        self.assertEqual(err, ErrorCode.NoError)
+
 class i8080Test(unittest.TestCase):
     def setUp(self):
         self.programsDir = MachineTestDeps.programsDir

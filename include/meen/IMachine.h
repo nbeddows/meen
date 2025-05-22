@@ -57,6 +57,14 @@ namespace meen
 			std::cout << std::format("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
 		});
 
+		// Register a method whose code will be executed exactly once after the initial call to `IMachine::Run`.
+		// Note that this can be called from a different thread if the runAsync configuration option
+		// has been specifed.
+		machine->OnInit([](IController* ioController)
+		{
+			// perform once off initialisation tasks here.
+		});
+
 		// The return code of the OnError method must be checked as it may fail to register, therefore it won't be picked
 		// up in your OnError handler.
 		if (err)
@@ -257,6 +265,30 @@ namespace meen
 									errc::busy: meen is running.
 		*/
 		virtual std::error_code SetOptions(const char* options) = 0;
+
+		/** One time initialisation handler
+		
+			Registers a method that will be called exactly once, right before the beginning of the machine
+			execution loop. The handler is guaranteed to be called no earlier than when the IMachine::Run
+			method is called successfully for the first time (note: this may be after the IMachine::Run method has returned).
+
+			@param		onInit		The method to call exactly once right before the beginning of the machine
+									execution loop. The method accepts one parameter: ioController - a pointer to the io
+									controller that was attached via the IMachine::AttachIoController method and returns
+									a meen:errc value.
+
+			@remark					If your initialisation handler returns a meen::errc value other than no_error it is not possible
+									for your initialisation handler to be invoked again with this machine instance.
+
+			@remark					When the runAsync configuration option is set to true, the initialisation handler will be called
+									from the thread that launched the machine execution loop, otherwise, it will be called from the
+									main thread.
+
+			@return					One of the meen std error codes, see meen/Error.h for further details.
+
+			@since					version 2.0.0
+		*/
+		virtual std::error_code OnInit(std::function<errc(IController* ioController)>&& onInit) = 0;
 
 		/** Machine save state completion handler
 		

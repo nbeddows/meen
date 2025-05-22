@@ -112,6 +112,9 @@ namespace meen::Tests
 		err = machine_->OnIdle(nullptr);
 		EXPECT_FALSE(err);
 
+		err = machine_->OnInit(nullptr);
+		EXPECT_FALSE(err);
+
 		err = machine_->OnLoad(nullptr);
 		EXPECT_FALSE(err);
 
@@ -536,6 +539,28 @@ namespace meen::Tests
 		{
 			Load(true);
 		}
+	}
+
+	TEST_F(MachineTest, OnInit)
+	{
+		int initCount = 0;
+		
+		auto err = machine_->OnInit([&initCount]([[maybe_unused]] IController* ioController)
+		{
+			initCount++;
+			return meen::errc::no_error;
+		});
+		EXPECT_FALSE(err);
+
+		// Run the test more than once (in this case 5 times)
+		for(int i = 0; i < 5; i++)
+		{
+			RunTestSuite("8080PRE.COM", R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})", "8080 Preliminary tests complete", 0);
+		}
+		EXPECT_EQ(1, initCount);
+
+		err = machine_->OnInit(nullptr);
+		EXPECT_FALSE(err);
 	}
 
 	TEST_F(MachineTest, Tst8080)

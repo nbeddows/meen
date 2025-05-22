@@ -109,6 +109,20 @@ PYBIND11_MODULE(meenPy, meen)
                 return static_cast<meen::errc>(machine.OnSave(nullptr).value());
             }
         })
+        .def("OnInit", [](meen::IMachine& machine, std::function<meen::errc(meen::IController* ioController)>&& onInit)
+        {
+            if (onInit)
+            {
+                return static_cast<meen::errc>(machine.OnInit([oi = std::move(onInit)](meen::IController* ioController)
+                {
+                    return oi(ioController);
+                }).value());
+            }
+            else
+            {
+                return static_cast<meen::errc>(machine.OnInit(nullptr).value());
+            }
+        })
         .def("OnIdle", [](meen::IMachine& machine, std::function<bool(meen::IController* ioController)>&& onIdle)
         {
             if (onIdle)
