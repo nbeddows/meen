@@ -72,10 +72,16 @@ namespace meen
 		bool running_{};
 		std::function<void(std::error_code ec, const char* fileName, const char* functionName, uint32_t line, uint32_t column, IController* ioController)> onError_;
 		std::function<bool(IController* ioController)> onIdle_;
+		std::function<errc(IController* ioController)> onInit_;
 		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_;
 #ifdef ENABLE_MEEN_SAVE
 		std::function<errc(const char* json, IController* ioController)> onSave_;
 #endif // ENABLE_MEEN_SAVE
+		/** One time initialisation handler call flag
+		
+			This is used for std::call_once to invoke the intialisation handler exactly once.
+		*/
+		std::once_flag initOnceFlag_;
 		std::error_code HandleError(std::error_code err, std::source_location&& sl);
 		std::error_code HandleError(errc ec, std::source_location&& sl);
 		friend void RunMachine(Machine* machine);
@@ -136,6 +142,12 @@ namespace meen
 			@see IMachine::OnIdle
 		*/
 		std::error_code OnIdle(std::function<bool(IController* ioController)>&& onIdle) final;
+
+		/** OnInit
+
+			@see IMachine::OnInit
+		*/
+		std::error_code OnInit(std::function<errc(IController* ioController)>&& onInit) final;
 
 		/** OnError
 

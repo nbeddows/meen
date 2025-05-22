@@ -400,12 +400,6 @@ namespace meen
 							return m->HandleError(errc::json_config, std::source_location::current());
 						}
 
-						if (resource.starts_with("0x") || resource.starts_with("0X"))
-						{
-							// std::from_chars does not support these prefixes
-							resource.remove_prefix(2);
-						}
-
 						uintptr_t value = 0;
 						auto [ptr, ec] = std::from_chars (resource.data(), resource.data() + resource.size(), value, 10);
 
@@ -1014,28 +1008,41 @@ namespace meen
 			return quit;
 		};
 
-		m->cpu_->Reset();
-		m->clock_->Reset();
+		auto err = errc::no_error;
 
-		if (m->opt_.ISRFreq() > 0)
+		if (m->onInit_ != nullptr)
 		{
-			ticksPerIsr = m->clock_->GetSpeed() / m->opt_.ISRFreq();
+			std::call_once(m->initOnceFlag_, [&err, m]
+			{
+				err = m->onInit_(m->ioController_.get());
+			});
 		}
 
-		auto quit = serviceInterrupts();
-
-		while (quit == false)
+		if (err == errc::no_error)
 		{
-			//Execute the next instruction
-			ticks = m->cpu_->Execute();
-			currTime = m->clock_->Tick(ticks);
-			totalTicks += ticks;
+			m->cpu_->Reset();
+			m->clock_->Reset();
 
-			// Check if it is time to service interrupts
-			if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+			if (m->opt_.ISRFreq() > 0)
 			{
-				quit = serviceInterrupts();
-				lastTicks = totalTicks;
+				ticksPerIsr = m->clock_->GetSpeed() / m->opt_.ISRFreq();
+			}
+
+			auto quit = serviceInterrupts();
+
+			while (quit == false)
+			{
+				//Execute the next instruction
+				ticks = m->cpu_->Execute();
+				currTime = m->clock_->Tick(ticks);
+				totalTicks += ticks;
+
+				// Check if it is time to service interrupts
+				if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+				{
+					quit = serviceInterrupts();
+					lastTicks = totalTicks;
+				}
 			}
 		}
 
@@ -1286,6 +1293,17 @@ namespace meen
 		}
 
 		onIdle_ = std::move(onIdle);
+		return std::error_code{};
+	}
+
+	std::error_code Machine::OnInit(std::function<errc(IController* ioController)>&& onInit)
+	{
+		if (running_ == true)
+		{
+			return HandleError(errc::busy, std::source_location::current());
+		}
+
+		onInit_ = std::move(onInit);
 		return std::error_code{};
 	}
 
