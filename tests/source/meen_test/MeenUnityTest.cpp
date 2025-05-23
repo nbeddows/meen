@@ -88,7 +88,7 @@ void tearDown()
     err = machine->OnIdle(nullptr);
     TEST_ASSERT_FALSE(err);
 
-    err = machine->OnLoad(nullptr);
+    err = machine->OnLoad(nullptr, nullptr);
     TEST_ASSERT_FALSE(err);
 
     // Set default options
@@ -161,7 +161,7 @@ namespace meen::tests
         {
             return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":5},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":50004,\"size\":%d}]}}}",
             saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
-        });
+        }, nullptr);
 
         if (runAsync == true)
         {
@@ -282,7 +282,7 @@ namespace meen::tests
 
             loadIndex++;
             return err;
-        });
+        }, nullptr);
 
         if (runAsync == true)
         {
@@ -409,7 +409,7 @@ namespace meen::tests
         {
             return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"%s\",\"offset\":256,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d}]}}}",
                                 saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
-        });
+        }, nullptr);
 
         machine->Run();
         TEST_ASSERT_TRUE(saveTriggered || err.value() == errc::not_implemented);
@@ -465,7 +465,7 @@ namespace meen::tests
             machine->AttachIoController(nullptr);
             machine->DetachIoController();
             machine->OnIdle(nullptr);
-            machine->OnLoad(nullptr);
+            machine->OnLoad(nullptr, nullptr);
             machine->OnSave(nullptr);
             machine->OnError(nullptr);
             machine->Run();

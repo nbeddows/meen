@@ -97,7 +97,7 @@ class MachineTest(unittest.TestCase):
             self.machine.AttachMemoryController(self.memoryController)
             self.machine.AttachIoController(self.testIoController)
             self.machine.OnIdle(None)
-            self.machine.OnLoad(None)
+            self.machine.OnLoad(None, None)
             self.machine.OnSave(None)
             self.machine.OnError(None)
             self.machine.Run()
@@ -119,7 +119,7 @@ class MachineTest(unittest.TestCase):
         err = self.machine.OnError(CheckError)
         # Need to manually check this one as it can fail before the method is registered
         self.assertEqual(err, ErrorCode.NoError)
-        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}')
+        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.nopStart + r'","offset":5},{"bytes":"' + self.nopEnd + r'","offset":50004}]}}}', None)
 
         if runAsync == True:
             self.machine.SetOptions(r'json://{"runAsync":true}')
@@ -191,7 +191,7 @@ class MachineTest(unittest.TestCase):
             self.loadIndex += 1
             return jsonToLoad
 
-        self.machine.OnLoad(loadJson)
+        self.machine.OnLoad(loadJson, None)
 
         if runAsync == True:
             self.machine.SetOptions(r'json://{"runAsync":true,"loadAsync":false,"saveAsync":true}')
@@ -293,7 +293,7 @@ class i8080Test(unittest.TestCase):
     def RunTestSuite(self, suiteName, expectedState, expectedMsg):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
-        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}')
+        self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}', None)
         err = self.machine.OnSave(lambda actualState, ioc: self.CheckMachineState(expectedState, actualState))
         runTime = self.machine.Run()
         self.assertGreater(runTime, 0)

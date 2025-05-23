@@ -115,7 +115,7 @@ namespace meen::Tests
 		err = machine_->OnInit(nullptr);
 		EXPECT_FALSE(err);
 
-		err = machine_->OnLoad(nullptr);
+		err = machine_->OnLoad(nullptr, nullptr);
 		EXPECT_FALSE(err);
 
 		// Set default options
@@ -197,7 +197,7 @@ namespace meen::Tests
 			{
 				return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256},{"bytes":"%s","offset":%d}]}}})", saveAndExit, name, extra, offset);
 			}
-		});
+		}, nullptr);
 
 		machine_->Run();
 		// When the OnSave method is implemented it MUST be triggered
@@ -305,7 +305,7 @@ namespace meen::Tests
 				machine_->AttachIoController(nullptr);
 				machine_->DetachIoController();
 				machine_->OnIdle(nullptr);
-				machine_->OnLoad(nullptr);
+				machine_->OnLoad(nullptr, nullptr);
 				machine_->OnSave(nullptr);
 				machine_->OnError(nullptr);
 				machine_->Run();
@@ -338,7 +338,7 @@ namespace meen::Tests
 		machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
 			return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
-		});
+		}, nullptr);
 
 		if (runAsync == true)
 		{
@@ -442,7 +442,7 @@ namespace meen::Tests
 
 				loadIndex++;
 				return err;
-			});
+			}, nullptr);
 
 			if (runAsync == true)
 			{
