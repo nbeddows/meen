@@ -750,6 +750,11 @@ namespace meen
 				{
 					m->cpu_->Reset();
 				}
+
+				if (m->onLoadComplete_ != nullptr)
+				{
+					return make_error_code(m->onLoadComplete_(m->ioController_.get()));
+				}
 			}
 
 			return std::error_code{};
@@ -1274,7 +1279,7 @@ namespace meen
 #endif // ENABLE_MEEN_SAVE
 	}
 
-	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad)
+	std::error_code Machine::OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad, std::function<errc(IController* ioController)>&& onLoadComplete)
 	{
 		if (running_ == true)
 		{
@@ -1282,6 +1287,7 @@ namespace meen
 		}
 
 		onLoad_ = std::move(onLoad);
+		onLoadComplete_ = std::move(onLoadComplete);
 		return std::error_code{};
 	}
 

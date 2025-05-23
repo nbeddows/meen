@@ -74,6 +74,7 @@ namespace meen
 		std::function<bool(IController* ioController)> onIdle_;
 		std::function<errc(IController* ioController)> onInit_;
 		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_;
+		std::function<errc(IController* ioController)> onLoadComplete_;
 #ifdef ENABLE_MEEN_SAVE
 		std::function<errc(const char* json, IController* ioController)> onSave_;
 #endif // ENABLE_MEEN_SAVE
@@ -129,7 +130,7 @@ namespace meen
 
 			@see IMachine::OnLoad
 		*/
-		std::error_code OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad) final;
+		std::error_code OnLoad(std::function<errc(char* json, int* jsonLen, IController* ioController)>&& onLoad, std::function<errc(IController* ioController)>&& onLoadComplete) final;
 
 		/** OnSave
 

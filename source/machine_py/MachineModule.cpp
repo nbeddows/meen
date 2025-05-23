@@ -72,7 +72,7 @@ PYBIND11_MODULE(meenPy, meen)
     meen.def("Make8080Machine", &meen::Make8080Machine);
     
     py::class_<meen::IMachine>(meen, "IMachine")
-        .def("OnLoad", [](meen::IMachine& machine, std::function<std::string(meen::IController* ioController)>&& onLoad)
+        .def("OnLoad", [](meen::IMachine& machine, std::function<std::string(meen::IController* ioController)>&& onLoad, std::function<meen::errc(meen::IController* ioController)>&& onLoadComplete)
         {
             if (onLoad)
             {
@@ -88,11 +88,14 @@ PYBIND11_MODULE(meenPy, meen)
                     *jsonLen = loadState.length();
                     strncpy(json, loadState.c_str(), *jsonLen);
                     return meen::errc::no_error;
+                }, [olc = std::move(onLoadComplete)](meen::IController* ioController)
+                {
+                    return olc ? olc(ioController) : meen::errc::no_error;
                 }).value());
             }
             else
             {
-                return static_cast<meen::errc>(machine.OnLoad(nullptr).value());
+                return static_cast<meen::errc>(machine.OnLoad(nullptr, nullptr).value());
             }
         })
         .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json, meen::IController* ioController)>&& onSave)
