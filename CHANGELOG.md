@@ -56,6 +56,7 @@
   `OnInit`.
 * The cpu will be reset when no cpu configutation has been
   specified by the `IMachine::OnLoad` handler.
+* The distribution documentation has changed from html to pdf.
 
 1.6.2 [24/07/24]
 * Deprecated config options `ramOffset`, `ramSize`,
