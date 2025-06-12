@@ -52,6 +52,6 @@ namespace std
 	*/
 	template<>
 	struct is_error_code_enum<meen::errc> : public std::true_type {};
-} // namespace std
+} // namespace meen
 
 #endif // MEEN_ERRORCODE_H
