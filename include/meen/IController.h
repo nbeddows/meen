@@ -50,28 +50,19 @@ namespace meen
 	/** Device interface
 
 		An interface to a device that can interact with the cpu.
-
-		@todo	Can be made into a template which can accept different
-				address and data sizes, currently only support 8 bit
-				data read and write from 16 bit addresses.
 	*/
 	struct IController
 	{
-		/**
+		/** UUID
+
 			A unique universal identifier for this controller.
 
-			@return				The Uuid as a std::array
-
-			@remark				To preserve 1.x api compatibility this method has been made
-								non-pure and returns an empty uuid by default. When a machine
-								load/save is requested the controller must implement this
-								method and a non-empty uuid returned otherwise no load/save
-								operation will be performed and an error will be logged.
+			@return				The Uuid as a `std::array`.
 		*/
 		virtual std::array<uint8_t, 16> Uuid() const = 0;
 
 		/** Read from a device
-		
+
 			Reads 8 bits from a device at the specifed 16 bit address.
 
 			The implementation of the function should be lightweight and
@@ -87,8 +78,8 @@ namespace meen
 		*/
 		virtual uint8_t Read(uint16_t address, IController* controller) = 0;
 
-		/** Write to device
-		
+		/** Write to a device
+
 			Write 8 bits of data to a device at the specified 16 bit address.
 
 			The implementation of the function should be lightweight and
@@ -103,8 +94,8 @@ namespace meen
 		*/
 		virtual void Write(uint16_t address, uint8_t value, IController* controller) = 0;
 
-		/** Interrupt handler
-		
+		/** Interrupt generator
+
 			Query the device for any pending interrupts.
 
 			@param	currTime	The time in nanoseconds of the machine clock.
@@ -125,45 +116,45 @@ namespace meen
 		virtual ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) = 0;
 
 		/** Destroys the controller
-		
+
 			Release all resources used by this controller instance.
 		*/
 		virtual ~IController() = default;
 	};
 
 	/** Custom contoller deleter
-	
+
 		All custom controllers must have this deleter attached for machine compatibility.
 
-		Since all machine controller attachments are via unique_ptr, this deleter allows
+		Since all machine controller attachments are via `std::unique_ptr`, this deleter allows
 		for the skipping of the deleteing of the attached pointer. This can be useful if
 		you are handling the memory via some other mechanism.
 
-		This should not have to be directly referenced by the user, use the IControllerPtr
+		This should not have to be directly referenced by the user, use the meen::IControllerPtr
 		using directive instead.
 
-		auto p1 = IControllerPtr(myController) - p1 takes ownership of myController and deletes it when its reference count hits 0.
-		auto p2 = IControllerPtr(myController, ControllerDeleter(false)) - p2 takes ownership of myController and DOES NOT delete it when its reference count hits 0.
+		`auto p1 = IControllerPtr(myController)`: p1 takes ownership of myController and deletes it when its reference count hits 0.<br>
+		`auto p2 = IControllerPtr(myController, ControllerDeleter(false))`: p2 takes ownership of myController and **DOES NOT** delete it when its reference count hits 0.
 	*/
 	struct ControllerDeleter
 	{
 	private:
 		/**	Delete this controller
-		
+
 			True if this controller should be deleted, false otherwise.
 		*/
 		bool delete_{};
 	public:
 		/** Initialisation constructor
-		
+
 			@param	del		True if this controller should be deleted (default behaviour), false otherwise.
 
 			@remark			The non default behaviour is used internally and should not be altered.
 		*/
 		DLL_EXP_IMP explicit ControllerDeleter(bool del = true);
 
-		/** Operator overload
-		
+		/** Operator function overload
+
 			Invoked when this deleter is attached to a smart pointer and it's
 			reference count hits 0.
 		*/
