@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -25,28 +25,34 @@ SOFTWARE.
 
 namespace meen
 {
-	/** Interrupt service routine
+	/** Interrupt service routines
 
 		A pre defined set of interrupts that can be returned from IController::ServiceInterrupts.
 
-		@see	IController.
+		@remark		Interrupts `Zero` to `Seven` interrupt the cpu and jump to the relevant
+					address dictated by that interrupt to execute specific instructions
+					before restoring the cpu's pre interrupt state.
+		@remark		Interrupts `Save` to `Quit` interrupt the machine to perform the specific
+					task as dictated by the interrupt.
+
+		@see		IController
 	*/
 	enum class ISR
 	{
 		// Cpu level interrupts
-		Zero,					/**< Interrupt 0. */
-		One,					/**< Interrupt 1. */
-		Two,					/**< Interrupt 2. */
-		Three,					/**< Interrupt 3. */
-		Four,					/**< Interrupt 4. */
-		Five,					/**< Interrupt 5. */
-		Six,					/**< Interrupt 6. */
-		Seven,					/**< Interrupt 7. */
+		Zero,					/**< Interrupt 0 */
+		One,					/**< Interrupt 1 */
+		Two,					/**< Interrupt 2 */
+		Three,					/**< Interrupt 3 */
+		Four,					/**< Interrupt 4 */
+		Five,					/**< Interrupt 5 */
+		Six,					/**< Interrupt 6 */
+		Seven,					/**< Interrupt 7 */
 		// Machine level interrupts
-		Save = 0xFFCF,			/**< Save the machine state. */
-		Load,					/**< Load the machine state. */
-		Quit,					/**< Exit the IMachine::Run control loop. */
-		NoInterrupt,			/**< No interrupt has occurred. */
+		Save = 0xFFCF,			/**< Save the machine state */
+		Load,					/**< Load the machine state */
+		Quit,					/**< Exit the IMachine::Run control loop */
+		NoInterrupt,			/**< No interrupt has occurred */
 	};
 } // namespace meen
 
