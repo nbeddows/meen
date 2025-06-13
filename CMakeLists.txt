@@ -545,9 +545,9 @@ target_sources(${meen} INTERFACE FILE_SET HEADERS BASE_DIRS ${include_dir} FILES
 
 install(CODE "execute_process(COMMAND doxygen ${CMAKE_SOURCE_DIR}/docs/Doxyfile)")
 if(DEFINED MSVC)
-  install(CODE "execute_process(COMMAND cmd /c make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/docs/latex)")
+  install(CODE "execute_process(COMMAND cmd /c make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 else()
-  install(CODE "execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/docs/latex)")
+  install(CODE "execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 endif()
 install(CODE "execute_process(COMMAND cppcheck -ibuild -i_CPack_Packages -itests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 ${CMAKE_SOURCE_DIR})")
 install(TARGETS ${meen} FILE_SET HEADERS)
@@ -555,7 +555,7 @@ install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG.md DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.md RENAME LICENSE DESTINATION .)
 # Latex to PDF generation under Windows is currently not working, remove the if protection once fixed
 if(NOT DEFINED MSVC)
-  install(FILES ${CMAKE_BINARY_DIR}/docs/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
+  install(FILES ${CMAKE_BINARY_DIR}/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
 endif()
 
 if(NOT DEFINED WIN32)
