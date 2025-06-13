@@ -119,7 +119,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13`
 - Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13-unity`<br>
 
-**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).
+**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
 **NOTE**: when using multi configuration generators (MSVC for example) we specify an output folder (--output-folder) so the directory depth remains constant with single configuation generators.
 
 The following additional install options are supported:
