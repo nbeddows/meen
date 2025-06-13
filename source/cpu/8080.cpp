@@ -356,7 +356,7 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 	}
 
 	programCounter_ = pc_ = json.value<uint16_t>("pc", programCounter_);
-	sp_ = json.value<uint16_t>("sp", sp_);
+	stackPointer_ = sp_ = json.value<uint16_t>("sp", stackPointer_);
 #else
 	JsonDocument json;
 	auto e = deserializeJson(json, str);
@@ -753,7 +753,7 @@ void Intel8080::Reset()
 	h_.reset();
 	l_.reset();
 	pc_ = programCounter_;
-	sp_ = 0;
+	sp_ = stackPointer_;
 	status_ = 0b00000010;
 	iff_ = false;
 	hlt_ = false;

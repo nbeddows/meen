@@ -96,6 +96,9 @@ namespace meen
 		*/
 		//cppcheck-suppress unusedStructMember
 		uint16_t sp_{};
+		// The canonical stack pointer, each reset will set sp_ to this value
+		//cppcheck-suppress unusedStructMember
+		uint16_t stackPointer_{};
 
 		/**
 			Five condition (or status) bits are provided by the
