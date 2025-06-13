@@ -113,7 +113,7 @@ namespace meen
 
 			@see				ISR
 		*/
-		virtual ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) = 0;
+		virtual ISR GenerateInterrupt(uint64_t currTime, uint64_t cycles, IController* controller) = 0;
 
 		/** Destroys the controller
 

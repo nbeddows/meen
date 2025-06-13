@@ -379,7 +379,7 @@ machine->AttachMemoryController(IControllerPtr(new CustomMemoryController()));
 // Run the machine sychronously with the registered on idle handler.
 auto runTime = machine->Run();
 
-// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+// Blocks here until the custom IO controller GenerateInterrupt override generates an ISR::Quit
 // interrupt or the registered IMachine::OnIdle handler returns true.
 
 // Run the machine asychronously - this can be done by setting the following json config option
@@ -387,7 +387,7 @@ machine->SetOptions(R"({"runAsync":true})");
 // The engine will run on a separate thread to the registered on idle handler
 runTime = machine->Run();
 
-// Blocks here until the custom IO controller ServiceInterrupts override generates an ISR::Quit
+// Blocks here until the custom IO controller GenerateInterrupt override generates an ISR::Quit
 // interrupt or the registered IMachine::OnIdle handler returns true.
 
 // We are done

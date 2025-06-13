@@ -19,8 +19,8 @@ class TestIoController(BaseIoController):
         else:
             super().Write(deviceNumber, value, controller)
 
-    def ServiceInterrupts(self, currTime, cycles, controller):
-        isr = super().ServiceInterrupts(currTime, cycles, controller)
+    def GenerateInterrupt(self, currTime, cycles, controller):
+        isr = super().GenerateInterrupt(currTime, cycles, controller)
 
         if isr == ISR.NoInterrupt:
             t = currTime - self._lastTime

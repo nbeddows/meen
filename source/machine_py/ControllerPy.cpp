@@ -28,12 +28,12 @@ namespace meen
         );
     };
 
-    meen::ISR ControllerPy::ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller)
+    meen::ISR ControllerPy::GenerateInterrupt(uint64_t currTime, uint64_t cycles, IController* controller)
     {
         PYBIND11_OVERRIDE_PURE(
             meen::ISR,       /* Return type */
             IController,        /* Parent class */
-            ServiceInterrupts,  /* Name of function in C++ (must match Python name) */
+            GenerateInterrupt,  /* Name of function in C++ (must match Python name) */
             currTime,           /* Argument(s) */
             cycles,
             controller

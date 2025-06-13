@@ -27,7 +27,7 @@ namespace meen
 {
 	/** Interrupt service routines
 
-		A pre defined set of interrupts that can be returned from IController::ServiceInterrupts.
+		A pre defined set of interrupts that can be returned from IController::GenerateInterrupt.
 
 		@remark		Interrupts `Zero` to `Seven` interrupt the cpu and jump to the relevant
 					address dictated by that interrupt to execute specific instructions

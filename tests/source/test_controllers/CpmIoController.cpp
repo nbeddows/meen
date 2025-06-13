@@ -94,8 +94,8 @@ namespace meen
 	}
 
 	//No interrupts
-	ISR CpmIoController::ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller)
+	ISR CpmIoController::GenerateInterrupt(uint64_t currTime, uint64_t cycles, IController* controller)
 	{
-		return BaseIoController::ServiceInterrupts(currTime, cycles, controller);
+		return BaseIoController::GenerateInterrupt(currTime, cycles, controller);
 	}
 } // namespace meen

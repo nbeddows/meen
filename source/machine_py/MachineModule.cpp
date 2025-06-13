@@ -179,6 +179,6 @@ PYBIND11_MODULE(meenPy, meen)
         .def(py::init<>())
         .def("Read", &meen::IController::Read)
         .def("Write", &meen::IController::Write)
-        .def("ServiceInterrupts", &meen::IController::ServiceInterrupts)
+        .def("GenerateInterrupt", &meen::IController::GenerateInterrupt)
         .def("Uuid", &meen::IController::Uuid);
 }
