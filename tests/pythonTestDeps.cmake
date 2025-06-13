@@ -10,7 +10,7 @@ endif()
 
 # command to prepend dll search path to machine test script
 file(GENERATE OUTPUT "MachineTestDeps${build_type}.py" CONTENT
-"# Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>\n\n\
+"# Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>\n\n\
 # Permission is hereby granted, free of charge, to any person obtaining a copy\n\
 # of this software and associated documentation files (the \"Software\"), to deal\n\
 # in the Software without restriction, including without limitation the rights\n\
