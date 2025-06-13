@@ -36,19 +36,19 @@ PYBIND11_MODULE(TestControllersPy, TestControllers)
         .def("Clear", &meen::MemoryController::Clear)
         .def("Read", &meen::MemoryController::Read)
         .def("Write", &meen::MemoryController::Write)
-        .def("ServiceInterrupts", &meen::MemoryController::ServiceInterrupts);
+        .def("GenerateInterrupt", &meen::MemoryController::GenerateInterrupt);
 
     py::class_<meen::TestIoController, meen::IController>(TestControllers, "TestIoController")
         .def(py::init<>())
         .def("Read", &meen::TestIoController::Read)
         .def("Write", &meen::TestIoController::Write)
         .def("SaveStateOn", &meen::TestIoController::SaveStateOn)
-        .def("ServiceInterrupts", &meen::TestIoController::ServiceInterrupts);
+        .def("GenerateInterrupt", &meen::TestIoController::GenerateInterrupt);
 
     py::class_<meen::CpmIoController, meen::IController>(TestControllers, "CpmIoController")
         .def(py::init<>())
         .def("Read", &meen::CpmIoController::Read)
         .def("Write", &meen::CpmIoController::Write)
         .def("SaveStateOn", &meen::CpmIoController::SaveStateOn)
-        .def("ServiceInterrupts", &meen::CpmIoController::ServiceInterrupts);
+        .def("GenerateInterrupt", &meen::CpmIoController::GenerateInterrupt);
 }

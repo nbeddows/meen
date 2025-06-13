@@ -9,7 +9,7 @@ class BaseIoController(Controller):
         self._save = False
         self._powerOff = False
 
-    def ServiceInterrupts(self, currTime, cycles, controller):
+    def GenerateInterrupt(self, currTime, cycles, controller):
         isr = ISR.NoInterrupt
 
         # load takes precedence over save

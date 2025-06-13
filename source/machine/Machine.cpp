@@ -786,7 +786,7 @@ namespace meen
 		auto serviceInterrupts = [&]
 		{
 			bool quit = false;
-			auto isr = m->ioController_->ServiceInterrupts(currTime.count(), totalTicks, m->memoryController_.get());
+			auto isr = m->ioController_->GenerateInterrupt(currTime.count(), totalTicks, m->memoryController_.get());
 
 			switch (isr)
 			{

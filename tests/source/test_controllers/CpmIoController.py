@@ -57,8 +57,8 @@ class CpmIoController(BaseIoController):
             case _:
                 super().Write(deviceNumber, value, controller)
 
-    def ServiceInterrupts(self, currTime, cycles, memoryController):
-        return super().ServiceInterrupts(currTime, cycles, memoryController)
+    def GenerateInterrupt(self, currTime, cycles, memoryController):
+        return super().GenerateInterrupt(currTime, cycles, memoryController)
 
     def Uuid(self):
         return [0x32, 0x8C, 0xCF, 0x78, 0x76, 0x1B, 0x48, 0xA4, 0x98, 0x2C, 0x1A, 0xAA, 0x5F, 0x14, 0x31, 0x24]

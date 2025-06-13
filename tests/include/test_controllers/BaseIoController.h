@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,10 +39,10 @@ namespace meen
 		private:
 			/** Machine save signal
 			
-				A signal to indicate to the ServiceInterrupts routine that the machine
+				A signal to indicate to the GenerateInterrupt routine that the machine
 				should save its current state.
 
-				@remark		The signal is handled during the servicing of interrupts as it
+				@remark		The signal is handled during the generation of interrupts as it
 							is guaranteed that no instructions are currently executing
 							at that time.
 			*/
@@ -51,10 +51,10 @@ namespace meen
 
 			/** Machine load signal
 
-				A signal to indicate to the ServiceInterrupts routine that the machine
+				A signal to indicate to the GenerateInterrupt routine that the machine
 				should load a new machine state.
 
-				@remark		The signal is handled during the servicing of interrupts as it
+				@remark		The signal is handled during the generation of interrupts as it
 							is guaranteed that no instructions are currently executing
 							at that time.
 			*/
@@ -63,7 +63,7 @@ namespace meen
 
 			/** Save on cycle count
 			
-				The number of cycles processed as seen by the ServiceInterrupts methods before an
+				The number of cycles processed as seen by the GenerateInterrupt method before an
 				ISR::Save interrupt is generated.
 			*/
 			//cppcheck-suppress unusedStructMember
@@ -71,10 +71,10 @@ namespace meen
 		protected:
 			/** Power off signal
 
-				A signal to indicate to the ServiceInterrupts routine that
+				A signal to indicate to the GenerateInterrupt method that
 				it is time to shutdown.
 
-				@remark		The signal is handled during the servicing of interrupts as it
+				@remark		The signal is handled during the generation of interrupts as it
 							is guaranteed that no instructions are currently executing
 							at that time.
 			*/
@@ -108,15 +108,15 @@ namespace meen
 
 				@remark				The only way a machine can exit is when an ISR::Quit interrupt is generated.
 			*/
-			ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) override;
+			ISR GenerateInterrupt(uint64_t currTime, uint64_t cycles, IController* controller) override;
 		public:
 			/** Save state after N cycles
 
-				Generate an ISR::Save interrupt from ServiceInterrupts when the Nth cycle has elapsed.
+				Generate an ISR::Save interrupt from GenerateInterrupt when the Nth cycle has elapsed.
 
 				@param	cycleCount	The number of the cpu cycles to execute before the save interrupt is triggered.
 				
-				@remark				The cycle count must be one that is seen by the ServiceInterrupts method 
+				@remark				The cycle count must be one that is seen by the GenerateInterrupt method 
 									otherwise no interrupt will be generated.
 			*/
 			void SaveStateOn(int64_t cycleCount);

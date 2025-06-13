@@ -129,9 +129,9 @@ namespace meen
 								io controller. The return value will always
 								be zero.
 
-			@see				IContoller::ServiceInterrupts
+			@see				IContoller::GenerateInterrupt
 		*/
-		ISR ServiceInterrupts(uint64_t currTime, uint64_t cycles, IController* controller) final;
+		ISR GenerateInterrupt(uint64_t currTime, uint64_t cycles, IController* controller) final;
 	};
 } // namespace meen
 

@@ -52,8 +52,7 @@ namespace meen
 			
 			@param			ticks			The number of ticks to advance the clock.
 			
-			@return			nanoseconds		The current time of the machine which is
-											emulating the target cpu.
+			@return							The current time of the machine which is emulating the target cpu.
 		*/
 		virtual std::chrono::nanoseconds Tick(uint64_t ticks) = 0;
 

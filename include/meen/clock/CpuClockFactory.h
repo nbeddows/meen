@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2024 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +36,7 @@ namespace meen
 
 		@param	speed					The desired clock speed in ticks per second, for the i8080 cpu this will be 2000000 (2Mhz)
 
-		@return	unique_ptr				A unique_ptr to the CpuClock interface.
+		@return							A unique_ptr to the CpuClock interface.
 	*/
 	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed);
 } // namespace meen
