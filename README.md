@@ -325,34 +325,32 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // the current directory into memory at address 0x0000 and start executing the rom from address 256.
   // Note the use of uri schemes to determine the type of resource to load (an ommitted scheme defaults
   // to json://).
-  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
-  // auto jsonToLoad = "file://myProgramSave.json"sv;
-    
-  // When the length of the json to load is greater than *jsonLen, the config option maxLoadStateLen
-  // needs to be increased.
-  if (jsonToLoad.length() > *jsonLength)
-  {
-    return errc::invalid_argument;
-  }
+  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})";
+  // auto jsonToLoad = "file://myProgramSave.json";
 
-  std::copy_n(json, jsonToLoad.length(), jsonToLoad.begin());
-  // Write the final length of the loaded program
-  *jsonLen = jsonToLoad.length();
+  // Write the json to load to json and update the final length of the loaded program.
+  // When the length of the json to load is greater than *jsonLen, the json will be truncated and a json parse
+  // error will occur. In this case, the config option maxLoadStateLen needs to be increased.
+  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad)
   return errc::no_error;
-});
+// Not defining a completion handler, set it to nullptr.
+}, nullptr);
 
 // Register a handler that can save the current state of the machine.
 // Note that this can be called from a different thread if the runAsync/saveAsync options are specifed.
-machine->OnSave([](const char* json, IController* ioController)
+machine->OnSave([](char* uri, int* uriLength, IController* ioController)
 {
   // Typically, the on save logic would be handled by your custom io controller:
   // ioController->SaveRom(json), but is left here for simplicity.
 
-  // Write the save state to disk
-  std::ofstream ofs("myProgramSave.json");
-  ofs.write(json, strlen(json));  
+  // Write the location of the resource to save and update the final resource length.
+  // NOTE: the maximum size of the uriLength parameter is 255, anything longer than this will cause
+  // the uri to be truncated.
+  *uriLength = snprintf(uri, *uriLength, "file://myProgramSave.json");
   return errc::no_error;
-});
+// Since we are using the built in file:// protocol support, don't define a completion handler, any errors
+// will be diverted to the registered OnError handler.
+}, nullptr);
 
 // Register a method that will be called when there is time to do so.
 // It will always be called from the same thread from which IMachine::Run was invoked.
