@@ -336,7 +336,7 @@ namespace meen
 			| jsonLen          | An `int*` to write the length of the json state to                                           |
 			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
-			The `onLoadComplete` sugnture:
+			The `onLoadComplete` signature:
 
 			| Return Type      | Explanation                                    |
 			|:-----------------|:-----------------------------------------------|
@@ -466,6 +466,7 @@ namespace meen
 			|:-----------------|:------|:-----------------------------------------|
 			| bool             | True  | Quit the running machine instance        |
             | ^                | False | Call the registered on idle method again |
+
 
 			| Parameter        | Explanation                                                                                  |
 			|:-----------------|:---------------------------------------------------------------------------------------------|
