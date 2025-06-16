@@ -120,6 +120,10 @@ class MeenRecipe(ConanFile):
     def layout(self):
         cmake_layout(self)
 
+        if self.settings.os == "Windows":
+            self.folders.build = "output/build"
+            self.folders.generators = "output/build/generators"
+
     def generate(self):
         deps = CMakeDeps(self)
         deps.generate()
