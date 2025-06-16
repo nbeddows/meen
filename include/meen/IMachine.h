@@ -170,7 +170,7 @@ namespace meen
 
 			| URI                     | Explanation                                                                                                |
 	 		|:------------------------|:-----------------------------------------------------------------------------------------------------------|
-			| file:// 		  | load the configuration options specifed by the json in the file on local disk given by the remaining bytes |
+			| file://                 | load the configuration options specifed by the json in the file on local disk given by the remaining bytes |
 			| json:// (default)       | load the configuration options specified by the json in the remaining bytes                                |
 
 			@remark					When no protocol is specified, `json://` will be used.
@@ -180,22 +180,29 @@ namespace meen
 			| MEEN error code         | Explanation                                               |
 			|:------------------------|:----------------------------------------------------------|
 			| no_error                | All options were set successfully                         |
-         	        | json_config             | One the options values are illegal                        |
-         	        | json_parse              | The json pointed to by the options parameter is malformed |
+			| json_config             | One the options values are illegal                        |
+			| json_parse              | The json pointed to by the options parameter is malformed |
 			| busy                    | MEEN is currently running                                 |
 		*/
 		virtual std::error_code SetOptions(const char* options) = 0;
 
 		/** One time initialisation handler
 
-			Registers a method that will be called exactly once, right before the beginning of the machine
-			execution loop. The handler is guaranteed to be called no earlier than when the IMachine::Run
-			method is called successfully for the first time (note: this may be after the IMachine::Run method has returned).
+			Registers a method that will be called exactly once.
 
-			@param		onInit			The method to call exactly once right before the beginning of the machine
-								execution loop. The method returns a meen::errc and accepts one parameter:
-								- ioController: a pointer to the io controller that was attached via the
-								IMachine::AttachIoController method.
+			The `onInit` signature:
+
+			| Return Type      | Explanation                                    |
+			|:-----------------|------------------------------------------------|
+			| meen::errc       | The meen error code as defined in meen/Error.h |
+
+			| Parameter        | Explanation                                                                                  |
+			|:-----------------|----------------------------------------------------------------------------------------------|
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
+
+			@param		onInit		A method that will be called exactly once, right before the beginning of the machine execution
+									loop. The handler is guaranteed to be called no earlier than when the IMachine::Run method is
+									called successfully for the first time.
 
 			@remark					If your initialisation handler returns a meen::errc value other than `no_error` it is not possible
 								for your initialisation handler to be invoked again with this machine instance.
@@ -206,10 +213,10 @@ namespace meen
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                     |
-	 		|:------------------------|:------------------------------------------------|
+			| MEEN error code         | Explanation                                      |
+	 		|:------------------------|:-------------------------------------------------|
 			| no_error                | The on init	 handler was registered successfully |
-			| busy                    | MEEN is currently running                       |
+			| busy                    | MEEN is currently running                        |
 
 			@since					version 2.0.0
 		*/
@@ -217,14 +224,36 @@ namespace meen
 
 		/** Machine save state completion handler
 
-			Registers a method which will be called when the ISR::Save interrupt is triggered. The registered
-			method shall return a meen::errc and accept 2 arguments:
-			-  json: a `const char*` which is the machine save state in json format, the contents of which can be
-			read back in via the method registered with IMachine::OnLoad to restore the machine state.
-			- ioController: a pointer to the io controller that was attached via the IMachine::AttachIoController method.
+			Registers two methods that will be called when the ISR::Save interrupt is triggered:
+
+			The `onSaveBegin` signature:
+
+			| Return Type      | Explanation                                    |
+			|:-----------------|:-----------------------------------------------|
+			| meen::errc       | The meen error code as defined in meen/Error.h |
+
+			| Parameter        | Explanation                                                                                                               |
+			|:-----------------|:--------------------------------------------------------------------------------------------------------------------------|
+			| uri              | A `char*` buffer that the method will write the location where the state is to be saved preceeded by a supported protocol |
+			| uriLen           | An `int*` containing the size of the uri buffer. The method will write to actual uri length to `uriLen`                   |
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method                              |
+
+			NOTE: The only supported protocol is `file://`. When no protocol is specified in the uri, `file://` will be used.
+
+			The `onSave` signature:
+
+			| Return Type      | Explanation                                    |
+			|:-----------------|:-----------------------------------------------|
+			| meen::errc       | The meen error code as defined in meen/Error.h |
+
+			| Parameter        | Explanation                                                                                  |
+			|:-----------------|:---------------------------------------------------------------------------------------------|
+			| location         | The uri obtained from the onSaveBegin method                                                 |
+			| json             | A `const char*` which points to the machine save state in json format                        |
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
 			The format of the save state is not overly relevant from a user perspective. The json save state is
-			documented below:<br>
+			defined below:<br>
 
 			@code{.json}
 
@@ -262,11 +291,18 @@ namespace meen
 
 			@endcode
 
-			@param	onSave					The method to call with the json machine save state after it has has been
-									generated via the ISR::Save interrupt. Is mutually exclusive with the IMachine::OnLoad
-									initiation handler.
+			@param	onSaveBegin		A method used to obtain the uri of the resource that will be used to write the json
+									save state to. It is mutually exclusive with the IMachine::OnLoad initiation handler.
 
-			@return						One of the following MEEN std error codes:
+			@param	onSave			A optional method that will be called in the following circumstances:
+									- when the onSaveBegin method yields a location with an unknown protocol (location and json parameters will be valid).
+									- when a supported protocol is found, but it fails to write (location and json parameters will be valid).
+									- when the save state is written successfully (location and json parameters will be nullptr).
+			
+									When no method is registered and an error is encountered, the method registered via IMachine::OnError will be
+									called with a meen::errc error code. It is mutually exclusive with the IMachine::OnLoad initiation handler.
+
+			@return					One of the following MEEN std error codes:
 
 			| MEEN error code         | Explanation                                     |
 			|:------------------------|:------------------------------------------------|
@@ -274,7 +310,7 @@ namespace meen
 			| busy                    | MEEN is currently running                       |
 			| not_implemented         | Save support has been disabled                  |
 
-			@remark						The function parameter `onSave` will be called from a different thread from which this
+			@remark						The function parameters `onSaveBegin` and `onSave` will be called from a different thread from which this
 									method was called if the `runAsync` and/or `saveAsync` configuration options have been specified.
 
 			@remark						Save requests are not queued. When a save is in progress, additional save interrupts
@@ -282,19 +318,33 @@ namespace meen
 
 			@since						version 1.5.0
 		*/
-		virtual std::error_code OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave) = 0;
+		virtual std::error_code OnSave(std::function<errc(char* uri, int* uriLen, IController* ioController)>&& onSaveBegin, std::function<errc(const char* location, const char* json, IController* ioController)>&& onSave) = 0;
 
 		/** Machine load state initiation handler
 
 			Registers two methods that will be called when the ISR::Load interrupt is triggered.
 
-			The first method shall return a meen::errc and accepts 3 arguments:
-			- json: a `char*` array to write the machine state json to.
-			- jsonLen: an `int*` to write the length of the json state array to.
-			- ioController: a pointer to the io controller that was attached via the IMachine::AttachIoController method.
+			The `onLoad` signature:
 
-			The second method shall return a meen::errc and accept one argument:
-			- ioController - a pointer to the io controller that was attached via the IMachine::AttachIoController method.
+			| Return Type      | Explanation                                    |
+			|:-----------------|:------------------------------------------------|
+			| meen::errc       | The meen error code as defined in meen/Error.h |
+
+			| Parameter        | Explanation                                                                                  |
+			|:-----------------|:---------------------------------------------------------------------------------------------|
+			| json             | A `char*` buffer to write the machine state json to                                          |
+			| jsonLen          | An `int*` to write the length of the json state to                                           |
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
+
+			The `onLoadComplete` sugnture:
+
+			| Return Type      | Explanation                                    |
+			|:-----------------|:-----------------------------------------------|
+			| meen::errc       | The meen error code as defined in meen/Error.h |
+
+			| Parameter        | Explanation                                                                                  |
+			|:-----------------|:---------------------------------------------------------------------------------------------|
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
 			The first method will be called once with a `char` array of the size specified by the `maxLoadStateLen`
 			configuration option (or the default value of 512 if not specified). When the computed json asset
@@ -367,7 +417,7 @@ namespace meen
 
 			@param	onLoad						The method to call to get the json machine state to load when the ISR::Load
 										interrupt is triggered. Is mutually exclusive with the IMachine::OnSave completion handler.
-			@param	onLoadComplete					The method to call when the machine state returned by the onLoad handler has been
+			@param	onLoadComplete					An optional method to call when the machine state returned by the onLoad handler has been
 										SUCESSFULLY loaded.
 
 			@return							One of the following MEEN std error codes:
@@ -408,20 +458,31 @@ namespace meen
 
 		/** Machine on idle handler
 
-			The registered handler will always be called from the same thread from which IMachine::Run was invoked.
-			When the configuration option `runAsync` is true, any data that is shared between this handler and the
-			IMachine::OnLoad and IMachine::OnSave handlers needs to be protected as they will be invoked from a separate
-			thread to this handler. When the configuration option `runAsync` is false, this method should be lightweight
-			and non-blocking as superfluous delays here can have an impact on overall performace.
+			Registers a handler that will be called periodically.
 
-			@param		onIdle					The on idle handler to register.
-										The method returns a `bool`, true to quit the machine, false to call the
-										on idle method again.
-										The method accepts one parameter:
-										- ioController: a pointer to the io controller that was attached with the
-										IMachine::AttachIoController method.
+			The `onIdle` signature:
 
-			@return							One of the following MEEN std error codes:
+			| Return Type      | Value | Explanation                              |
+			|:-----------------|:------|:-----------------------------------------|
+			| bool             | True  | Quit the running machine instance        |
+            | ^                | False | Call the registered on idle method again |
+
+			| Parameter        | Explanation                                                                                  |
+			|:-----------------|:---------------------------------------------------------------------------------------------|
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
+
+			@param		onIdle			The on idle handler to register.
+
+			@remark						The registered handler will always be called from the same thread from which IMachine::Run was invoked.
+			
+			@remark						When the configuration option `runAsync` is true, any data that is shared between this handler and the
+										IMachine::OnLoad and IMachine::OnSave handlers needs to be protected as they will be invoked from a separate
+										thread to this handler.
+										
+			@remark						When the configuration option `runAsync` is false, this method should be lightweight
+										and non-blocking as superfluous delays here can have an impact on overall performace.
+
+			@return						One of the following MEEN std error codes:
 
 			| MEEN error code         | Explanation                                     |
 			|:------------------------|:------------------------------------------------|
@@ -434,19 +495,26 @@ namespace meen
 
 		/** Machine on error handler
 
-			Allows the attachment of an error handler to the machine that allows for the custom processing of
-			errors generated by MEEN.
+			Registers a handler that allows for the custom processing of errors generated by MEEN.
 
-			@param		onError					The on error handler to register. The method returns `void` and accepts six
-										arguments:
-										- ec: the MEEN std error_code whose value method returns one of the errors defined in meen/Error.h.
-										- fileName: a `const char*` to the source file that generated the call to this method.
-										- functionName: the name of the function that generated the call to this method.
-										- line: the line number from the source file that generated the call to this method.
-										- column: the line number column from the source file that generated the call to this method.
-										- ioController: a pointer to the io controller that was attached with the IMachine::AttachIoController method.
+			The `onError` signature:
 
-			@return							One of the following MEEN std error codes:
+			| Return Type      | Explanation                                    |
+			|:-----------------|------------------------------------------------|
+			| void             | The method does not return anything            |
+
+			| Parameter        | Explanation                                                                                   |
+			|:-----------------|:----------------------------------------------------------------------------------------------|
+			| ec               | The MEEN std::error_code whose value method returns one of the errors defined in meen/Error.h |
+			| fileName         | A `const char*` to the source file that generated the call to this method                     |
+			| functionName     | The name of the function that generated the call to this method                               |
+			| line             | The line number from the source file that generated the call to this method                   |
+			| column           | The line number column from the source file that generated the call to this method            |
+			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method  |
+
+			@param		onError			The on error handler to register.
+
+			@return						One of the following MEEN std::error_codes:
 
 			| MEEN error code         | Explanation                                      |
 			|:------------------------|:-------------------------------------------------|
