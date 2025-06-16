@@ -98,7 +98,7 @@ class MachineTest(unittest.TestCase):
             self.machine.AttachIoController(self.testIoController)
             self.machine.OnIdle(None)
             self.machine.OnLoad(None, None)
-            self.machine.OnSave(None)
+            self.machine.OnSave(None, None)
             self.machine.OnError(None)
             self.machine.Run()
             return True
@@ -167,11 +167,12 @@ class MachineTest(unittest.TestCase):
         # Need to manually check this one as it can fail before the method is registered
         self.assertEqual(err, ErrorCode.NoError)
 
-        def saveJson(json, ioc):
+        def saveJson(location, json, ioc):
+            self.assertEqual("json://pyTest", location)
             saveStates.append(json.rstrip('\0'))
             return ErrorCode.NoError
 
-        err = self.machine.OnSave(saveJson)
+        err = self.machine.OnSave(lambda ioc: "json://pyTest", saveJson)
         
         if err == ErrorCode.NotImplemented:
             self.skipTest("Machine.OnSave is not supported")
@@ -283,7 +284,8 @@ class i8080Test(unittest.TestCase):
 
         return message
 
-    def CheckMachineState(self, expected, actual):
+    def CheckMachineState(self, location, expected, actual):
+        self.assertEqual("json://pyTest", location)
         e = json.loads(expected)
         a = json.loads(actual.rstrip('\0'))
         self.assertEqual(e, a['cpu'])
@@ -294,7 +296,7 @@ class i8080Test(unittest.TestCase):
         # Write to the 'load device', the value doesn't matter (use 0)
         self.cpmIoController.Write(0xFD, 0, None)
         self.machine.OnLoad(lambda ioc: r'json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"' + self.saveAndExit + r'","offset":0},{"bytes":"' + self.bdosMsg + r'","offset":5},{"bytes":"file://' + self.programsDir + '/' + suiteName + r'","offset":256}]}}}', None)
-        err = self.machine.OnSave(lambda actualState, ioc: self.CheckMachineState(expectedState, actualState))
+        err = self.machine.OnSave(lambda ioc: "json://pyTest", lambda location, actualState, ioc: self.CheckMachineState(location, expectedState, actualState))
         runTime = self.machine.Run()
         self.assertGreater(runTime, 0)
         self.assertTrue(self.saveTriggered or err == ErrorCode.NotImplemented)

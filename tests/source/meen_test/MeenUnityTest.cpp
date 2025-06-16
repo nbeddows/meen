@@ -82,7 +82,7 @@ void tearDown()
     auto err = machine->OnError(nullptr);
     TEST_ASSERT_FALSE(err);
 
-    err = machine->OnSave(nullptr);
+    err = machine->OnSave(nullptr, nullptr);
     TEST_ASSERT_TRUE(err.value() == meen::errc::no_error || err.value() == meen::errc::not_implemented);
 
     err = machine->OnIdle(nullptr);
@@ -232,8 +232,14 @@ namespace meen::tests
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
 
-        err = machine->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
+        err = machine->OnSave([&](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
+        {   			
+            // Return back a protocol that is unsupported so that our completion handler is called
+            *uriLen = snprintf(uri, *uriLen, "%s", "json://unity");
+            return meen::errc::no_error;
+        }, [&](const char* location, const char* json, [[maybe_unused]] IController* ioController)
         {
+            TEST_ASSERT_EQUAL_STRING("json://unity", location);
             saveStates.emplace_back(json);
             return errc::no_error;
         });
@@ -378,11 +384,18 @@ namespace meen::tests
         });
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
-
-        err = machine->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
+                    
+        err = machine->OnSave([&saveTriggered, expected](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
+        {
+            // Return back a protocol that is unsupported so that our completion handler is called
+            *uriLen = snprintf(uri, *uriLen, "%s", "json://unity");
+            return meen::errc::no_error;
+        }, [&saveTriggered, expected](const char* location, const char* actual, [[maybe_unused]] IController* ioController)
         {
             std::string actualStr;
             std::string expectedStr;
+
+            TEST_ASSERT_EQUAL_STRING("json://unity", location);
 #ifdef ENABLE_NLOHMANN_JSON
             auto actualJson = nlohmann::json::parse(actual, nullptr, false);
             TEST_ASSERT_FALSE(actualJson.is_discarded());
