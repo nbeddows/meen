@@ -76,7 +76,8 @@ namespace meen
 		std::function<errc(char* json, int* jsonLen, IController* ioController)> onLoad_;
 		std::function<errc(IController* ioController)> onLoadComplete_;
 #ifdef ENABLE_MEEN_SAVE
-		std::function<errc(const char* json, IController* ioController)> onSave_;
+		std::function<errc(char* uri, int* uriLen, IController* ioController)> onSaveBegin_;
+		std::function<errc(const char* location, const char* json, IController* ioController)> onSave_;
 #endif // ENABLE_MEEN_SAVE
 		/** One time initialisation handler call flag
 		
@@ -136,7 +137,7 @@ namespace meen
 
 			@see IMachine::OnSave
 		*/
-		std::error_code OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave) final;
+		std::error_code OnSave(std::function<errc(char* uri, int* uriLen, IController* ioController)>&& onSaveBegin, std::function<errc(const char* location, const char* json, IController* ioController)>&& onSave) final;
 
 		/** OnIdle
 

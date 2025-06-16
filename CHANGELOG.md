@@ -23,10 +23,10 @@
 * Factory methods are based on cpu type (removed `MakeMachine`
   in favour of `Make8080Machine`) and take no options.
 * Removed the Load method from the unit test memory controller.
-* The original `IMachine::OnLoad` callback parameter signature
-  has changed.
-* Added an on load complete callback parameter to the
-  `IMachine::OnLoad` method.
+* The original `IMachine::OnLoad` and `IMachine::OnSave` callback
+  parameter signatures have changed.
+* Added an on completion handler parameter to the
+  `IMachine::OnLoad`and `IMachine::OnSave` methods.
 * Removed superfluous pybind machine holder.
 * Replaced `IMachine` api methods `SetIoController` and
   `SetMemoryController` with `AttachIoController` and

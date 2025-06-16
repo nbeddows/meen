@@ -35,6 +35,10 @@ SOFTWARE.
 #define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
+#ifdef ENABLE_MEEN_SAVE
+#include <filesystem>
+#include <fstream>
+#endif
 
 #include "meen/utils/Utils.h"
 #include "meen/clock/CpuClockFactory.h"
@@ -847,7 +851,7 @@ namespace meen
 				{
 #ifdef ENABLE_MEEN_SAVE
 					// If a user defined callback is set and we are not processing a save or load request
-					if (m->onSave_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
+					if (m->onSaveBegin_ != nullptr && onSave.valid() == false && onLoad.valid() == false)
 					{
 						auto memUuid = m->memoryController_->Uuid();
 						auto memUuidTxt = Utils::BinToTxt(m->opt_.Encoder(), "none", memUuid.data(), memUuid.size());
@@ -916,10 +920,87 @@ namespace meen
 
 										onSave = std::async(saveLaunchPolicy, [m, state = writeState()]
 										{
-											// TODO: this method needs to be marked as nothrow
-											auto e = m->onSave_(state.c_str(), m->ioController_.get());
+											int len = 255;
+											std::string uri(len + 1, '\0');
 
-											if (e)
+											auto e = m->onSaveBegin_(uri.data(), &len, m->ioController_.get());
+
+											if (!e)
+											{
+												uri.resize(len);
+
+												if (uri.starts_with("file://"))
+												{
+													uri.erase(uri.begin(), uri.begin() + strlen("file://"));
+													std::filesystem::path path(std::move(uri));
+													auto fileName = path.filename();
+													path.remove_filename();
+
+													std::error_code ec;
+													std::filesystem::create_directories(path, ec);
+
+													if (!ec)
+													{
+														std::ofstream fout(path / fileName);
+														
+														if (!fout.good())
+														{
+															e = meen::errc::invalid_argument;
+														}
+														else
+														{
+															fout.write(state.data(), state.size());
+
+															if (fout.good())
+															{
+																if (m->onSave_)
+																{
+																	// We wrote successfully, set nullptr location and json to indicate there is nothing to write.
+																	m->onSave_(nullptr, nullptr, m->ioController_.get());
+																}
+															}
+															else
+															{
+																e = meen::errc::incompatible_ram;
+															}
+														}
+													}
+													else
+													{
+														e = meen::errc::invalid_argument;
+													}
+													
+													if (e)
+													{
+														// We failed to write, give the completion handler a chance to write it correctly.
+														if (m->onSave_)
+														{
+															e = m->onSave_((std::string("file://") + "/" + path.string() + "/" + fileName.string()).c_str(), state.c_str(), m->ioController_.get());
+														}
+
+														if (e)
+														{
+															m->HandleError(e, std::source_location::current());
+														}
+													}
+												}
+												else
+												{
+													e = meen::errc::uri_scheme;
+
+													// We don't understand the protocol, pass it along to the completion handler to handle.
+													if (m->onSave_)
+													{
+														e = m->onSave_(uri.c_str(), state.c_str(), m->ioController_.get());
+													}
+
+													if (e)
+													{
+														m->HandleError(e, std::source_location::current());
+													}
+												}
+											}
+											else
 											{
 												m->HandleError(e, std::source_location::current());
 											}
@@ -1264,7 +1345,7 @@ namespace meen
 		return controller;
 	}
 
-	std::error_code Machine::OnSave(std::function<errc(const char* json, IController* ioController)>&& onSave)
+	std::error_code Machine::OnSave(std::function<errc(char* uri, int* uriLen, IController* ioController)>&& onSaveBegin, std::function<errc(const char* location, const char* json, IController* ioController)>&& onSave)
 	{
 #ifdef ENABLE_MEEN_SAVE
 		if (running_ == true)
@@ -1272,6 +1353,7 @@ namespace meen
 			return HandleError(errc::busy, std::source_location::current());
 		}
 
+		onSaveBegin_ = std::move(onSaveBegin);
 		onSave_ = std::move(onSave);
 		return std::error_code{};
 #else

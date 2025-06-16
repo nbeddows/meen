@@ -85,8 +85,7 @@ PYBIND11_MODULE(meenPy, meen)
                         return meen::errc::invalid_argument;
                     }
 
-                    *jsonLen = loadState.length();
-                    strncpy(json, loadState.c_str(), *jsonLen);
+                    *jsonLen = snprintf(json, *jsonLen, "%s", loadState.c_str());
                     return meen::errc::no_error;
                 }, [olc = std::move(onLoadComplete)](meen::IController* ioController)
                 {
@@ -98,18 +97,29 @@ PYBIND11_MODULE(meenPy, meen)
                 return static_cast<meen::errc>(machine.OnLoad(nullptr, nullptr).value());
             }
         })
-        .def("OnSave", [](meen::IMachine& machine, std::function<meen::errc(std::string&& json, meen::IController* ioController)>&& onSave)
+        .def("OnSave", [](meen::IMachine& machine, std::function<std::string(meen::IController* ioController)>&& onSaveBegin, std::function<meen::errc(std::string&& location, std::string&& json, meen::IController* ioController)>&& onSave)
         {
-            if (onSave)
+            if (onSaveBegin)
             {
-                return static_cast<meen::errc>(machine.OnSave([os = std::move(onSave)](const char* json, meen::IController* ioController)
+                return static_cast<meen::errc>(machine.OnSave([osb = std::move(onSaveBegin)](char* uri, int* uriLen, meen::IController* ioController)
                 {
-                    return os(std::move(json), ioController);
+                    auto location = osb(ioController);
+
+                    if (location.size() > *uriLen)
+                    {
+                        return meen::errc::invalid_argument;
+                    }
+
+                    *uriLen = snprintf(uri, *uriLen, "%s", location.c_str());
+                    return meen::errc::no_error;
+                }, [os = std::move(onSave)](const char* location, const char* json, meen::IController* ioController)
+                {
+                    return os ? os(std::move(location), std::move(json), ioController) : meen::errc::no_error;
                 }).value());
             }
             else
             {
-                return static_cast<meen::errc>(machine.OnSave(nullptr).value());
+                return static_cast<meen::errc>(machine.OnSave(nullptr, nullptr).value());
             }
         })
         .def("OnInit", [](meen::IMachine& machine, std::function<meen::errc(meen::IController* ioController)>&& onInit)

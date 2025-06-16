@@ -106,7 +106,7 @@ namespace meen::Tests
 		auto err = machine_->OnError(nullptr);
 		EXPECT_FALSE(err);
 
-		err = machine_->OnSave(nullptr);
+		err = machine_->OnSave(nullptr, nullptr);
 		EXPECT_TRUE(err.value() == errc::no_error || err.value() == errc::not_implemented);
 
 		err = machine_->OnIdle(nullptr);
@@ -161,10 +161,17 @@ namespace meen::Tests
 		//Need to manually check this one as it can fail before the method is registered
 		EXPECT_FALSE(err);
 
-		err = machine_->OnSave([&saveTriggered, expected](const char* actual, [[maybe_unused]] IController* ioController)
+		err = machine_->OnSave([&saveTriggered, expected](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
+		{
+			// Return back a protocol that is unsupported so that our completion handler is called
+			*uriLen = snprintf(uri, *uriLen, "%s", "json://gtest");
+			return meen::errc::no_error;
+		}, [&saveTriggered, expected](const char* location, const char* actual, [[maybe_unused]] IController* ioController)
 		{
 			std::string actualStr;
 			std::string expectedStr;
+
+			EXPECT_STREQ("json://gtest", location);
 #ifdef ENABLE_NLOHMANN_JSON
 			auto actualJson = nlohmann::json::parse(actual, nullptr, false);
 			EXPECT_FALSE(actualJson.is_discarded());
@@ -306,7 +313,7 @@ namespace meen::Tests
 				machine_->DetachIoController();
 				machine_->OnIdle(nullptr);
 				machine_->OnLoad(nullptr, nullptr);
-				machine_->OnSave(nullptr);
+				machine_->OnSave(nullptr, nullptr);
 				machine_->OnError(nullptr);
 				machine_->Run();
 
@@ -402,8 +409,14 @@ namespace meen::Tests
 			//Need to manually check this one as it can fail before the method is registered
 			EXPECT_FALSE(err);
 
-			err = machine_->OnSave([&](const char* json, [[maybe_unused]] IController* ioController)
+			err = machine_->OnSave([&](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
 			{
+				// Return back a protocol that is unsupported so that our completion handler is called
+				*uriLen = snprintf(uri, *uriLen, "%s", "json://gtest");
+				return meen::errc::no_error;
+			}, [&](const char* location, const char* json, [[maybe_unused]] IController* ioController)
+			{
+				EXPECT_STREQ("json://gtest", location);
 				saveStates.emplace_back(json);
 				return errc::no_error;
 			});

@@ -40,9 +40,9 @@ The following table displays the current defacto test suites that these unit tes
 | Cpu   | Test             | Status | 
 |:-----:|:----------------:|:------:|
 | i8080 | 8080EXM          | PASS   |
-|       | 8080PRE          | PASS   |
-|       | CPUTEST          | PASS   |
-|       | TST8080          | PASS   |
+| ^     | 8080PRE          | PASS   |
+| ^     | CPUTEST          | PASS   |
+| ^     | TST8080          | PASS   |
 
 `IMachine.h` specifies the MEEN API.<br>
 `MachineFactory.h` specifies the MEEN library entry point.
@@ -325,34 +325,33 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // the current directory into memory at address 0x0000 and start executing the rom from address 256.
   // Note the use of uri schemes to determine the type of resource to load (an ommitted scheme defaults
   // to json://).
-  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})"sv;
-  // auto jsonToLoad = "file://myProgramSave.json"sv;
-    
-  // When the length of the json to load is greater than *jsonLen, the config option maxLoadStateLen
-  // needs to be increased.
-  if (jsonToLoad.length() > *jsonLength)
-  {
-    return errc::invalid_argument;
-  }
+  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})";
+  // auto jsonToLoad = "file://myProgramSave.json";
 
-  std::copy_n(json, jsonToLoad.length(), jsonToLoad.begin());
-  // Write the final length of the loaded program
-  *jsonLen = jsonToLoad.length();
+  // Write the json to load to json and update the final length of the loaded program.
+  // When the length of the json to load is greater than *jsonLen, the json will be truncated
+  // and a json parse error will occur. In this case, the config option maxLoadStateLen needs
+  // to be increased.
+  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad);
   return errc::no_error;
-});
+// Not defining a completion handler, set it to nullptr.
+}, nullptr);
 
 // Register a handler that can save the current state of the machine.
 // Note that this can be called from a different thread if the runAsync/saveAsync options are specifed.
-machine->OnSave([](const char* json, IController* ioController)
+machine->OnSave([](char* uri, int* uriLength, IController* ioController)
 {
   // Typically, the on save logic would be handled by your custom io controller:
   // ioController->SaveRom(json), but is left here for simplicity.
 
-  // Write the save state to disk
-  std::ofstream ofs("myProgramSave.json");
-  ofs.write(json, strlen(json));  
+  // Write the location of the resource to save and update the final resource length.
+  // NOTE: the maximum size of the uriLength parameter is 255, anything longer than this will cause
+  // the uri to be truncated.
+  *uriLength = snprintf(uri, *uriLength, "file://myProgramSave.json");
   return errc::no_error;
-});
+// Since we are using the built in file:// protocol support, don't define a completion handler, any errors
+// will be diverted to the registered OnError handler.
+}, nullptr);
 
 // Register a method that will be called when there is time to do so.
 // It will always be called from the same thread from which IMachine::Run was invoked.
@@ -409,20 +408,20 @@ The following table describes the supported options (note, when no option is spe
 | Option                | Type   | Value              | Remarks                                                                             |
 |:----------------------|:-------|:-------------------|:------------------------------------------------------------------------------------|
 | clockSamplingFreq     | double | -1 (default)       | Run meen as fast as possible with the highest possible host clock sampling frequency|
-|                       |        | 0 Hz               | Run meen at realtime with the highest possible host clock sampling frequency        |
-|                       |        | 0, 1000+ Hz        | Will always spin the host cpu to maintain the clock speed and is not recommended    |
-|                       |        | n Hz               | A request in Hertz as to how frequently meen's clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available|
+| ^                     | ^      | 0 Hz               | Run meen at realtime with the highest possible host clock sampling frequency        |
+| ^                     | ^      | 0, 1000+ Hz        | Will always spin the host cpu to maintain the clock speed and is not recommended    |
+| ^                     | ^      | n Hz               | A request in Hertz as to how frequently meen's clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available|
 | compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state              |
-|                       |        | "none"             | No compression will be used when saving the state of the ram                        |
+| ^                     | ^      | "none"             | No compression will be used when saving the state of the ram                        |
 | encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json         |
 | isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                            |
-|                       |        | n                  | The number of times interrupts will be serviced per emulated cpu clock speed. For example, an i8080 running at 2Mhz with an isrFreq of 50 will service interrupts every 40000 ticks|
+| ^                     | ^      | n                  | The number of times interrupts will be serviced per emulated cpu clock speed. For example, an i8080 running at 2Mhz with an isrFreq of 50 will service interrupts every 40000 ticks|
 | loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                                |
-|                       |        | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option  |
+| ^                     | ^      | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option  |
 | runAsync              | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                 |
-|                       |        | false (default)    | `IMachine::Run` will run its execution loop on the current thread                   |
+| ^                     | ^      | false (default)    | `IMachine::Run` will run its execution loop on the current thread                   |
 | saveAsync             | bool   | true               | Run the save completion handler on a separate thread                                |
-|                       |        | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option   |
+| ^                     | ^      | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option   |
 
 Configuration options can be supplied to MEEN via the IMachine::SetOptions api method:
 
