@@ -479,7 +479,7 @@ namespace meen::tests
             machine->DetachIoController();
             machine->OnIdle(nullptr);
             machine->OnLoad(nullptr, nullptr);
-            machine->OnSave(nullptr);
+            machine->OnSave(nullptr, nullptr);
             machine->OnError(nullptr);
             machine->Run();
 
