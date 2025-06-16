@@ -329,9 +329,10 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // auto jsonToLoad = "file://myProgramSave.json";
 
   // Write the json to load to json and update the final length of the loaded program.
-  // When the length of the json to load is greater than *jsonLen, the json will be truncated and a json parse
-  // error will occur. In this case, the config option maxLoadStateLen needs to be increased.
-  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad)
+  // When the length of the json to load is greater than *jsonLen, the json will be truncated
+  // and a json parse error will occur. In this case, the config option maxLoadStateLen needs
+  // to be increased.
+  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad);
   return errc::no_error;
 // Not defining a completion handler, set it to nullptr.
 }, nullptr);
