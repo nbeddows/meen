@@ -37,12 +37,34 @@ Example code in this framework is supplied in the form of unit tests. A test IO 
 
 The following table displays the current defacto test suites that these unit tests run.
 
-| Cpu   | Test             | Status | 
-|:-----:|:----------------:|:------:|
-| i8080 | 8080EXM          | PASS   |
-| ^     | 8080PRE          | PASS   |
-| ^     | CPUTEST          | PASS   |
-| ^     | TST8080          | PASS   |
+<table>
+  <thead>
+    <tr>
+      <th>CPU</th>
+      <th>Test</th>
+      <th>Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan=4>i8080</td>
+      <td>8080EXM</td>
+      <td>PASS</td>
+    </tr>
+    <tr>
+      <td>8080PRE</td>
+      <td>PASS</td>
+    </tr>
+    <tr>
+      <td>CPUTEST</td>
+      <td>PASS</td>
+    </tr>
+    <tr>
+      <td>TST8080</td>
+      <td>PASS</td>
+    </tr>
+  </tbody>
+</table>
 
 `IMachine.h` specifies the MEEN API.<br>
 `MachineFactory.h` specifies the MEEN library entry point.
@@ -405,23 +427,92 @@ The options must be supplied in json format defined by one of the following prot
 
 The following table describes the supported options (note, when no option is specifed the one marked as default will be used):
 
-| Option                | Type   | Value              | Remarks                                                                             |
-|:----------------------|:-------|:-------------------|:------------------------------------------------------------------------------------|
-| clockSamplingFreq     | double | -1 (default)       | Run meen as fast as possible with the highest possible host clock sampling frequency|
-| ^                     | ^      | 0 Hz               | Run meen at realtime with the highest possible host clock sampling frequency        |
-| ^                     | ^      | 0, 1000+ Hz        | Will always spin the host cpu to maintain the clock speed and is not recommended    |
-| ^                     | ^      | n Hz               | A request in Hertz as to how frequently meen's clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available|
-| compressor            | string | "zlib" (default)   | Use zlib compression library to compress the ram when saving its state              |
-| ^                     | ^      | "none"             | No compression will be used when saving the state of the ram                        |
-| encoder               | string | "base64" (default) | The binary to text encoder to use when saving the machine state ram to json         |
-| isrFreq               | double | 0 (default)        | Service interrupts at the completion of each instruction                            |
-| ^                     | ^      | n                  | The number of times interrupts will be serviced per emulated cpu clock speed. For example, an i8080 running at 2Mhz with an isrFreq of 50 will service interrupts every 40000 ticks|
-| loadAsync             | bool   | true               | Run the load initiation handler on a separate thread                                |
-| ^                     | ^      | false (default)    | Run the load initiation handler from the thread specified by the `runAsync` option  |
-| runAsync              | bool   | true               | `IMachine::Run` will launch its execution loop on a separate thread                 |
-| ^                     | ^      | false (default)    | `IMachine::Run` will run its execution loop on the current thread                   |
-| saveAsync             | bool   | true               | Run the save completion handler on a separate thread                                |
-| ^                     | ^      | false (default)    | Run the save completion handler from the thread specifed by the `runAsync` option   |
+<table>
+  <thead>
+    <tr align=left>
+      <th>Option</th>
+      <th>Type</th>
+      <th>Value</th>
+      <th>Remarks</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td rowspan=4>clockSamplingFreq</td>
+      <td rowspan=4>double</td>
+      <td>-1 (default)</td>
+      <td>Run MEEN as fast as possible with the highest possible host clock sampling frequency</td>
+    </tr>
+    <tr>
+      <td>0 Hz</td>
+      <td>Run MEEN at realtime with the highest possible host clock sampling frequency</td>
+    </tr>
+    <tr>
+      <td>0, 1000+ Hz</td>
+      <td>Will always spin the host cpu to maintain the clock speed and is not recommended</td>
+    </tr>
+    <tr>
+      <td>n Hz</td>
+      <td>A request in Hertz as to how frequently the MEEN clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available</td>
+    </tr>
+    <tr>
+      <td rowspan=2>compressor</td>
+      <td rowspan=2>string</td>
+      <td>"zlib" (default)</td>
+      <td>Use zlib compression library to compress the ram when saving its state</td>
+    </tr>
+    <tr>
+      <td>"none"</td>
+      <td>No compression will be used when saving the state of the ram</td>
+    </tr>
+    <tr>
+      <td>encoder</td>
+      <td>string</td>
+      <td>"base64" (default)</td>
+      <td>The binary to text encoder to use when saving the machine state ram to json</td>
+    </tr>
+    <tr>
+      <td rowspan=2>isrFreq</td>
+      <td rowspan=2>double</td>
+      <td>0 (default)</td>
+      <td>Service interrupts at the completion of each instruction</td>
+    </tr>
+    <tr>
+      <td>n</td>
+      <td>The number of times interrupts will be serviced per emulated cpu clock speed. For example, an i8080 running at 2Mhz with an isrFreq of 50 will service interrupts every 40000 ticks (approx)</td>
+    </tr>
+    <tr>
+      <td rowspan=2>loadAsync</td>
+      <td rowspan=2>bool</td>
+      <td>true</td>
+      <td>Run the IMachine::OnLoad handlers on a separate thread</td>
+    </tr>
+    <tr>
+      <td>false (default)</td>
+      <td>Run the IMachine::OnLoad handlers from the thread specified by the runAsync option</td>
+    </tr>
+    <tr>
+      <td rowspan=2>runAsync</td>
+      <td rowspan=2>bool</td>
+      <td>true</td>
+      <td>IMachine::Run will launch its execution loop on a separate thread</td>
+    </tr>
+    <tr>
+      <td>false (default)</td>
+      <td>IMachine::Run will run its execution loop on the current thread</td>
+    </tr>
+    <tr>
+      <td rowspan=2>saveAsync</td>
+      <td rowspan=2>bool</td>
+      <td>true</td>
+      <td>Run the IMachine::OnSave handlers on a separate thread</td>
+    </tr>
+    <tr>
+      <td>false (default)</td>
+      <td>Run the IMachine::OnSave handlers from the thread specifed by the runAsync option</td>
+    </tr>
+  </tbody>
+</table>
 
 Configuration options can be supplied to MEEN via the IMachine::SetOptions api method:
 
