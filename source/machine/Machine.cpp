@@ -87,7 +87,28 @@ namespace meen
 	{
 		if (onError_)
 		{
-			onError_(err, sl.file_name(), sl.function_name(), sl.line(), sl.column(), ioController_.get());
+			// We only want the file name starting from the repository root, search for the third last '/\' from the end of the file name
+			std::string_view fn(sl.file_name(), strlen(sl.file_name()));
+			int count;
+			int index = fn.size();
+
+			for(count = 0; count < 3; count++)
+			{
+				index = fn.find_last_of("/\\", index - 1);
+
+				if (index == std::string::npos)
+				{
+					index = 0;
+					break;
+				}
+			}
+
+			if (index > 0)
+			{
+				fn.remove_prefix(index + 1); // + 1 - remove the leading slash
+			}
+
+			onError_(err, fn.data(), sl.function_name(), sl.line(), sl.column(), ioController_.get());
 		}
 
 		return err;
