@@ -81,9 +81,9 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - `sudo apt install cmake`
 - `sudo apt install cppcheck` (if building a binary development package)
 - `sudo apt install doxygen` (if building a binary development package)
-- `sudo apt install texlive-latex-base`
-- `sudo apt install texlive-latex-extra`
-- [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images)
+- `sudo apt install texlive-latex-base` (if building a binary development package)
+- `sudo apt install texlive-latex-extra` (if building a binary developemnt package)
+- [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images if building a binary development package)
 - `sudo apt install python3 python-is-python3 python3-dev` (if building the Python module)
 - cross compilation:
   - armv7hf:
@@ -116,8 +116,8 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - [Install CMake build system](https://cmake.org/download/).
 - [Install CppCheck static analysis](http://cppcheck.net/) (if building a binary development package)
 - [Install Doxygen](https://www.doxygen.nl/download.html) (if building a binary development package)
-- [Install Tex Live](https://www.tug.org/texlive/windows.html)
-- [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images)
+- [Install Tex Live](https://www.tug.org/texlive/windows.html) (if building a binary development package)
+- [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images if builing a binary development package)
 - [Install Python3](https://www.python.org/downloads/windows/) (if building the Python module)
 - Install `python3-dev`: available via the advanced options in the Python3 installer (if building the Python module)
 
@@ -267,7 +267,7 @@ Example command lines:
 3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
 4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
 5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13`: same as 1 but will skip running the unit tests.
-6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_i8080_test_suites=True`: same as 1 but will run the i8080 test suites.
+6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_i8080_test_suites=True`: same as 1 but will also run the i8080 test suites.
 
 #### Upload a Conan package
 
