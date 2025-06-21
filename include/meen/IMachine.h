@@ -361,9 +361,18 @@ namespace meen
 			@code{.json}
 
 			{
+				// Set the cpu properties.
+				// Omitting the 'cpu' object will reset all cpu properties to zero.
 				"cpu":{
 					// Start executing the loaded program from address 256 (0x100)
-					"pc":256
+					// Omitting 'pc' will leave it unchanged.
+					"pc":256,
+					// Set the stack pointer to 0.
+					// Omitting 'sp' will leave it unchanged.
+					"sp": 0,
+					// Set the 'a' register to 42, leave the remaining registers (b, c, d, e, h, l, s) unchanged.
+					// Omitting the 'registers' object will reset all registers to zero.
+					"registers":{"a":42}
 				},
 				"memory": {
 					"rom":{
@@ -380,10 +389,6 @@ namespace meen
 			}
 
 			@endcode
-
-			NOTE: the cpu registers can also be set (see IMachine::OnSave), registers unassigned will remain unchanged.
-			NOTE: upon machine (re)start, the program counter (pc) and stack pointer (sp) will always be assigned the
-			last valid value set (or 0 if these parameters have never been set).
 
 			The memory:rom:block array can be omitted if loading from a single file:<br>
 

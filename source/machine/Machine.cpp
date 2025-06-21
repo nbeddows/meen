@@ -962,7 +962,7 @@ namespace meen
 
 													if (!ec)
 													{
-														std::ofstream fout(path / fileName);
+														std::ofstream fout(path / fileName, std::ios::trunc);
 														
 														if (!fout.good())
 														{
