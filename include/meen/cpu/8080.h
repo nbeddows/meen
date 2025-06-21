@@ -85,9 +85,6 @@ namespace meen
 		*/
 		//cppcheck-suppress unusedStructMember
 		uint16_t pc_{};
-		// The canonical program counter, each reset will set pc_ to this value
-		//cppcheck-suppress unusedStructMember
-		uint16_t programCounter_{};
 
 		/**
 			A stack is an area of memory set aside by the programmer in which data or addresses are stored and retrieved
@@ -96,9 +93,6 @@ namespace meen
 		*/
 		//cppcheck-suppress unusedStructMember
 		uint16_t sp_{};
-		// The canonical stack pointer, each reset will set sp_ to this value
-		//cppcheck-suppress unusedStructMember
-		uint16_t stackPointer_{};
 
 		/**
 			Five condition (or status) bits are provided by the

@@ -354,9 +354,15 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 		l_ = registers.value<uint8_t>("l", Value(l_));
 		status_ = registers.value<uint8_t>("s", Value(status_)) | 0x02;
 	}
+	// The registers object has not been specified, reset all registers to zero.
+	else
+	{
+		a_ = b_ = c_ = d_ = e_ = h_ = l_ = 0;
+		status_ = 0x02;
+	}
 
-	programCounter_ = pc_ = json.value<uint16_t>("pc", programCounter_);
-	stackPointer_ = sp_ = json.value<uint16_t>("sp", stackPointer_);
+	pc_ = json.value<uint16_t>("pc", pc_);
+	sp_ = json.value<uint16_t>("sp", sp_);
 #else
 	JsonDocument json;
 	auto e = deserializeJson(json, str);
@@ -752,8 +758,8 @@ void Intel8080::Reset()
 	e_.reset();
 	h_.reset();
 	l_.reset();
-	pc_ = programCounter_;
-	sp_ = stackPointer_;
+	pc_ = 0;
+	sp_ = 0;
 	status_ = 0b00000010;
 	iff_ = false;
 	hlt_ = false;
