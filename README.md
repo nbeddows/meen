@@ -130,8 +130,8 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
 **3.** Install dependencies:
-- Windows x86_64 build and host: `conan install . --build=missing --output-folder=output --profile:all=Windows-x86_64-msvc-193`
-- Windows x86_64 build and host with unit tests: `conan install . --build=missing --output-folder=output --profile:all=Windows-x86_64-msvc-193-gtest`
+- Windows x86_64 build and host: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193`
+- Windows x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193-gtest`
 - Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13`
 - Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`
 - Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13`
@@ -142,7 +142,6 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13-unity`<br>
 
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
-**NOTE**: when using multi configuration generators (MSVC for example) we specify an output folder (--output-folder) so the directory depth remains constant with single configuation generators.
 
 The following additional install options are supported:
 - enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on arm platforms)
