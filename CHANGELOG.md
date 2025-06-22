@@ -1,4 +1,4 @@
-2.0.0
+2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
 * Added `std::error_code` support.
 * Removed the use of exceptions (methods return std::error_code).
@@ -7,7 +7,7 @@
   save support. 
 * Added support for ArduinoJson for baremetal.
 * Added RP2040 microcontroller support.
-* Code refactor for a minimum 2x performace boost.
+* Code refactor for a minimum 2x performance boost.
 * The ISR frequency is now honoured when no clock resolution
   is set.
 * Compiler Id and version are now incorporated
