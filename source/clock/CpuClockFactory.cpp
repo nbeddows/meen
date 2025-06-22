@@ -1,6 +1,5 @@
-MIT License
-
-Copyright (c) 2021-2025 Nicolas Beddows
+/*
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +18,16 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+*/
+
+#include "meen/clock/CpuClock.h"
+#include "meen/clock/CpuClockFactory.h"
+
+namespace meen
+{
+	//factory free form function
+	std::unique_ptr<ICpuClock> MakeCpuClock(uint64_t speed)
+	{
+		return std::make_unique<CpuClock>(speed);
+	}
+} // namespace meen

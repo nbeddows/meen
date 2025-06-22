@@ -1,6 +1,5 @@
-MIT License
-
-Copyright (c) 2021-2025 Nicolas Beddows
+/*
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +18,40 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+*/
+
+#ifndef MEEN_ERRORCODE_H
+#define MEEN_ERRORCODE_H
+
+#include <system_error>
+
+#include "meen/Error.h"
+
+namespace meen
+{
+	/** The custom meen error category
+
+		Defines the name of the error category and the messages that each meen::errc returns.
+	*/
+	const std::error_category& category();
+
+	/** std::error_code wrapper
+
+		A simple convenience wrapper
+
+		@param	ec	The meen::errc to use to create a meen std::error_code
+	*/
+	inline std::error_code make_error_code(errc ec) { return {ec, meen::category()}; }
+} // namespace meen
+
+namespace std
+{
+	/** Boilerplate
+
+		Inform std that our meen::errc enum is a std::error_code enum.
+	*/
+	template<>
+	struct is_error_code_enum<meen::errc> : public std::true_type {};
+} // namespace meen
+
+#endif // MEEN_ERRORCODE_H

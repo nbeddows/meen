@@ -1,6 +1,5 @@
-MIT License
-
-Copyright (c) 2021-2025 Nicolas Beddows
+/*
+Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -19,3 +18,42 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+*/
+
+#ifndef ICPU_H
+#define ICPU_H
+
+#include <cstdint>
+#include <expected>
+#include <memory>
+#include <string>
+#include <system_error>
+
+#include "meen/Base.h"
+#include "meen/IController.h"
+
+namespace meen
+{
+	struct ICpu
+	{
+		virtual void SetMemoryController(IController* memoryController) = 0;
+
+		virtual void SetIoController(IController* ioController) = 0;
+
+		//Executes the next instruction
+		virtual uint8_t Execute() = 0;
+
+		virtual uint8_t Interrupt(ISR isr) = 0;
+
+		virtual void Reset() = 0;
+
+		virtual std::error_code Load(const std::string&& json, bool checkUuid) = 0;
+
+#ifdef ENABLE_MEEN_SAVE
+		virtual std::expected<std::string, std::error_code> Save() const = 0;
+#endif // ENABLE_MEEN_SAVE
+		virtual ~ICpu() = default;
+	};
+} // namespace meen
+
+#endif // ICPU_H
