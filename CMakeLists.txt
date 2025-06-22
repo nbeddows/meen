@@ -480,7 +480,7 @@ GOTO parse\n\
 echo Adding %cd%\\${runtime_dir} to PATH\n\
 PATH=%cd%\\${runtime_dir};%PATH%\n\
 echo Running C++ unit tests\n\
-${runtime_dir}\\${meen}_test %gtest-filter% tests\\programs\\\n\
+${runtime_dir}\\${meen}_test %gtest-filter% tests\\\\programs\n\
 ${pythonExecute}\n\
 pause\n\
 exit"
