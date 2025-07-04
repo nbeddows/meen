@@ -547,16 +547,18 @@ install(CODE "execute_process(COMMAND doxygen ${CMAKE_SOURCE_DIR}/docs/Doxyfile)
 if(DEFINED MSVC)
   # Under Windows Doxygen documentaiton causes LaTeX to go into what looks to be an infinite loop, disable until a solution is found
   # install(CODE "execute_process(COMMAND cmd /c make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
-else()
+# We are not going to build the documentation on arm platforms
+elif(${build_arch} STREQUAL "x86_64")
   install(CODE "execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 endif()
-install(CODE "execute_process(COMMAND cppcheck -ibuild -i_CPack_Packages -itests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 ${CMAKE_SOURCE_DIR})")
 install(TARGETS ${meen} FILE_SET HEADERS)
 install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG.md DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.md RENAME LICENSE DESTINATION .)
 # Latex to PDF generation under Windows is currently not working, remove the if protection once fixed
 if(NOT DEFINED MSVC)
-  install(FILES ${CMAKE_BINARY_DIR}/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
+  if(${build_arch} STREQUAL "x86_64")
+    install(FILES ${CMAKE_BINARY_DIR}/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
+  endif()
 endif()
 
 if(NOT DEFINED WIN32)
