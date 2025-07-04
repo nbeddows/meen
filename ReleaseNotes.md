@@ -1,4 +1,4 @@
-## MEEN 2.1.0 Release
+## MEEN 2.1.0
 
 ## Highlights
 
