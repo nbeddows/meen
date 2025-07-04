@@ -548,7 +548,7 @@ if(DEFINED MSVC)
   # Under Windows Doxygen documentaiton causes LaTeX to go into what looks to be an infinite loop, disable until a solution is found
   # install(CODE "execute_process(COMMAND cmd /c make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 # We are not going to build the documentation on arm platforms
-elif(${build_arch} STREQUAL "x86_64")
+elseif(${build_arch} STREQUAL "x86_64")
   install(CODE "execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 endif()
 install(TARGETS ${meen} FILE_SET HEADERS)
