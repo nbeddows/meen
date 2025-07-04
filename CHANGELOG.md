@@ -1,3 +1,6 @@
+2.1.0
+* Added testing and release workflows for GitHub Actions CI/CD.
+
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
 * Added `std::error_code` support.
