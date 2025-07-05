@@ -89,7 +89,7 @@ jobs:
       # Run the unit tests
       - name: Run unit tests
         if: github.event_name == 'pull_request'
-        run: artifacts/Release/${{ matrix.arch }}/bin/meen_test
+        run: artifacts/Release/${{ matrix.arch }}/bin/meen_test tests/programs
 
       # Build the package
       - name: Build package
