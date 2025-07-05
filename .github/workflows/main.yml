@@ -69,8 +69,8 @@ jobs:
         if: github.ref_type == 'tag'
         uses: ssciwr/doxygen-install@v1
       - name: Install TeX Live
-        # Not building the documentation on Windows (needs to be fixed)
-        if: github.ref_type == 'tag' && runner.os == 'Linux'
+        # Only generating the documentation for Linux x86_64 (Arm Linux GitHub runner runs into an issue with Doxygen, Windows has deeper issues ...)
+        if: github.ref_type == 'tag' && runner.os == 'Linux' && matrix.arch == 'x86_64'
         run: |
           sudo apt-get install texlive-latex-base
           sudo apt-get install texlive-latex-extra
