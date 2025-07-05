@@ -80,16 +80,20 @@ jobs:
       - name: Install Conan profiles
         run: conan config install -sf profiles -tf profiles https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.0"
       - name: Install dependencies
-        run: conan install . --build=missing --profile:all=${{ runner.os }}-${{ matrix.arch }}-${{ matrix.compiler }}-${{ matrix.version }}-gtest
+        run: conan install . --build=missing --options=with_python=True --profile:all=${{ runner.os }}-${{ matrix.arch }}-${{ matrix.compiler }}-${{ matrix.version }}-gtest
       - name: CMake presets
         run: cmake --preset conan-${{ matrix.preset }}
       - name: CMake build
         run: cmake --build --preset conan-release
 
       # Run the unit tests
-      - name: Run unit tests
+      - name: Run C++ unit tests
         if: github.event_name == 'pull_request'
         run: artifacts/Release/${{ matrix.arch }}/bin/meen_test tests/programs
+      # Run Python unit tests
+      - name: Run Python unit tests
+        if: github.event_name == 'pull_request'
+        run: python tests/source/meen_test/test_Machine.py -v
 
       # Build the package
       - name: Build package
