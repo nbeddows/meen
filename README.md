@@ -71,12 +71,13 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) and latex for documentation. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
+MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706).
 
 #### Pre-requisites
 
-##### Linux (Ubuntu (24.04 at time of writing))
+##### Linux (Ubuntu 25.04)
 
+- `sudo apt install gcc`
 - [Install Conan](https://conan.io/downloads/)
 - `sudo apt install cmake`
 - `sudo apt install cppcheck` (if building a binary development package)
@@ -112,6 +113,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 ##### Windows (10)
 
+- [Install Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
 - [Install Conan](https://conan.io/downloads/)
 - [Install CMake build system](https://cmake.org/download/).
 - [Install CppCheck static analysis](http://cppcheck.net/) (if building a binary development package)
