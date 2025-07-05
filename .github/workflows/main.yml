@@ -92,8 +92,12 @@ jobs:
         run: artifacts/Release/${{ matrix.arch }}/bin/meen_test tests/programs
       # Run Python unit tests
       - name: Run Python unit tests
-        if: github.event_name == 'pull_request'
-        run: python tests/source/meen_test/test_Machine.py -v
+        # We don't run the Python unit tests on Windows since the current Windows GitHub hosted runner has Python 3.9 and the
+        # unit tests use the 'match' keyword which was introduced in Python 3.10. Remove this runner check when the Python
+        # distro of the latest Windows runner reaches at least 3.10
+        if: github.event_name == 'pull_request' && runner.os != 'Windows'
+        # We already test the longer running test suites in the C++ tests, so we disable them for Python to improve the run time
+        run: python tests/source/meen_test/test_Machine.py -v -k MachineTest
 
       # Build the package
       - name: Build package
