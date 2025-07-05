@@ -93,9 +93,7 @@ class MeenRecipe(ConanFile):
             self.output.info("base64 uri scheme and saving are not supported, removing options with_base64 and with_save")
             self.options.rm_safe("with_save")
             self.options.rm_safe("with_base64")
-
-        if "arm" in self.settings.arch:
-            self.output.info("Python ARM module not supported, removing option with_python.")
+            self.output.info("Python module not supported, removing option with_python.")
             self.options.rm_safe("with_python")
 
         if self.settings_build.os == "Windows":
