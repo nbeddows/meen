@@ -24,6 +24,7 @@ SOFTWARE.
 #include <bit>
 #include <charconv>
 #include <cinttypes>
+#include <format>
 #include <numeric>
 #include <stdio.h>
 #ifdef ENABLE_MEEN_RP2040
@@ -909,37 +910,11 @@ namespace meen
 
 									if (cpuStateTxt)
 									{
-										size_t dataSize = 0;
-										auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
+										auto str = std::vformat(R"({{"cpu":{},"memory":{{"uuid":"{}://{}","rom":{{"bytes":"{}://md5://{}"}},"ram":{{"size":{},"bytes":"{}://{}://{}"}}}}}})",
+																std::make_format_args(cpuStateTxt.value(), m->opt_.Encoder(), memUuidTxt.value(), m->opt_.Encoder(), romMd5Txt.value(),
+																ram.size(), m->opt_.Encoder(), m->opt_.Compressor(), ramTxt.value()));
 
-										// todo - replace snprintf with std::format
-										auto writeState = [&]()
-										{
-											std::string str;
-											char* data = nullptr;
-
-											if (dataSize > 0)
-											{
-												str.resize(dataSize);
-												data = str.data();
-											}
-
-											//cppcheck-suppress nullPointer
-											dataSize = snprintf(data, dataSize, fmtStr,
-												cpuStateTxt.value().c_str(),
-												m->opt_.Encoder().c_str(),
-												memUuidTxt.value().c_str(),
-												m->opt_.Encoder().c_str(),
-												romMd5Txt.value().c_str(),
-												ram.size(), m->opt_.Encoder().c_str(), m->opt_.Compressor().c_str(),
-												ramTxt.value().c_str()) + 1;
-
-											return str;
-										};
-
-										writeState();
-
-										onSave = std::async(saveLaunchPolicy, [m, state = writeState()]
+										onSave = std::async(saveLaunchPolicy, [m, state = std::move(str)]
 										{
 											int len = 255;
 											std::string uri(len + 1, '\0');

@@ -21,14 +21,16 @@ SOFTWARE.
 */
 
 #include <assert.h>
+#include <format>
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
 #define ARDUINOJSON_ENABLE_STRING_VIEW 1
 #include <ArduinoJson.h>
 #endif // ENABLE_NLOHMANN_JSON
-#include "meen/utils/Utils.h"
+
 #include "meen/cpu/8080.h"
+#include "meen/utils/Utils.h"
 #include "meen/utils/ErrorCode.h"
 
 namespace meen
@@ -435,11 +437,8 @@ std::expected<std::string, std::error_code> Intel8080::Save() const
 		return b64;
 	}
 
-	auto fmtStr = R"({"uuid":"base64://%s","registers":{"a":%d,"b":%d,"c":%d,"d":%d,"e":%d,"h":%d,"l":%d,"s":%d},"pc":%d,"sp":%d})";
-	auto count = snprintf(nullptr, 0, fmtStr, b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
-	std::string str(count + 1, '\0');
-	snprintf(str.data(), count + 1, fmtStr, b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_);
-	return str;
+	return std::vformat(R"({{"uuid":"base64://{}","registers":{{"a":{},"b":{},"c":{},"d":{},"e":{},"h":{},"l":{},"s":{}}},"pc":{},"sp":{}}})",
+						std::make_format_args(b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_));
 }
 #endif // ENABLE_MEEN_SAVE
 
