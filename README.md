@@ -71,7 +71,7 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706).
+MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 13) and MSVC (minimum version 1706).
 
 #### Pre-requisites
 
