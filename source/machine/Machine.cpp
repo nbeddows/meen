@@ -24,6 +24,7 @@ SOFTWARE.
 #include <bit>
 #include <charconv>
 #include <cinttypes>
+#include <format>
 #include <numeric>
 #include <stdio.h>
 #ifdef ENABLE_MEEN_RP2040
@@ -173,9 +174,14 @@ namespace meen
 						fseek(fin, 0, SEEK_END);
 						std::string jsonStr(ftell(fin), '\0');
 						fseek(fin, 0, SEEK_SET);
-						fread(jsonStr.data(), 1, jsonStr.size(), fin);
-						fclose(fin);
+						
+						if (fread(jsonStr.data(), jsonStr.size(), 1, fin) != 1)
+						{
+							return m->HandleError(errc::incompatible_rom, std::source_location::current());
+							fclose(fin);
+						}
 
+						fclose(fin);
 						auto je = deserializeJson(json, jsonStr);
 
 						if (je)
@@ -584,7 +590,7 @@ namespace meen
 						{
 							scheme = memory["rom"]["scheme"].get<std::string_view>();
 						}
-				
+
 						if (memory["rom"].contains("directory"))
 						{
 							directory = memory["rom"]["directory"].get<std::string_view>();
@@ -909,37 +915,12 @@ namespace meen
 
 									if (cpuStateTxt)
 									{
-										size_t dataSize = 0;
-										auto fmtStr = R"({"cpu":%s,"memory":{"uuid":"%s://%s","rom":{"bytes":"%s://md5://%s"},"ram":{"size":%d,"bytes":"%s://%s://%s"}}})";
+										auto ramSize = ram.size();
+										auto str = std::vformat(R"({{"cpu":{},"memory":{{"uuid":"{}://{}","rom":{{"bytes":"{}://md5://{}"}},"ram":{{"size":{},"bytes":"{}://{}://{}"}}}}}})",
+																std::make_format_args(cpuStateTxt.value(), m->opt_.Encoder(), memUuidTxt.value(), m->opt_.Encoder(), romMd5Txt.value(),
+																ramSize, m->opt_.Encoder(), m->opt_.Compressor(), ramTxt.value()));
 
-										// todo - replace snprintf with std::format
-										auto writeState = [&]()
-										{
-											std::string str;
-											char* data = nullptr;
-
-											if (dataSize > 0)
-											{
-												str.resize(dataSize);
-												data = str.data();
-											}
-
-											//cppcheck-suppress nullPointer
-											dataSize = snprintf(data, dataSize, fmtStr,
-												cpuStateTxt.value().c_str(),
-												m->opt_.Encoder().c_str(),
-												memUuidTxt.value().c_str(),
-												m->opt_.Encoder().c_str(),
-												romMd5Txt.value().c_str(),
-												ram.size(), m->opt_.Encoder().c_str(), m->opt_.Compressor().c_str(),
-												ramTxt.value().c_str()) + 1;
-
-											return str;
-										};
-
-										writeState();
-
-										onSave = std::async(saveLaunchPolicy, [m, state = writeState()]
+										onSave = std::async(saveLaunchPolicy, [m, state = std::move(str)]
 										{
 											int len = 255;
 											std::string uri(len + 1, '\0');
@@ -963,7 +944,7 @@ namespace meen
 													if (!ec)
 													{
 														std::ofstream fout(path / fileName, std::ios::trunc);
-														
+
 														if (!fout.good())
 														{
 															e = meen::errc::invalid_argument;
@@ -990,7 +971,7 @@ namespace meen
 													{
 														e = meen::errc::invalid_argument;
 													}
-													
+
 													if (e)
 													{
 														// We failed to write, give the completion handler a chance to write it correctly.

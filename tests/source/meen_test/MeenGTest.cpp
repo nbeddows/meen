@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <format>
 #include <gtest/gtest.h>
 #include <memory>
 #ifdef ENABLE_NLOHMANN_JSON
@@ -36,6 +37,8 @@ SOFTWARE.
 #include "test_controllers/MemoryController.h"
 #include "test_controllers/TestIoController.h"
 #include "test_controllers/CpmIoController.h"
+
+using namespace std::literals::string_view_literals;
 
 namespace meen::Tests
 {
@@ -57,7 +60,8 @@ namespace meen::Tests
 		static void Run(bool runAsync);
 		static void Load(bool runAsync);
 		static void RunTestSuite(const char* suiteName, const char* expectedState, const char* expectedMsg, size_t pos);
-		static errc LoadProgram (char* json, int* jsonLen, const char* fmt, ...);
+		template <typename... Args>
+		static errc LoadProgram(char* json, int* jsonLen, const std::format_string<Args...> fmt, Args&&... args);
 		static std::string ReadCpmIoControllerBuffer();
 
 	public:
@@ -123,22 +127,21 @@ namespace meen::Tests
 		EXPECT_FALSE(err);
 	}
 
-	errc MachineTest::LoadProgram(char* json, int* jsonLen, const char* fmt, ...)
+	template<class... Args>
+	errc MachineTest::LoadProgram(char* json, int* jsonLen, const std::format_string<Args...> fmt, Args&&... args)
 	{
-		va_list args;
-		va_start(args, fmt);
-
-		auto len = vsnprintf(json, *jsonLen, fmt, args);
+		auto formattedSize = std::formatted_size(fmt, args...);
 
 		// A write error occurred while executing the function, odds are that one of our parameters are incorrect.
-		// When len == *jsonLen, the config option `maxLoadStateLen` needs to be increased
-		if (len < 0 || len == *jsonLen)
+		// When len > *jsonLen, the config option `maxLoadStateLen` needs to be increased
+		if (formattedSize <= 0 || formattedSize > *jsonLen)
 		{
 			return errc::invalid_argument;
 		}
 
+		std::vformat_to(json, fmt.get(), std::make_format_args(args...));
 		// Write the final length of the loaded program
-		*jsonLen = len;
+		*jsonLen = formattedSize;
 		return errc::no_error;
 	}
 
@@ -164,7 +167,7 @@ namespace meen::Tests
 		err = machine_->OnSave([&saveTriggered, expected](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
 		{
 			// Return back a protocol that is unsupported so that our completion handler is called
-			*uriLen = snprintf(uri, *uriLen, "%s", "json://gtest");
+			*uriLen = std::format_to_n(uri, *uriLen, "json://gtest").size;
 			return meen::errc::no_error;
 		}, [&saveTriggered, expected](const char* location, const char* actual, [[maybe_unused]] IController* ioController)
 		{
@@ -198,11 +201,11 @@ namespace meen::Tests
 		{
 			if (extra == nullptr)
 			{
-				return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256}]}}})", saveAndExit, name);
+				return LoadProgram(json, jsonLen, R"(json://{{"cpu":{{"pc":256}},"memory":{{"rom":{{"block":[{{"bytes":"{}","offset":0}},{{"bytes":"{}","offset":256}}]}}}}}})"sv, saveAndExit, name);
 			}
 			else
 			{
-				return LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":256},{"bytes":"%s","offset":%d}]}}})", saveAndExit, name, extra, offset);
+				return LoadProgram(json, jsonLen, R"(json://{{"cpu":{{"pc":256}},"memory":{{"rom":{{"block":[{{"bytes":"{}","offset":0}},{{"bytes":"{}","offset":256}},{{"bytes":"{}","offset":{}}}]}}}}}})"sv, saveAndExit, name, extra, offset);
 			}
 		}, nullptr);
 
@@ -344,7 +347,7 @@ namespace meen::Tests
 
 		machine_->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
 		{
-			return LoadProgram (json, jsonLen, R"(json://{"cpu":{"pc":5},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"%s","offset":50004}]}}})", saveAndExit, nopStart, nopEnd);
+			return LoadProgram (json, jsonLen, R"(json://{{"cpu":{{"pc":5}},"memory":{{"rom":{{"block":[{{"bytes":"{}","offset":0}},{{"bytes":"{}","offset":5}},{{"bytes":"{}","offset":50004}}]}}}}}})"sv, saveAndExit, nopStart, nopEnd);
 		}, nullptr);
 
 		if (runAsync == true)
@@ -412,7 +415,7 @@ namespace meen::Tests
 			err = machine_->OnSave([&](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
 			{
 				// Return back a protocol that is unsupported so that our completion handler is called
-				*uriLen = snprintf(uri, *uriLen, "%s", "json://gtest");
+				*uriLen = std::format_to_n(uri, *uriLen, "json://gtest").size;
 				return meen::errc::no_error;
 			}, [&](const char* location, const char* json, [[maybe_unused]] IController* ioController)
 			{
@@ -437,7 +440,7 @@ namespace meen::Tests
 					// be subtracted from the total size of the file,
 					// hence an explicit setting of the test file size.
 					case 0:
-						err = LoadProgram(json, jsonLen, R"(json://{"cpu":{"pc":256},"memory":{"rom":{"block":[{"bytes":"%s","offset":0},{"bytes":"%s","offset":5},{"bytes":"file://%s/TST8080.COM","offset":256,"size":1471}]}}})", saveAndExit, bdosMsg, progDir);
+						err = LoadProgram(json, jsonLen, R"(json://{{"cpu":{{"pc":256}},"memory":{{"rom":{{"block":[{{"bytes":"{}","offset":0}},{{"bytes":"{}","offset":5}},{{"bytes":"file://{}/TST8080.COM","offset":256,"size":1471}}]}}}}}})"sv, saveAndExit, bdosMsg, progDir);
 						break;
 					case 1:
 						EXPECT_FALSE(saveStates.empty());
@@ -445,7 +448,19 @@ namespace meen::Tests
 						if (saveStates.empty() == false)
 						{
 							// 0 - mid program save state, 1 and 2 - end of program save states
-							err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
+							auto str = std::string("json://") + saveStates[0];
+
+							// When len > *jsonLen, the config option `maxLoadStateLen` needs to be increased
+							if (str.length() > *jsonLen)
+							{
+								err = errc::invalid_argument;
+							}
+							else
+							{
+								strncpy(json, str.c_str(), str.length());
+								// Write the final length of the loaded program
+								*jsonLen = str.length();
+							}
 						}
 						break;
 					default:

@@ -71,13 +71,13 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706).
+MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 13) and MSVC (minimum version 1706).
 
 #### Pre-requisites
 
 ##### Linux (Ubuntu 25.04)
 
-- `sudo apt install gcc`
+- `sudo apt install gcc g++`
 - [Install Conan](https://conan.io/downloads/)
 - `sudo apt install cmake`
 - `sudo apt install cppcheck` (if building a binary development package)
@@ -127,7 +127,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 **1.** Install the supported MEEN Conan configurations (v0.1.0) (if not done so already):
 - `conan config install -sf profiles -tf profiles `<br>
-  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
+  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.0"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
@@ -146,8 +146,8 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
 
 The following additional install options are supported:
-- enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on arm platforms)
-- enable/disable zlib support: `--options=with_zlib=[True(default)|False]` (Options not available on embedded platofrms)
+- enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on embedded platforms)
+- enable/disable zlib support: `--options=with_zlib=[True(default)|False]` (Option not available on embedded platofrms)
 
 The following will enable python and disable zlib: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193 --options=with_python=True --options=with_zlib=False`
 
@@ -174,7 +174,7 @@ A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build
 
 **NOTE**: the options supported during the install step can also be enabled/disabled here if required:
 - Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`
-- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail)
+- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON`
 
 **5.** Run cmake to compile MEEN: `cmake --build --preset conan-release`<br>
 

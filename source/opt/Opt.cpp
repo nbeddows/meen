@@ -226,21 +226,23 @@ namespace meen
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
-	std::string Opt::Compressor() const
+	const std::string& Opt::Compressor() const
 	{
 #ifdef ENABLE_NLOHMANN_JSON
-		return json_["compressor"].get<std::string>();
+		return json_["compressor"].get_ref<const std::string&>();
 #else
-		return json_["compressor"].as<std::string>();
+		compressor_ = json_["compressor"].as<std::string>();
+		return compressor_;
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
-	std::string Opt::Encoder() const
+	const std::string& Opt::Encoder() const
 	{
 #ifdef ENABLE_NLOHMANN_JSON
-		return json_["encoder"].get<std::string>();
+		return json_["encoder"].get_ref<const std::string&>();
 #else
-		return json_["encoder"].as<std::string>();
+		encoder_ = json_["encoder"].as<std::string>();
+		return encoder_;
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
