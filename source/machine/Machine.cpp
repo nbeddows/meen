@@ -174,9 +174,14 @@ namespace meen
 						fseek(fin, 0, SEEK_END);
 						std::string jsonStr(ftell(fin), '\0');
 						fseek(fin, 0, SEEK_SET);
-						fread(jsonStr.data(), 1, jsonStr.size(), fin);
-						fclose(fin);
+						
+						if (fread(jsonStr.data(), jsonStr.size(), 1, fin) != 1)
+						{
+							return m->HandleError(errc::incompatible_rom, std::source_location::current());
+							fclose(fin);
+						}
 
+						fclose(fin);
 						auto je = deserializeJson(json, jsonStr);
 
 						if (je)
@@ -585,7 +590,7 @@ namespace meen
 						{
 							scheme = memory["rom"]["scheme"].get<std::string_view>();
 						}
-				
+
 						if (memory["rom"].contains("directory"))
 						{
 							directory = memory["rom"]["directory"].get<std::string_view>();
@@ -910,9 +915,10 @@ namespace meen
 
 									if (cpuStateTxt)
 									{
+										auto ramSize = ram.size();
 										auto str = std::vformat(R"({{"cpu":{},"memory":{{"uuid":"{}://{}","rom":{{"bytes":"{}://md5://{}"}},"ram":{{"size":{},"bytes":"{}://{}://{}"}}}}}})",
 																std::make_format_args(cpuStateTxt.value(), m->opt_.Encoder(), memUuidTxt.value(), m->opt_.Encoder(), romMd5Txt.value(),
-																ram.size(), m->opt_.Encoder(), m->opt_.Compressor(), ramTxt.value()));
+																ramSize, m->opt_.Encoder(), m->opt_.Compressor(), ramTxt.value()));
 
 										onSave = std::async(saveLaunchPolicy, [m, state = std::move(str)]
 										{
@@ -938,7 +944,7 @@ namespace meen
 													if (!ec)
 													{
 														std::ofstream fout(path / fileName, std::ios::trunc);
-														
+
 														if (!fout.good())
 														{
 															e = meen::errc::invalid_argument;
@@ -965,7 +971,7 @@ namespace meen
 													{
 														e = meen::errc::invalid_argument;
 													}
-													
+
 													if (e)
 													{
 														// We failed to write, give the completion handler a chance to write it correctly.

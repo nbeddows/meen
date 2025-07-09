@@ -431,14 +431,23 @@ std::error_code Intel8080::Load(const std::string&& str, bool checkUuid)
 std::expected<std::string, std::error_code> Intel8080::Save() const
 {
 	auto b64 = Utils::BinToTxt("base64", "none", uuid_.data(), uuid_.size());
-	
+
 	if (!b64)
 	{
 		return b64;
 	}
 
+	auto a = Value(a_);
+	auto b = Value(b_);
+	auto c = Value(c_);
+	auto d = Value(d_);
+	auto e = Value(e_);
+	auto h = Value(h_);
+	auto l = Value(l_);
+	auto s = Value(status_);
+
 	return std::vformat(R"({{"uuid":"base64://{}","registers":{{"a":{},"b":{},"c":{},"d":{},"e":{},"h":{},"l":{},"s":{}}},"pc":{},"sp":{}}})",
-						std::make_format_args(b64.value().c_str(), Value(a_), Value(b_), Value(c_), Value(d_), Value(e_), Value(h_), Value(l_), Value(status_), pc_, sp_));
+						std::make_format_args(b64.value(), a, b, c, d, e, h, l, s, pc_, sp_));
 }
 #endif // ENABLE_MEEN_SAVE
 
