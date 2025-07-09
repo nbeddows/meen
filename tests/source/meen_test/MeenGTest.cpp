@@ -415,7 +415,7 @@ namespace meen::Tests
 			err = machine_->OnSave([&](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
 			{
 				// Return back a protocol that is unsupported so that our completion handler is called
-				*urlLen = std::format_to_n(uri, *uriLen, "json://gtest").size;
+				*uriLen = std::format_to_n(uri, *uriLen, "json://gtest").size;
 				return meen::errc::no_error;
 			}, [&](const char* location, const char* json, [[maybe_unused]] IController* ioController)
 			{
