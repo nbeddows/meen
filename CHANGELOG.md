@@ -3,6 +3,8 @@
 * Dropped GCC-12 support.
 * Added GCC-14 support.
 * The MEEN conan option --with_python is now supported on Arm Linux.
+* Added support for the latest pico sdk (2.1.1) while maintaing
+  support for sdk version 1.5.1.
 
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
