@@ -696,8 +696,8 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_OnInit);
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
-// These may take a little while to run on embedded platforms, disabled by default
-#ifndef ENABLE_MEEN_RP2040
+// These may take a little while to run on embedded platforms - only run when using pico sdk >= 2.x.x
+#if !defined ENABLE_MEEN_RP2040 || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_CpuTest);
 //        RUN_TEST(meen::tests::test_8080Exm);
 #endif
