@@ -264,6 +264,14 @@ target_include_directories(${meen} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
   if(${enable_rp2040} STREQUAL ON)
+    # SDL Version 2 supports a higher base clock speed
+    # We take advantage of this to run additional tests that would otherwise take too long using version 1 of the sdk
+    if(${PICO_SDK_VERSION_MAJOR} GREATER_EQUAL 2)
+      target_compile_definitions(${meen} PUBLIC PICO_USE_FASTEST_SUPPORTED_CLOCK=1)
+    else()
+      target_compile_definitions(${meen} PUBLIC PICO_USE_FASTEST_SUPPORTED_CLOCK=0)
+    endif()
+    
     target_compile_definitions(${meen} PUBLIC ENABLE_MEEN_RP2040)
     target_link_libraries(${meen} PUBLIC pico_stdlib)
     target_link_libraries(${meen} PRIVATE pico_multicore)
