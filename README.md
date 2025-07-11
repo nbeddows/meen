@@ -105,7 +105,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
     - Set the Raspberry Pi Pico SDK Path:
         - `nano ~/.bashrc`
         - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}/2.1.1`
-	      - Save, close and re-open shell.
+        - Save, close and re-open shell.
     - Install picotool
       - `sudo apt install libusb-1.0-0-dev pkg-config`
       - `git clone https://github.com/raspberrypi/picotool.git`
@@ -141,14 +141,14 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - Windows x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193-gtest`
 - Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14`
 - Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest`
-- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv7hf-gcc-14`
-- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv7hf-gcc-14-gtest`
-- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv8-gcc-14`
-- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv8-gcc-14-gtest`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=rp2040-armv6-gcc-14`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=rp2040-armv6-gcc-14-unity`<br>
+- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv7hf-gcc-14`
+- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv7hf-gcc-14-gtest`
+- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14`
+- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14-gtest`
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14`<br>`--profile:host=rp2040-armv6-gcc-14`
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14`<br>`--profile:host=rp2040-armv6-gcc-14-unity`
 
-**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
+**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).
 
 The following additional install options are supported:
 - enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on embedded platforms)

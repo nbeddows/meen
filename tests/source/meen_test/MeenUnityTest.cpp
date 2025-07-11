@@ -276,7 +276,7 @@ namespace meen::tests
 #ifdef ENABLE_MEEN_RP2040
                     if (&tst8080End - &tst8080Start >= 1471)
                     {
-                        auto tsts = std::bit_cast<uintptr_t>(&tst8080Start);                        
+                        auto tsts = std::bit_cast<uintptr_t>(&tst8080Start);
                         err = LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":256}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":256,\"size\":1471}}]}}}}}}",
                                            sae, saes, bdm, bdms, tsts);
                     }
@@ -413,7 +413,7 @@ namespace meen::tests
         });
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
-                    
+
         err = machine->OnSave([&saveTriggered, expected](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
         {
             // Return back a protocol that is unsupported so that our completion handler is called
@@ -638,21 +638,21 @@ namespace meen::tests
     static void test_OnInit()
     {
         int initCount = 0;
-            
+
         auto err = machine->OnInit([&initCount]([[maybe_unused]] IController* ioController)
         {
             initCount++;
             return meen::errc::no_error;
         });
         TEST_ASSERT_FALSE(err);
-    
+
         // Run the test more than once (in this case 5 times)
         for(int i = 0; i < 5; i++)
         {
             test_8080Pre();
         }
         TEST_ASSERT_EQUAL(1, initCount);
-    
+
         err = machine->OnInit(nullptr);
         TEST_ASSERT_FALSE(err);
     }
@@ -696,8 +696,8 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_OnInit);
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
-// These may take a little while to run on embedded platforms, disabled by default
-#ifndef ENABLE_MEEN_RP2040
+// These may take a little while to run on embedded platforms - only run when using pico sdk >= 2.x.x
+#if !defined ENABLE_MEEN_RP2040 || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_CpuTest);
 //        RUN_TEST(meen::tests::test_8080Exm);
 #endif
