@@ -86,30 +86,35 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - `sudo apt install texlive-latex-extra` (if building a binary developemnt package)
 - [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images if building a binary development package)
 - `sudo apt install python3 python-is-python3 python3-dev` (if building the Python module)
-- cross compilation:
+- Cross compilation:
   - armv7hf:
     - `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`
   - aarch64:
     - `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu`
   - rp2040:
-    - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`
-    - `git clone https://github.com/raspberrypi/pico-sdk.git --branch 1.5.1`
-    - `cd pico-sdk`
-    - `git submodule update --init`
-    - build the Raspberry Pi Pico SDK:
-      - Conan and the Raspberry Pi Pico Sdk seem to have an issue with conflicting use of the cmake toolchain file which results in test programs not being able to be compiled during the conan build process as outlined [here](https://github.com/raspberrypi/pico-sdk/issues/1693).
-      At this point we need to build the sdk so that we have the required tools pre-built so the Conan build process will succeed:
-      **NOTE**: Conan will assume that the build tools are located in the `build` directory, **do not** use a different directory name.
-        - `mkdir build`
-        - `cd build`
-        - `cmake ..`
-        - `make`
+    - Install the Pico SDK
+      - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`
+      - `mkdir pico-sdk`
+      - `cd pico-sdk`
+      - `git clone https://github.com/raspberrypi/pico-sdk.git --tag 2.1.1`
+      - `cd 2.1.1`
+      - `git submodule update --init`
+      - The picotool uf2 convert postbuild command in tools/CMakeLists.txt requires its target file type be set explicitly:
+          - `nano tools/CMakeLists.txt`
+          - Change the picotool uf2 post build command target from `$<TARGET_FILE:${TARGET}>` to `$<TARGET_FILE:${TARGET}> -t elf`
     - Set the Raspberry Pi Pico SDK Path:
-        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
-        To avoid having to export it on every session, add it to the end of your .bashrc file instead:
         - `nano ~/.bashrc`
-        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
-	- save, close and re-open shell.
+        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}/2.1.1`
+	      - Save, close and re-open shell.
+    - Install picotool
+      - `sudo apt install libusb-1.0-0-dev pkg-config`
+      - `git clone https://github.com/raspberrypi/picotool.git`
+      - `cd picotool`
+      - `mkdir build`
+      - `cd build`
+      - `cmake ..`
+      - `make`
+      - `sudo make install`
 
 ##### Windows (10)
 
@@ -125,23 +130,23 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 #### Configuration
 
-**1.** Install the supported MEEN Conan configurations (v0.1.0) (if not done so already):
+**1.** Install the latest supported MEEN Conan configurations (if not done so already):
 - `conan config install -sf profiles -tf profiles `<br>
-  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.0"`
+  `https://github.com/nbeddows/meen-conan-config.git`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
 **3.** Install dependencies:
 - Windows x86_64 build and host: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193`
 - Windows x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193-gtest`
-- Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13`
-- Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`
-- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13`
-- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13-gtest`
-- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13`
-- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13-gtest`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13-unity`<br>
+- Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14`
+- Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest`
+- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv7hf-gcc-14`
+- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv7hf-gcc-14-gtest`
+- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv8-gcc-14`
+- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=Linux-armv8-gcc-14-gtest`
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=rp2040-armv6-gcc-14`
+- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-14 -profile:host=rp2040-armv6-gcc-14-unity`<br>
 
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
 
@@ -162,9 +167,9 @@ The following dependent packages will be (compiled if required and) installed ba
 - `unity`: for running the MEEN unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
 
-You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --settings=build_type=Debug`.
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14 --settings=build_type=Debug`.
 
-You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --options=zlib/*:shared=False`.
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14 --options=zlib/*:shared=False`.
 
 **4.** Run cmake to configure and generate the build system.
 
@@ -263,12 +268,12 @@ The following additional options are supported:
 **NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
-1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the MEEN package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
-2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
-3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
-4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
-5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13`: same as 1 but will skip running the unit tests.
-6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_i8080_test_suites=True`: same as 1 but will also run the i8080 test suites.
+1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest`: build the MEEN package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
+3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
+4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
+5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14`: same as 1 but will skip running the unit tests.
+6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_i8080_test_suites=True`: same as 1 but will also run the i8080 test suites.
 
 #### Upload a Conan package
 

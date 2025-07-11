@@ -38,15 +38,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 23)
 
 if(${enable_rp2040} STREQUAL ON)
-  add_executable(Pioasm IMPORTED)
-  set_property(TARGET Pioasm PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/pioasm/pioasm)
-  set(Pioasm_FOUND 1)
-
-  # In the 2.x SDK this is handled by picotool, need to account for this with version numbers
-  add_executable(ELF2UF2 IMPORTED)
-  set_property(TARGET ELF2UF2 PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/elf2uf2/elf2uf2)
-  set(ELF2UF2_FOUND 1)
-
   pico_sdk_init()
 endif()
 
