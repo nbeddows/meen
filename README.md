@@ -91,7 +91,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
     - `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`
   - aarch64:
     - `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu`
-  - rp2040:
+  - pico:
     - Install the Pico SDK
       - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`
       - `mkdir pico-sdk`
@@ -130,9 +130,9 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 #### Configuration
 
-**1.** Install the latest supported MEEN Conan configurations (if not done so already):
+**1.** Install the latest supported MEEN Conan configuration profiles (if not done so already):
 - `conan config install -sf profiles -tf profiles `<br>
-  `https://github.com/nbeddows/meen-conan-config.git`
+  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.1"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
@@ -145,8 +145,8 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv7hf-gcc-14-gtest`
 - Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14`
 - Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14-gtest`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14`<br>`--profile:host=rp2040-armv6-gcc-14`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14`<br>`--profile:host=rp2040-armv6-gcc-14-unity`
+- Linux x86_64 build, Pico (RP2040) microcontroller (baremetal armv6-m) host: `conan install . --build=missing`<br>`--profile:build=Linux-x86_64-gcc-14 --profile:host=pico-armv6-gcc-14`
+- Linux x86_64 build, Pico (RP2040) microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing`<br>`--profile:build=Linux-x86_64-gcc-14 --profile:host=pico-armv6-gcc-14-unity`
 
 **NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).
 
@@ -196,25 +196,25 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/meen-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:meen-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-Linux-armv7hf-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v1.5.1.tar.gz`.
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
 5. Change directory to meen: `cd meen`.
 6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
-**C++ - RP2040 (armv6-m)**
+**C++ - Pico RP2040 (armv6-m)**
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 This example will assume you are deploying the UF2 file from a Raspberry Pi.
 1. Create an Arm Linux binary distribution: see building a binary development package.
-2. Copy the distribution to the arm machine: `scp build/MinSizeRel/meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin.tar.gz ${user}@raspberrypi:meen-v1.6.2.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-baremetal-armv6-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v1.6.2.tar.gz`.
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
 5. Hold down the `bootsel` button on the pico and plug in the usb cable into the usb port of the Raspberry Pi then release the `bootsel` button.
 6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`.
 7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`.
 8. Mount the device: `sudo mount /dev/sdb1 /mnt/pico`. Run `ls /mnt/pico` to confirm it mounted.
-9. Copy the uf2 image to the pico: `cp meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin/bin/meen_test.uf2 /mnt/pico`
+9. Copy the uf2 image to the pico: `cp meen-v2.1.0-baremetal-armv6-GNU-14.2.1/bin/meen_test.uf2 /mnt/pico`
 10. You should see a new device `ttyACM0`: `ls /dev` to confirm.
 11. Install minicom (if not done already): `sudo apt install minicom`.
 12. Run minicom to see test output: `minicom -b 115200 -o -D /dev/ttyACM0`<br>
@@ -238,11 +238,11 @@ MEEN supports the building of standalone binary development packages. The motiva
 Once the configuration step is complete a binary development tgz package can be built with the following command:
 - `cmake --build --preset conan-release --target=package`
 
-The package will be located in `build/Release/` with a name similar to the following depending on the platform it was built on:
-- `meen-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`
+The package will be located in `build/Release/` (single config generators) or `output/build` (multi config generators) with a name similar to the following depending on the platform it was built on:
+- `meen-v2.1.0-Windows-x86_64-MSVC-19.38.33133.0.tar.gz`
 
 CPack can be used directly rather than the package target if finer control is required:
-- `cpack --config build\CPackConfig.cmake -C ${build_type} -G 7Z`
+- `cpack --config [output/]build/CPackConfig.cmake -C ${build_type} -G 7Z`
 
 **NOTE**: the underlying package generator used to build the package (in this case `7zip`) must be installed otherwise the preceeding command will fail.
 
@@ -321,7 +321,7 @@ auto machine = Make8080Machine();
 auto err = machine->OnError([](std::error_code ec, const char* fileName, const char* functionName, int line, int column, IController* ioController)
 {
   // Handle the error, for demonstration purposes, print it to the console.
-  std::cout << std::format("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
+  std::cout << std::vformat("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
 });
 
 // The return code of the OnError method must be checked as it may fail to register, therefore it won't be
@@ -349,18 +349,15 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // Typically, the on load logic would be handled by your custom io controller:
   // ioController->LoadRom(json, jsonLen), but is left here for simplicity.
 
-  // The machine state to load in json format: load all bytes from the rom myProgram.com from
-  // the current directory into memory at address 0x0000 and start executing the rom from address 256.
+  // Load all bytes from the rom myProgram.com from the current directory into memory at
+  // address 0x0000 and start executing the rom from address 256.
   // Note the use of uri schemes to determine the type of resource to load (an ommitted scheme defaults
   // to json://).
-  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})";
-  // auto jsonToLoad = "file://myProgramSave.json";
-
-  // Write the json to load to json and update the final length of the loaded program.
-  // When the length of the json to load is greater than *jsonLen, the json will be truncated
-  // and a json parse error will occur. In this case, the config option maxLoadStateLen needs
-  // to be increased.
-  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad);
+  // When std::formatted_size of the format string is greater than *jsonLength, the json will be truncated
+  // and a meen::errc error will be raised. In this case, the config option maxLoadStateLen needs to
+  // be increased.
+  auto result = std::format_to_n(json, *jsonLength, R"(json://{{"cpu":{{"pc":{}}},"memory":{{"rom:"{{"bytes":"{}"}}}}}})", 256, "file://myProgram.com");
+  *jsonLength = result.size;
   return errc::no_error;
 // Not defining a completion handler, set it to nullptr.
 }, nullptr);
@@ -375,7 +372,8 @@ machine->OnSave([](char* uri, int* uriLength, IController* ioController)
   // Write the location of the resource to save and update the final resource length.
   // NOTE: the maximum size of the uriLength parameter is 255, anything longer than this will cause
   // the uri to be truncated.
-  *uriLength = snprintf(uri, *uriLength, "file://myProgramSave.json");
+  auto result = std::format_to_n(uri, *uriLength, "{}", "file://myProgramSave.json");
+  *uriLength = result.size;
   return errc::no_error;
 // Since we are using the built in file:// protocol support, don't define a completion handler, any errors
 // will be diverted to the registered OnError handler.
