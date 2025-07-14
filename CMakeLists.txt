@@ -29,7 +29,7 @@ set(major 2)
 set(minor 0)
 set(bugfix 0)
 
-if(${enable_rp2040} STREQUAL ON)
+if(NOT ${enable_board} STREQUAL "none")
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
@@ -37,7 +37,7 @@ project(${meen} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 23)
 
-if(${enable_rp2040} STREQUAL ON)
+if(NOT ${enable_board} STREQUAL "none")
   pico_sdk_init()
 endif()
 
@@ -82,8 +82,8 @@ else()
   endif()
 endif()
 
-# TODO: rp2040 does not output all artifacts correctly when setting this - investigate me
-if(NOT ${enable_rp2040} STREQUAL ON)
+# TODO: Pico SDK does not output all artifacts correctly when setting this - investigate me
+if(${enable_board} STREQUAL "none")
   set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
@@ -263,8 +263,8 @@ target_compile_definitions(${meen} PUBLIC ${meen}_${lib_type})
 target_include_directories(${meen} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
-  if(${enable_rp2040} STREQUAL ON)
-    target_compile_definitions(${meen} PUBLIC ENABLE_MEEN_RP2040)
+  if(NOT ${enable_board} STREQUAL "none")
+    target_compile_definitions(${meen} PUBLIC PICO_BOARD=${enable_board})
     target_link_libraries(${meen} PUBLIC pico_stdlib)
     target_link_libraries(${meen} PRIVATE pico_multicore)
   endif()
@@ -339,7 +339,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   )
 
   if(${build_os} STREQUAL "baremetal")
-    if(${enable_rp2040} STREQUAL ON)
+    if(NOT ${enable_board} STREQUAL "none")
       set(${test_controllers}_source_files
         ${${test_controllers}_source_files}
         tests/${source_dir}/${test_controllers}/TestPrograms.S
@@ -398,7 +398,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   add_executable(${meen}_test ${${meen}_test_source_files})
 
   if(${build_os} STREQUAL "baremetal")
-    if(${enable_rp2040} STREQUAL ON)
+    if(NOT ${enable_board} STREQUAL "none")
       # PICO_USE_FASTEST_SUPPORTED_CLOCK is only available in SDK Version 2.x.x
       if(${PICO_SDK_VERSION_MAJOR} GREATER_EQUAL 2)
         target_compile_definitions(${meen}_test PRIVATE PICO_USE_FASTEST_SUPPORTED_CLOCK=1)
@@ -408,7 +408,10 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
       pico_enable_stdio_usb(${meen}_test 1)
       pico_enable_stdio_uart(${meen}_test 0)
-      pico_set_program_url(${meen}_test "https://github.com/neddows/mach-emu")
+      pico_set_program_name(${meen}_test, "MEEN test")
+      pico_set_program_description(${meen}_test, "Machine Emulator ENgine unit tests")
+      pico_set_program_version_string(${meen}_test, "${major}.${minor}.${bugfix}")
+      pico_set_program_url(${meen}_test "https://github.com/nbeddows/meen")
       pico_add_extra_outputs(${meen}_test)
       install(PROGRAMS ${CMAKE_BINARY_DIR}/${meen}_test.bin DESTINATION ./bin)
       install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.uf2 DESTINATION ./bin)
