@@ -6,7 +6,9 @@
 * Added support for the latest pico sdk (2.1.1) while maintaing
   support for sdk version 1.5.1.
 * Enabled CpuTest Suite for embedded platforms running at least
-  Pico SDK version 2.x.x.
+  Pico SDK version 2.0.0.
+* Embed common information in meen_test.uf2.
+* Replaced Conan option `with_rp2040` with `with_board`.
 
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
