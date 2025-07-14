@@ -27,9 +27,9 @@ SOFTWARE.
 #include <format>
 #include <numeric>
 #include <stdio.h>
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 #include <pico/multicore.h>
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
@@ -126,10 +126,10 @@ namespace meen
 		int64_t totalTicks = 0;
 		int64_t lastTicks = 0;
 		auto ticksPerIsr = 0ull;
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 		auto loadLaunchPolicy = m->opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 		auto loadMachineState = [&](std::string&& str)
 		{
 			if (str.empty() == false)
@@ -791,7 +791,7 @@ namespace meen
 			return std::error_code{};
 		};
 
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 		auto checkHandler = [](std::future<std::string>& fut)
 		{
 			std::string str;
@@ -808,7 +808,7 @@ namespace meen
 
 			return str;
 		};
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 #ifdef ENABLE_MEEN_SAVE
 		auto saveLaunchPolicy = m->opt_.SaveAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onSave;
@@ -839,18 +839,18 @@ namespace meen
 				{
 					// If a user defined callback is set and we are not processing a load or save request
 					if (m->onLoad_ != nullptr
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 						&& onLoad.valid() == false
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 #ifdef ENABLE_MEEN_SAVE
 						&& onSave.valid() == false
 #endif // ENABLE_MEEN_SAVE
 					)
 					{
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 						onLoad = std::async(loadLaunchPolicy, [m]
 						{
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 							int len = m->opt_.MaxLoadStateLength();
 							std::string str(len, '\0');
 
@@ -863,14 +863,14 @@ namespace meen
 							}
 
 							str.resize(len);
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 							return str;
 						});
 
 						loadMachineState(checkHandler(onLoad));
 #else
 						loadMachineState(std::move(str));
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 					}
 					break;
 				}
@@ -1038,13 +1038,13 @@ namespace meen
 				case ISR::Quit:
 				{
 					// Wait for any outstanding load/save requests to complete
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 					if (onLoad.valid() == true)
 					{
 						// we are quitting, wait for the onLoad handler to complete
 						loadMachineState(onLoad.get());
 					}
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 #ifdef ENABLE_MEEN_SAVE
 					if (onSave.valid() == true)
 					{
@@ -1078,9 +1078,9 @@ namespace meen
 							quit = m->onIdle_(m->ioController_.get());
 						}
 					}
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 					loadMachineState(checkHandler(onLoad));
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 #ifdef ENABLE_MEEN_SAVE
 					checkHandler(onSave);
 #endif // ENABLE_MEEN_SAVE
@@ -1179,7 +1179,7 @@ namespace meen
 		{
 			if(running_ == true)
 			{
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 				auto core1Ret = multicore_fifo_pop_blocking();
 
 				if(core1Ret != 0xFFFFFFFF)
@@ -1195,7 +1195,7 @@ namespace meen
 				{
 					return HandleError(errc::async, std::source_location::current());
 				}
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 				running_ = false;
 			}
 
@@ -1217,7 +1217,7 @@ namespace meen
 			}
 		};
 
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 		if(opt_.RunAsync() == true)
 		{
 			auto runMachineAsync = []
@@ -1271,7 +1271,7 @@ namespace meen
 				return std::unexpected(err);
 			}
 		}
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 		return runTime_;
 	}
 

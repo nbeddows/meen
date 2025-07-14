@@ -24,7 +24,7 @@ SOFTWARE.
 #define MACHINE_H
 
 #include <atomic>
-#ifdef EMABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 
 #else
 #include <future>
@@ -61,11 +61,11 @@ namespace meen
 		int64_t ticksPerIsr_{};
 		uint64_t runTime_{};
 		std::atomic_bool quit_{};
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 
 #else
 		std::future<void> fut_;
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 		std::map<uint16_t, uint16_t> romMetadata_;
 		std::map<uint16_t, uint16_t> ramMetadata_;
 		//cppcheck-suppress unusedStructMember
