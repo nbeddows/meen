@@ -38,8 +38,8 @@ class MeenRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "with_base64":[True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_rp2040": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
-    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_base64": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
+    options = {"shared": [True, False], "fPIC": [True, False], "with_base64":[True, False], "with_board":["none", "pico"], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
+    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_base64": True, "with_board":"none", "with_i8080_test_suites": False, "with_python": False, "with_save": True, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     # "tests/CMakeLists.txt",\
@@ -97,8 +97,8 @@ class MeenRecipe(ConanFile):
             self.options.rm_safe("with_python")
 
         if self.settings_build.os == "Windows":
-            self.output.info("Cross compiling with RP2040 support from Windows is not supported, removing option with_rp2040")
-            self.options.rm_safe("with_rp2040")
+            self.output.info("Cross compiling for microcontrollers from Windows is not supported, removing options 'with_board'")
+            self.options.rm_safe("with_board")
 
             if self.settings.os == "Linux" or self.settings.os == "baremetal":
                 self.output.error("Cross compiling from Windows to Linux or baremetal is not supported")
@@ -106,14 +106,14 @@ class MeenRecipe(ConanFile):
     def configure(self):
         if self.options.shared:
             self.options.rm_safe("fPIC")
-            self.options.rm_safe("with_rp2040")
+            self.options.rm_safe("with_board")
 
         if not self.options.get_safe("with_save", False):
             self.options.rm_safe("with_zlib")
 
         if self.settings.os == "baremetal":
-            if not self.options.get_safe("with_rp2040", False):
-                self.output.error("Baremetal unsupported (did you enable 'with_rp2040'?)")
+            if self.options.get_safe("with_board", "none") == "none":
+                self.output.error("Baremetal unsupported (did you set the option 'with_board'?)")
 
     def layout(self):
         cmake_layout(self)
@@ -130,7 +130,7 @@ class MeenRecipe(ConanFile):
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
         tc.cache_variables["enable_base64"] = self.options.get_safe("with_base64", False)
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
-        tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
+        tc.cache_variables["enable_board"] = self.options.get_safe("with_board", "none")
         tc.variables["build_os"] = self.settings.os
         tc.variables["build_arch"] = self.settings.arch
         tc.variables["archive_dir"] = self.cpp_info.libdirs[0]
