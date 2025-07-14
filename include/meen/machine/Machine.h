@@ -25,7 +25,7 @@ SOFTWARE.
 
 #include <atomic>
 #ifdef PICO_BOARD
-
+#include <mutex>
 #else
 #include <future>
 #endif
