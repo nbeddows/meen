@@ -30,6 +30,7 @@ set(minor 0)
 set(bugfix 0)
 
 if(NOT ${enable_board} STREQUAL "none")
+  set(PICO_BOARD ${enable_board})
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
@@ -264,7 +265,6 @@ target_include_directories(${meen} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
   if(NOT ${enable_board} STREQUAL "none")
-    target_compile_definitions(${meen} PUBLIC PICO_BOARD=${enable_board})
     target_link_libraries(${meen} PUBLIC pico_stdlib)
     target_link_libraries(${meen} PRIVATE pico_multicore)
   endif()
