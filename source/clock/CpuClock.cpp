@@ -20,7 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef ENABLE_MEEN_RP2040
+#ifndef PICO_BOARD
 #ifdef __GNUC__
 // use nanosleep
 #include <time.h>
@@ -31,7 +31,7 @@ SOFTWARE.
 // use std::thread::sleep_for
 #include <thread>
 #endif // __GNUC__
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
 
 #include "meen/clock/CpuClock.h"
 
@@ -43,7 +43,7 @@ namespace meen
 		speed_{ speed },
 		timePeriod_{ 1000000000 / speed }
 	{
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 		maxResolution_ = 1000ns;
 #elif defined __GNUC__
 		struct timespec res;
@@ -145,7 +145,7 @@ namespace meen
 					if (spinTime >= 1000000ns)
 					{
 						auto n = nanoseconds(static_cast<int64_t>(spinTime.count() * spinPercentageToSleep_));
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 						auto now = get_absolute_time();
 						sleep_us(duration_cast<microseconds>(n).count());
 						spinTime -= duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(now, get_absolute_time())));
@@ -190,7 +190,7 @@ namespace meen
 				{
 					if(spinTime > 0ns)
 					{
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 						auto now = get_absolute_time();
 						busy_wait_us(duration_cast<microseconds>(spinTime).count());
 						spinTime = spinTime - duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(now, get_absolute_time())));
@@ -211,7 +211,7 @@ namespace meen
 					return spinTime;
 				};
 
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 				auto timeTaken = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(lastTime_, get_absolute_time())));
 				auto nanos = nanoseconds(tickCount_* timePeriod_) - timeTaken + error_;
 #else
@@ -219,7 +219,7 @@ namespace meen
 #endif
 				error_ = spinFor(sleepFor(nanos));
 				tickCount_ = 0;
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 				lastTime_ = get_absolute_time();
 				time_ = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(epoch_, lastTime_)));
 #else
@@ -230,7 +230,7 @@ namespace meen
 		}
 		else
 		{
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 			lastTime_ = get_absolute_time();
 			time_ = duration_cast<nanoseconds>(microseconds(absolute_time_diff_us(epoch_, lastTime_)));
 #else
@@ -244,7 +244,7 @@ namespace meen
 
 	void CpuClock::Reset()
 	{
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 		epoch_ = get_absolute_time();
 #else
 		epoch_ = steady_clock::now();

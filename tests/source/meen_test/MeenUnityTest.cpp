@@ -29,7 +29,7 @@ SOFTWARE.
 #else
 #include <ArduinoJson.h>
 #endif
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 #include <pico/stdlib.h>
 extern uint8_t cpuTestStart;
 extern uint8_t cpuTestEnd;
@@ -39,7 +39,7 @@ extern uint8_t exm8080Start;
 extern uint8_t exm8080End;
 extern uint8_t tst8080Start;
 extern uint8_t tst8080End;
-#endif
+#endif // PICO_BOARD
 #include <stdarg.h>
 #include <unity/unity.h>
 
@@ -273,7 +273,7 @@ namespace meen::tests
                 // be subtracted from the total size of the file,
                 // hence an explicit setting of the test file size.
                 case 0:
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
                     if (&tst8080End - &tst8080Start >= 1471)
                     {
                         auto tsts = std::bit_cast<uintptr_t>(&tst8080Start);
@@ -287,7 +287,7 @@ namespace meen::tests
 #else
                     err = LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":256}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}},{{\"bytes\":\"file://{}/TST8080.COM\",\"offset\":256,\"size\":1471}}]}}}}}}",
                                sae, saes, bdm, bdms, programsDir);
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
                     break;
                 case 1:
                     TEST_ASSERT_FALSE(saveStates.empty());
@@ -578,13 +578,13 @@ namespace meen::tests
     static void test_Tst8080()
     {
         RunTestSuite(
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
         std::format("mem://{}", std::bit_cast<uintptr_t>(&tst8080Start)),
         &tst8080End - &tst8080Start,
 #else
         std::format("file://{}/TST8080.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})",
         "CPU IS OPERATIONAL",
         74);
@@ -593,13 +593,13 @@ namespace meen::tests
     static void test_8080Pre()
     {
         RunTestSuite(
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
         std::format("mem://{}", std::bit_cast<uintptr_t>(&pre8080Start)),
         &pre8080End - &pre8080Start,
 #else
         std::format("file://{}/8080PRE.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})",
         "8080 Preliminary tests complete",
         0);
@@ -608,13 +608,13 @@ namespace meen::tests
     static void test_CpuTest()
     {
         RunTestSuite(
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
         std::format("mem://{}", std::bit_cast<uintptr_t>(&cpuTestStart)),
         &cpuTestEnd - &cpuTestStart,
 #else
         std::format("file://{}/CPUTEST.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})",
         "CPU TESTS OK",
         168);
@@ -623,13 +623,13 @@ namespace meen::tests
     static void test_8080Exm()
     {
         RunTestSuite(
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
         std::format("mem://{}", std::bit_cast<uintptr_t>(&exm8080Start)),
         &exm8080End - &exm8080Start,
 #else
         std::format("file://{}/8080EXM.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})",
         "ERROR",
         std::string::npos);
@@ -677,14 +677,14 @@ int main(int argc, char** argv)
         programsDir = argv[1];
     }
 
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
     stdio_init_all();
 
 //    set_sys_clock_pll(150, 5, 2);
 //    set_sys_clock_khz(250000, true);
 
     while(true)
-#endif
+#endif // PICO_BOARD
     {
         meen::tests::suiteSetUp();
         UNITY_BEGIN();
@@ -697,10 +697,10 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
 // These may take a little while to run on embedded platforms - only run when using pico sdk >= 2.x.x
-#if !defined ENABLE_MEEN_RP2040 || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
+#if !defined PICO_BOARD || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_CpuTest);
 //        RUN_TEST(meen::tests::test_8080Exm);
-#endif
+#endif // !defined PICO_BOARD || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_MethodsErrorAfterRunCalled);
         RUN_TEST(meen::tests::test_RunTimed);
         RUN_TEST(meen::tests::test_RunTimedAsync);
