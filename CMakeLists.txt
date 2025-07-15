@@ -265,7 +265,7 @@ target_include_directories(${meen} PRIVATE ${include_dir})
 
 if(${build_os} STREQUAL "baremetal")
   if(NOT ${enable_board} STREQUAL "none")
-    target_link_libraries(${meen} PUBLIC pico_stdlib)
+    target_link_libraries(${meen} PRIVATE pico_stdlib)
     target_link_libraries(${meen} PRIVATE pico_multicore)
   endif()
 
