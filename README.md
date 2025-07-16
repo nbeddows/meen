@@ -225,7 +225,7 @@ This example will assume you are deploying the UF2 file from a Raspberry Pi.
 **Python**:
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`
 
-**Note**: for the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+**NOTE**: for the C++ unit tests the command line option --gtest_filter (for gtest based profiles only) can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
 - `artifacts\Release\x86_64\bin\meen_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
 - `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
@@ -256,6 +256,7 @@ When the package has been built with unit tests enabled it will contain a script
 - `start run-meen-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`
 
 **NOTE**: the package will not contain Python units tests if MEEN was not configured with the python module enabled.
+**NOTE**: the meen-unit-tests script does not support filters for unity based profiles.
 
 #### Export a Conan package
 
