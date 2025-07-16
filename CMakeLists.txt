@@ -455,23 +455,26 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/programs DESTINATION tests)
 ##### Generate unit test run script
     if(DEFINED MSVC)
-      # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguemnts
+      # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguments
       if(${enable_python_module} STREQUAL ON)
         set(pythonFilter "set python-filter=-k *")
         set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
         set(pythonExecute "echo Running Python unit tests\npython tests\\test_Machine.py -v %python-filter%")
       endif()
 
-#### TODO: Need to add Unity support when ${enable_framework} == "unity"
+      if(${enable_framework} STREQUAL "gtest")
+        set(gTestFilter "set gtest-filter=--gtest_filter=*")
+        set(gtestCmdLine "IF \"%~1\"==\"--gtest_filter\" set gtest-filter=%~1=%~2")
+      endif()
 
       # start run-meen-unit-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
       file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.bat
           "@echo off\n\
-set gtest-filter=--gtest_filter=*\n\
+${gtestFilter}
 ${pythonFilter}
 :parse\n\
 IF \"%~1\"==\"\" GOTO endparse\n\
-IF \"%~1\"==\"--gtest_filter\" set gtest-filter=%~1=%~2\n\
+${gtestCmdLine}\n\
 ${pythonCmdLine}\n\
 SHIFT\n\
 GOTO parse\n\
@@ -493,22 +496,22 @@ exit"
         set(pythonExecute "echo Running Python unit tests\npython tests/test_Machine.py -v \${python_filter}")
       endif()
 
-#### TODO: Need to add Unity support when ${enable_framework} == "unity"
+      if(${enable_framework} STREQUAL "gtest")
+        set(gtestFilter "export gtest_filter=\"--gtest_filter=*\"")
+        set(gtestCmdLine "--gtest_filter)\nexport gtest_filter=\"$1=$2\"\nshift\n;;")
+      endif()
 
       file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.sh
 "#!/bin/bash\n\
-export gtest_filter=\"--gtest_filter=*\"\n\
+${gtestFilter}\n\
 ${pythonFilter}\n\
 while [[ \$# -gt 0 ]]; do\n\
   case \$1 in\n\
-    --gtest_filter)\n\
-      export gtest_filter=\"\$1=\$2\"\n\
-      shift\n\
-    ;;\n\
+    ${gtestCmdLine}\n\
     ${pythonCmdLine}\n\
     *)\n\
       echo Invalid option: \$1\n\
-      echo ./run-${meen}-unit-tests [--gtest_filter \\\$gtest_filter][--python_filter \\\${python_filter}
+      echo ./run-${meen}-unit-tests [--gtest_filter \\\${gtest_filter}][--python_filter \\\${python_filter}]
       exit\n\
       ;;\n\
   esac\n\
@@ -517,7 +520,7 @@ done\n\
 echo Adding `pwd`/${archive_dir} to LD_LIBRARY_PATH\n\
 export LD_LIBRARY_PATH=`pwd`/${archive_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
-${runtime_dir}/${meen}_test \"\${gtest_filter}\" tests/programs/\n\
+${runtime_dir}/${meen}_test \${gtest_filter} tests/programs/\n\
 ${pythonExecute}"
       )
 
