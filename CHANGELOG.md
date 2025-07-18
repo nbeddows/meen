@@ -13,6 +13,8 @@
 * Now using ArduinoJson exclusively.
 * MEEN pybind library names now use snake_case instead of
   CamelCase.
+* Updated GTest dependency to 1.16.0.
+* Updated PyBind dependency to 2.13.6.
 
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
