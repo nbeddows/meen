@@ -22,6 +22,6 @@ import MachineTestDeps
 import os
 import sys
 
-from meenPy import __version__
+from meen_py import __version__
 print("meen python module version:", __version__)
 

@@ -29,7 +29,7 @@ SOFTWARE.
 
 namespace py = pybind11;
 
-PYBIND11_MODULE(TestControllersPy, TestControllers)
+PYBIND11_MODULE(test_controllers_py, TestControllers)
 {
     py::class_<meen::MemoryController, meen::IController>(TestControllers, "MemoryController")
         .def(py::init<>())

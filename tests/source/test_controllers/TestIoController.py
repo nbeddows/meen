@@ -1,5 +1,5 @@
 from BaseIoController import BaseIoController
-from meenPy import ISR
+from meen_py import ISR
 
 class TestIoController(BaseIoController):
     def __init__(self):

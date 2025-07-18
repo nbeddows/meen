@@ -1,5 +1,5 @@
-from meenPy import Controller
-from meenPy import ISR
+from meen_py import Controller
+from meen_py import ISR
 import numpy as np
 
 class MemoryController(Controller):

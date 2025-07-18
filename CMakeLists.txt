@@ -297,13 +297,13 @@ if(${enable_zlib} STREQUAL ON)
 endif()
 
 if(${enable_python_module} STREQUAL ON)
-  pybind11_add_module(${meen}Py
+  pybind11_add_module(${meen}_py
     ${${meen}_py_include_files}
     ${${meen}_py_source_files}
   )
-  target_link_directories(${meen}Py PRIVATE ${Python_LIBRARY_DIRS})
-  target_link_libraries(${meen}Py PRIVATE pybind11::headers ${meen})
-  install(TARGETS ${meen}Py DESTINATION ${runtime_dir})
+  target_link_directories(${meen}_py PRIVATE ${Python_LIBRARY_DIRS})
+  target_link_libraries(${meen}_py PRIVATE pybind11::headers ${meen})
+  install(TARGETS ${meen}_py DESTINATION ${runtime_dir})
 endif()
 
 if(DEFINED zlib_bin_dir)
@@ -364,14 +364,13 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     set (${test_controllers_py}_source_files tests/${source_dir}/${test_controllers_py}/TestControllersPy.cpp)
     SOURCE_GROUP(${source_dir} FILES ${${test_controllers_py}_source_files})
 
-    # todo: replace with TestControllersPy with ${test_controllers_py} when moving to meen 2.0
-    pybind11_add_module(TestControllersPy ${${test_controllers_py}_source_files})
+    pybind11_add_module(${test_controllers_py} ${${test_controllers_py}_source_files})
 
-    set_target_properties(TestControllersPy PROPERTIES FOLDER tests)
-    target_include_directories(TestControllersPy PRIVATE ${include_dir} tests/${include_dir})
-    target_link_directories(TestControllersPy PRIVATE ${Python_LIBRARY_DIRS})
-    target_link_libraries(TestControllersPy PRIVATE pybind11::headers ${test_controllers})
-    install(TARGETS TestControllersPy LIBRARY DESTINATION ${runtime_dir})
+    set_target_properties(${test_controllers_py} PROPERTIES FOLDER tests)
+    target_include_directories(${test_controllers_py} PRIVATE ${include_dir} tests/${include_dir})
+    target_link_directories(${test_controllers_py} PRIVATE ${Python_LIBRARY_DIRS})
+    target_link_libraries(${test_controllers_py} PRIVATE pybind11::headers ${test_controllers})
+    install(TARGETS ${test_controllers_py} LIBRARY DESTINATION ${runtime_dir})
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/BaseIoController.py DESTINATION tests)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/CpmIoController.py DESTINATION tests)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/MemoryController.py DESTINATION tests)
