@@ -132,7 +132,7 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 **1.** Install the latest supported MEEN Conan configuration profiles (if not done so already):
 - `conan config install -sf profiles -tf profiles `<br>
-  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.1"`
+  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.3.0"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
