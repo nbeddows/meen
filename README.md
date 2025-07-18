@@ -162,7 +162,7 @@ The following dependent packages will be (compiled if required and) installed ba
 - `base64`: for base64 coding.
 - `gtest`: for running the MEEN unit tests.
 - `hash-library`: for md5 hashing.
-- `pybind`: for creating Python C++ bindings.
+- `pybind11`: for creating Python C++ bindings.
 - `unity`: for running the MEEN unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
 
