@@ -66,14 +66,14 @@ class MeenRecipe(ConanFile):
             self.requires("hash-library/8.0")
 
         if self.options.get_safe("with_python", False):
-            self.requires("pybind11/2.12.0")
+            self.requires("pybind11/2.13.6")
         if self.options.get_safe("with_zlib", False):
             self.requires("zlib/1.3.1")
 
     def build_requirements(self):
         if not self.conf.get("tools.build:skip_test", default=False):
             if self.options.get_safe("with_framework", "none") == "gtest":
-                self.test_requires("gtest/1.14.0")
+                self.test_requires("gtest/1.16.0")
             elif self.options.get_safe("with_framework", "none") == "unity":
                 self.test_requires("unity/2.6.0")
 
