@@ -32,7 +32,7 @@ SOFTWARE.
 namespace py = pybind11;
 
 //cppcheck-suppress unusedFunction
-PYBIND11_MODULE(meenPy, meen)
+PYBIND11_MODULE(meen_py, meen)
 {
     meen.attr("__version__") = meen::Version();
 
