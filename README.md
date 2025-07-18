@@ -158,11 +158,10 @@ The following will enable python and disable zlib: `conan install . --build=miss
 
 The following dependent packages will be (compiled if required and) installed based on the supplied options:
 
-- `arduinojson`: for parsing machine configuration options  (baremetal).
+- `arduinojson`: for parsing machine configuration options.
 - `base64`: for base64 coding.
 - `gtest`: for running the MEEN unit tests.
 - `hash-library`: for md5 hashing.
-- `nlohmann_json`: for parsing machine configuration options.
 - `pybind`: for creating Python C++ bindings.
 - `unity`: for running the MEEN unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
