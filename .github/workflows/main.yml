@@ -78,7 +78,7 @@ jobs:
 
       # Build the project
       - name: Install Conan profiles
-        run: conan config install -sf profiles -tf profiles https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.2.0"
+        run: conan config install -sf profiles -tf profiles https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.3.0"
       - name: Install dependencies
         run: conan install . --build=missing --options=with_python=True --profile:all=${{ runner.os }}-${{ matrix.arch }}-${{ matrix.compiler }}-${{ matrix.version }}-gtest
       - name: CMake presets
