@@ -9,6 +9,8 @@
   Pico SDK version 2.0.0.
 * Embed common information in meen_test.uf2.
 * Replaced Conan option `with_rp2040` with `with_board`.
+* Added the Conan option `with_framework`.
+* Now using ArduinoJson exclusively.
 
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.

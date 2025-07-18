@@ -177,8 +177,8 @@ namespace meen
 						
 						if (fread(jsonStr.data(), jsonStr.size(), 1, fin) != 1)
 						{
-							return m->HandleError(errc::incompatible_rom, std::source_location::current());
 							fclose(fin);
+							return m->HandleError(errc::incompatible_rom, std::source_location::current());
 						}
 
 						fclose(fin);
