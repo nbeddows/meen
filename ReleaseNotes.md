@@ -1,6 +1,6 @@
 ## MEEN 2.1.0
 
-**Highlights**
+**Highlights:**
 
 - GitHub Actions CI/CD support.
 - GCC-14 support.
