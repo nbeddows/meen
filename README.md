@@ -71,12 +71,13 @@ The following table displays the current defacto test suites that these unit tes
 
 ### Compilation
 
-MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support,[cppcheck](http://cppcheck.net/) for static analysis and [Doxygen](https://www.doxygen.nl/index.html) and latex for documentation. Supported compilers are GCC (minimum version 12) and MSVC (minimum version 1706). Clang (minimum version 16) hasn't been tested for a while, therefore, it is no longer officially supported.
+MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build system, [Conan (minimum version 2.0)](https://conan.io/) for it's dependency package manager, Python3-dev for python module support, [cppcheck](http://cppcheck.net/) for static analysis, [Doxygen](https://www.doxygen.nl/index.html) for (LaTeX) PDF documentation and GitHub Actions for CI/CD. Supported compilers are GCC (minimum version 13) and MSVC (minimum version 1706).
 
 #### Pre-requisites
 
-##### Linux (Ubuntu (24.04 at time of writing))
+##### Linux (Ubuntu 25.04)
 
+- `sudo apt install gcc g++`
 - [Install Conan](https://conan.io/downloads/)
 - `sudo apt install cmake`
 - `sudo apt install cppcheck` (if building a binary development package)
@@ -85,33 +86,39 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 - `sudo apt install texlive-latex-extra` (if building a binary developemnt package)
 - [Install Emojis](https://www.doxygen.nl/dl/github_emojis.zip) (download and unzip in docs/images if building a binary development package)
 - `sudo apt install python3 python-is-python3 python3-dev` (if building the Python module)
-- cross compilation:
+- Cross compilation:
   - armv7hf:
     - `sudo apt install gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf`
   - aarch64:
     - `sudo apt install gcc-aarch64-linux-gnu g++-aarch64-linux-gnu`
-  - rp2040:
-    - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`
-    - `git clone https://github.com/raspberrypi/pico-sdk.git --branch 1.5.1`
-    - `cd pico-sdk`
-    - `git submodule update --init`
-    - build the Raspberry Pi Pico SDK:
-      - Conan and the Raspberry Pi Pico Sdk seem to have an issue with conflicting use of the cmake toolchain file which results in test programs not being able to be compiled during the conan build process as outlined [here](https://github.com/raspberrypi/pico-sdk/issues/1693).
-      At this point we need to build the sdk so that we have the required tools pre-built so the Conan build process will succeed:
-      **NOTE**: Conan will assume that the build tools are located in the `build` directory, **do not** use a different directory name.
-        - `mkdir build`
-        - `cd build`
-        - `cmake ..`
-        - `make`
+  - pico:
+    - Install the Pico SDK
+      - `sudo apt install gcc-arm-none-eabi libnewlib-arm-none-eabi build-essential libstdc++-arm-none-eabi-newlib`
+      - `mkdir pico-sdk`
+      - `cd pico-sdk`
+      - `git clone https://github.com/raspberrypi/pico-sdk.git --tag 2.1.1`
+      - `cd 2.1.1`
+      - `git submodule update --init`
+      - The picotool uf2 convert postbuild command in tools/CMakeLists.txt requires its target file type be set explicitly:
+          - `nano tools/CMakeLists.txt`
+          - Change the picotool uf2 post build command target from `$<TARGET_FILE:${TARGET}>` to `$<TARGET_FILE:${TARGET}> -t elf`
     - Set the Raspberry Pi Pico SDK Path:
-        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
-        To avoid having to export it on every session, add it to the end of your .bashrc file instead:
         - `nano ~/.bashrc`
-        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}`
-	- save, close and re-open shell.
+        - `export PICO_SDK_PATH=${PATH_TO_PICO_SDK}/2.1.1`
+        - Save, close and re-open shell.
+    - Install picotool
+      - `sudo apt install libusb-1.0-0-dev pkg-config`
+      - `git clone https://github.com/raspberrypi/picotool.git`
+      - `cd picotool`
+      - `mkdir build`
+      - `cd build`
+      - `cmake ..`
+      - `make`
+      - `sudo make install`
 
 ##### Windows (10)
 
+- [Install Visual Studio 2022](https://visualstudio.microsoft.com/downloads/)
 - [Install Conan](https://conan.io/downloads/)
 - [Install CMake build system](https://cmake.org/download/).
 - [Install CppCheck static analysis](http://cppcheck.net/) (if building a binary development package)
@@ -123,46 +130,45 @@ MEEN uses [CMake (minimum version 3.23)](https://cmake.org/) for its build syste
 
 #### Configuration
 
-**1.** Install the supported MEEN Conan configurations (v0.1.0) (if not done so already):
+**1.** Install the latest supported MEEN Conan configuration profiles (if not done so already):
 - `conan config install -sf profiles -tf profiles `<br>
-  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.1.0"`
+  `https://github.com/nbeddows/meen-conan-config.git --args "--branch v0.3.0"`
 
 **2.** The installed profiles may need to be tweaked depending on your environment.
 
 **3.** Install dependencies:
 - Windows x86_64 build and host: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193`
 - Windows x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193-gtest`
-- Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13`
-- Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`
-- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13`
-- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv7hf-gcc-13-gtest`
-- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13`
-- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=Linux-armv8-gcc-13-gtest`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13`
-- Linux x86_64 build, RP2040 microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing -profile:build=Linux-x86_64-gcc-13 -profile:host=rp2040-armv6-gcc-13-unity`<br>
+- Linux x86_64 build and host: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14`
+- Linux x86_64 build and host with unit tests: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest`
+- Linux x86_64 build, Linux armv7hf host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv7hf-gcc-14`
+- Linux x86_64 build, Linux armv7hf host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv7hf-gcc-14-gtest`
+- Linux x86_64 build, Linux aarch64 host: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14`
+- Linux x86_64 build, Linux aarch64 host with unit tests: `conan install . --build=missing --profile:build=Linux-x86_64-gcc-14 --profile:host=Linux-armv8-gcc-14-gtest`
+- Linux x86_64 build, Pico (RP2040) microcontroller (baremetal armv6-m) host: `conan install . --build=missing`<br>`--profile:build=Linux-x86_64-gcc-14 --profile:host=pico-armv6-gcc-14`
+- Linux x86_64 build, Pico (RP2040) microcontroller (baremetal armv6-m) host with unit tests: `conan install . --build=missing`<br>`--profile:build=Linux-x86_64-gcc-14 --profile:host=pico-armv6-gcc-14-unity`
 
-**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).<br>
+**NOTE**: when performing a cross compile using a host profile you must install the requisite toolchain of the target architecture (see pre-requisites).
 
 The following additional install options are supported:
-- enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on arm platforms)
-- enable/disable zlib support: `--options=with_zlib=[True(default)|False]` (Options not available on embedded platofrms)
+- enable/disable python module support: `--options=with_python=[True|False(default)]` (Option not available on embedded platforms)
+- enable/disable zlib support: `--options=with_zlib=[True(default)|False]` (Option not available on embedded platofrms)
 
 The following will enable python and disable zlib: `conan install . --build=missing --profile:all=Windows-x86_64-msvc-193 --options=with_python=True --options=with_zlib=False`
 
 The following dependent packages will be (compiled if required and) installed based on the supplied options:
 
-- `arduinojson`: for parsing machine configuration options  (baremetal).
+- `arduinojson`: for parsing machine configuration options.
 - `base64`: for base64 coding.
 - `gtest`: for running the MEEN unit tests.
 - `hash-library`: for md5 hashing.
-- `nlohmann_json`: for parsing machine configuration options.
-- `pybind`: for creating Python C++ bindings.
+- `pybind11`: for creating Python C++ bindings.
 - `unity`: for running the MEEN unit tests (baremetal).
 - `zlib`: for memory (de)compression when loading and saving files.<br>
 
-You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --settings=build_type=Debug`.
+You can override the default build configuration to Debug (or MinRelSize or RelWithDebInfo) by overriding the build_type setting: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14 --settings=build_type=Debug`.
 
-You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-13 --options=zlib/*:shared=False`.
+You can also compile the dependent zlib library statically if required by overriding the shared option: `conan install . --build=missing --profile:all=Linux-x86_64-gcc-14 --options=zlib/*:shared=False`.
 
 **4.** Run cmake to configure and generate the build system.
 
@@ -172,7 +178,7 @@ A Debug preset (or MinRelSize or RelWithDebugInfo) can be used if the said build
 
 **NOTE**: the options supported during the install step can also be enabled/disabled here if required:
 - Disable zlib support: `cmake --preset conan-default -D enable_zlib=OFF`
-- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON` (Unsupported on arm, CMake will fail)
+- Enable the Python module: `cmake --preset conan-default -D enable_python_module=ON`
 
 **5.** Run cmake to compile MEEN: `cmake --build --preset conan-release`<br>
 
@@ -189,25 +195,25 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/meen-v1.5.1-Linux-armv7hf-bin.tar.gz ${user}@raspberrypi:meen-v1.5.1.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-Linux-armv7hf-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v1.5.1.tar.gz`.
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
 5. Change directory to meen: `cd meen`.
 6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
 
-**C++ - RP2040 (armv6-m)**
+**C++ - Pico RP2040 (armv6-m)**
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 This example will assume you are deploying the UF2 file from a Raspberry Pi.
 1. Create an Arm Linux binary distribution: see building a binary development package.
-2. Copy the distribution to the arm machine: `scp build/MinSizeRel/meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin.tar.gz ${user}@raspberrypi:meen-v1.6.2.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-baremetal-armv6-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
 3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v1.6.2.tar.gz`.
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
 5. Hold down the `bootsel` button on the pico and plug in the usb cable into the usb port of the Raspberry Pi then release the `bootsel` button.
 6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`.
 7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`.
 8. Mount the device: `sudo mount /dev/sdb1 /mnt/pico`. Run `ls /mnt/pico` to confirm it mounted.
-9. Copy the uf2 image to the pico: `cp meen-v1.6.2-Linux-6.2.0-39-generic-armv6-bin/bin/meen_test.uf2 /mnt/pico`
+9. Copy the uf2 image to the pico: `cp meen-v2.1.0-baremetal-armv6-GNU-14.2.1/bin/meen_test.uf2 /mnt/pico`
 10. You should see a new device `ttyACM0`: `ls /dev` to confirm.
 11. Install minicom (if not done already): `sudo apt install minicom`.
 12. Run minicom to see test output: `minicom -b 115200 -o -D /dev/ttyACM0`<br>
@@ -218,7 +224,7 @@ This example will assume you are deploying the UF2 file from a Raspberry Pi.
 **Python**:
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`
 
-**Note**: for the C++ unit tests the command line option --gtest_filter can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
+**NOTE**: for the C++ unit tests the command line option --gtest_filter (for gtest based profiles only) can be used to run a subset of the tests and under Python the -k option can be used for the same effect.
 - `artifacts\Release\x86_64\bin\meen_test --gtest_filter=*:-*8080*:*CpuTest*`: run all tests except the i8080 test suites.
 - `tests\source\meen_test\test_Machine.py -v -k MachineTest`: run all tests except the i8080 test suites.
 
@@ -231,11 +237,11 @@ MEEN supports the building of standalone binary development packages. The motiva
 Once the configuration step is complete a binary development tgz package can be built with the following command:
 - `cmake --build --preset conan-release --target=package`
 
-The package will be located in `build/Release/` with a name similar to the following depending on the platform it was built on:
-- `meen-v1.5.1-Windows-10.0.19042-x86_64-bin.tar.gz`
+The package will be located in `build/Release/` (single config generators) or `output/build` (multi config generators) with a name similar to the following depending on the platform it was built on:
+- `meen-v2.1.0-Windows-x86_64-MSVC-19.38.33133.0.tar.gz`
 
 CPack can be used directly rather than the package target if finer control is required:
-- `cpack --config build\CPackConfig.cmake -C ${build_type} -G 7Z`
+- `cpack --config [output/]build/CPackConfig.cmake -C ${build_type} -G 7Z`
 
 **NOTE**: the underlying package generator used to build the package (in this case `7zip`) must be installed otherwise the preceeding command will fail.
 
@@ -249,6 +255,7 @@ When the package has been built with unit tests enabled it will contain a script
 - `start run-meen-unit-tests.bat [--gtest_filter ${gtest_filter}] [--python_filter ${python_filter}]`
 
 **NOTE**: the package will not contain Python units tests if MEEN was not configured with the python module enabled.
+**NOTE**: the meen-unit-tests script does not support filters for unity based profiles.
 
 #### Export a Conan package
 
@@ -261,12 +268,12 @@ The following additional options are supported:
 **NOTE**: a pre-requisite of exporting the package is the running of the unit tests (unless disabled). The export process will halt if the unit tests fail.
 
 Example command lines:
-1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest`: build the MEEN package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
-2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
-3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
-4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
-5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13`: same as 1 but will skip running the unit tests.
-6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-13-gtest --options=with_i8080_test_suites=True`: same as 1 but will also run the i8080 test suites.
+1. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest`: build the MEEN package, run the unit tests, export it to the conan cache and then run a basic test to confirm that the exported package can be used.
+2. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_python=True`: same as 1 but will run the python unit tests, then run a basic test to confirm that the python module in the exported package can also be used.
+3. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_zlib=False`: same as 1 but will disable zlib support.
+4. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --test-folder=""`: same as 1 but will not run the basic package tests (not recommended).
+5. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14`: same as 1 but will skip running the unit tests.
+6. `conan create . --build=missing --profile:all=Linux-x86_64-gcc-14-gtest --options=with_i8080_test_suites=True`: same as 1 but will also run the i8080 test suites.
 
 #### Upload a Conan package
 
@@ -314,7 +321,7 @@ auto machine = Make8080Machine();
 auto err = machine->OnError([](std::error_code ec, const char* fileName, const char* functionName, int line, int column, IController* ioController)
 {
   // Handle the error, for demonstration purposes, print it to the console.
-  std::cout << std::format("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
+  std::cout << std::vformat("{}({}:{}) `{}`: {}", fileName, line, column, functionName, ec.message()) << std::endl;
 });
 
 // The return code of the OnError method must be checked as it may fail to register, therefore it won't be
@@ -342,18 +349,15 @@ machine->OnLoad([](char* json, int* jsonLength, IController* ioController)
   // Typically, the on load logic would be handled by your custom io controller:
   // ioController->LoadRom(json, jsonLen), but is left here for simplicity.
 
-  // The machine state to load in json format: load all bytes from the rom myProgram.com from
-  // the current directory into memory at address 0x0000 and start executing the rom from address 256.
+  // Load all bytes from the rom myProgram.com from the current directory into memory at
+  // address 0x0000 and start executing the rom from address 256.
   // Note the use of uri schemes to determine the type of resource to load (an ommitted scheme defaults
   // to json://).
-  auto jsonToLoad = R"(json://{"cpu":{"pc":256},"memory":{"rom:"{"bytes":"file://myProgram.com"}}})";
-  // auto jsonToLoad = "file://myProgramSave.json";
-
-  // Write the json to load to json and update the final length of the loaded program.
-  // When the length of the json to load is greater than *jsonLen, the json will be truncated
-  // and a json parse error will occur. In this case, the config option maxLoadStateLen needs
-  // to be increased.
-  *jsonLength = snprintf(json, *jsonLength, "%s", jsonToLoad);
+  // When std::formatted_size of the format string is greater than *jsonLength, the json will be truncated
+  // and a meen::errc error will be raised. In this case, the config option maxLoadStateLen needs to
+  // be increased.
+  auto result = std::format_to_n(json, *jsonLength, R"(json://{{"cpu":{{"pc":{}}},"memory":{{"rom:"{{"bytes":"{}"}}}}}})", 256, "file://myProgram.com");
+  *jsonLength = result.size;
   return errc::no_error;
 // Not defining a completion handler, set it to nullptr.
 }, nullptr);
@@ -368,7 +372,8 @@ machine->OnSave([](char* uri, int* uriLength, IController* ioController)
   // Write the location of the resource to save and update the final resource length.
   // NOTE: the maximum size of the uriLength parameter is 255, anything longer than this will cause
   // the uri to be truncated.
-  *uriLength = snprintf(uri, *uriLength, "file://myProgramSave.json");
+  auto result = std::format_to_n(uri, *uriLength, "{}", "file://myProgramSave.json");
+  *uriLength = result.size;
   return errc::no_error;
 // Since we are using the built in file:// protocol support, don't define a completion handler, any errors
 // will be diverted to the registered OnError handler.

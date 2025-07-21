@@ -1,3 +1,21 @@
+2.1.0 [21/07/25]
+* Added testing and release workflows for GitHub Actions CI/CD.
+* Dropped GCC-12 support.
+* Added GCC-14 support.
+* The MEEN conan option --with_python is now supported on Arm Linux.
+* Added support for the latest pico sdk (2.1.1) while maintaing
+  support for sdk version 1.5.1.
+* Enabled CpuTest Suite for embedded platforms running at least
+  Pico SDK version 2.0.0.
+* Embed common information in meen_test.uf2.
+* Replaced Conan option `with_rp2040` with `with_board`.
+* Added the Conan option `with_framework`.
+* Now using ArduinoJson exclusively.
+* MEEN pybind library names now use snake_case instead of
+  CamelCase.
+* Updated GTest dependency to 1.16.0.
+* Updated pybind11 dependency to 2.13.6.
+
 2.0.0 [22/06/25]
 * Updated the project layout for improved workflow.
 * Added `std::error_code` support.

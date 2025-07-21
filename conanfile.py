@@ -25,7 +25,7 @@ import os
 
 class MeenRecipe(ConanFile):
     name = "meen"
-    version = "2.0.0"
+    version = "2.1.0"
     package_type = "library"
     test_package_folder = "tests/conan_package_test"
 
@@ -38,8 +38,8 @@ class MeenRecipe(ConanFile):
 
     # Binary configuration
     settings = "os", "compiler", "build_type", "arch"
-    options = {"shared": [True, False], "fPIC": [True, False], "with_base64":[True, False], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_rp2040": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
-    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_base64": True, "with_i8080_test_suites": False, "with_python": False, "with_rp2040": False, "with_save": True, "with_zlib": True}
+    options = {"shared": [True, False], "fPIC": [True, False], "with_base64":[True, False], "with_board":["none", "pico"], "with_framework": ["none", "gtest", "unity"], "with_i8080_test_suites": [True, False], "with_python": [True, False], "with_save": [True, False], "with_zlib": [True, False]}
+    default_options = {"zlib*:shared": True, "shared": True, "fPIC": True, "with_base64": True, "with_board": "none", "with_framework": "none", "with_i8080_test_suites": False, "with_python": False, "with_save": True, "with_zlib": True}
 
     # Sources are located in the same place as this recipe, copy them to the recipe
     # "tests/CMakeLists.txt",\
@@ -57,28 +57,25 @@ class MeenRecipe(ConanFile):
         "tests/source/*",
 
     def requirements(self):
+        self.requires("arduinojson/7.0.1")
+
         if self.options.get_safe("with_base64", False):
             self.requires("base64/0.5.2")
 
         if self.options.get_safe("with_save", False):
             self.requires("hash-library/8.0")
 
-        if(self.settings.os == "baremetal"):
-            self.requires("arduinojson/7.0.1")
-        else:
-            self.requires("nlohmann_json/3.11.3")
-
         if self.options.get_safe("with_python", False):
-            self.requires("pybind11/2.12.0")
+            self.requires("pybind11/2.13.6")
         if self.options.get_safe("with_zlib", False):
             self.requires("zlib/1.3.1")
 
     def build_requirements(self):
         if not self.conf.get("tools.build:skip_test", default=False):
-            if self.settings.os == "baremetal":
+            if self.options.get_safe("with_framework", "none") == "gtest":
+                self.test_requires("gtest/1.16.0")
+            elif self.options.get_safe("with_framework", "none") == "unity":
                 self.test_requires("unity/2.6.0")
-            else:
-                self.test_requires("gtest/1.14.0")
 
     def config_options(self):
         if self.settings.os == "Windows":
@@ -93,14 +90,12 @@ class MeenRecipe(ConanFile):
             self.output.info("base64 uri scheme and saving are not supported, removing options with_base64 and with_save")
             self.options.rm_safe("with_save")
             self.options.rm_safe("with_base64")
-
-        if "arm" in self.settings.arch:
-            self.output.info("Python ARM module not supported, removing option with_python.")
+            self.output.info("Python module not supported, removing option with_python.")
             self.options.rm_safe("with_python")
 
         if self.settings_build.os == "Windows":
-            self.output.info("Cross compiling with RP2040 support from Windows is not supported, removing option with_rp2040")
-            self.options.rm_safe("with_rp2040")
+            self.output.info("Cross compiling for microcontrollers from Windows is not supported, removing options 'with_board'")
+            self.options.rm_safe("with_board")
 
             if self.settings.os == "Linux" or self.settings.os == "baremetal":
                 self.output.error("Cross compiling from Windows to Linux or baremetal is not supported")
@@ -108,14 +103,17 @@ class MeenRecipe(ConanFile):
     def configure(self):
         if self.options.shared:
             self.options.rm_safe("fPIC")
-            self.options.rm_safe("with_rp2040")
+            self.options.rm_safe("with_board")
 
         if not self.options.get_safe("with_save", False):
             self.options.rm_safe("with_zlib")
 
         if self.settings.os == "baremetal":
-            if not self.options.get_safe("with_rp2040", False):
-                self.output.error("Baremetal unsupported (did you enable 'with_rp2040'?)")
+            if self.options.get_safe("with_board", "none") == "none":
+                self.output.error("Baremetal unsupported (did you set the option 'with_board'?)")
+
+            if self.options.get_safe("with_framework", "none") == "gtest":
+                self.output.error("GTest not supported (did you set the option `with_framework=unity`?)")
 
     def layout(self):
         cmake_layout(self)
@@ -132,7 +130,8 @@ class MeenRecipe(ConanFile):
         tc.cache_variables["enable_zlib"] = self.options.get_safe("with_zlib", False)
         tc.cache_variables["enable_base64"] = self.options.get_safe("with_base64", False)
         tc.cache_variables["enable_hash_library"] = self.options.get_safe("with_save", False)
-        tc.cache_variables["enable_rp2040"] = self.options.get_safe("with_rp2040", False)
+        tc.cache_variables["enable_board"] = self.options.get_safe("with_board", "none")
+        tc.cache_variables["enable_framework"] = self.options.get_safe("with_framework", "none")
         tc.variables["build_os"] = self.settings.os
         tc.variables["build_arch"] = self.settings.arch
         tc.variables["archive_dir"] = self.cpp_info.libdirs[0]
@@ -147,11 +146,16 @@ class MeenRecipe(ConanFile):
         cmake.build()
 
         if can_run(self) and not self.conf.get("tools.build:skip_test", default=False):
-            testFilter = "--gtest_filter=*"
-            if not self.options.with_i8080_test_suites:
-                testFilter += ":-*8080*:*CpuTest*"
+            testFilter = ""
+
+            if self.options.get_safe("with_framework", "none") == "gtest":
+                testFilter = "--gtest_filter=*"
+                if not self.options.with_i8080_test_suites:
+                    testFilter += ":-*8080*:*CpuTest*"
+            
             testsDir = os.path.join(self.source_folder, "artifacts", str(self.settings.build_type), str(self.settings.arch), self.cpp_info.bindirs[0])
             self.run(os.path.join(testsDir, "meen_test " + testFilter + " " + os.path.join(self.source_folder.replace("\\" ,"/") + "/tests/programs")))
+            
             if self.options.get_safe("with_python", False):
                 testFilter = "-k "
                 if self.options.with_i8080_test_suites:

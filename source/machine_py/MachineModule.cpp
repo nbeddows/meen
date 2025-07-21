@@ -20,6 +20,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <format>
 #include <pybind11/functional.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -31,7 +32,7 @@ SOFTWARE.
 namespace py = pybind11;
 
 //cppcheck-suppress unusedFunction
-PYBIND11_MODULE(meenPy, meen)
+PYBIND11_MODULE(meen_py, meen)
 {
     meen.attr("__version__") = meen::Version();
 
@@ -85,7 +86,8 @@ PYBIND11_MODULE(meenPy, meen)
                         return meen::errc::invalid_argument;
                     }
 
-                    *jsonLen = snprintf(json, *jsonLen, "%s", loadState.c_str());
+                    std::vformat_to(json, "{}", std::make_format_args(loadState));
+                    *jsonLen = loadState.size();
                     return meen::errc::no_error;
                 }, [olc = std::move(onLoadComplete)](meen::IController* ioController)
                 {
@@ -110,7 +112,8 @@ PYBIND11_MODULE(meenPy, meen)
                         return meen::errc::invalid_argument;
                     }
 
-                    *uriLen = snprintf(uri, *uriLen, "%s", location.c_str());
+                    std::vformat_to(uri, "{}", std::make_format_args(location));
+                    *uriLen = location.size();
                     return meen::errc::no_error;
                 }, [os = std::move(onSave)](const char* location, const char* json, meen::IController* ioController)
                 {

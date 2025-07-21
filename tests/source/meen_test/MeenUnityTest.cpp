@@ -22,13 +22,14 @@ SOFTWARE.
 
 #include <array>
 #include <cinttypes>
+#include <format>
 #include <memory>
 #ifdef ENABLE_NLOHMANN_JSON
 #include <nlohmann/json.hpp>
 #else
 #include <ArduinoJson.h>
 #endif
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
 #include <pico/stdlib.h>
 extern uint8_t cpuTestStart;
 extern uint8_t cpuTestEnd;
@@ -38,7 +39,7 @@ extern uint8_t exm8080Start;
 extern uint8_t exm8080End;
 extern uint8_t tst8080Start;
 extern uint8_t tst8080End;
-#endif
+#endif // PICO_BOARD
 #include <stdarg.h>
 #include <unity/unity.h>
 
@@ -124,22 +125,21 @@ namespace meen::tests
         return numFailures;
     }
 
-    static errc LoadProgram(char* json, int* jsonLen, const char* fmt, ...)
+    template<class... Args>
+    static errc LoadProgram(char* json, int* jsonLen, const std::format_string<Args...> fmt, Args&&... args)
     {
-        va_list args;
-        va_start(args, fmt);
-
-        auto len = vsnprintf(json, *jsonLen, fmt, args);
+        auto formattedSize = std::formatted_size(fmt, args...);
 
         // A write error occurred while executing the function, odds are that one of our parameters are incorrect.
-        // When len == *jsonLen, the config option `maxLoadStateLen` needs to be increased
-        if (len < 0 || len == *jsonLen)
+        // When len > *jsonLen, the config option `maxLoadStateLen` needs to be increased
+        if (formattedSize <= 0 || formattedSize > *jsonLen)
         {
             return errc::invalid_argument;
         }
 
+        std::vformat_to(json, fmt.get(), std::make_format_args(args...));
         // Write the final length of the loaded program
-        *jsonLen = len;
+        *jsonLen = formattedSize;
         return errc::no_error;
     }
 
@@ -157,10 +157,16 @@ namespace meen::tests
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
 
-        machine->OnLoad([](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        machine->OnLoad([sae = std::bit_cast<uintptr_t>(saveAndExit.data()),
+                        saes = saveAndExit.size(),
+                        ns = std::bit_cast<uintptr_t>(nopStart.data()),
+                        nss = nopStart.size(),
+                        ne = std::bit_cast<uintptr_t>(nopEnd.data()),
+                        nes = nopEnd.size()
+                        ](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
-            return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":5},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":50004,\"size\":%d}]}}}",
-            saveAndExit.data(), saveAndExit.size(), nopStart.data(), nopStart.size(), nopEnd.data(), nopEnd.size());
+            return LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":5}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":50004,\"size\":{}}}]}}}}}}",
+                               sae, saes, ns, nss, ne, nes);
         }, nullptr);
 
         if (runAsync == true)
@@ -184,7 +190,7 @@ namespace meen::tests
         nanos = ex.value_or(0);
 #endif
         auto error = nanos - 1000000000;
-        // Allow 0.5 milliseconds or error
+        // Allow 0.5 milliseconds of error
         TEST_ASSERT_INT_WITHIN(500000, 0, error);
     }
 
@@ -233,9 +239,9 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
 
         err = machine->OnSave([&](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
-        {   			
+        {
             // Return back a protocol that is unsupported so that our completion handler is called
-            *uriLen = snprintf(uri, *uriLen, "%s", "json://unity");
+            *uriLen = std::format_to_n(uri, *uriLen, "json://unity").size;
             return meen::errc::no_error;
         }, [&](const char* location, const char* json, [[maybe_unused]] IController* ioController)
         {
@@ -250,7 +256,13 @@ namespace meen::tests
         }
 
         // 0 - mid program save state, 1 and 2 - end of program save states
-        machine->OnLoad([&saveStates, &loadIndex, progDir = programsDir.c_str()](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        machine->OnLoad([&saveStates,
+                        &loadIndex,
+                        sae = std::bit_cast<uintptr_t>(saveAndExit.data()),
+                        saes = saveAndExit.size(),
+                        bdm = std::bit_cast<uintptr_t>(bdosMsg.data()),
+                        bdms = bdosMsg.size()
+                        ](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
             auto err = errc::no_error;
 
@@ -261,25 +273,42 @@ namespace meen::tests
                 // be subtracted from the total size of the file,
                 // hence an explicit setting of the test file size.
                 case 0:
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
                     if (&tst8080End - &tst8080Start >= 1471)
                     {
-                        err = LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":256,\"size\":1471}]}}}",
-                                           saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), &tst8080Start);
+                        auto tsts = std::bit_cast<uintptr_t>(&tst8080Start);
+                        err = LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":256}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":256,\"size\":1471}}]}}}}}}",
+                                           sae, saes, bdm, bdms, tsts);
                     }
                     else
                     {
                         err = errc::incompatible_rom;
                     }
 #else
-                    err = LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d},{\"bytes\":\"file://%s/TST8080.COM\",\"offset\":256,\"size\":1471}]}}}",
-                                   saveAndExit.data(), saveAndExit.size(), bdosMsg.data(), bdosMsg.size(), progDir);
-#endif // ENABLE_MEEN_RP2040
+                    err = LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":256}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}},{{\"bytes\":\"file://{}/TST8080.COM\",\"offset\":256,\"size\":1471}}]}}}}}}",
+                               sae, saes, bdm, bdms, programsDir);
+#endif // PICO_BOARD
                     break;
                 case 1:
                     TEST_ASSERT_FALSE(saveStates.empty());
-                    // 0 - mid program save state, 1 and 2 - end of program save states
-                    err = LoadProgram(json, jsonLen, (std::string("json://") + saveStates[0]).c_str());
+
+                    if (saveStates.empty() == false)
+                    {
+                        // 0 - mid program save state, 1 and 2 - end of program save states
+                        auto str = std::string("json://") + saveStates[0];
+
+                        // When len > *jsonLen, the config option `maxLoadStateLen` needs to be increased
+                        if (str.length() > *jsonLen)
+                        {
+                            err = errc::invalid_argument;
+                        }
+                        else
+                        {
+                            strncpy(json, str.c_str(), str.length());
+                            // Write the final length of the loaded program
+                            *jsonLen = str.length();
+                        }
+                    }
                     break;
                 default:
                     err = errc::invalid_argument;
@@ -365,7 +394,7 @@ namespace meen::tests
         machine->AttachIoController(std::move(controller.value()));
     }
 
-    static void LoadAndRun(const char* name, int progSize, const char* expected)
+    static void LoadAndRun(std::string&& name, int progSize, const char* expected)
     {
         bool saveTriggered = false;
 
@@ -384,11 +413,11 @@ namespace meen::tests
         });
         //Need to manually check this one as it can fail before the method is registered
         TEST_ASSERT_FALSE(err);
-                    
+
         err = machine->OnSave([&saveTriggered, expected](char* uri, int* uriLen, [[maybe_unused]] IController* ioController)
         {
             // Return back a protocol that is unsupported so that our completion handler is called
-            *uriLen = snprintf(uri, *uriLen, "%s", "json://unity");
+			*uriLen = std::format_to_n(uri, *uriLen, "json://unity").size;
             return meen::errc::no_error;
         }, [&saveTriggered, expected](const char* location, const char* actual, [[maybe_unused]] IController* ioController)
         {
@@ -418,10 +447,16 @@ namespace meen::tests
             return errc::no_error;
         });
 
-        machine->OnLoad([name, progSize](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
+        machine->OnLoad([name,
+                        progSize,
+                        sae = std::bit_cast<uintptr_t>(saveAndExit.data()),
+                        saes = saveAndExit.size(),
+                        bdm = std::bit_cast<uintptr_t>(bdosMsg.data()),
+                        bdms = bdosMsg.size()
+                        ](char* json, int* jsonLen, [[maybe_unused]] IController* ioController)
         {
-            return LoadProgram(json, jsonLen, "json://{\"cpu\":{\"pc\":256},\"memory\":{\"rom\":{\"block\":[{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":0,\"size\":%d},{\"bytes\":\"%s\",\"offset\":256,\"size\":%d},{\"bytes\":\"mem://%" PRIuPTR "\",\"offset\":5,\"size\":%d}]}}}",
-                                saveAndExit.data(), saveAndExit.size(), name, progSize, bdosMsg.data(), bdosMsg.size());
+            return LoadProgram(json, jsonLen, "json://{{\"cpu\":{{\"pc\":256}},\"memory\":{{\"rom\":{{\"block\":[{{\"bytes\":\"mem://{}\",\"offset\":0,\"size\":{}}},{{\"bytes\":\"{}\",\"offset\":256,\"size\":{}}},{{\"bytes\":\"mem://{}\",\"offset\":5,\"size\":{}}}]}}}}}}",
+                                sae, saes, name, progSize, bdm, bdms); 
         }, nullptr);
 
         machine->Run();
@@ -519,7 +554,7 @@ namespace meen::tests
         }
     }
 
-    static void RunTestSuite(const char* suiteName, int suiteLen, const char* expectedState, const char* expectedMsg, size_t pos)
+    static void RunTestSuite(std::string&& suiteName, int suiteLen, const char* expectedState, const char* expectedMsg, size_t pos)
     {
         // Write to the 'load device', the value doesn't matter (use 0)
         cpmIoController->Write(0xFD, 0, nullptr);
@@ -532,7 +567,7 @@ namespace meen::tests
         TEST_ASSERT_FALSE(err);
         //CP/M BDOS print message system call is at memory address 0x05,
         //this will be emulated with the bdosMsg subroutine.
-        LoadAndRun(suiteName, suiteLen, expectedState);
+        LoadAndRun(std::move(suiteName), suiteLen, expectedState);
         cpmIoController = std::move(machine->DetachIoController().value());
         TEST_ASSERT_TRUE(cpmIoController);
         TEST_ASSERT_EQUAL_INT(ReadCpmIoControllerBuffer().find(expectedMsg), pos);
@@ -542,19 +577,14 @@ namespace meen::tests
 
     static void test_Tst8080()
     {
-        char src[128]{};
-#ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%" PRIuPTR, &tst8080Start);
-#else
-        snprintf(src, 128, "file://%s/TST8080.COM", programsDir.c_str());
-#endif // ENABLE_MEEN_RP2040
-
-        RunTestSuite(src,
-#ifdef ENABLE_MEEN_RP2040
+        RunTestSuite(
+#ifdef PICO_BOARD
+        std::format("mem://{}", std::bit_cast<uintptr_t>(&tst8080Start)),
         &tst8080End - &tst8080Start,
 #else
+        std::format("file://{}/TST8080.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":170,"b":170,"c":9,"d":170,"e":170,"h":170,"l":170,"s":86},"pc":5,"sp":1981})",
         "CPU IS OPERATIONAL",
         74);
@@ -562,19 +592,14 @@ namespace meen::tests
 
     static void test_8080Pre()
     {
-        char src[128]{};
-#ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%" PRIuPTR, &pre8080Start);
-#else
-        snprintf(src, 128, "file://%s/8080PRE.COM", programsDir.c_str());
-#endif // ENABLE_MEEN_RP2040
-
-        RunTestSuite(src,
-#ifdef ENABLE_MEEN_RP2040
+        RunTestSuite(
+#ifdef PICO_BOARD
+        std::format("mem://{}", std::bit_cast<uintptr_t>(&pre8080Start)),
         &pre8080End - &pre8080Start,
 #else
+        std::format("file://{}/8080PRE.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":9,"d":3,"e":50,"h":1,"l":0,"s":86},"pc":5,"sp":1280})",
         "8080 Preliminary tests complete",
         0);
@@ -582,19 +607,14 @@ namespace meen::tests
 
     static void test_CpuTest()
     {
-        char src[128]{};
-#ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%" PRIuPTR, &cpuTestStart);
-#else
-        snprintf(src, 128, "file://%s/CPUTEST.COM", programsDir.c_str());
-#endif // ENABLE_MEEN_RP2040
-
-        RunTestSuite(src,
-#ifdef ENABLE_MEEN_RP2040
+        RunTestSuite(
+#ifdef PICO_BOARD
+        std::format("mem://{}", std::bit_cast<uintptr_t>(&cpuTestStart)),
         &cpuTestEnd - &cpuTestStart,
 #else
+        std::format("file://{}/CPUTEST.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":0,"c":247,"d":4,"e":23,"h":0,"l":0,"s":70},"pc":5,"sp":12283})",
         "CPU TESTS OK",
         168);
@@ -602,19 +622,14 @@ namespace meen::tests
 
     static void test_8080Exm()
     {
-        char src[128]{};
-#ifdef ENABLE_MEEN_RP2040
-        snprintf(src, 128, "mem://%" PRIuPTR, &exm8080Start);
-#else
-        snprintf(src, 128, "file://%s/8080EXM.COM", programsDir.c_str());
-#endif // ENABLE_MEEN_RP2040
-
-        RunTestSuite(src,
-#ifdef ENABLE_MEEN_RP2040
+        RunTestSuite(
+#ifdef PICO_BOARD
+        std::format("mem://{}", std::bit_cast<uintptr_t>(&exm8080Start)),
         &exm8080End - &exm8080Start,
 #else
+        std::format("file://{}/8080EXM.COM", programsDir),
         0,
-#endif // ENABLE_MEEN_RP2040
+#endif // PICO_BOARD
         R"({"uuid":"base64://O+hPH516S3ClRdnzSRL8rQ==","registers":{"a":0,"b":10,"c":9,"d":14,"e":30,"h":1,"l":109,"s":70},"pc":5,"sp":54137})",
         "ERROR",
         std::string::npos);
@@ -623,21 +638,21 @@ namespace meen::tests
     static void test_OnInit()
     {
         int initCount = 0;
-            
+
         auto err = machine->OnInit([&initCount]([[maybe_unused]] IController* ioController)
         {
             initCount++;
             return meen::errc::no_error;
         });
         TEST_ASSERT_FALSE(err);
-    
+
         // Run the test more than once (in this case 5 times)
         for(int i = 0; i < 5; i++)
         {
             test_8080Pre();
         }
         TEST_ASSERT_EQUAL(1, initCount);
-    
+
         err = machine->OnInit(nullptr);
         TEST_ASSERT_FALSE(err);
     }
@@ -662,14 +677,14 @@ int main(int argc, char** argv)
         programsDir = argv[1];
     }
 
-#ifdef ENABLE_MEEN_RP2040
+#ifdef PICO_BOARD
     stdio_init_all();
 
 //    set_sys_clock_pll(150, 5, 2);
 //    set_sys_clock_khz(250000, true);
 
     while(true)
-#endif
+#endif // PICO_BOARD
     {
         meen::tests::suiteSetUp();
         UNITY_BEGIN();
@@ -681,11 +696,11 @@ int main(int argc, char** argv)
         RUN_TEST(meen::tests::test_OnInit);
         RUN_TEST(meen::tests::test_Tst8080);
         RUN_TEST(meen::tests::test_8080Pre);
-// These may take a little while to run on embedded platforms, disabled by default
-#ifndef ENABLE_MEEN_RP2040
+// These may take a little while to run on embedded platforms - only run when using pico sdk >= 2.x.x
+#if !defined PICO_BOARD || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_CpuTest);
 //        RUN_TEST(meen::tests::test_8080Exm);
-#endif
+#endif // !defined PICO_BOARD || PICO_USE_FASTEST_SUPPORTED_CLOCK == 1
         RUN_TEST(meen::tests::test_MethodsErrorAfterRunCalled);
         RUN_TEST(meen::tests::test_RunTimed);
         RUN_TEST(meen::tests::test_RunTimedAsync);

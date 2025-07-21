@@ -55,6 +55,10 @@ namespace meen
 #else
 			JsonDocument json_{};
 
+			mutable std::string encoder_;
+
+			mutable std::string compressor_;
+
 			static void Merge(JsonVariant dst, JsonVariantConst src);
 #endif
 			/**
@@ -66,7 +70,7 @@ namespace meen
 
 			/*
 				Parse a json string view
-				
+
 				Helper methods to parse json strings.
 			*/
 #ifdef ENABLE_NLOHMANN_JSON
@@ -114,13 +118,13 @@ namespace meen
 
 				Supported compressors, currently only zlib is supported.
 			*/
-			std::string Compressor() const;
+			const std::string& Compressor() const;
 
 			/** Text to binary encoder
 
 				Supported encoders, currently only base64 is supported.
 			*/
-			std::string Encoder() const;
+			const std::string& Encoder() const;
 
 			/** Machine state load mode
 

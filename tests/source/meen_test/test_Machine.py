@@ -24,9 +24,9 @@ import re
 import sys
 import unittest
 
-from meenPy import __version__
-from meenPy import ErrorCode
-from meenPy import Make8080Machine
+from meen_py import __version__
+from meen_py import ErrorCode
+from meen_py import Make8080Machine
 
 # Import Python controller modules (a port of the c++ modules are available below)
 # Always use the c++ memory controller module for performance reasons, the python module is available strictly for demonstration purposes
@@ -36,9 +36,9 @@ from CpmIoController import CpmIoController
 
 # These c++ controller module versions are also available
 # Always use the c++ memory controller for performance reasons
-from TestControllersPy import MemoryController
-#from TestControllersPy import CpmIoController
-#from TestControllersPy import TestIoController
+from test_controllers_py import MemoryController
+#from test_controllers_py import CpmIoController
+#from test_controllers_py import TestIoController
 
 class MachineTest(unittest.TestCase):
     def setUp(self):

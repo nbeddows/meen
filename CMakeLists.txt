@@ -26,10 +26,11 @@ set(resource_dir resource)
 set(source_dir source)
 set(meen meen)
 set(major 2)
-set(minor 0)
+set(minor 1)
 set(bugfix 0)
 
-if(${enable_rp2040} STREQUAL ON)
+if(NOT ${enable_board} STREQUAL "none")
+  set(PICO_BOARD ${enable_board})
   include ($ENV{PICO_SDK_PATH}/external/pico_sdk_import.cmake)
 endif()
 
@@ -37,16 +38,7 @@ project(${meen} VERSION ${major}.${minor}.${bugfix} LANGUAGES C CXX ASM)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_CXX_STANDARD 23)
 
-if(${enable_rp2040} STREQUAL ON)
-  add_executable(Pioasm IMPORTED)
-  set_property(TARGET Pioasm PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/pioasm/pioasm)
-  set(Pioasm_FOUND 1)
-
-  # In the 2.x SDK this is handled by picotool, need to account for this with version numbers
-  add_executable(ELF2UF2 IMPORTED)
-  set_property(TARGET ELF2UF2 PROPERTY IMPORTED_LOCATION $ENV{PICO_SDK_PATH}/build/elf2uf2/elf2uf2)
-  set(ELF2UF2_FOUND 1)
-
+if(NOT ${enable_board} STREQUAL "none")
   pico_sdk_init()
 endif()
 
@@ -91,8 +83,8 @@ else()
   endif()
 endif()
 
-# TODO: rp2040 does not output all artifacts correctly when setting this - investigate me
-if(NOT ${enable_rp2040} STREQUAL ON)
+# TODO: Pico SDK does not output all artifacts correctly when setting this - investigate me
+if(${enable_board} STREQUAL "none")
   set(artifacts_dir $<1:${CMAKE_SOURCE_DIR}/artifacts/${build_type}/${build_arch}>)
   set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${artifacts_dir}/${archive_dir})
   set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${artifacts_dir}/${runtime_dir})
@@ -100,6 +92,8 @@ if(NOT ${enable_rp2040} STREQUAL ON)
 endif()
 
 # Stage 2: locate our required packages
+
+find_package(ArduinoJson REQUIRED)
 
 if(${enable_python_module} STREQUAL ON)
   find_package(Python REQUIRED COMPONENTS Interpreter Development.Module)
@@ -118,16 +112,12 @@ if(${enable_hash_library} STREQUAL ON)
   find_package(hash-library REQUIRED)
 endif()
 
-if(${build_os} STREQUAL "baremetal")
-  find_package(ArduinoJson REQUIRED)
-
-  if(NOT BUILD_TESTING STREQUAL OFF)
+if(NOT BUILD_TESTING STREQUAL OFF)
+  if(${enable_framework} STREQUAL unity)
     find_package(Unity REQUIRED)
   endif()
-else()
-  find_package(nlohmann_json REQUIRED)
 
-  if(NOT BUILD_TESTING STREQUAL OFF)
+  if(${enable_framework} STREQUAL gtest)
     find_package(GTest REQUIRED)
   endif()
 endif()
@@ -271,23 +261,19 @@ target_compile_definitions(${meen} PRIVATE ${meen}_VERSION=\"${CMAKE_PROJECT_VER
 target_compile_definitions(${meen} PUBLIC ${meen}_${lib_type})
 target_include_directories(${meen} PRIVATE ${include_dir})
 
-if(${build_os} STREQUAL "baremetal")
-  if(${enable_rp2040} STREQUAL ON)
-    target_compile_definitions(${meen} PUBLIC ENABLE_MEEN_RP2040)
-    target_link_libraries(${meen} PUBLIC pico_stdlib)
+target_link_libraries(${meen} PUBLIC ArduinoJson)
+
+if(${build_os} STREQUAL baremetal)
+  if(NOT ${enable_board} STREQUAL none)
+    target_link_libraries(${meen} PRIVATE pico_stdlib)
     target_link_libraries(${meen} PRIVATE pico_multicore)
   endif()
-
-  target_link_libraries(${meen} PUBLIC ArduinoJson)
 
   if(DEFINED MSVC)
     message("todo: disable exceptions and rtti for msvc")
   else()
     target_compile_options(${meen} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:-fno-exceptions -fno-rtti>)
   endif()
-else()
-  target_compile_definitions(${meen} PUBLIC ENABLE_NLOHMANN_JSON)
-  target_link_libraries(${meen} PUBLIC nlohmann_json::nlohmann_json)
 endif()
 
 if(${enable_base64} STREQUAL ON)
@@ -311,13 +297,13 @@ if(${enable_zlib} STREQUAL ON)
 endif()
 
 if(${enable_python_module} STREQUAL ON)
-  pybind11_add_module(${meen}Py
+  pybind11_add_module(${meen}_py
     ${${meen}_py_include_files}
     ${${meen}_py_source_files}
   )
-  target_link_directories(${meen}Py PRIVATE ${Python_LIBRARY_DIRS})
-  target_link_libraries(${meen}Py PRIVATE pybind11::headers ${meen})
-  install(TARGETS ${meen}Py DESTINATION ${runtime_dir})
+  target_link_directories(${meen}_py PRIVATE ${Python_LIBRARY_DIRS})
+  target_link_libraries(${meen}_py PRIVATE pybind11::headers ${meen})
+  install(TARGETS ${meen}_py DESTINATION ${runtime_dir})
 endif()
 
 if(DEFINED zlib_bin_dir)
@@ -347,8 +333,8 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     tests/${source_dir}/${test_controllers}/TestIoController.cpp
   )
 
-  if(${build_os} STREQUAL "baremetal")
-    if(${enable_rp2040} STREQUAL ON)
+  if(${build_os} STREQUAL baremetal)
+    if(NOT ${enable_board} STREQUAL none)
       set(${test_controllers}_source_files
         ${${test_controllers}_source_files}
         tests/${source_dir}/${test_controllers}/TestPrograms.S
@@ -378,14 +364,13 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     set (${test_controllers_py}_source_files tests/${source_dir}/${test_controllers_py}/TestControllersPy.cpp)
     SOURCE_GROUP(${source_dir} FILES ${${test_controllers_py}_source_files})
 
-    # todo: replace with TestControllersPy with ${test_controllers_py} when moving to meen 2.0
-    pybind11_add_module(TestControllersPy ${${test_controllers_py}_source_files})
+    pybind11_add_module(${test_controllers_py} ${${test_controllers_py}_source_files})
 
-    set_target_properties(TestControllersPy PROPERTIES FOLDER tests)
-    target_include_directories(TestControllersPy PRIVATE ${include_dir} tests/${include_dir})
-    target_link_directories(TestControllersPy PRIVATE ${Python_LIBRARY_DIRS})
-    target_link_libraries(TestControllersPy PRIVATE pybind11::headers ${test_controllers})
-    install(TARGETS TestControllersPy LIBRARY DESTINATION ${runtime_dir})
+    set_target_properties(${test_controllers_py} PROPERTIES FOLDER tests)
+    target_include_directories(${test_controllers_py} PRIVATE ${include_dir} tests/${include_dir})
+    target_link_directories(${test_controllers_py} PRIVATE ${Python_LIBRARY_DIRS})
+    target_link_libraries(${test_controllers_py} PRIVATE pybind11::headers ${test_controllers})
+    install(TARGETS ${test_controllers_py} LIBRARY DESTINATION ${runtime_dir})
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/BaseIoController.py DESTINATION tests)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/CpmIoController.py DESTINATION tests)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/source/test_controllers/MemoryController.py DESTINATION tests)
@@ -393,11 +378,12 @@ if(NOT BUILD_TESTING STREQUAL OFF)
   endif()
 
 ##### MEEN TEST
-
-  if(${build_os} STREQUAL "baremetal")
+  if(${enable_framework} STREQUAL unity)
     set(${meen}_test_source_files tests/${source_dir}/${meen}_test/MeenUnityTest.cpp)
     set(${meen}_test_deps unity::unity)
-  else()
+  endif()
+
+  if(${enable_framework} STREQUAL gtest)
     set(${meen}_test_source_files tests/${source_dir}/${meen}_test/MeenGTest.cpp)
     set(${meen}_test_deps GTest::GTest)
   endif()
@@ -406,17 +392,27 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
   add_executable(${meen}_test ${${meen}_test_source_files})
 
-  if(${build_os} STREQUAL "baremetal")
-    if(${enable_rp2040} STREQUAL ON)
+  if(${build_os} STREQUAL baremetal)
+    if(NOT ${enable_board} STREQUAL none)
+      # PICO_USE_FASTEST_SUPPORTED_CLOCK is only available in SDK Version 2.x.x
+      if(${PICO_SDK_VERSION_MAJOR} GREATER_EQUAL 2)
+        target_compile_definitions(${meen}_test PRIVATE PICO_USE_FASTEST_SUPPORTED_CLOCK=1)
+      else()
+        target_compile_definitions(${meen}_test PRIVATE PICO_USE_FASTEST_SUPPORTED_CLOCK=0)
+      endif()
+
       pico_enable_stdio_usb(${meen}_test 1)
       pico_enable_stdio_uart(${meen}_test 0)
-      pico_set_program_url(${meen}_test "https://github.com/neddows/mach-emu")
+      pico_set_program_name(${meen}_test "MEEN test")
+      pico_set_program_description(${meen}_test "Machine Emulator ENgine unit tests")
+      # pico_set_program_version_string(${meen}_test "${major}.${minor}.${bugfix}")
+      pico_set_program_url(${meen}_test "https://github.com/nbeddows/meen")
       pico_add_extra_outputs(${meen}_test)
-      install(PROGRAMS ${CMAKE_BINARY_DIR}/${meen}_test.bin DESTINATION ./bin)
-      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.uf2 DESTINATION ./bin)
-      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.dis DESTINATION ./lib)
-      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.elf.map DESTINATION ./lib)
-      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.hex DESTINATION ./lib)
+      install(PROGRAMS ${CMAKE_BINARY_DIR}/${meen}_test.bin DESTINATION bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.uf2 DESTINATION bin)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.dis DESTINATION lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.map DESTINATION lib)
+      install(FILES ${CMAKE_BINARY_DIR}/${meen}_test.hex DESTINATION lib)
     endif()
   endif()
 
@@ -449,7 +445,7 @@ if(NOT BUILD_TESTING STREQUAL OFF)
 
   install(TARGETS ${meen}_test RUNTIME DESTINATION ${runtime_dir})
 
-  if(${build_os} STREQUAL "baremetal")
+  if(${build_os} STREQUAL baremetal)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080EXM.COM DESTINATION tests/programs)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/8080PRE.COM DESTINATION tests/programs)
     install(FILES ${CMAKE_SOURCE_DIR}/tests/programs/CPUTEST.COM DESTINATION tests/programs)
@@ -458,21 +454,26 @@ if(NOT BUILD_TESTING STREQUAL OFF)
     install(DIRECTORY ${CMAKE_SOURCE_DIR}/tests/programs DESTINATION tests)
 ##### Generate unit test run script
     if(DEFINED MSVC)
-      # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguemnts
+      # write out a script which exports the runtime directory and runs the tests, $@ - bash all command line arguments
       if(${enable_python_module} STREQUAL ON)
         set(pythonFilter "set python-filter=-k *")
         set(pythonCmdLine "IF \"%~1\"==\"--python_filter\" set python-filter=-k %~2")
         set(pythonExecute "echo Running Python unit tests\npython tests\\test_Machine.py -v %python-filter%")
       endif()
 
+      if(${enable_framework} STREQUAL "gtest")
+        set(gTestFilter "set gtest-filter=--gtest_filter=*")
+        set(gtestCmdLine "IF \"%~1\"==\"--gtest_filter\" set gtest-filter=%~1=%~2")
+      endif()
+
       # start run-meen-unit-tests.bat --gtest_filter=*LXI_B* --python_filter=Tst8080
       file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.bat
           "@echo off\n\
-set gtest-filter=--gtest_filter=*\n\
+${gtestFilter}
 ${pythonFilter}
 :parse\n\
 IF \"%~1\"==\"\" GOTO endparse\n\
-IF \"%~1\"==\"--gtest_filter\" set gtest-filter=%~1=%~2\n\
+${gtestCmdLine}\n\
 ${pythonCmdLine}\n\
 SHIFT\n\
 GOTO parse\n\
@@ -494,20 +495,22 @@ exit"
         set(pythonExecute "echo Running Python unit tests\npython tests/test_Machine.py -v \${python_filter}")
       endif()
 
+      if(${enable_framework} STREQUAL "gtest")
+        set(gtestFilter "export gtest_filter=\"--gtest_filter=*\"")
+        set(gtestCmdLine "--gtest_filter)\nexport gtest_filter=\"$1=$2\"\nshift\n;;")
+      endif()
+
       file(WRITE ${CMAKE_BINARY_DIR}/run-${meen}-unit-tests.sh
 "#!/bin/bash\n\
-export gtest_filter=\"--gtest_filter=*\"\n\
+${gtestFilter}\n\
 ${pythonFilter}\n\
 while [[ \$# -gt 0 ]]; do\n\
   case \$1 in\n\
-    --gtest_filter)\n\
-      export gtest_filter=\"\$1=\$2\"\n\
-      shift\n\
-    ;;\n\
+    ${gtestCmdLine}\n\
     ${pythonCmdLine}\n\
     *)\n\
       echo Invalid option: \$1\n\
-      echo ./run-${meen}-unit-tests [--gtest_filter \\\$gtest_filter][--python_filter \\\${python_filter}
+      echo ./run-${meen}-unit-tests [--gtest_filter \\\${gtest_filter}][--python_filter \\\${python_filter}]
       exit\n\
       ;;\n\
   esac\n\
@@ -516,7 +519,7 @@ done\n\
 echo Adding `pwd`/${archive_dir} to LD_LIBRARY_PATH\n\
 export LD_LIBRARY_PATH=`pwd`/${archive_dir}:\${LD_LIBRARY_PATH}\n\
 echo Running C++ unit tests\n\
-${runtime_dir}/${meen}_test \"\${gtest_filter}\" tests/programs/\n\
+${runtime_dir}/${meen}_test \${gtest_filter} tests/programs/\n\
 ${pythonExecute}"
       )
 
@@ -547,16 +550,18 @@ install(CODE "execute_process(COMMAND doxygen ${CMAKE_SOURCE_DIR}/docs/Doxyfile)
 if(DEFINED MSVC)
   # Under Windows Doxygen documentaiton causes LaTeX to go into what looks to be an infinite loop, disable until a solution is found
   # install(CODE "execute_process(COMMAND cmd /c make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
-else()
+# We are not going to build the documentation on arm platforms
+elseif(${build_arch} STREQUAL x86_64)
   install(CODE "execute_process(COMMAND make WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/latex)")
 endif()
-install(CODE "execute_process(COMMAND cppcheck -ibuild -i_CPack_Packages -itests --inline-suppr --enable=warning,style,performance,portability,unusedFunction --std=c++20 ${CMAKE_SOURCE_DIR})")
 install(TARGETS ${meen} FILE_SET HEADERS)
 install(FILES ${CMAKE_SOURCE_DIR}/CHANGELOG.md DESTINATION .)
 install(FILES ${CMAKE_SOURCE_DIR}/LICENSE.md RENAME LICENSE DESTINATION .)
 # Latex to PDF generation under Windows is currently not working, remove the if protection once fixed
 if(NOT DEFINED MSVC)
-  install(FILES ${CMAKE_BINARY_DIR}/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
+  if(${build_arch} STREQUAL x86_64)
+    install(FILES ${CMAKE_BINARY_DIR}/latex/refman.pdf RENAME MEEN_Reference.pdf DESTINATION .)
+  endif()
 endif()
 
 if(NOT DEFINED WIN32)
