@@ -26,7 +26,7 @@ set(resource_dir resource)
 set(source_dir source)
 set(meen meen)
 set(major 2)
-set(minor 0)
+set(minor 1)
 set(bugfix 0)
 
 if(NOT ${enable_board} STREQUAL "none")

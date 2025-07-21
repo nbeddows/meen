@@ -1,4 +1,4 @@
-2.1.0
+2.1.0 [21/07/25]
 * Added testing and release workflows for GitHub Actions CI/CD.
 * Dropped GCC-12 support.
 * Added GCC-14 support.
