@@ -177,7 +177,7 @@ PYBIND11_MODULE(meen_py, meen)
         })
         .def("AttachIoController", [](meen::IMachine& machine, meen::IController* controller)
         {
-            return static_cast<meen::errc>(machine.AttachIoController(meen::IControllerPtr(controller, meen::ControllerDeleter(false))).value());            
+            return static_cast<meen::errc>(machine.AttachIoController(meen::IControllerPtr(controller, meen::ControllerDeleter(false))).value());
         })
         .def("AttachMemoryController", [](meen::IMachine& machine, meen::IController* controller)
         {
