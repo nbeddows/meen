@@ -285,6 +285,19 @@ namespace meen::Tests
 		);
 	}
 
+	TEST_F(MachineTest, InvalidTimescale)
+	{
+		EXPECT_NO_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			auto err = machine_->SetOptions(R"(json://{"timescale":-1.0})");
+			EXPECT_EQ(errc::json_config, err.value());
+			//cppcheck-suppress unknownMacro
+			err = machine_->SetOptions(R"(json://{"timescale":1000000001})");
+			EXPECT_EQ(errc::json_config, err.value());
+		);
+	}
+
 	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
 		EXPECT_NO_THROW
