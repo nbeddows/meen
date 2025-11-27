@@ -53,16 +53,19 @@ namespace meen
 								to initialise the memory to a known state will result in undefined behaviour.
 
 			@return					A `std::expected` with an expected value of the duration of the
-								run time of the machine as a `uint64_t` in nanoseconds and an
-								unexpected value of one of the following MEEN std error codes:
+								run time of the machine as a `uint64_t` expressed in the timescale specified by the
+								`timescale` configuration option (default is nanoseconds) and an unexpected value of one
+								of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                                       |
+			| MEEN error code         | Remarks                                                           |
 			|:------------------------|:------------------------------------------------------------------|
 			| memory_controller       | No memory controller has been attached                            |
 			| io_controller           | No io controller has been attached                                |
 			| busy                    | MEEN is running                                                   |
 			| cpu                     | The machine cpu is invalid                                        |
 			| clock_resolution        | The clock is invalid or the supplied clock resolution is too high |
+
+			@sa						SetOptions
 
 			@since					version 0.2.0
 		*/
@@ -82,7 +85,7 @@ namespace meen
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                       |
+			| MEEN error code         | Remarks                           |
 			|:------------------------|:----------------------------------|
 			| invalid_argument        | The controller parameter is empty |
 			| busy                    | MEEN is currently running         |
@@ -103,7 +106,7 @@ namespace meen
 			@return					A `std::expected` with an expected value of a `std::unique_ptr` to the detached controller
 								and an unexpected value of one of the following MEEN std error codes:
 
-								| MEEN error code         | Explanation                                            |
+								| MEEN error code         | Remarks                                                |
 								|:------------------------|:-------------------------------------------------------|
 								| io_controller           | MEEN currently has no memory controller attached to it |
 								| busy                    | MEEN is currently running                              |
@@ -127,7 +130,7 @@ namespace meen
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                       |
+			| MEEN error code         | Remarks                           |
 			|:------------------------|:----------------------------------|
 			| invalid_argument        | The controller parameter is empty |
 			| busy                    | MEEN is currently running         |
@@ -148,7 +151,7 @@ namespace meen
 			@return					A `std::expected` with an expected value of a `std::unique_ptr` to the detached controller
 								and an unexpected value of one of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                        |
+			| MEEN error code         | Remarks                                            |
 			|:------------------------|:---------------------------------------------------|
 			| io_controller           | MEEN currently has no io controller attached to it |
 			| busy                    | MEEN is currently running                          |
@@ -168,16 +171,16 @@ namespace meen
 
 			@remark					The options parameter should be prefixed by one of the following supported protocols:
 
-			| URI                     | Explanation                                                                                                |
+			| URI                     | Remarks                                                                                                    |
 	 		|:------------------------|:-----------------------------------------------------------------------------------------------------------|
-			| file://                 | load the configuration options specifed by the json in the file on local disk given by the remaining bytes |
-			| json:// (default)       | load the configuration options specified by the json in the remaining bytes                                |
+			| file://                 | Load the configuration options specifed by the json in the file on local disk given by the remaining bytes |
+			| json:// (default)       | Load the configuration options specified by the json in the remaining bytes                                |
 
 			@remark					When no protocol is specified, `json://` will be used.
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                               |
+			| MEEN error code         | Remarks                                                   |
 			|:------------------------|:----------------------------------------------------------|
 			| no_error                | All options were set successfully                         |
 			| json_config             | One the options values are illegal                        |
@@ -192,11 +195,11 @@ namespace meen
 
 			The `onInit` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                        |
 			|:-----------------|------------------------------------------------|
 			| meen::errc       | The meen error code as defined in meen/Error.h |
 
-			| Parameter        | Explanation                                                                                  |
+			| Parameter        | Remarks                                                                                      |
 			|:-----------------|----------------------------------------------------------------------------------------------|
 			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
@@ -213,7 +216,7 @@ namespace meen
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                      |
+			| MEEN error code         | Remarks                                          |
 	 		|:------------------------|:-------------------------------------------------|
 			| no_error                | The on init	 handler was registered successfully |
 			| busy                    | MEEN is currently running                        |
@@ -228,11 +231,11 @@ namespace meen
 
 			The `onSaveBegin` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                        |
 			|:-----------------|:-----------------------------------------------|
 			| meen::errc       | The meen error code as defined in meen/Error.h |
 
-			| Parameter        | Explanation                                                                                                               |
+			| Parameter        | Remarks                                                                                                                   |
 			|:-----------------|:--------------------------------------------------------------------------------------------------------------------------|
 			| uri              | A `char*` buffer that the method will write the location where the state is to be saved preceeded by a supported protocol |
 			| uriLen           | An `int*` containing the size of the uri buffer. The method will write to actual uri length to `uriLen`                   |
@@ -242,11 +245,11 @@ namespace meen
 
 			The `onSave` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                        |
 			|:-----------------|:-----------------------------------------------|
 			| meen::errc       | The meen error code as defined in meen/Error.h |
 
-			| Parameter        | Explanation                                                                                  |
+			| Parameter        | Remarks                                                                                      |
 			|:-----------------|:---------------------------------------------------------------------------------------------|
 			| location         | The uri obtained from the onSaveBegin method                                                 |
 			| json             | A `const char*` which points to the machine save state in json format                        |
@@ -304,7 +307,7 @@ namespace meen
 
 			@return					One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                     |
+			| MEEN error code         | Remarks                                         |
 			|:------------------------|:------------------------------------------------|
 			| no_error                | The on save handler was registered successfully |
 			| busy                    | MEEN is currently running                       |
@@ -326,11 +329,11 @@ namespace meen
 
 			The `onLoad` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                         |
 			|:-----------------|:------------------------------------------------|
-			| meen::errc       | The meen error code as defined in meen/Error.h |
+			| meen::errc       | The meen error code as defined in meen/Error.h  |
 
-			| Parameter        | Explanation                                                                                  |
+			| Parameter        | Remarks                                                                                      |
 			|:-----------------|:---------------------------------------------------------------------------------------------|
 			| json             | A `char*` buffer to write the machine state json to                                          |
 			| jsonLen          | An `int*` to write the length of the json state to                                           |
@@ -338,11 +341,11 @@ namespace meen
 
 			The `onLoadComplete` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                        |
 			|:-----------------|:-----------------------------------------------|
 			| meen::errc       | The meen error code as defined in meen/Error.h |
 
-			| Parameter        | Explanation                                                                                  |
+			| Parameter        | Remarks                                                                                      |
 			|:-----------------|:---------------------------------------------------------------------------------------------|
 			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
@@ -411,7 +414,7 @@ namespace meen
 
 			Supported protocols:
 
-			| URI                     | Explanation                                                                                     |
+			| URI                     | Remarks                                                                                         |
 	 		|:------------------------|:------------------------------------------------------------------------------------------------|
 			| file:// 		  | load a resource located at the path specifed by the remainder of the bytes property into memory |
 			| base64://               | base64 decode the remaining bytes and load them into memory.                                    |
@@ -427,7 +430,7 @@ namespace meen
 
 			@return							One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                     |
+			| MEEN error code         | Remarks                                         |
 			|:------------------------|:------------------------------------------------|
 			| no_error                | The on load handler was registered successfully |
 			| busy                    | MEEN is currently running                       |
@@ -467,13 +470,13 @@ namespace meen
 
 			The `onIdle` signature:
 
-			| Return Type      | Value | Explanation                              |
+			| Return Type      | Value | Remarks                                  |
 			|:-----------------|:------|:-----------------------------------------|
 			| bool             | True  | Quit the running machine instance        |
             | ^                | False | Call the registered on idle method again |
 
 
-			| Parameter        | Explanation                                                                                  |
+			| Parameter        | Remarks                                                                                      |
 			|:-----------------|:---------------------------------------------------------------------------------------------|
 			| ioController     | A pointer to the io controller that was attached via the IMachine::AttachIoController method |
 
@@ -490,7 +493,7 @@ namespace meen
 
 			@return						One of the following MEEN std error codes:
 
-			| MEEN error code         | Explanation                                     |
+			| MEEN error code         | Remarks                                         |
 			|:------------------------|:------------------------------------------------|
 			| no_error                | The on idle handler was registered successfully |
 			| busy                    | MEEN is currently running                       |
@@ -505,11 +508,11 @@ namespace meen
 
 			The `onError` signature:
 
-			| Return Type      | Explanation                                    |
+			| Return Type      | Remarks                                        |
 			|:-----------------|------------------------------------------------|
 			| void             | The method does not return anything            |
 
-			| Parameter        | Explanation                                                                                   |
+			| Parameter        | Remarks                                                                                       |
 			|:-----------------|:----------------------------------------------------------------------------------------------|
 			| ec               | The MEEN std::error_code whose value method returns one of the errors defined in meen/Error.h |
 			| fileName         | A `const char*` to the source file that generated the call to this method                     |
@@ -522,7 +525,7 @@ namespace meen
 
 			@return						One of the following MEEN std::error_codes:
 
-			| MEEN error code         | Explanation                                      |
+			| MEEN error code         | Remarks                                          |
 			|:------------------------|:-------------------------------------------------|
 			| no_error                | The on error handler was registered successfully |
 			| busy                    | MEEN is currently running                        |
