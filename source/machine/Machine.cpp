@@ -130,6 +130,9 @@ namespace meen
 		auto loadLaunchPolicy = m->opt_.LoadAsync() ? std::launch::async : std::launch::deferred;
 		std::future<std::string> onLoad;
 #endif // PICO_BOARD
+		// The smallest amount of nanos that can be represented by a single unit of the timescale 
+		auto timescaleResolution = 1000000000.0 / m->opt_.Timescale();
+
 		auto loadMachineState = [&](std::string&& str)
 		{
 			if (str.empty() == false)
@@ -817,7 +820,7 @@ namespace meen
 		auto serviceInterrupts = [&]
 		{
 			bool quit = false;
-			auto isr = m->ioController_->GenerateInterrupt(currTime.count(), totalTicks, m->memoryController_.get());
+			auto isr = m->ioController_->GenerateInterrupt(currTime.count() / timescaleResolution, totalTicks, m->memoryController_.get());
 
 			switch (isr)
 			{
@@ -1134,7 +1137,7 @@ namespace meen
 			}
 		}
 
-		m->runTime_ = currTime.count();
+		m->runTime_ = currTime.count() / timescaleResolution;
 	}
 
 	std::expected<uint64_t, std::error_code> Machine::Run()

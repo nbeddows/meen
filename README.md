@@ -195,31 +195,31 @@ The presets of `conan-debug`, `conan-minsizerel` and `conan-relwithdebinfo` can 
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 1. Create an Arm Linux binary distribution: See building a binary development package. 
-2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-Linux-armv7hf-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
-3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
-5. Change directory to meen: `cd meen`.
-6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`.<br>
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-Linux-armv7hf-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`
+5. Change directory to meen: `cd meen`
+6. Run the unit tests: `./run-meen-unit-tests.sh [--gtest_filter ${gtest_filter}]`<br>
 
 **C++ - Pico RP2040 (armv6-m)**
 
 When running a cross compiled build the binaries need to be uploaded to the host machine before they can be executed.
 This example will assume you are deploying the UF2 file from a Raspberry Pi.
 1. Create an Arm Linux binary distribution: see building a binary development package.
-2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-baremetal-armv6-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`.
-3. Ssh into the arm machine: `ssh ${user}@raspberrypi`.
-4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`.
+2. Copy the distribution to the arm machine: `scp build/Release/meen-v2.1.0-baremetal-armv6-GNU-14.2.1.tar.gz ${user}@raspberrypi:meen-v2.1.0.tar.gz`
+3. Ssh into the arm machine: `ssh ${user}@raspberrypi`
+4. Extract the MEEN archive copied over via scp: `tar -xzf meen-v2.1.0.tar.gz`
 5. Hold down the `bootsel` button on the pico and plug in the usb cable into the usb port of the Raspberry Pi then release the `bootsel` button.
-6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`.
-7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`.
+6. Echo the attached `/dev` device (this should show up as `sdb1` for example): `dmesg | tail`
+7. Create a mount point (if not done already): `sudo mkdir /mnt/pico`
 8. Mount the device: `sudo mount /dev/sdb1 /mnt/pico`. Run `ls /mnt/pico` to confirm it mounted.
 9. Copy the uf2 image to the pico: `cp meen-v2.1.0-baremetal-armv6-GNU-14.2.1/bin/meen_test.uf2 /mnt/pico`
 10. You should see a new device `ttyACM0`: `ls /dev` to confirm.
-11. Install minicom (if not done already): `sudo apt install minicom`.
+11. Install minicom (if not done already): `sudo apt install minicom`
 12. Run minicom to see test output: `minicom -b 115200 -o -D /dev/ttyACM0`<br>
     You should see the test output running at 1 second intervals.
 13. Quit minicom once done: `ctrl-a, x, enter`
-14. Unmount the device: `sudo umount /mnt/pico`.
+14. Unmount the device: `sudo umount /mnt/pico`
 
 **Python**:
 - `tests\source\meen_test\test_Machine.py -v [-k ${python_filter}]`
@@ -458,6 +458,12 @@ The following table describes the supported options (note, when no option is spe
     <tr>
       <td>n Hz</td>
       <td>A request in Hertz as to how frequently the MEEN clock will tick. Note: this is only a request and while best efforts are made to honour it, the consistency of the tick rate will not be perfect, especially at higher sampling frequencies when no high resolution host clock is available</td>
+    </tr>
+    <tr>
+      <td>timescale</td>
+      <td>double</td>
+      <td>n</td>
+      <td>Change the MEEN clock timescale to a value in the range of 1 - 1000000000 (default). This updates the resolution of the clock samples.</td>
     </tr>
     <tr>
       <td rowspan=2>compressor</td>

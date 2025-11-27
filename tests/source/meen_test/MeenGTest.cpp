@@ -209,7 +209,7 @@ namespace meen::Tests
 			}
 		}, nullptr);
 
-		machine_->Run();
+		[[maybe_unused]] auto runTime = machine_->Run();
 		// When the OnSave method is implemented it MUST be triggered
 		EXPECT_TRUE(saveTriggered || err.value() == errc::not_implemented);
 	}
@@ -285,6 +285,19 @@ namespace meen::Tests
 		);
 	}
 
+	TEST_F(MachineTest, InvalidTimescale)
+	{
+		EXPECT_NO_THROW
+		(
+			//cppcheck-suppress unknownMacro
+			auto err = machine_->SetOptions(R"(json://{"timescale":-1.0})");
+			EXPECT_EQ(errc::json_config, err.value());
+			//cppcheck-suppress unknownMacro
+			err = machine_->SetOptions(R"(json://{"timescale":1000000001})");
+			EXPECT_EQ(errc::json_config, err.value());
+		);
+	}
+
 	TEST_F(MachineTest, MethodsErrorAfterRunCalled)
 	{
 		EXPECT_NO_THROW
@@ -308,17 +321,17 @@ namespace meen::Tests
 			// It's possible to capture the machine and wreak havoc, make sure that does not happen.
 			machine_->OnIdle([]([[maybe_unused]] IController* ioController)
 			{
-				// All these methods should return busy
+				// All these methods should trigger the onError handler
 				machine_->SetOptions(R"(json://bad-json})");
 				machine_->AttachMemoryController(nullptr);
-				machine_->DetachMemoryController();
+				[[maybe_unused]] auto mc = machine_->DetachMemoryController();
 				machine_->AttachIoController(nullptr);
-				machine_->DetachIoController();
+				[[maybe_unused]] auto ioc = machine_->DetachIoController();
 				machine_->OnIdle(nullptr);
 				machine_->OnLoad(nullptr, nullptr);
 				machine_->OnSave(nullptr, nullptr);
 				machine_->OnError(nullptr);
-				machine_->Run();
+				[[maybe_unused]] auto runTime = machine_->Run();
 
 				// true: stop calling the idle function and exit.
 				// false: keep calling the idle function and wait for the ISR:Quit interrupt to be triggered.
@@ -326,7 +339,7 @@ namespace meen::Tests
 				return true;
 			});
 
-			machine_->Run();
+			[[maybe_unused]] auto runTime = machine_->Run();
 			EXPECT_EQ(10, errCount);
 		);
 	}
@@ -490,7 +503,7 @@ namespace meen::Tests
 
 			// Attach the cpm io controller
 			machine_->AttachIoController(std::move(cpmIoController_));
-			machine_->Run();
+			[[maybe_unused]] auto runTime = machine_->Run();
 
 			cpmIoController_ = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
@@ -511,7 +524,7 @@ namespace meen::Tests
 
 			machine_->AttachIoController(std::move(cpmIoController_));
 			// run it again, but this time trigger the load interrupt
-			machine_->Run();
+			runTime = machine_->Run();
 
 			cpmIoController_ = std::move(machine_->DetachIoController().value());
 			ASSERT_TRUE(cpmIoController_);
