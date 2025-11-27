@@ -80,7 +80,7 @@ namespace meen
 #else
 								R"(")"
 #endif // ENABLE_MEEN_SAVE
-								R"(,"isrFreq":0,"maxLoadStateLen":512,"runAsync":false})"sv;
+								R"(,"timescale":1000000000,"isrFreq":0,"maxLoadStateLen":512,"runAsync":false})"sv;
 	}
 
 #ifdef ENABLE_NLOHMANN_JSON
@@ -185,6 +185,17 @@ namespace meen
 				}
 			}
 #endif // ENABLE_ZLIB
+			if (!err)
+			{
+#ifdef ENABLE_NLOHMANN_JSON
+				if (json.contains("timescale") == true && (json["timescale"].get<double>() <= 0 || json["timescale"].get<double>() > 1000000000))
+#else
+				if (json["timescale"] != nullptr && (json["timescale"].as<double>() <= 0 || json["timescale"].as<double>() > 1000000000))
+#endif // ENABLE_NLOHMANN_JSON
+				{
+					err = make_error_code(errc::json_config);
+				}
+			}
 		}
 
 		if (!err)
@@ -205,6 +216,15 @@ namespace meen
 		return json_["clockSamplingFreq"].get<double>();
 #else
 		return json_["clockSamplingFreq"].as<double>();
+#endif // ENABLE_NLOHMANN_JSON
+	}
+
+	double Opt::Timescale() const
+	{
+#ifdef ENABLE_NLOHMANN_JSON
+		return json_["timescale"].get<double>();
+#else
+		return json_["timescale"].as<double>();
 #endif // ENABLE_NLOHMANN_JSON
 	}
 
