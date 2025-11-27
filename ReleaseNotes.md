@@ -1,8 +1,6 @@
-## MEEN 2.1.0
+## MEEN 2.2.0
 
 **Highlights:**
 
-- GitHub Actions CI/CD support.
-- GCC-14 support.
-- Pico SDK 2.x.x support.
-- GTest and pybind11 version updates.
+- Visual Studio Version 17.14.9 (July 2025) support.
+- Added the configuration parameter `timescale`.
