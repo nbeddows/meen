@@ -32,7 +32,7 @@ class MeenRecipe(ConanFile):
     # Optional metadata
     license = "MIT"
     author = "Nicolas Beddows <nicolas.beddows@gmail.com>"
-    url = "https://github.com/nbeddows"
+    url = "https://github.com/nbeddows/meen"
     description = "8 bit Machine Emulator Engine"
     topics = ("emulator", "i8080")
 
