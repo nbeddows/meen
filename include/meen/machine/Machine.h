@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -31,6 +31,7 @@ SOFTWARE.
 #endif
 #include <map>
 #include <source_location>
+#include <unordered_map>
 
 #include "meen/IController.h"
 #include "meen/cpu/ICpu.h"
@@ -82,8 +83,11 @@ namespace meen
 		/** One time initialisation handler call flag
 		
 			This is used for std::call_once to invoke the intialisation handler exactly once.
+			Declared as an unordered_map so different handlers can be attached having their
+			initialisation handlers called exactly once
 		*/
-		std::once_flag initOnceFlag_;
+		std::unordered_map<std::string, std::once_flag> controllerInitMap_;
+
 		std::error_code HandleError(std::error_code err, std::source_location&& sl);
 		std::error_code HandleError(errc ec, std::source_location&& sl);
 		friend void RunMachine(Machine* machine);

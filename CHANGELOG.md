@@ -1,6 +1,8 @@
 2.2.0
 * Visual Studio Version 17.14.9 (July 2025) support.
 * Added the config parameter `timescale`.
+* Fixed a bug where a controllers OnInit method would
+  only be called for the first controller attached.
 
 2.1.0 [21/07/25]
 * Added testing and release workflows for GitHub Actions CI/CD.

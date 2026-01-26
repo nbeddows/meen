@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -863,8 +863,8 @@ namespace meen
 							{
 								str.clear();
 								m->HandleError(e, std::source_location::current());
-							}
 
+							}
 							str.resize(len);
 #ifndef PICO_BOARD
 							return str;
@@ -1103,10 +1103,20 @@ namespace meen
 
 		if (m->onInit_ != nullptr)
 		{
-			std::call_once(m->initOnceFlag_, [&err, m]
+			auto uuid = m->ioController_->Uuid();
+			auto ex = Utils::BinToTxt(m->opt_.Encoder(), "none", uuid.data(), uuid.size());
+
+			if (ex.has_value() == true)
 			{
-				err = m->onInit_(m->ioController_.get());
-			});
+				std::call_once(m->controllerInitMap_[ex.value()], [&err, m]
+				{
+					err = m->onInit_(m->ioController_.get());
+				});
+			}
+			else
+			{
+				printf("Warning: Invalid UUID, controllable not initialised\n");
+			}
 		}
 
 		if (err == errc::no_error)
