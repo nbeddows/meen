@@ -43,7 +43,8 @@ namespace meen
 {
 	enum class Cpu
 	{
-		i8080
+		i8080,
+		z80
 	};
 
 	/** Machine

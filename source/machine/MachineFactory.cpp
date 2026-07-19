@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -34,5 +34,11 @@ namespace meen
 	std::unique_ptr<IMachine> Make8080Machine()
 	{
 		return std::make_unique<Machine>(Cpu::i8080);
+	}
+
+	//cppcheck-suppress unusedFunction
+	std::unique_ptr<IMachine> MakeZ80Machine()
+	{
+		return std::make_unique<Machine>(Cpu::z80);
 	}
 } // namespace meen

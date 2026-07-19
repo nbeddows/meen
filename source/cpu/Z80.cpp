@@ -20,18 +20,58 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#include "meen/cpu/8080.h"
-#include "meen/cpu/z80.h"
+#include "meen/cpu/Z80.h"
 
 namespace meen
 {
-	std::unique_ptr<ICpu> Make8080()
+	Z80::Z80()
 	{
-		return std::make_unique<Intel8080>();
+
 	}
 
-	std::unique_ptr<ICpu> MakeZ80()
+	Z80::~Z80()
 	{
-		return std::make_unique<Z80>();
+
 	}
-} // namespace meen
+
+	/* I8080 overrides */
+	uint8_t Z80::Execute()
+	{
+		// TODO: Execute needs to return int8_t, that way we can return -1 when we encounter an opcode we don't understand
+
+		auto timePeriods = i8080_.Execute();
+
+		return timePeriods;
+	}
+
+	uint8_t Z80::Interrupt(ISR isr)
+	{
+		return i8080_.Interrupt(isr);
+	}
+
+	std::error_code Z80::Load(const std::string&& json, bool checkUuid)
+	{
+		return i8080_.Load(std::move(json), checkUuid);
+	}
+#ifdef ENABLE_MEEN_SAVE
+	std::expected<std::string, std::error_code> Z80::Save() const
+	{
+		return i8080_.Save();
+	}
+#endif // ENABLE_MEEN_SAVE
+	void Z80::Reset()
+	{
+		i8080_.Reset();
+	}
+
+	void Z80::SetMemoryController(IController* memoryController)
+	{
+		i8080_.SetMemoryController(memoryController);
+	}
+
+	void Z80::SetIoController(IController* ioController)
+	{
+		i8080_.SetIoController(ioController);
+	}
+	/* End I8080 overrides */
+}
