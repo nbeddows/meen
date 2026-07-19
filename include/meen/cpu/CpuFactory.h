@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -30,6 +30,7 @@ SOFTWARE.
 namespace meen
 {
 	std::unique_ptr<ICpu> Make8080();
+	std::unique_ptr<ICpu> MakeZ80();
 } // namespace meen
 
 #endif // CPU_FACTORY_H

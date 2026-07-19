@@ -59,6 +59,13 @@ namespace meen
 			{
 				clock_ = MakeCpuClock(2000000);
 				cpu_ = Make8080();
+				break;
+			}
+			case Cpu::z80:
+			{
+				clock_ = MakeCpuClock(3500000);
+				cpu_ = MakeZ80();
+				break;
 			}
 			default:
 			{

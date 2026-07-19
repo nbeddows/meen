@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -64,6 +64,18 @@ namespace meen
 		@remark		When this factory method fails a valid object will be still returned, however, API calls on the returned object will fail.
 	*/
 	DLL_EXP_IMP std::unique_ptr<IMachine> Make8080Machine();
+
+	/** Create a machine with a z80 cpu
+
+		Build a z80 machine based on the default configuration. See the `Configuration options` section
+		for a complete list of options and their defaults.
+
+		@return		A unique machine pointer that can be loaded with memory and io controllers.
+
+		@remark		When this factory method fails a valid object will be still returned, however, API calls on the returned object will fail.
+	*/
+	DLL_EXP_IMP std::unique_ptr<IMachine> MakeZ80Machine();
+
 } // namespace meen
 
 #endif // MACHINE_FACTORY_H
