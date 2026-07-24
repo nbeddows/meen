@@ -41,9 +41,9 @@ namespace meen
 		virtual void SetIoController(IController* ioController) = 0;
 
 		//Executes the next instruction
-		virtual uint8_t Execute() = 0;
+		virtual int8_t Execute() = 0;
 
-		virtual uint8_t Interrupt(ISR isr) = 0;
+		virtual int8_t Interrupt(ISR isr) = 0;
 
 		virtual void Reset() = 0;
 

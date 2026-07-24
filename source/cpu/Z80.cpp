@@ -20,6 +20,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#include <assert.h>
+
 #include "meen/cpu/Z80.h"
 
 namespace meen
@@ -35,18 +37,45 @@ namespace meen
 	}
 
 	/* I8080 overrides */
-	uint8_t Z80::Execute()
+	int8_t Z80::Execute()
 	{
-		// TODO: Execute needs to return int8_t, that way we can return -1 when we encounter an opcode we don't understand
-
 		auto timePeriods = i8080_.Execute();
 
+		if (timePeriods < 0)
+		{
+			uint8_t opcode = 0;
+			/*
+				Read the next opcode
+			*/
+			switch (opcode)
+			{
+				case 0xCB:
+					break;
+				case 0xDD:
+					break;
+				case 0xED:
+					break;
+				case 0xFD:
+					break;
+				default:
+					assert(0);
+					break;
+			}
+		}
+		
 		return timePeriods;
 	}
 
-	uint8_t Z80::Interrupt(ISR isr)
+	int8_t Z80::Interrupt(ISR isr)
 	{
-		return i8080_.Interrupt(isr);
+		auto timePeriods = i8080_.Interrupt(isr);
+
+		if (timePeriods < 0)
+		{
+			
+		}
+
+		return timePeriods;
 	}
 
 	std::error_code Z80::Load(const std::string&& json, bool checkUuid)
