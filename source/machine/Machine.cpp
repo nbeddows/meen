@@ -841,8 +841,17 @@ namespace meen
 				case ISR::Seven:
 				{
 					ticks = m->cpu_->Interrupt(isr);
-					currTime = m->clock_->Tick(ticks);
-					totalTicks += ticks;
+
+					if (ticks >= 0)
+					{
+						currTime = m->clock_->Tick(ticks);
+						totalTicks += ticks;
+					}
+					else
+					{
+						// Call the on error handler if it has been set to indicate we have encountered an instruction we don't understand
+						m->HandleError(errc::invalid_instruction, std::source_location::current());
+					}
 					break;
 				}
 				case ISR::Load:
@@ -1142,11 +1151,23 @@ namespace meen
 			{
 				//Execute the next instruction
 				ticks = m->cpu_->Execute();
-				currTime = m->clock_->Tick(ticks);
-				totalTicks += ticks;
+
+				// We can return megative here, we don't want to rewind the clock
+				if (ticks >= 0)
+				{
+					currTime = m->clock_->Tick(ticks);
+					totalTicks += ticks;
+				}
+				else
+				{
+					// Call the on error handler if it has been set to indicate we have encountered an instruction we don't understand
+					m->HandleError(errc::invalid_instruction, std::source_location::current());
+				}
 
 				// Check if it is time to service interrupts
-				if (totalTicks - lastTicks >= ticksPerIsr || ticks == 0) // when ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+				// When ticks is 0 the cpu is not executing (it has been halted), poll (should be less aggressive) for interrupts to unhalt the cpu
+				// When ticks is < 0 we are stuck on an instruction we don't understand, give the interrupt system some chance to take action
+				if (totalTicks - lastTicks >= ticksPerIsr || ticks <= 0)
 				{
 					quit = serviceInterrupts();
 					lastTicks = totalTicks;
