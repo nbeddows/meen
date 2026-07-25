@@ -38,8 +38,8 @@ namespace meen
 			Intel8080 i8080_;
 		public:
 			/* I8080 overrides */
-			uint8_t Execute() final;
-			uint8_t Interrupt(ISR isr);
+			int8_t Execute() final;
+			int8_t Interrupt(ISR isr);
 			std::error_code Load(const std::string&& json, bool checkUuid) final;
 #ifdef ENABLE_MEEN_SAVE
 			std::expected<std::string, std::error_code> Save() const final;
