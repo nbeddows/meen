@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2021-2025 Nicolas Beddows <nicolas.beddows@gmail.com>
+Copyright (c) 2021-2026 Nicolas Beddows <nicolas.beddows@gmail.com>
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -39,6 +39,7 @@ namespace meen
 		busy,					/**< MEEN is currently running */
 		clock_sampling_freq,	/**< The sampling frequency can't be set, either it is too high/low or the host clock can't be queried */
 		cpu,					/**< The cpu is invalid */
+		invalid_instruction,	/**< The cpu attempted to execute an invalid instruction */
 		encoder, 				/**< The binary to text encoding scheme is unknown */
 		incompatible_ram,		/**< The ram to load is not compatible with this component */
 		incompatible_rom,		/**< The rom to load is not compatible with this component */
